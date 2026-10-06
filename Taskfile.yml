@@ -1,0 +1,155 @@
+# Taskfile for MarketDesk (https://taskfile.dev)
+# Run `task` to list the available commands.
+#
+# Locally every command runs inside the `app` container defined in
+# docker-compose.yaml. In CI (CI=true) the same command runs directly
+# with `uv`, so there is one definition per command and two runners.
+# Scripts are added milestone by milestone; a task whose script does not
+# exist yet will fail until then.
+
+version: "3"
+
+env:
+  HOST_UID:
+    sh: id -u
+  HOST_GID:
+    sh: id -g
+
+vars:
+  # Prefix for commands that need the Python environment.
+  RUN: '{{if eq .CI "true"}}{{else}}docker compose run --rm app{{end}}'
+  # Compose with every profile enabled, for commands that must see all services.
+  COMPOSE_ALL: docker compose --profile "*"
+
+tasks:
+  default:
+    desc: List available tasks
+    silent: true
+    cmds:
+      - task --list
+
+  # --- Full setup --------------------------------------------------------
+
+  install:
+    desc: Full local setup (pull images, install deps, load data, start services)
+    preconditions:
+      - sh: test -f .env
+        msg: ".env not found. Run `cp .env.example .env` and fill in your API keys first."
+    cmds:
+      - task: pull
+      - task: sync
+      - task: data
+      - task: up
+
+  reset:
+    desc: Remove everything and run the full setup again
+    cmds:
+      - task: clean
+      - task: install
+
+  # --- Containers (all services, or one: `task up -- phoenix`) -----------
+
+  pull:
+    desc: Pull the container images
+    cmds:
+      - "{{.COMPOSE_ALL}} pull {{.CLI_ARGS}}"
+
+  up:
+    desc: Start services in the background (default is app only)
+    cmds:
+      - docker compose up -d {{.CLI_ARGS}}
+
+  down:
+    desc: Stop and remove all containers
+    cmds:
+      - "{{.COMPOSE_ALL}} down"
+
+  restart:
+    desc: Restart running services
+    cmds:
+      - "{{.COMPOSE_ALL}} restart {{.CLI_ARGS}}"
+
+  logs:
+    desc: Follow service logs
+    cmds:
+      - "{{.COMPOSE_ALL}} logs -f {{.CLI_ARGS}}"
+
+  ps:
+    desc: Show container status
+    cmds:
+      - "{{.COMPOSE_ALL}} ps -a"
+
+  rm:
+    desc: Stop and delete one service's container (`task rm -- phoenix`)
+    preconditions:
+      - sh: test -n "{{.CLI_ARGS}}"
+        msg: "Name a service: task rm -- <service>"
+    cmds:
+      - "{{.COMPOSE_ALL}} rm -sf {{.CLI_ARGS}}"
+
+  clean:
+    desc: Delete containers and volumes (installed dependencies, Phoenix traces)
+    prompt: This deletes all containers, the dependency volume and the Phoenix trace volume. Continue?
+    cmds:
+      - "{{.COMPOSE_ALL}} down -v"
+
+  # --- Environment -------------------------------------------------------
+
+  sync:
+    desc: Install dependencies from uv.lock
+    cmds:
+      - "{{.RUN}} uv sync --frozen"
+
+  # --- Quality -----------------------------------------------------------
+
+  lint:
+    desc: Run ruff lint checks
+    cmds:
+      - "{{.RUN}} uv run ruff check ."
+
+  format:
+    desc: Format code with ruff
+    cmds:
+      - "{{.RUN}} uv run ruff format ."
+
+  test:
+    desc: Run unit tests (no API key or network needed)
+    cmds:
+      - "{{.RUN}} uv run pytest {{.CLI_ARGS}}"
+
+  check:
+    desc: Lint and test, the same checks CI runs
+    cmds:
+      - task: lint
+      - task: test
+
+  # --- Data --------------------------------------------------------------
+
+  data:download:
+    desc: Download the Olist dataset
+    cmds:
+      - "{{.RUN}} uv run python data/download.py"
+
+  data:load:
+    desc: Load the CSV files into SQLite (data/marketdesk.db)
+    cmds:
+      - "{{.RUN}} uv run python scripts/load_sqlite.py --db data/marketdesk.db"
+
+  data:smoke:
+    desc: Verify the downloaded data and the database against the expected numbers
+    cmds:
+      - "{{.RUN}} uv run python scripts/smoke.py --db data/marketdesk.db"
+
+  data:
+    desc: Download, load and verify the dataset
+    cmds:
+      - task: data:download
+      - task: data:load
+      - task: data:smoke
+
+  # --- Evaluation --------------------------------------------------------
+
+  eval:
+    desc: Run the full evaluation (uses LLM free-tier quota)
+    cmds:
+      - "{{.RUN}} uv run python eval/run_eval.py {{.CLI_ARGS}}"
