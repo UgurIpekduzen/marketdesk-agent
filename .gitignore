@@ -218,3 +218,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local working notes (Claude Code guidance, task list, archive)
+CLAUDE.md
+TASKS.md
+ARCHIVE.md

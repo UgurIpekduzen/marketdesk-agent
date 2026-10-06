@@ -1,0 +1,18 @@
+[project]
+name = "marketdesk-agent"
+version = "0.1.0"
+description = "Marketplace customer-support and operations agent system"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12,<3.13"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pytest==9.1.1",
+    "ruff==0.16.10",
+]
+
+[tool.uv]
+# An application, not a library: nothing to build or install as a package.
+package = false
