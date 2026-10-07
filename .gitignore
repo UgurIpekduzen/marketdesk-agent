@@ -223,3 +223,7 @@ __marimo__/
 CLAUDE.md
 TASKS.md
 ARCHIVE.md
+
+# Raw Olist data and the SQLite DB built from it (licence: CC BY-NC-SA 4.0)
+data/*
+!data/download.py
