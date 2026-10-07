@@ -271,13 +271,18 @@ def run_checks(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--db", type=Path, default=DEFAULT_DB_PATH)
-    parser.add_argument("--raw", type=Path, default=DEFAULT_RAW_DIR)
+    parser.add_argument(
+        "--src",
+        type=Path,
+        default=DEFAULT_RAW_DIR,
+        help="folder that holds the nine Olist CSV files",
+    )
     args = parser.parse_args(argv)
 
-    if not args.raw.is_dir():
-        print(f"SKIP  raw CSV checks: {args.raw} not found")
+    if not args.src.is_dir():
+        print(f"SKIP  raw CSV checks: {args.src} not found")
     try:
-        checks = run_checks(args.db, args.raw)
+        checks = run_checks(args.db, args.src)
     except (FileNotFoundError, sqlite3.Error) as error:
         print(f"Smoke test could not run: {error}")
         return 1

@@ -176,7 +176,7 @@ def test_database_is_not_changed(db_path, raw_dir):
 
 
 def test_main_returns_1_and_explains_when_the_database_is_missing(tmp_path, capsys):
-    code = smoke.main(["--db", str(tmp_path / "missing.db"), "--raw", str(tmp_path)])
+    code = smoke.main(["--db", str(tmp_path / "missing.db"), "--src", str(tmp_path)])
 
     assert code == 1
     assert "Smoke test could not run" in capsys.readouterr().out
@@ -184,7 +184,7 @@ def test_main_returns_1_and_explains_when_the_database_is_missing(tmp_path, caps
 
 def test_main_returns_1_when_a_check_fails(db_path, raw_dir, capsys):
     # The synthetic database cannot match the real Olist numbers.
-    code = smoke.main(["--db", str(db_path), "--raw", str(raw_dir)])
+    code = smoke.main(["--db", str(db_path), "--src", str(raw_dir)])
 
     output = capsys.readouterr().out
     assert code == 1

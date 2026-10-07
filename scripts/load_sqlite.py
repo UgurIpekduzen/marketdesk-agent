@@ -1,6 +1,6 @@
 """Load the Olist CSV files into a SQLite database.
 
-Usage:  python scripts/load_sqlite.py --db data/marketdesk.db
+Usage:  python scripts/load_sqlite.py --src data/raw --db data/marketdesk.db
 
 What it does:
 - creates one table per CSV file, with explicit column types;
@@ -309,10 +309,15 @@ def build_database(
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--db", type=Path, default=DEFAULT_DB_PATH)
-    parser.add_argument("--raw", type=Path, default=DEFAULT_RAW_DIR)
+    parser.add_argument(
+        "--src",
+        type=Path,
+        default=DEFAULT_RAW_DIR,
+        help="folder that holds the nine Olist CSV files",
+    )
     args = parser.parse_args()
 
-    counts = build_database(args.raw, args.db)
+    counts = build_database(args.src, args.db)
     excluded = counts.pop("excluded_by_r0")
     for name, count in counts.items():
         print(f"{name:<36}{count:>9,}")

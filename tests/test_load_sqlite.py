@@ -308,3 +308,23 @@ def test_script_runs_from_another_working_directory(tmp_path):
     )
 
     assert result.returncode == 0, result.stderr
+
+
+def test_script_builds_a_database_from_a_given_source_folder(raw_dir, tmp_path):
+    script = Path(__file__).resolve().parent.parent / "scripts" / "load_sqlite.py"
+    db_path = tmp_path / "out" / "orders.db"
+
+    result = subprocess.run(
+        [sys.executable, str(script), "--src", str(raw_dir), "--db", str(db_path)],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    conn = sqlite3.connect(db_path)
+    try:
+        assert conn.execute("SELECT COUNT(*) FROM orders").fetchone()[0] == 2
+    finally:
+        conn.close()
