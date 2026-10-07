@@ -1,6 +1,6 @@
 """Load the Olist CSV files into a SQLite database.
 
-Run from the project root:  python -m scripts.load_sqlite --db data/marketdesk.db
+Usage:  python scripts/load_sqlite.py --db data/marketdesk.db
 
 What it does:
 - creates one table per CSV file, with explicit column types;
@@ -17,10 +17,15 @@ The database is rebuilt from scratch on every run.
 import argparse
 import csv
 import sqlite3
+import sys
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
+
+# Run as a plain script, Python only searches the scripts/ folder for imports.
+# Adding the project root lets config.py be found from any working directory.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from config import SIMULATED_TODAY
 

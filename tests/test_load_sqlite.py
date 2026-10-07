@@ -5,7 +5,10 @@ No Olist data is used: each test builds its own raw folder in tmp_path.
 
 import csv
 import sqlite3
+import subprocess
+import sys
 from datetime import date
+from pathlib import Path
 
 import pytest
 
@@ -269,3 +272,39 @@ def test_failed_rebuild_keeps_the_previous_database(raw_dir, tmp_path):
         assert conn.execute("SELECT COUNT(*) FROM orders").fetchone()[0] == 2
     finally:
         conn.close()
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        ["scripts/load_sqlite.py", "--help"],
+        ["-m", "scripts.load_sqlite", "--help"],
+    ],
+)
+def test_script_runs_as_a_file_and_as_a_module(command):
+    project_root = Path(__file__).resolve().parent.parent
+
+    result = subprocess.run(
+        [sys.executable, *command],
+        cwd=project_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "--db" in result.stdout
+
+
+def test_script_runs_from_another_working_directory(tmp_path):
+    script = Path(__file__).resolve().parent.parent / "scripts" / "load_sqlite.py"
+
+    result = subprocess.run(
+        [sys.executable, str(script), "--help"],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
