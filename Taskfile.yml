@@ -133,7 +133,7 @@ tasks:
   data:load:
     desc: Load the CSV files into SQLite (data/marketdesk.db)
     cmds:
-      - "{{.RUN}} uv run python scripts/load_sqlite.py --db data/marketdesk.db"
+      - "{{.RUN}} uv run python -m scripts.load_sqlite --db data/marketdesk.db"
 
   data:smoke:
     desc: Verify the downloaded data and the database against the expected numbers
