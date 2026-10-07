@@ -18,10 +18,17 @@ LLM_MODEL = "gemini-3.5-flash-lite"
 
 # Return windows in calendar days. The delivery day is day 0 and the last
 # day of a window is still inside it.
+# Short window (R6): the customer changed their mind or the order was late.
 RETURN_WINDOW_SHORT_DAYS = 14
+# Long window (R7): the item was damaged or wrong. Also the limit for a
+# freight-only claim on a late delivery (R9).
 RETURN_WINDOW_LONG_DAYS = 30
 
-# Amount in BRL that separates the two approval levels.
+# A delivery this many days after the estimated date, or later, earns a
+# freight refund (R9).
+FREIGHT_REFUND_DELAY_DAYS = 10
+
+# A refund above this amount in BRL needs senior approval (R10).
 APPROVAL_THRESHOLD_BRL = 500
 
 # --- Agent loop ---------------------------------------------------------

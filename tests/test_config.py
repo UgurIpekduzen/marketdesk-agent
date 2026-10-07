@@ -49,6 +49,7 @@ def test_simulated_today_is_the_first_of_september_2018():
 def test_return_windows_and_threshold():
     assert config.RETURN_WINDOW_SHORT_DAYS == 14
     assert config.RETURN_WINDOW_LONG_DAYS == 30
+    assert config.FREIGHT_REFUND_DELAY_DAYS == 10
     assert config.APPROVAL_THRESHOLD_BRL == 500
 
 
