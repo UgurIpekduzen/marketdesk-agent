@@ -15,6 +15,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "kagglehub==1.0.2",
     "pytest==9.1.1",
     "ruff==0.16.10",
 ]
@@ -22,3 +23,8 @@ dev = [
 [tool.uv]
 # An application, not a library: nothing to build or install as a package.
 package = false
+
+[tool.pytest.ini_options]
+# Lets tests import top-level modules and folders (config, data, scripts, src).
+pythonpath = ["."]
+testpaths = ["tests"]
