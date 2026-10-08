@@ -58,3 +58,35 @@ SQL_TIMEOUT = "Sorgu {seconds} saniyede tamamlanmadığı için durduruldu."
 # How a policy section is cited in an answer.
 POLICY_CITATION = "{document}, Bölüm {number}"
 EMPTY_POLICY_QUERY = "Arama metni boş olamaz."
+
+# --- Support agent ------------------------------------------------------
+
+STEP_LIMIT_REACHED = (
+    "İsteğinizi bu adımda tamamlayamadım. Sorunuzu biraz daha açık yazabilir "
+    "ya da konunun bir müşteri temsilcisine aktarılmasını isteyebilirsiniz."
+)
+EMPTY_REPLY = "Şu anda bir cevap oluşturamadım. Lütfen sorunuzu yeniden yazın."
+
+RETURN_REASON_LABELS = {
+    "changed_mind": "vazgeçme",
+    "late": "geç teslim",
+    "damaged": "hasarlı ürün",
+    "wrong_item": "yanlış ürün",
+}
+REQUEST_STATUS_LABELS = {
+    "PENDING_REVIEW": "inceleme bekliyor",
+    "PENDING_SENIOR": "kıdemli onay bekliyor",
+}
+APPROVAL_SUMMARY = (
+    "Oluşturulacak iade talebi:\n"
+    "  Sipariş: {order}\n"
+    "  İade nedeni: {reason}\n"
+    "  İade tutarı: {amount} BRL\n"
+    "  Talep şu durumda açılacak: {status}"
+)
+APPROVAL_QUESTION = "Onaylıyor musunuz? [e/h] "
+RETURN_REQUEST_CREATED_DETAIL = (
+    "İade talebiniz oluşturuldu. Talep numarası: {request_id}, durum: {status}."
+)
+RETURN_REQUEST_NOT_CREATED = "İade talebi oluşturulmadı: {reason}"
+APPROVAL_DECLINED = "Onay vermediniz; iade talebi oluşturulmadı."

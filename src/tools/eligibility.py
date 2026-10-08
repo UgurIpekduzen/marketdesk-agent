@@ -30,16 +30,14 @@ def check_return_eligibility(
     to return it: changed_mind, late, damaged or wrong_item. Ask the customer
     if the reason is not clear; do not guess it.
 
-    The decision is final and comes from fixed rules: report it, do not
-    change it. decision is one of NOT_DELIVERED_CANCELLABLE, IN_TRANSIT,
+    The decision comes from fixed rules and is final: report it, do not
+    change it. decision is NOT_DELIVERED_CANCELLABLE, IN_TRANSIT,
     ALREADY_CLOSED, NEEDS_HUMAN, DUPLICATE_REQUEST, ELIGIBLE or
-    NOT_ELIGIBLE_WINDOW, and rule is the rule that decided. refund_amount
-    (BRL) is what a request would refund; "0.00" means nothing can be
-    refunded. freight_refund is true when the freight is refunded because
-    the delivery was late; for damaged and wrong_item the freight is always
-    part of refund_amount. freight_only_claim is true when the items can no
-    longer be returned but the freight can still be claimed because the
-    delivery was late. If the customer has no such order the result is
+    NOT_ELIGIBLE_WINDOW; rule is the rule that decided. refund_amount (BRL)
+    is what a request would refund; "0.00" means nothing can be refunded.
+    freight_refund is true when the freight is refunded because the delivery
+    was late. freight_only_claim is true when the items can no longer be
+    returned but the freight can still be claimed. An unknown order answers
     {"error": "NOT_FOUND", "message": ...}.
     """
     if reason not in RETURN_REASONS:
