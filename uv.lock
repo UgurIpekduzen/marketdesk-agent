@@ -798,6 +798,7 @@ dependencies = [
     { name = "llama-index-llms-groq" },
     { name = "llama-index-tools-mcp" },
     { name = "mcp" },
+    { name = "pyyaml" },
 ]
 
 [package.dev-dependencies]
@@ -814,6 +815,7 @@ requires-dist = [
     { name = "llama-index-llms-groq", specifier = "==0.6.1" },
     { name = "llama-index-tools-mcp", specifier = "==0.6.0" },
     { name = "mcp", specifier = "==2.3.0" },
+    { name = "pyyaml", specifier = "==6.0.3" },
 ]
 
 [package.metadata.requires-dev]

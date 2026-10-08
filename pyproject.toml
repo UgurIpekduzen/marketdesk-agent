@@ -11,6 +11,7 @@ dependencies = [
     "llama-index-llms-groq==0.6.1",
     "llama-index-tools-mcp==0.6.0",
     "mcp==2.3.0",
+    "pyyaml==6.0.3",
 ]
 
 [dependency-groups]
