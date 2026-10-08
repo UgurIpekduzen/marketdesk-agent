@@ -7,13 +7,20 @@ The session also gives every order a short alias (SIP-1, SIP-2, ...), so the
 raw order id never has to appear in a tool's output. Aliases are numbered in
 the order they are first handed out and mean nothing outside this session.
 
-Approvals given by the person in this session are kept here as well.
+Approvals given by the person in this session are kept here as well, and
+so are the values known to be personal for this customer (city, zip code
+prefix), which the outbound guard keeps away from the model provider.
 """
 
 import re
+import sqlite3
 from dataclasses import dataclass, field
 
 from src.guardrails.approval import Approvals
+from src.guardrails.outbound import Redactor
+
+CITY_MASK = "[city]"
+ZIP_MASK = "[zip]"
 
 ALIAS_PREFIX = "SIP-"
 # Accepts "SIP-1", "sip-1", "SIP 1" and "sip1".
@@ -26,6 +33,8 @@ class Session:
     # Position n - 1 holds the order id behind the alias SIP-n.
     _order_ids: list[str] = field(default_factory=list, repr=False)
     approvals: Approvals = field(default_factory=Approvals, repr=False)
+    # Personal value -> the mask that replaces it in text sent to the model.
+    personal_values: dict[str, str] = field(default_factory=dict, repr=False)
 
     def alias_for(self, order_id: str) -> str:
         """Return the alias of an order, handing out a new one if needed."""
@@ -48,3 +57,27 @@ class Session:
             if 1 <= number <= len(self._order_ids):
                 return self._order_ids[number - 1]
         return order_ref
+
+    def redactor(self) -> Redactor:
+        """The cleaner for text that leaves this session for the model."""
+        return Redactor(alias_for=self.alias_for, known_values=self.personal_values)
+
+
+def open_session(conn: sqlite3.Connection, customer_unique_id: str) -> Session:
+    """Start a session and load the customer's city and zip code prefix.
+
+    A customer can have several of each, one per order. An unknown customer
+    simply has none.
+    """
+    personal_values = {}
+    rows = conn.execute(
+        "SELECT DISTINCT customer_city, customer_zip_code_prefix "
+        "FROM customers WHERE customer_unique_id = ?",
+        (customer_unique_id,),
+    )
+    for city, zip_prefix in rows:
+        if city:
+            personal_values[city] = CITY_MASK
+        if zip_prefix:
+            personal_values[zip_prefix] = ZIP_MASK
+    return Session(customer_unique_id, personal_values=personal_values)
