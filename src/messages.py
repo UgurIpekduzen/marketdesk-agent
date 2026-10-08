@@ -57,3 +57,4 @@ SQL_TIMEOUT = "Sorgu {seconds} saniyede tamamlanmadığı için durduruldu."
 
 # How a policy section is cited in an answer.
 POLICY_CITATION = "{document}, Bölüm {number}"
+EMPTY_POLICY_QUERY = "Arama metni boş olamaz."
