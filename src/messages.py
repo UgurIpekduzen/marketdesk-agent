@@ -5,3 +5,4 @@
 ORDER_NOT_FOUND = "Bu numarayla size ait bir sipariş bulunamadı."
 
 INVALID_ORDER_STATUS = "Geçersiz sipariş durumu. Geçerli değerler: {allowed}."
+INVALID_RETURN_REASON = "Geçersiz iade nedeni. Geçerli değerler: {allowed}."
