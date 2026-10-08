@@ -55,9 +55,9 @@ tasks:
       - "{{.COMPOSE_ALL}} pull {{.CLI_ARGS}}"
 
   up:
-    desc: Start services in the background (default is app only)
+    desc: Start services in the background and wait until they are healthy (default is app only)
     cmds:
-      - docker compose up -d {{.CLI_ARGS}}
+      - docker compose up -d --wait {{.CLI_ARGS}}
 
   down:
     desc: Stop and remove all containers

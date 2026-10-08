@@ -33,7 +33,19 @@ services:
         required: false
     ports:
       - "8501:8501"
-    command: uv run streamlit run app.py --server.address 0.0.0.0
+    command: uv run streamlit run app.py --server.address 0.0.0.0 --server.headless true
+    # Healthy once Streamlit answers. `task up` waits for this, so a service
+    # that exits or never comes up is reported instead of passing silently.
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8501/_stcore/health', timeout=3)"
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
 
   phoenix:
     image: arizephoenix/phoenix:version-20.19.0
