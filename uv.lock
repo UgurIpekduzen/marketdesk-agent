@@ -1048,20 +1048,6 @@ wheels = [
 ]
 
 [[package]]
-name = "llama-index-tools-mcp"
-version = "0.6.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "llama-index-core" },
-    { name = "mcp" },
-    { name = "pydantic" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/a7/8c/02bcfccc7d27c7553375fc2184f5dc24b1cf1b81037d17ea379edd7d34a2/llama_index_tools_mcp-0.6.0.tar.gz", hash = "sha256:5a0661765b9b5ba8364e3875134dd291db063450fd344e8ab3b10b7bb05c56d9", size = 13776, upload-time = "2026-08-31T16:10:10.482Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/55/29/afdb57cf15d23c378a8b8d14f6086e18393a3d266319a95a2a668431c09b/llama_index_tools_mcp-0.6.0-py3-none-any.whl", hash = "sha256:9661e87fac9383c4b0754fcceed4fcce827c3581c03be6de1621f67e48e77abc", size = 14915, upload-time = "2026-08-31T16:10:09.67Z" },
-]
-
-[[package]]
 name = "llama-index-workflows"
 version = "2.25.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1097,7 +1083,6 @@ dependencies = [
     { name = "llama-index-core" },
     { name = "llama-index-llms-google-genai" },
     { name = "llama-index-llms-groq" },
-    { name = "llama-index-tools-mcp" },
     { name = "mcp" },
     { name = "numpy" },
     { name = "onnxruntime" },
@@ -1121,7 +1106,6 @@ requires-dist = [
     { name = "llama-index-core", specifier = "==0.14.25" },
     { name = "llama-index-llms-google-genai", specifier = "==0.11.2" },
     { name = "llama-index-llms-groq", specifier = "==0.6.1" },
-    { name = "llama-index-tools-mcp", specifier = "==0.6.0" },
     { name = "mcp", specifier = "==2.3.0" },
     { name = "numpy", specifier = "==2.5.3" },
     { name = "onnxruntime", specifier = "==1.30.0" },
