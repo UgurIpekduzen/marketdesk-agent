@@ -31,6 +31,12 @@ FREIGHT_REFUND_DELAY_DAYS = 10
 # A refund above this amount in BRL needs senior approval (R10).
 APPROVAL_THRESHOLD_BRL = 500
 
+# --- Free SQL -----------------------------------------------------------
+
+# The most rows a free SQL query may return. A query without a LIMIT gets
+# this one; a larger LIMIT is lowered to it.
+SQL_MAX_ROWS = 1000
+
 # --- Agent loop ---------------------------------------------------------
 
 # Upper limit on the steps an agent may take for one user message.
