@@ -90,3 +90,10 @@ RETURN_REQUEST_CREATED_DETAIL = (
 )
 RETURN_REQUEST_NOT_CREATED = "İade talebi oluşturulmadı: {reason}"
 APPROVAL_DECLINED = "Onay vermediniz; iade talebi oluşturulmadı."
+
+# --- Chat command -------------------------------------------------------
+
+CHAT_BANNER = "MarketDesk müşteri desteği. Çıkmak için 'çık' yazın.\nSorunuzu yazın:"
+CHAT_PROMPT = "> "
+CHAT_GOODBYE = "Görüşmek üzere."
+CHAT_UNKNOWN_CUSTOMER = "Bu müşteri için kayıtlı sipariş bulunamadı."

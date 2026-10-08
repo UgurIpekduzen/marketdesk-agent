@@ -164,6 +164,13 @@ tasks:
     cmds:
       - "{{.RUN}} uv run python scripts/check_embedding.py"
 
+  # --- Agents ------------------------------------------------------------
+
+  chat:
+    desc: Chat with the Support Agent (uses LLM quota); pass --demo or --customer <id> after --
+    cmds:
+      - "{{.RUN}} uv run python -m src.cli {{.CLI_ARGS}}"
+
   # --- Evaluation --------------------------------------------------------
 
   eval:
