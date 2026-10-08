@@ -37,6 +37,9 @@ APPROVAL_THRESHOLD_BRL = 500
 # this one; a larger LIMIT is lowered to it.
 SQL_MAX_ROWS = 1000
 
+# A free SQL query that runs longer than this many seconds is stopped.
+SQL_TIMEOUT_SECONDS = 5
+
 # --- Agent loop ---------------------------------------------------------
 
 # Upper limit on the steps an agent may take for one user message.

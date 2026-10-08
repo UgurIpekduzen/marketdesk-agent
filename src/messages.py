@@ -38,3 +38,19 @@ INVALID_FILTER_VALUE = (
     "{name} filtresinin değeri bir metin ya da metin listesi olmalıdır."
 )
 INVALID_PERIOD_FILTER = "{name} filtresi YYYY-AA-GG biçiminde bir tarih olmalıdır."
+
+SQL_REJECTED = {
+    "EMPTY_QUERY": "Sorgu boş.",
+    "PARSE_ERROR": "Sorgu ayrıştırılamadı; SQL yazımını kontrol edin.",
+    "MULTIPLE_STATEMENTS": "Tek seferde yalnızca bir SQL ifadesi çalıştırılabilir.",
+    "NOT_A_SELECT": "Yalnızca SELECT sorguları çalıştırılabilir.",
+    "FORBIDDEN_STATEMENT": (
+        "Sorgu izin verilmeyen bir ifade içeriyor; yalnızca veri okunabilir."
+    ),
+    "TABLE_NOT_ALLOWED": (
+        "Sorgu izin verilmeyen bir tabloya erişiyor. İzinli görünümler: {allowed}."
+    ),
+    "FUNCTION_NOT_ALLOWED": "Sorgu izin verilmeyen bir fonksiyon çağırıyor.",
+}
+SQL_ERROR = "Sorgu çalıştırılamadı."
+SQL_TIMEOUT = "Sorgu {seconds} saniyede tamamlanmadığı için durduruldu."
