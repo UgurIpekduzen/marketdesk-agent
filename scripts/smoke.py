@@ -28,6 +28,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from config import SIMULATED_TODAY
+from src.knowledge.safe_views import ALLOWED_VIEWS
 
 DEFAULT_RAW_DIR = Path("data/raw")
 DEFAULT_DB_PATH = Path("data/marketdesk.db")
@@ -45,6 +46,8 @@ class Expected:
     distinct_customers: int  # distinct customer_unique_id after R0
     # Tables that only have to exist: the application adds rows to them.
     tables_that_exist: tuple[str, ...] = field(default=("return_requests",))
+    # Views free SQL reads from; the loader creates them.
+    views_that_exist: tuple[str, ...] = field(default=ALLOWED_VIEWS)
 
 
 # Raw counts are those of the published dataset (version 2). Database counts
@@ -181,6 +184,14 @@ def database_checks(
             (table,),
         )
         checks.append(Check(f"{table} table exists", 1, exists))
+
+    for view in expected.views_that_exist:
+        exists = scalar(
+            conn,
+            "SELECT COUNT(*) FROM sqlite_master WHERE type = 'view' AND name = ?",
+            (view,),
+        )
+        checks.append(Check(f"{view} view exists", 1, exists))
 
     found_status = dict(
         conn.execute("SELECT order_status, COUNT(*) FROM orders GROUP BY order_status")

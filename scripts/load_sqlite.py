@@ -9,7 +9,8 @@ What it does:
   out, together with their items, payments, reviews and customer rows;
 - adds indexes on the columns used for joins and filters;
 - creates the empty return_requests table, the only table the application
-  writes to.
+  writes to;
+- creates the safe views, the only things free SQL may read.
 
 The database is rebuilt from scratch on every run.
 """
@@ -28,6 +29,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from config import SIMULATED_TODAY
+from src.knowledge.safe_views import create_view_statements
 
 DEFAULT_RAW_DIR = Path("data/raw")
 DEFAULT_DB_PATH = Path("data/marketdesk.db")
@@ -296,6 +298,9 @@ def build_database(
                 conn.execute(
                     f"CREATE INDEX idx_{table_name}_{column} ON {table_name} ({column})"
                 )
+
+            for statement in create_view_statements():
+                conn.execute(statement)
         counts["excluded_by_r0"] = len(excluded_order_ids)
     except BaseException:
         conn.close()
