@@ -12,6 +12,7 @@ dependencies = [
     "llama-index-tools-mcp==0.6.0",
     "mcp==2.3.0",
     "pyyaml==6.0.3",
+    "sqlglot==30.21.0",
 ]
 
 [dependency-groups]
