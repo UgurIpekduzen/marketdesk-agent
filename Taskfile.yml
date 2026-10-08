@@ -166,6 +166,11 @@ tasks:
 
   # --- Agents ------------------------------------------------------------
 
+  agent:check:
+    desc: Run the example questions through the Support Agent with the real model (uses LLM quota)
+    cmds:
+      - "{{.RUN}} uv run python scripts/try_support_agent.py {{.CLI_ARGS}}"
+
   chat:
     desc: Chat with the Support Agent (uses LLM quota); pass --demo or --customer <id> after --
     cmds:
