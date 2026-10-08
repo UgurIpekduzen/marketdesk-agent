@@ -28,7 +28,7 @@ from pydantic import ConfigDict, Field
 import config
 from src.guardrails.outbound import Redactor, log_findings
 
-API_KEY_VARIABLES = {"gemini": "GEMINI_API_KEY"}
+API_KEY_VARIABLES = {"gemini": "GEMINI_API_KEY", "groq": "GROQ_API_KEY"}
 
 
 class GuardedLLM(FunctionCallingLLM):
@@ -127,17 +127,30 @@ class GuardedLLM(FunctionCallingLLM):
         return self.inner.get_tool_calls_from_response(*args, **kwargs)
 
 
+def configured_model() -> tuple[str, str]:
+    """(provider, model name) to use now: the main one, or the fallback."""
+    if config.LLM_USE_FALLBACK:
+        return config.LLM_FALLBACK_PROVIDER, config.LLM_FALLBACK_MODEL
+    return config.LLM_PROVIDER, config.LLM_MODEL
+
+
 def build_provider_llm() -> FunctionCallingLLM:
     """Create the provider's model named in config.py."""
-    provider = config.LLM_PROVIDER
+    provider, model = configured_model()
+    if provider not in API_KEY_VARIABLES:
+        raise ValueError(f"unknown LLM provider in config.py: {provider!r}")
+    api_key = os.environ[API_KEY_VARIABLES[provider]]
+
+    # Imported here: this is the only place that knows the providers.
     if provider == "gemini":
-        # Imported here: this is the only place that knows the provider.
         from llama_index.llms.google_genai import GoogleGenAI
 
         return GoogleGenAI(
-            model=config.LLM_MODEL, api_key=os.environ[API_KEY_VARIABLES[provider]]
+            model=model, api_key=api_key, temperature=config.LLM_TEMPERATURE
         )
-    raise ValueError(f"unknown LLM provider in config.py: {provider!r}")
+    from llama_index.llms.groq import Groq
+
+    return Groq(model=model, api_key=api_key, temperature=config.LLM_TEMPERATURE)
 
 
 def build_llm(redactor: Redactor | None = None) -> GuardedLLM:

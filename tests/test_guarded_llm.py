@@ -2,6 +2,7 @@
 
 import ast
 import asyncio
+import importlib
 from pathlib import Path
 
 import pytest
@@ -223,8 +224,62 @@ def test_unknown_provider_is_an_error(monkeypatch):
         guarded_llm.build_provider_llm()
 
 
-def test_configured_provider_has_an_api_key_variable():
+def test_main_and_fallback_providers_have_an_api_key_variable():
     assert config.LLM_PROVIDER in guarded_llm.API_KEY_VARIABLES
+    assert config.LLM_FALLBACK_PROVIDER in guarded_llm.API_KEY_VARIABLES
+
+
+def test_main_model_is_used_unless_the_fallback_is_switched_on(monkeypatch):
+    assert config.LLM_USE_FALLBACK is False
+    assert guarded_llm.configured_model() == (config.LLM_PROVIDER, config.LLM_MODEL)
+
+    monkeypatch.setattr(config, "LLM_USE_FALLBACK", True)
+
+    assert guarded_llm.configured_model() == (
+        config.LLM_FALLBACK_PROVIDER,
+        config.LLM_FALLBACK_MODEL,
+    )
+
+
+def recording_provider(created):
+    """A stand-in for a provider's model class that records how it is created."""
+
+    def create(**kwargs):
+        created.append(kwargs)
+
+    return create
+
+
+@pytest.mark.parametrize(
+    ("use_fallback", "module", "class_name", "key_variable"),
+    [
+        (False, "llama_index.llms.google_genai", "GoogleGenAI", "GEMINI_API_KEY"),
+        (True, "llama_index.llms.groq", "Groq", "GROQ_API_KEY"),
+    ],
+)
+def test_provider_model_gets_name_key_and_temperature(
+    monkeypatch, use_fallback, module, class_name, key_variable
+):
+    created = []
+    monkeypatch.setattr(
+        importlib.import_module(module), class_name, recording_provider(created)
+    )
+    monkeypatch.setattr(config, "LLM_USE_FALLBACK", use_fallback)
+    monkeypatch.setenv(key_variable, "test-key")
+
+    guarded_llm.build_provider_llm()
+
+    expected_model = config.LLM_FALLBACK_MODEL if use_fallback else config.LLM_MODEL
+    assert created == [
+        {"model": expected_model, "api_key": "test-key", "temperature": 0}
+    ]
+
+
+def test_missing_api_key_is_an_error(monkeypatch):
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+
+    with pytest.raises(KeyError, match="GEMINI_API_KEY"):
+        guarded_llm.build_provider_llm()
 
 
 def imported_modules(path):

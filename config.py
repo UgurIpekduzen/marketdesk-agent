@@ -13,6 +13,14 @@ SIMULATED_TODAY = date(2018, 9, 1)
 # which provider is in use.
 LLM_PROVIDER = "gemini"
 LLM_MODEL = "gemini-3.5-flash-lite"
+# The fallback is a second provider kept ready for a day the main one is
+# down. Nothing is sent to it unless LLM_USE_FALLBACK is switched on here.
+LLM_FALLBACK_PROVIDER = "groq"
+LLM_FALLBACK_MODEL = "qwen/qwen3.8-27b"
+LLM_USE_FALLBACK = False
+# 0 makes the model pick the most likely answer every time: the same
+# question gives the same answer, which the evaluation needs.
+LLM_TEMPERATURE = 0
 
 # --- Return rules -------------------------------------------------------
 
