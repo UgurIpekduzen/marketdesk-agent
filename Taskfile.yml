@@ -147,6 +147,13 @@ tasks:
       - task: data:load
       - task: data:smoke
 
+  # --- Knowledge layer ---------------------------------------------------
+
+  embed:check:
+    desc: Load the real embedding model and search the policy sections (needs the network once)
+    cmds:
+      - "{{.RUN}} uv run python scripts/check_embedding.py"
+
   # --- Evaluation --------------------------------------------------------
 
   eval:

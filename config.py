@@ -40,6 +40,19 @@ SQL_MAX_ROWS = 1000
 # A free SQL query that runs longer than this many seconds is stopped.
 SQL_TIMEOUT_SECONDS = 5
 
+# --- Embedding ----------------------------------------------------------
+
+# multilingual-e5-small as a quantized ONNX file: the same model, small
+# enough for the deploy platform's memory. The revision pins the exact
+# files, so a later change in the repository cannot reach this project.
+EMBEDDING_MODEL_REPO = "Xenova/multilingual-e5-small"
+EMBEDDING_MODEL_REVISION = "761b726dd34fb83930e26aab4e9ac3899aa1fa78"
+EMBEDDING_MODEL_FILE = "onnx/model_quantized.onnx"
+EMBEDDING_TOKENIZER_FILE = "tokenizer.json"
+EMBEDDING_DIMENSIONS = 384
+# Longer texts are cut to this many tokens, the model's limit.
+EMBEDDING_MAX_TOKENS = 512
+
 # --- Agent loop ---------------------------------------------------------
 
 # Upper limit on the steps an agent may take for one user message.
