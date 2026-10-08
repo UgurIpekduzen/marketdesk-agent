@@ -17,3 +17,7 @@ APPROVAL_REQUIRED = (
     "İade talebi ancak sizin onayınızla oluşturulur. Henüz hiçbir kayıt açılmadı."
 )
 RETURN_REQUEST_CREATED = "İade talebiniz oluşturuldu."
+
+INVALID_PRIORITY = "Geçersiz öncelik. Geçerli değerler: {allowed}."
+EMPTY_SUMMARY = "Devir özeti boş olamaz."
+ESCALATED = "Konu bir müşteri temsilcisine iletildi."
