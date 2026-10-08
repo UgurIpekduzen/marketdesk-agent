@@ -1,0 +1,106 @@
+# Semantic layer: what every operations metric means.
+#
+# A metric question is answered from these definitions, not from SQL written
+# for the occasion, so the same question always gives the same number.
+#
+# Table aliases used in the expressions:
+#   o  orders          c  customers       i  order_items
+#   p  products        t  product_category_name_translation
+#   s  sellers         ot order_totals    r  order_reviews (one row per order)
+#
+# Every query binds :simulated_today and counts only orders purchased on or
+# before that day. Descriptions and caveats are Turkish: they are shown to
+# the operations user.
+
+dimensions:
+  customer_state:
+    description: "Müşterinin eyaleti (iki harfli kod, ör. SP)"
+    level: order
+    expression: "c.customer_state"
+  purchase_month:
+    description: "Siparişin verildiği ay (YYYY-MM)"
+    level: order
+    expression: "strftime('%Y-%m', o.order_purchase_timestamp)"
+  product_category_en:
+    description: "Ürün kategorisinin İngilizce adı"
+    level: item
+    expression: "COALESCE(t.product_category_name_english, p.product_category_name)"
+  seller_state:
+    description: "Satıcının eyaleti (iki harfli kod)"
+    level: item
+    expression: "s.seller_state"
+
+metrics:
+  order_count:
+    description: "Sipariş sayısı, siparişin verildiği tarihe göre"
+    grain: order
+    base_filter: "1 = 1"
+    numerator: "COUNT(*)"
+    denominator: null
+    dimensions: [customer_state, product_category_en, purchase_month, seller_state]
+    caveat: "Her durumdaki sipariş sayılır, iptal edilenler dahil. Kategori ya da satıcı eyaletine göre kırılımda birden fazla gruba giren sipariş her grupta bir kez sayılır; grupların toplamı sipariş sayısını aşabilir."
+
+  gmv:
+    description: "Ciro hacmi (GMV): satılan ürün bedellerinin toplamı, BRL"
+    grain: item
+    base_filter: "o.order_status NOT IN ('canceled', 'unavailable')"
+    numerator: "SUM(i.price)"
+    denominator: null
+    dimensions: [customer_state, product_category_en, purchase_month, seller_state]
+    caveat: "GMV ciro hacmidir; gelir, katkı ya da net kâr değildir. Kargo bedeli dahil değildir; iptal edilmiş ve temin edilememiş siparişler hariçtir."
+
+  avg_order_value:
+    description: "Ortalama sipariş tutarı: GMV / sipariş sayısı, BRL"
+    grain: order
+    join: order_totals
+    base_filter: "1 = 1"
+    numerator: "SUM(CASE WHEN o.order_status NOT IN ('canceled', 'unavailable') THEN COALESCE(ot.price_total, 0) ELSE 0 END)"
+    denominator: "COUNT(*)"
+    dimensions: [customer_state, purchase_month]
+    caveat: "GMV'nin sipariş sayısına bölümüdür; payda iptal edilen siparişleri de içerir. Kargo bedeli dahil değildir. Gelir ya da kâr göstergesi değildir."
+
+  cancel_rate:
+    description: "İptal oranı: iptal edilen siparişler / tüm siparişler"
+    grain: order
+    base_filter: "1 = 1"
+    numerator: "SUM(CASE WHEN o.order_status = 'canceled' THEN 1 ELSE 0 END)"
+    denominator: "COUNT(*)"
+    dimensions: [customer_state, purchase_month]
+    caveat: "Gözlemsel oran; nedensellik değildir. Yalnız 'canceled' durumundaki siparişler sayılır, 'unavailable' sayılmaz."
+
+  late_delivery_rate:
+    description: "Teslim edilen siparişlerde tahmini tarihten sonra teslim oranı"
+    grain: order
+    base_filter: "o.order_status = 'delivered' AND o.order_delivered_customer_date IS NOT NULL AND DATE(o.order_delivered_customer_date) <= DATE(:simulated_today)"
+    numerator: "SUM(CASE WHEN DATE(o.order_delivered_customer_date) > DATE(o.order_estimated_delivery_date) THEN 1 ELSE 0 END)"
+    denominator: "COUNT(*)"
+    dimensions: [customer_state, product_category_en, purchase_month, seller_state]
+    caveat: "Gözlemsel oran; nedensellik değildir. Takvim günü düzeyinde karşılaştırılır. Teslim tarihi bugünden sonra olan siparişler henüz teslim edilmemiş sayılır ve dışarıda kalır."
+
+  avg_delivery_days:
+    description: "Siparişten teslime geçen ortalama süre, gün"
+    grain: order
+    base_filter: "o.order_status = 'delivered' AND o.order_delivered_customer_date IS NOT NULL AND DATE(o.order_delivered_customer_date) <= DATE(:simulated_today)"
+    numerator: "SUM(julianday(o.order_delivered_customer_date) - julianday(o.order_purchase_timestamp))"
+    denominator: "COUNT(*)"
+    dimensions: [customer_state, product_category_en, purchase_month, seller_state]
+    caveat: "Gözlemsel ortalama; nedensellik değildir. Süre saat dahil hesaplanır (kesirli gün). Yalnız teslim edilmiş ve teslim tarihi bugünü geçmeyen siparişler sayılır."
+
+  avg_review_score:
+    description: "Ortalama yorum puanı (1-5), sipariş başına tekilleştirilmiş"
+    grain: order
+    join: order_reviews
+    base_filter: "r.review_score IS NOT NULL"
+    numerator: "SUM(r.review_score)"
+    denominator: "COUNT(*)"
+    dimensions: [customer_state, product_category_en, purchase_month, seller_state]
+    caveat: "Gözlemsel ortalama; nedensellik değildir. Birden fazla yorumu olan siparişte yorumların ortalaması alınır. Yorumu olmayan siparişler ve bugünden sonra yazılmış yorumlar dışarıda kalır."
+
+  seller_late_shipping_rate:
+    description: "Satıcının kargoya son tarihten sonra verdiği kalemlerin oranı"
+    grain: item
+    base_filter: "o.order_delivered_carrier_date IS NOT NULL AND DATE(o.order_delivered_carrier_date) <= DATE(:simulated_today)"
+    numerator: "SUM(CASE WHEN DATE(o.order_delivered_carrier_date) > DATE(i.shipping_limit_date) THEN 1 ELSE 0 END)"
+    denominator: "COUNT(*)"
+    dimensions: [customer_state, product_category_en, purchase_month, seller_state]
+    caveat: "Gözlemsel oran; nedensellik değildir. Kalem düzeyinde sayılır ve takvim günü düzeyinde karşılaştırılır; son tarihle aynı gün kargoya verilen kalem geç sayılmaz. Kargoya verilmemiş kalemler dışarıda kalır."

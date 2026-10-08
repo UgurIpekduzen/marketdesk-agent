@@ -281,8 +281,18 @@ def build_rows() -> dict[str, list[dict[str, str]]]:
         "order_items": [],
         "order_payments": [],
         "order_reviews": [
-            {"review_id": "r_day14", "order_id": "o_day14", "review_score": "5"},
-            {"review_id": "r_late_10", "order_id": "o_late_10", "review_score": "2"},
+            {
+                "review_id": "r_day14",
+                "order_id": "o_day14",
+                "review_score": "5",
+                "review_creation_date": "2018-08-19 00:00:00",
+            },
+            {
+                "review_id": "r_late_10",
+                "order_id": "o_late_10",
+                "review_score": "2",
+                "review_creation_date": "2018-08-26 00:00:00",
+            },
         ],
         "products": [
             {"product_id": "p_chair", "product_category_name": "moveis_decoracao"},

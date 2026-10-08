@@ -21,3 +21,20 @@ RETURN_REQUEST_CREATED = "İade talebiniz oluşturuldu."
 INVALID_PRIORITY = "Geçersiz öncelik. Geçerli değerler: {allowed}."
 EMPTY_SUMMARY = "Devir özeti boş olamaz."
 ESCALATED = "Konu bir müşteri temsilcisine iletildi."
+
+UNKNOWN_METRIC = "Böyle bir metrik tanımlı değil. Tanımlı metrikler: {allowed}."
+INVALID_DIMENSION = (
+    "Bu metrik {name} boyutuna göre kırılamaz. İzinli boyutlar: {allowed}."
+)
+TOO_MANY_DIMENSIONS = "Bir metrik en fazla {limit} farklı boyuta göre kırılabilir."
+ITEM_DIMENSIONS_TOGETHER = (
+    "Bu metrik {names} boyutlarına aynı anda kırılamaz: aynı sipariş birden "
+    "fazla kez sayılır. Boyutlardan birini seçin."
+)
+INVALID_METRIC_FILTER = (
+    "Bu metrik {name} ile filtrelenemez. İzinli filtreler: {allowed}."
+)
+INVALID_FILTER_VALUE = (
+    "{name} filtresinin değeri bir metin ya da metin listesi olmalıdır."
+)
+INVALID_PERIOD_FILTER = "{name} filtresi YYYY-AA-GG biçiminde bir tarih olmalıdır."
