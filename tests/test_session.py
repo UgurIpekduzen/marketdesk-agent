@@ -54,3 +54,7 @@ def test_order_ids_are_not_in_the_session_repr():
     session.alias_for("o_secret")
 
     assert "o_secret" not in repr(session)
+
+
+def test_every_session_has_its_own_approvals():
+    assert Session("u_alice").approvals is not Session("u_bob").approvals

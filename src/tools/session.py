@@ -6,10 +6,14 @@ session; the model cannot pass or change it.
 The session also gives every order a short alias (SIP-1, SIP-2, ...), so the
 raw order id never has to appear in a tool's output. Aliases are numbered in
 the order they are first handed out and mean nothing outside this session.
+
+Approvals given by the person in this session are kept here as well.
 """
 
 import re
 from dataclasses import dataclass, field
+
+from src.guardrails.approval import Approvals
 
 ALIAS_PREFIX = "SIP-"
 # Accepts "SIP-1", "sip-1", "SIP 1" and "sip1".
@@ -21,6 +25,7 @@ class Session:
     customer_unique_id: str
     # Position n - 1 holds the order id behind the alias SIP-n.
     _order_ids: list[str] = field(default_factory=list, repr=False)
+    approvals: Approvals = field(default_factory=Approvals, repr=False)
 
     def alias_for(self, order_id: str) -> str:
         """Return the alias of an order, handing out a new one if needed."""
