@@ -64,16 +64,24 @@ WINDOW_DAYS = {
     ReturnReason.WRONG_ITEM: config.RETURN_WINDOW_LONG_DAYS,
 }
 
-# Statuses that decide on their own (R2, R3, R4). "delivered" is not here:
-# it needs the delivery date.
+# Statuses that decide on their own, with the rule that says so (R2, R3,
+# R4). "delivered" is not here: it needs the delivery date.
 STATUS_DECISIONS = {
-    "created": DecisionCode.NOT_DELIVERED_CANCELLABLE,
-    "approved": DecisionCode.NOT_DELIVERED_CANCELLABLE,
-    "invoiced": DecisionCode.NOT_DELIVERED_CANCELLABLE,
-    "processing": DecisionCode.NOT_DELIVERED_CANCELLABLE,
-    "shipped": DecisionCode.IN_TRANSIT,
-    "canceled": DecisionCode.ALREADY_CLOSED,
-    "unavailable": DecisionCode.ALREADY_CLOSED,
+    "created": ("R2", DecisionCode.NOT_DELIVERED_CANCELLABLE),
+    "approved": ("R2", DecisionCode.NOT_DELIVERED_CANCELLABLE),
+    "invoiced": ("R2", DecisionCode.NOT_DELIVERED_CANCELLABLE),
+    "processing": ("R2", DecisionCode.NOT_DELIVERED_CANCELLABLE),
+    "shipped": ("R3", DecisionCode.IN_TRANSIT),
+    "canceled": ("R4", DecisionCode.ALREADY_CLOSED),
+    "unavailable": ("R4", DecisionCode.ALREADY_CLOSED),
+}
+
+# The rule that holds the return window for each reason.
+WINDOW_RULES = {
+    ReturnReason.CHANGED_MIND: "R6",
+    ReturnReason.LATE: "R6",
+    ReturnReason.DAMAGED: "R7",
+    ReturnReason.WRONG_ITEM: "R7",
 }
 
 # A request in one of these states blocks a second one for the same order (R11).
@@ -108,6 +116,9 @@ class OrderFacts:
 @dataclass(frozen=True)
 class ReturnDecision:
     code: DecisionCode
+    # The rule that decided, for example "R6". A missing order and a foreign
+    # one both say "R1".
+    rule: str
     # Calendar days from delivery to today; None when no window was checked.
     days_since_delivery: int | None = None
     # R9: the delivery was late enough to earn the freight back.
@@ -205,21 +216,22 @@ def evaluate(
     """Decide whether the order can be returned for the given reason."""
     # Step 1 (R0, R1).
     if facts is None:
-        return ReturnDecision(DecisionCode.NOT_FOUND)
+        return ReturnDecision(DecisionCode.NOT_FOUND, "R1")
 
     # Step 2 (R2-R5).
     if facts.status in STATUS_DECISIONS:
-        return ReturnDecision(STATUS_DECISIONS[facts.status])
+        rule, code = STATUS_DECISIONS[facts.status]
+        return ReturnDecision(code, rule)
     if facts.status != "delivered" or facts.delivered_on is None:
         # R5, and any status the rules do not know: a person decides.
-        return ReturnDecision(DecisionCode.NEEDS_HUMAN)
+        return ReturnDecision(DecisionCode.NEEDS_HUMAN, "R5")
     if facts.delivered_on > today:
         # R3: marked delivered, but that day has not come yet.
-        return ReturnDecision(DecisionCode.IN_TRANSIT)
+        return ReturnDecision(DecisionCode.IN_TRANSIT, "R3")
 
     # Step 3 (R11).
     if facts.has_blocking_request:
-        return ReturnDecision(DecisionCode.DUPLICATE_REQUEST)
+        return ReturnDecision(DecisionCode.DUPLICATE_REQUEST, "R11")
 
     # Step 4 (R6, R7). The last day of the window is still inside it.
     days_since_delivery = (today - facts.delivered_on).days
@@ -267,6 +279,7 @@ def evaluate(
 
     return ReturnDecision(
         code=code,
+        rule=WINDOW_RULES[reason],
         days_since_delivery=days_since_delivery,
         freight_refund=freight_refund,
         refund_amount=refund_amount,

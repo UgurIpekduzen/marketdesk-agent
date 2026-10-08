@@ -235,7 +235,7 @@ def test_refund_amount(synthetic_db, order_id, reason, code, amount):
 def test_other_decisions_carry_no_amount_or_flag(synthetic_db, order_id):
     decision = decide(synthetic_db, order_id)
 
-    assert decision == ReturnDecision(decision.code)
+    assert decision == ReturnDecision(decision.code, decision.rule)
 
 
 def test_amounts_are_exact_to_the_cent():
@@ -344,6 +344,30 @@ def test_seller_delay_does_not_change_the_decision_or_amount(synthetic_db):
     on_time = decide(synthetic_db, "o_late_9")
 
     assert (late.code, late.refund_amount) == (on_time.code, on_time.refund_amount)
+
+
+# --- The rule behind a decision -----------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("order_id", "reason", "rule"),
+    [
+        ("o_does_not_exist", "changed_mind", "R1"),
+        ("o_other_customer", "changed_mind", "R1"),
+        ("o_created", "changed_mind", "R2"),
+        ("o_shipped", "changed_mind", "R3"),
+        ("o_delivered_future", "changed_mind", "R3"),
+        ("o_canceled", "changed_mind", "R4"),
+        ("o_no_delivery_date", "changed_mind", "R5"),
+        ("o_duplicate", "changed_mind", "R11"),
+        ("o_day14", "changed_mind", "R6"),
+        ("o_day15", "late", "R6"),
+        ("o_day30", "damaged", "R7"),
+        ("o_day31", "wrong_item", "R7"),
+    ],
+)
+def test_decision_names_the_rule_that_decided(synthetic_db, order_id, reason, rule):
+    assert decide(synthetic_db, order_id, reason).rule == rule
 
 
 # --- Inputs -------------------------------------------------------------
