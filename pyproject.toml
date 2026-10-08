@@ -36,3 +36,7 @@ package = false
 # Lets tests import top-level modules and folders (config, data, scripts, src).
 pythonpath = ["."]
 testpaths = ["tests"]
+# Tests marked "model" load the real embedding model, which needs the
+# network once. They are left out by default; run them with `task test:model`.
+markers = ["model: needs the real embedding model"]
+addopts = "-m 'not model'"
