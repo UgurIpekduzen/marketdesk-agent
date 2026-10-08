@@ -6,13 +6,18 @@ readme = "README.md"
 license = "MIT"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "huggingface-hub==1.33.0",
     "llama-index-core==0.14.25",
     "llama-index-llms-google-genai==0.11.2",
     "llama-index-llms-groq==0.6.1",
     "llama-index-tools-mcp==0.6.0",
     "mcp==2.3.0",
+    "numpy==2.5.3",
+    "onnxruntime==1.30.0",
     "pyyaml==6.0.3",
     "sqlglot==30.21.0",
+    "streamlit==1.65.0",
+    "tokenizers==0.23.2",
 ]
 
 [dependency-groups]
