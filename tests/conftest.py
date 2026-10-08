@@ -1,8 +1,11 @@
 """Shared fixtures: a small synthetic database with one order per rule."""
 
+import hashlib
+import re
 import shutil
 import sqlite3
 
+import numpy as np
 import pytest
 
 import config
@@ -49,3 +52,42 @@ def synthetic_db(synthetic_db_path):
     conn.row_factory = sqlite3.Row
     yield conn
     conn.close()
+
+
+class FakeEmbedder:
+    """Stands in for the embedding model: no download, same interface.
+
+    A text becomes a vector of word counts, each word (cut to its first five
+    letters, to forgive Turkish endings) hashed into one of 256 slots. Texts
+    that share words get similar vectors, which is all these tests need.
+    """
+
+    DIMENSIONS = 256
+
+    def _embed(self, texts):
+        vectors = np.zeros((len(texts), self.DIMENSIONS))
+        for row, text in enumerate(texts):
+            for word in re.findall(r"\w+", text.lower()):
+                slot = int(hashlib.sha256(word[:5].encode()).hexdigest(), 16)
+                vectors[row, slot % self.DIMENSIONS] += 1
+            if not vectors[row].any():
+                vectors[row, 0] = 1
+        return vectors / np.linalg.norm(vectors, axis=1, keepdims=True)
+
+    embed_queries = _embed
+    embed_passages = _embed
+
+
+@pytest.fixture(scope="session")
+def fake_embedder():
+    return FakeEmbedder()
+
+
+@pytest.fixture(scope="session")
+def fake_policy_index(fake_embedder, tmp_path_factory):
+    """An index of the real policy sections, built with the fake embedder."""
+    from src.knowledge.policy_index import PolicyIndex, build_index
+
+    index_dir = tmp_path_factory.mktemp("policy-index") / "index"
+    build_index(fake_embedder, index_dir)
+    return PolicyIndex(fake_embedder, index_dir)

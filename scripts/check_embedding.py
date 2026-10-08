@@ -8,18 +8,17 @@ documents and prints the three closest to a few questions, with the memory
 the process uses.
 """
 
-import re
 import resource
 import sys
 import time
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
 # Run as a plain script, Python only searches the scripts/ folder for imports.
-sys.path.insert(0, str(PROJECT_ROOT))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import config
 from src.knowledge.embedding import load_embedder
+from src.knowledge.policy_index import read_sections
 
 QUESTIONS = (
     "hasarlı ürün",
@@ -33,28 +32,14 @@ def peak_memory_mb() -> float:
     return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024
 
 
-def policy_sections() -> list[tuple[str, str]]:
-    """(document title + section heading, section text) for every section."""
-    sections = []
-    for path in sorted((PROJECT_ROOT / "policies").glob("*.md")):
-        title, *parts = re.split(
-            r"^## ", path.read_text(encoding="utf-8"), flags=re.MULTILINE
-        )
-        document = title.splitlines()[0].removeprefix("# ")
-        for part in parts:
-            heading, _, body = part.partition("\n")
-            sections.append((f"{document}, Bölüm {heading}", body.strip()))
-    return sections
-
-
 def main() -> int:
     started = time.perf_counter()
     embedder = load_embedder()
     print(f"Model: {config.EMBEDDING_MODEL_REPO} / {config.EMBEDDING_MODEL_FILE}")
     print(f"Loaded in {time.perf_counter() - started:.1f} s")
 
-    sections = policy_sections()
-    passages = embedder.embed_passages([text for _, text in sections])
+    sections = read_sections()
+    passages = embedder.embed_passages([section.embedding_text for section in sections])
     print(f"{len(sections)} policy sections, {passages.shape[1]} dimensions")
     if passages.shape[1] != config.EMBEDDING_DIMENSIONS:
         print("Unexpected number of dimensions.")
@@ -65,7 +50,7 @@ def main() -> int:
         scores = passages @ query
         print(f"\n{question}")
         for index in scores.argsort()[::-1][:3]:
-            print(f"  {scores[index]:.3f}  {sections[index][0]}")
+            print(f"  {scores[index]:.3f}  {sections[index].citation}")
 
     print(f"\nPeak memory of this process: {peak_memory_mb():.0f} MB")
     return 0

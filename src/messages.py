@@ -54,3 +54,6 @@ SQL_REJECTED = {
 }
 SQL_ERROR = "Sorgu çalıştırılamadı."
 SQL_TIMEOUT = "Sorgu {seconds} saniyede tamamlanmadığı için durduruldu."
+
+# How a policy section is cited in an answer.
+POLICY_CITATION = "{document}, Bölüm {number}"

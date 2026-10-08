@@ -149,6 +149,11 @@ tasks:
 
   # --- Knowledge layer ---------------------------------------------------
 
+  index:build:
+    desc: Build the policy index in policies/index (run after changing a policy or the embedding model)
+    cmds:
+      - "{{.RUN}} uv run python scripts/build_policy_index.py"
+
   embed:check:
     desc: Load the real embedding model and search the policy sections (needs the network once)
     cmds:
