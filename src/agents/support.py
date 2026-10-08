@@ -3,21 +3,24 @@
 The model decides which tool to call and words the answer. Everything that
 must be right is decided in code, not by the model:
 
-- who the customer is comes from the session, not from a tool argument;
+- who the customer is lives in the MCP order server's session, not in a
+  tool argument;
 - whether an order can be returned comes from the rule engine;
 - a return request is written only after the person approves, with a token
-  the model never sees;
+  that never leaves the order server;
 - the model is reached only through the outbound guard;
 - one user message may take at most config.MAX_STEPS model calls, and the
   same tool call is run at most twice.
+
+The four order tools are called over MCP, on the project's own server. The
+policy search and the hand-over to a human run in this process.
 """
 
 import inspect
 import json
-import sqlite3
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from datetime import date
+from typing import Self
 
 from llama_index.core.agent.workflow import (
     AgentOutput,
@@ -34,9 +37,11 @@ import config
 from src import messages
 from src.agents.loop_guard import REPEATED_CALL, LoopGuard
 from src.agents.run_log import RunLog
-from src.guardrails.approval import ReturnAction
-from src.guardrails.guarded_llm import build_llm
+from src.guardrails.guarded_llm import GuardedLLM, build_provider_llm
+from src.guardrails.outbound import Redactor
+from src.guardrails.pii import RAW_ID_PATTERN
 from src.knowledge.policy_index import PolicyIndex
+from src.mcp_server.client import OrdersClient
 from src.tools.eligibility import check_return_eligibility
 from src.tools.escalation import EscalationQueue, escalate_to_human
 from src.tools.orders import DEFAULT_LIST_LIMIT, get_order_status, list_customer_orders
@@ -116,78 +121,78 @@ Amounts are in BRL and dates are calendar days.
 class Reply:
     text: str
     log: RunLog
-    # Set when a return request is waiting for the person's approval.
-    awaiting_approval: ReturnAction | None = None
+    # Set when a return request is waiting for the person's approval: the
+    # order alias, reason, refund amount and the status it would start in.
+    awaiting_approval: dict | None = None
 
 
 def build_tools(
-    session: Session,
-    conn: sqlite3.Connection,
+    orders: OrdersClient,
+    identity: Session,
     policy_index: PolicyIndex,
     queue: EscalationQueue,
     guard: LoopGuard,
-    today: date,
 ) -> list[FunctionTool]:
-    """Wrap the tool functions for the model.
+    """The six tools the model may call.
 
     Each wrapper shows the model only the arguments the model may choose.
-    The session, the database connection and the approval token are bound
-    here and are not part of any tool's schema. The description the model
-    reads is the docstring of the function that does the work.
+    The four order tools are forwarded to the MCP order server, which holds
+    the customer's session; the customer and the approval token are not part
+    of any tool's arguments. The description the model reads is the
+    docstring of the function that does the work.
     """
 
-    def answer(name: str, arguments: dict, run: Callable[[], dict]) -> str:
+    async def answer(
+        name: str, arguments: dict, run: Callable[[], Awaitable[dict]]
+    ) -> str:
         if not guard.allows(name, arguments):
             return json.dumps(REPEATED_CALL)
-        return json.dumps(run(), ensure_ascii=False)
+        return json.dumps(await run(), ensure_ascii=False)
+
+    async def over_mcp(name: str, arguments: dict) -> str:
+        return await answer(name, arguments, lambda: orders.call(name, arguments))
+
+    async def locally(name: str, arguments: dict, run: Callable[[], dict]) -> str:
+        async def run_now() -> dict:
+            return run()
+
+        return await answer(name, arguments, run_now)
 
     async def get_order_status_tool(order_ref: str) -> str:
-        return answer(
-            "get_order_status",
-            {"order_ref": order_ref},
-            lambda: get_order_status(session, conn, order_ref, today),
-        )
+        return await over_mcp("get_order_status", {"order_ref": order_ref})
 
     async def list_customer_orders_tool(
         limit: int = DEFAULT_LIST_LIMIT, status: str | None = None
     ) -> str:
-        return answer(
-            "list_customer_orders",
-            {"limit": limit, "status": status},
-            lambda: list_customer_orders(session, conn, limit, status, today),
+        return await over_mcp(
+            "list_customer_orders", {"limit": limit, "status": status}
         )
 
     async def check_return_eligibility_tool(order_ref: str, reason: str) -> str:
-        return answer(
-            "check_return_eligibility",
-            {"order_ref": order_ref, "reason": reason},
-            lambda: check_return_eligibility(session, conn, order_ref, reason, today),
+        return await over_mcp(
+            "check_return_eligibility", {"order_ref": order_ref, "reason": reason}
         )
 
     async def create_return_request_tool(
         order_ref: str, reason: str, amount: str
     ) -> str:
-        # No approval token here: the model cannot pass one.
-        return answer(
+        return await over_mcp(
             "create_return_request",
             {"order_ref": order_ref, "reason": reason, "amount": amount},
-            lambda: create_return_request(
-                session, conn, order_ref, reason, amount, today=today
-            ),
         )
 
     async def search_policies_tool(query: str, k: int = DEFAULT_K) -> str:
-        return answer(
+        return await locally(
             "search_policies",
             {"query": query, "k": k},
             lambda: search_policies(policy_index, query, k),
         )
 
     async def escalate_to_human_tool(summary: str, priority: str = "normal") -> str:
-        return answer(
+        return await locally(
             "escalate_to_human",
             {"summary": summary, "priority": priority},
-            lambda: escalate_to_human(session, queue, summary, priority),
+            lambda: escalate_to_human(identity, queue, summary, priority),
         )
 
     wrapped = (
@@ -211,33 +216,66 @@ def build_tools(
 class SupportAgent:
     def __init__(
         self,
-        session: Session,
-        conn: sqlite3.Connection,
+        orders: OrdersClient,
+        customer_unique_id: str,
         policy_index: PolicyIndex,
         queue: EscalationQueue,
-        llm: FunctionCallingLLM | None = None,
-        today: date = config.SIMULATED_TODAY,
+        redactor: Redactor,
+        provider_llm: FunctionCallingLLM | None = None,
     ) -> None:
-        self._session = session
-        self._conn = conn
-        self._today = today
+        """Use SupportAgent.create, which asks the order server what to redact."""
+        self._orders = orders
+        self._customer_unique_id = customer_unique_id
         self._guard = LoopGuard()
+        # Who the customer is, for the hand-over log only. Order aliases and
+        # approvals are not kept here: they live on the order server.
+        identity = Session(customer_unique_id)
         self._agent = FunctionAgent(
             name=AGENT_NAME,
-            tools=build_tools(session, conn, policy_index, queue, self._guard, today),
-            # The provider is only ever reached through the outbound guard.
-            llm=llm or build_llm(session.redactor()),
-            system_prompt=SYSTEM_PROMPT.format(today=today.isoformat()),
+            tools=build_tools(orders, identity, policy_index, queue, self._guard),
+            # Whatever model is used, it is only ever reached through the guard.
+            llm=GuardedLLM(
+                inner=provider_llm or build_provider_llm(), redactor=redactor
+            ),
+            system_prompt=SYSTEM_PROMPT.format(
+                today=config.SIMULATED_TODAY.isoformat()
+            ),
         )
         # Holds the conversation so far; created on the first message.
         self._context: Context | None = None
         # Something the model has to be told with the next message.
         self._note: str | None = None
 
+    @classmethod
+    async def create(
+        cls,
+        orders: OrdersClient,
+        customer_unique_id: str,
+        policy_index: PolicyIndex,
+        queue: EscalationQueue,
+        provider_llm: FunctionCallingLLM | None = None,
+    ) -> Self:
+        """Build the agent for the customer the order server was started for."""
+        info = await orders.session_info()
+        # Raw ids that reach the guard are masked. Order numbers the customer
+        # types are turned into aliases before that, in ask.
+        redactor = Redactor(known_values=info["personal_values"])
+        return cls(
+            orders, customer_unique_id, policy_index, queue, redactor, provider_llm
+        )
+
+    async def _alias_order_numbers(self, message: str) -> str:
+        """Replace order numbers the customer typed with the server's aliases."""
+        for raw_id in dict.fromkeys(RAW_ID_PATTERN.findall(message)):
+            alias = await self._orders.alias_order_reference(raw_id)
+            message = message.replace(raw_id, alias)
+        return message
+
     async def ask(self, message: str) -> Reply:
         """Answer one customer message."""
         if self._context is None:
             self._context = Context(self._agent)
+        message = await self._alias_order_numbers(message)
         if self._note:
             message = f"[Note from the system: {self._note}]\n{message}"
             self._note = None
@@ -262,46 +300,33 @@ class SupportAgent:
             log.stopped_at_step_limit = True
             text = messages.STEP_LIMIT_REACHED
         finally:
-            log.write(AGENT_NAME, self._session.customer_unique_id)
+            log.write(AGENT_NAME, self._customer_unique_id)
 
-        return Reply(text, log, self._session.approvals.awaiting)
+        return Reply(text, log, await self._orders.pending_approval())
 
     # --- Human approval: code only, the model takes no part --------------
 
-    def approval_summary(self) -> str:
+    @staticmethod
+    def approval_summary(pending: dict) -> str:
         """What the person is asked to approve, in Turkish."""
-        action = self._session.approvals.awaiting
-        if action is None:
-            raise LookupError("no return request is waiting for approval")
-        decision = check_return_eligibility(
-            self._session, self._conn, action.order_id, action.reason, self._today
-        )
         return messages.APPROVAL_SUMMARY.format(
-            order=self._session.alias_for(action.order_id),
-            reason=messages.RETURN_REASON_LABELS[action.reason],
-            amount=action.amount,
-            status=messages.REQUEST_STATUS_LABELS[decision["request_status"]],
+            order=pending["order"],
+            reason=messages.RETURN_REASON_LABELS[pending["reason"]],
+            amount=pending["refund_amount"],
+            status=messages.REQUEST_STATUS_LABELS[pending["request_status"]],
         )
 
-    def approve(self) -> str:
-        """The person said yes: write the request and return what to show."""
-        action = self._session.approvals.awaiting
-        token = self._session.approvals.approve()
-        result = create_return_request(
-            self._session,
-            self._conn,
-            action.order_id,
-            action.reason,
-            str(action.amount),
-            token,
-            self._today,
-        )
+    async def approve(self) -> str:
+        """The person said yes: have the server write the request."""
+        result = await self._orders.approve_pending()
         if "error" in result:
             self._note = (
                 "the customer approved on screen, but the return request was "
                 f"not created: {result['error']}."
             )
-            return messages.RETURN_REQUEST_NOT_CREATED.format(reason=result["message"])
+            return messages.RETURN_REQUEST_NOT_CREATED.format(
+                reason=result.get("message", result["error"])
+            )
         self._note = (
             "the customer approved on screen and the return request was "
             f"created for {result['order']} with status {result['status']}."
@@ -311,8 +336,8 @@ class SupportAgent:
             status=messages.REQUEST_STATUS_LABELS[result["status"]],
         )
 
-    def decline(self) -> str:
+    async def decline(self) -> str:
         """The person said no: nothing is written."""
-        self._session.approvals.reject()
+        await self._orders.decline_pending()
         self._note = "the customer declined on screen; no return request was created."
         return messages.APPROVAL_DECLINED

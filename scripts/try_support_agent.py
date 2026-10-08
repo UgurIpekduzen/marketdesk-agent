@@ -28,8 +28,8 @@ from scripts import load_sqlite
 from src.agents.support import SupportAgent
 from src.knowledge.embedding import load_embedder
 from src.knowledge.policy_index import PolicyIndex
+from src.mcp_server.client import OrdersClient
 from src.tools.escalation import EscalationQueue
-from src.tools.session import open_session
 from tests import synthetic_data
 from tests.realistic import make_realistic, real_shaped
 from tests.test_load_sqlite import write_raw
@@ -165,17 +165,24 @@ def checks(
     return problems
 
 
-async def run_scenario(scenario: Scenario, db_path: Path, index: PolicyIndex) -> dict:
+def return_request_count(db_path: Path) -> int:
     conn = sqlite3.connect(db_path)
     try:
-        session = open_session(conn, real_shaped(synthetic_data.ALICE))
-        agent = SupportAgent(session, conn, index, EscalationQueue())
+        return conn.execute("SELECT COUNT(*) FROM return_requests").fetchone()[0]
+    finally:
+        conn.close()
+
+
+async def run_scenario(scenario: Scenario, db_path: Path, index: PolicyIndex) -> dict:
+    customer = real_shaped(synthetic_data.ALICE)
+    before = return_request_count(db_path)
+    # A new order server, and so a new session, for every scenario.
+    async with OrdersClient(db_path, customer) as orders:
+        agent = await SupportAgent.create(orders, customer, index, EscalationQueue())
         started = time.perf_counter()
         reply = await agent.ask(scenario.message.format_map(OrderNumbers()))
         seconds = time.perf_counter() - started
-        written = conn.execute("SELECT COUNT(*) FROM return_requests").fetchone()[0]
-    finally:
-        conn.close()
+    written = return_request_count(db_path) - before
     awaiting = reply.awaiting_approval is not None
     problems = checks(scenario, reply.log.tool_calls, reply.text, awaiting)
     if written != 0:

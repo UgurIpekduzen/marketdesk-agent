@@ -21,8 +21,8 @@ from src import messages
 from src.agents.support import SupportAgent
 from src.knowledge.embedding import load_embedder
 from src.knowledge.policy_index import PolicyIndex
+from src.mcp_server.client import OrdersClient
 from src.tools.escalation import EscalationQueue
-from src.tools.session import open_session
 
 DEFAULT_DB_PATH = Path("data/marketdesk.db")
 # "çik" is what Python's lower() makes of "ÇIK" typed in capitals.
@@ -51,10 +51,13 @@ async def chat(
         write(reply.text)
 
         if reply.awaiting_approval is not None:
-            write(agent.approval_summary())
+            write(agent.approval_summary(reply.awaiting_approval))
             answer = read(messages.APPROVAL_QUESTION).strip().lower()
             # Anything but a clear yes is a no.
-            write(agent.approve() if answer in YES_WORDS else agent.decline())
+            if answer in YES_WORDS:
+                write(await agent.approve())
+            else:
+                write(await agent.decline())
     write(messages.CHAT_GOODBYE)
 
 
@@ -64,6 +67,16 @@ def demo_customer(conn: sqlite3.Connection) -> str:
         "SELECT customer_unique_id FROM customers GROUP BY customer_unique_id "
         "ORDER BY COUNT(*) DESC, customer_unique_id LIMIT 1"
     ).fetchone()[0]
+
+
+async def run(db_path: Path, customer: str) -> None:
+    """Start the order server for the customer and chat until they leave."""
+    policy_index = PolicyIndex(load_embedder())
+    async with OrdersClient(db_path, customer) as orders:
+        agent = await SupportAgent.create(
+            orders, customer, policy_index, EscalationQueue()
+        )
+        await chat(agent)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -77,24 +90,19 @@ def main(argv: list[str] | None = None) -> int:
     # The step and token log of every run goes to stderr.
     logging.basicConfig(level=logging.INFO, stream=sys.stderr, format="%(message)s")
 
-    conn = sqlite3.connect(args.db)
+    conn = sqlite3.connect(f"file:{args.db.as_posix()}?mode=ro", uri=True)
     try:
         customer = demo_customer(conn) if args.demo else args.customer
         owns_orders = conn.execute(
             "SELECT 1 FROM customers WHERE customer_unique_id = ? LIMIT 1", (customer,)
         ).fetchone()
-        if owns_orders is None:
-            print(messages.CHAT_UNKNOWN_CUSTOMER)
-            return 1
-        agent = SupportAgent(
-            open_session(conn, customer),
-            conn,
-            PolicyIndex(load_embedder()),
-            EscalationQueue(),
-        )
-        asyncio.run(chat(agent))
     finally:
         conn.close()
+    if owns_orders is None:
+        print(messages.CHAT_UNKNOWN_CUSTOMER)
+        return 1
+
+    asyncio.run(run(args.db, customer))
     return 0
 
 

@@ -1,14 +1,13 @@
 """Tests for the Support Agent with a stand-in model.
 
 The stand-in plays the model's part from a script, so these tests show what
-the code does around the model: tool wiring, the approval path, the loop
-limits and the log. Whether the real model asks a clarifying question or
-declines politely is checked with `task agent:check`, not here.
+the code does around the model: tool wiring over MCP, the approval path,
+the loop limits and the log. Whether the real model asks a clarifying
+question or declines politely is checked with `task agent:check`, not here.
 """
 
-import asyncio
-import json
 import logging
+import sqlite3
 
 import pytest
 
@@ -16,9 +15,10 @@ import config
 from src import messages
 from src.agents.loop_guard import LoopGuard
 from src.agents.support import SYSTEM_PROMPT, SupportAgent, build_tools
-from src.guardrails.guarded_llm import GuardedLLM
+from src.mcp_server.server import MODEL_TOOLS
 from src.tools.escalation import EscalationQueue
-from src.tools.session import open_session
+from src.tools.session import Session
+from tests.agent_harness import asking, request_count, tool_results, with_agent
 from tests.fakes import FakeLLM
 from tests.synthetic_data import ALICE
 
@@ -30,6 +30,10 @@ TOOL_NAMES = [
     "search_policies",
     "escalate_to_human",
 ]
+RETURN_CALL = (
+    "create_return_request",
+    {"order_ref": "o_day14", "reason": "damaged", "amount": "115.00"},
+)
 
 
 @pytest.fixture
@@ -38,75 +42,34 @@ def fake():
 
 
 @pytest.fixture
-def session(synthetic_db):
-    return open_session(synthetic_db, ALICE)
+def run(synthetic_db_path, fake_policy_index, fake):
+    """Run a scenario with the agent; returns what the scenario returns."""
+
+    def run_scenario(scenario, **kwargs):
+        return with_agent(
+            synthetic_db_path, fake_policy_index, fake, scenario, **kwargs
+        )
+
+    return run_scenario
 
 
 @pytest.fixture
-def queue():
-    return EscalationQueue()
-
-
-@pytest.fixture
-def agent(session, synthetic_db, fake_policy_index, queue, fake):
-    llm = GuardedLLM(inner=fake, redactor=session.redactor())
-    return SupportAgent(session, synthetic_db, fake_policy_index, queue, llm)
-
-
-def ask(agent, *messages_to_send):
-    """Send the messages one after another and return the last reply."""
-
-    async def run():
-        reply = None
-        for message in messages_to_send:
-            reply = await agent.ask(message)
-        return reply
-
-    return asyncio.run(run())
-
-
-def tool_results(fake):
-    """The tool results in the last request, parsed."""
-    return [
-        json.loads(block["text"])
-        for message in fake.requests[-1]["messages"]
-        if message["role"] == "tool"
-        for block in message["blocks"]
-    ]
-
-
-def request_count(conn):
-    return conn.execute("SELECT COUNT(*) FROM return_requests").fetchone()[0]
+def tools(fake_policy_index):
+    # No connection is needed to look at the tools' names and schemas.
+    return build_tools(
+        None, Session(ALICE), fake_policy_index, EscalationQueue(), LoopGuard()
+    )
 
 
 # --- Tools ----------------------------------------------------------------
 
 
-def test_the_agent_has_the_six_tools(session, synthetic_db, fake_policy_index, queue):
-    tools = build_tools(
-        session,
-        synthetic_db,
-        fake_policy_index,
-        queue,
-        LoopGuard(),
-        config.SIMULATED_TODAY,
-    )
-
+def test_the_agent_has_the_six_tools(tools):
     assert [tool.metadata.name for tool in tools] == TOOL_NAMES
+    assert TOOL_NAMES[:4] == list(MODEL_TOOLS)
 
 
-def test_no_tool_lets_the_model_pass_identity_or_approval(
-    session, synthetic_db, fake_policy_index, queue
-):
-    tools = build_tools(
-        session,
-        synthetic_db,
-        fake_policy_index,
-        queue,
-        LoopGuard(),
-        config.SIMULATED_TODAY,
-    )
-
+def test_no_tool_lets_the_model_pass_identity_or_approval(tools):
     for tool in tools:
         parameters = set(tool.metadata.get_parameters_dict()["properties"])
         assert not parameters & {
@@ -123,19 +86,22 @@ def test_no_tool_lets_the_model_pass_identity_or_approval(
     ) == {"order_ref", "reason", "amount"}
 
 
-def test_tool_descriptions_are_the_docstrings_written_for_the_model(
-    session, synthetic_db, fake_policy_index, queue
-):
-    tools = build_tools(
-        session,
-        synthetic_db,
-        fake_policy_index,
-        queue,
-        LoopGuard(),
-        config.SIMULATED_TODAY,
-    )
+def test_control_tools_of_the_server_are_not_given_to_the_model(tools):
+    names = {tool.metadata.name for tool in tools}
 
+    assert not names & {
+        "approve_pending",
+        "decline_pending",
+        "pending_approval",
+        "alias_order_reference",
+        "session_info",
+        "status",
+    }
+
+
+def test_tool_descriptions_are_the_docstrings_written_for_the_model(tools):
     by_name = {tool.metadata.name: tool.metadata.description for tool in tools}
+
     assert "APPROVAL_REQUIRED" in by_name["create_return_request"]
     assert (
         "changed_mind, late, damaged or wrong_item"
@@ -144,28 +110,17 @@ def test_tool_descriptions_are_the_docstrings_written_for_the_model(
     assert "citation" in by_name["search_policies"]
 
 
-def test_tool_descriptions_fit_the_strictest_provider_limit(
-    session, synthetic_db, fake_policy_index, queue
-):
-    tools = build_tools(
-        session,
-        synthetic_db,
-        fake_policy_index,
-        queue,
-        LoopGuard(),
-        config.SIMULATED_TODAY,
-    )
-
+def test_tool_descriptions_fit_the_strictest_provider_limit(tools):
     # OpenAI-style APIs refuse a description longer than 1,024 characters.
     for tool in tools:
         assert len(tool.metadata.description) <= 1024, tool.metadata.name
         assert not tool.metadata.description.startswith(" ")
 
 
-def test_system_prompt_says_today_and_to_answer_in_turkish(agent, fake):
+def test_system_prompt_says_today_and_to_answer_in_turkish(run, fake):
     fake.script = ["Merhaba."]
 
-    ask(agent, "Merhaba")
+    run(asking("Merhaba"))
 
     system = fake.requests[0]["messages"][0]
     assert system["role"] == "system"
@@ -192,17 +147,17 @@ def test_system_prompt_holds_the_rules_the_agent_must_follow():
         assert rule in SYSTEM_PROMPT, rule
 
 
-# --- Example questions ----------------------------------------------------
+# --- Example questions, with the order tools called over MCP --------------
 
 
-def test_last_order(agent, fake):
+def test_last_order(run, fake):
     fake.script = [
         [("list_customer_orders", {"limit": 1})],
         [("get_order_status", {"order_ref": "SIP-1"})],
         "SIP-1 numaralı siparişiniz teslim edildi.",
     ]
 
-    reply = ask(agent, "Son siparişim nerede?")
+    reply = run(asking("Son siparişim nerede?"))
 
     assert reply.text == "SIP-1 numaralı siparişiniz teslim edildi."
     results = tool_results(fake)
@@ -212,7 +167,7 @@ def test_last_order(agent, fake):
     assert reply.awaiting_approval is None
 
 
-def test_eligibility_comes_from_the_rule_engine(agent, fake):
+def test_eligibility_comes_from_the_rule_engine(run, fake):
     fake.script = [
         [
             (
@@ -223,7 +178,7 @@ def test_eligibility_comes_from_the_rule_engine(agent, fake):
         "İade süresi dolmuş.",
     ]
 
-    ask(agent, "o_day15 siparişimi iade edebilir miyim? Vazgeçtim.")
+    run(asking("o_day15 siparişimi iade edebilir miyim? Vazgeçtim."))
 
     decision = tool_results(fake)[0]
     assert decision["decision"] == "NOT_ELIGIBLE_WINDOW"
@@ -231,32 +186,33 @@ def test_eligibility_comes_from_the_rule_engine(agent, fake):
     assert decision["refund_amount"] == "0.00"
 
 
-def test_foreign_order_is_not_found(agent, fake):
+def test_foreign_order_is_not_found(run, fake):
     fake.script = [
         [("get_order_status", {"order_ref": "o_other_customer"})],
         "Bu numarayla size ait bir sipariş bulunamadı.",
     ]
 
-    ask(agent, "o_other_customer nerede?")
+    run(asking("o_other_customer nerede?"))
 
     assert tool_results(fake) == [
         {"error": "NOT_FOUND", "message": messages.ORDER_NOT_FOUND}
     ]
 
 
-def test_policy_answer_gets_sections_with_citations(agent, fake):
+def test_policy_answer_gets_sections_with_citations(run, fake):
     fake.script = [
         [("search_policies", {"query": "hediye çeki ile ödenen sipariş iadesi"})],
         "Hediye çeki oranında iade edilir (Ödeme ve Geri Ödeme Politikası, Bölüm 3).",
     ]
 
-    ask(agent, "Hediye çekiyle ödedim, iadem nasıl olur?")
+    run(asking("Hediye çekiyle ödedim, iadem nasıl olur?"))
 
     results = tool_results(fake)[0]["results"]
     assert results[0]["citation"] == "Ödeme ve Geri Ödeme Politikası, Bölüm 3"
 
 
-def test_escalation_gives_a_ticket(agent, fake, queue):
+def test_escalation_gives_a_ticket(run, fake):
+    queue = EscalationQueue()
     fake.script = [
         [
             (
@@ -267,36 +223,80 @@ def test_escalation_gives_a_ticket(agent, fake, queue):
         "Talebiniz iletildi: ESC-1.",
     ]
 
-    ask(agent, "Siparişimi iptal etmek istiyorum.")
+    run(asking("Siparişimi iptal etmek istiyorum."), queue=queue)
 
     assert tool_results(fake)[0]["ticket"] == "ESC-1"
     assert len(queue.tickets) == 1
 
 
-def test_question_without_a_tool_call(agent, fake):
+def test_question_without_a_tool_call(run, fake):
     fake.script = ["Hangi siparişinizle ilgili?"]
 
-    reply = ask(agent, "Siparişimle ilgili sorun var.")
+    reply = run(asking("Siparişimle ilgili sorun var."))
 
     assert reply.text == "Hangi siparişinizle ilgili?"
     assert reply.log.tool_calls == []
     assert reply.log.llm_calls == 1
 
 
-def test_conversation_is_remembered_across_messages(agent, fake):
+def test_conversation_is_remembered_across_messages(run, fake):
     fake.script = ["Hangi siparişiniz?", "Anladım."]
 
-    ask(agent, "Siparişimle ilgili sorun var.", "o_day14 olan.")
+    run(asking("Siparişimle ilgili sorun var.", "o_day14 olan."))
 
     roles = [message["role"] for message in fake.requests[-1]["messages"]]
     assert roles == ["system", "user", "assistant", "user"]
+
+
+def test_alias_given_by_the_server_works_in_a_later_message(run, fake):
+    fake.script = [
+        [("list_customer_orders", {"limit": 3})],
+        "Üç siparişiniz var.",
+        [("get_order_status", {"order_ref": "SIP-2"})],
+        "SIP-2 teslim edildi.",
+    ]
+
+    run(asking("Siparişlerim neler?", "İkincisi ne durumda?"))
+
+    assert tool_results(fake)[-1]["order"] == "SIP-2"
+
+
+# --- Order numbers typed by the customer ----------------------------------
+
+
+def test_typed_order_number_reaches_the_model_as_an_alias(
+    synthetic_db, synthetic_db_path, fake_policy_index, fake
+):
+    raw_id = "0a1b2c3d4e5f60718293a4b5c6d7e8f9"
+    for table in ("orders", "order_items", "order_payments"):
+        synthetic_db.execute(
+            f"UPDATE {table} SET order_id = ? WHERE order_id = 'o_day14'", (raw_id,)
+        )
+    synthetic_db.commit()
+    fake.script = [[("get_order_status", {"order_ref": "SIP-1"})], "Teslim edildi."]
+
+    with_agent(synthetic_db_path, fake_policy_index, fake, asking(f"{raw_id} nerede?"))
+
+    assert raw_id not in fake.sent_text()
+    assert "SIP-1 nerede?" in fake.sent_text()
+    # The alias the model was shown is the one the server resolves.
+    assert tool_results(fake)[0]["delivered_on"] == "2018-08-18"
+
+
+def test_personal_values_come_from_the_server_and_are_masked(run, fake):
+    fake.script = ["Merhaba."]
+
+    run(asking("Sao Paulo'dayım, posta kodum 01310."))
+
+    assert "[city]'dayım, posta kodum [zip]." in fake.sent_text()
+    assert "sao paulo" not in fake.sent_text().lower()
 
 
 # --- Human approval -------------------------------------------------------
 
 
 def test_return_request_waits_for_approval_and_writes_nothing(
-    agent, fake, synthetic_db
+    run, fake, synthetic_db_path
 ):
     fake.script = [
         [("check_return_eligibility", {"order_ref": "o_day14", "reason": "damaged"})],
@@ -309,13 +309,18 @@ def test_return_request_waits_for_approval_and_writes_nothing(
         "115,00 BRL tutarındaki iade için onayınız istenecek.",
     ]
 
-    reply = ask(agent, "o_day14 hasarlı geldi, iade etmek istiyorum.")
+    reply = run(asking("o_day14 hasarlı geldi, iade etmek istiyorum."))
 
     assert tool_results(fake)[1]["error"] == "APPROVAL_REQUIRED"
-    assert reply.awaiting_approval is not None
-    assert reply.awaiting_approval.order_id == "o_day14"
-    assert request_count(synthetic_db) == 2
-    assert agent.approval_summary() == (
+    assert reply.awaiting_approval == {
+        "pending": True,
+        "order": "SIP-1",
+        "reason": "damaged",
+        "refund_amount": "115.00",
+        "request_status": "PENDING_REVIEW",
+    }
+    assert request_count(synthetic_db_path) == 2
+    assert SupportAgent.approval_summary(reply.awaiting_approval) == (
         "Oluşturulacak iade talebi:\n"
         "  Sipariş: SIP-1\n"
         "  İade nedeni: hasarlı ürün\n"
@@ -324,66 +329,70 @@ def test_return_request_waits_for_approval_and_writes_nothing(
     )
 
 
-def approve_scenario(agent, fake):
-    fake.script = [
-        [
-            (
-                "create_return_request",
-                {"order_ref": "o_day14", "reason": "damaged", "amount": "115.00"},
-            )
-        ],
-        "Onayınız istenecek.",
-    ]
-    return ask(agent, "o_day14 hasarlı geldi, iade etmek istiyorum.")
+def test_approval_writes_one_row_without_the_model(run, fake, synthetic_db_path):
+    fake.script = [[RETURN_CALL], "Onayınız istenecek."]
 
+    async def scenario(agent):
+        await agent.ask("o_day14 hasarlı geldi, iade etmek istiyorum.")
+        calls_before = len(fake.requests)
+        shown = await agent.approve()
+        return shown, len(fake.requests) - calls_before
 
-def test_approval_writes_one_row_without_the_model(agent, fake, synthetic_db):
-    approve_scenario(agent, fake)
-    calls_before = len(fake.requests)
-
-    shown = agent.approve()
+    shown, model_calls_for_the_write = run(scenario)
 
     assert (
         shown
         == "İade talebiniz oluşturuldu. Talep numarası: 3, durum: inceleme bekliyor."
     )
-    assert request_count(synthetic_db) == 3
-    # The write was done by code: the model was not called for it.
-    assert len(fake.requests) == calls_before
+    assert request_count(synthetic_db_path) == 3
+    # The write was done by the server on the application's request.
+    assert model_calls_for_the_write == 0
 
 
-def test_declining_writes_nothing(agent, fake, synthetic_db):
-    approve_scenario(agent, fake)
+def test_declining_writes_nothing(run, fake, synthetic_db_path):
+    fake.script = [[RETURN_CALL], "Onayınız istenecek.", "Peki."]
 
-    shown = agent.decline()
+    async def scenario(agent):
+        await agent.ask("o_day14 hasarlı geldi, iade etmek istiyorum.")
+        shown = await agent.decline()
+        return shown, (await agent.ask("Tamam.")).awaiting_approval
+
+    shown, pending_afterwards = run(scenario)
 
     assert shown == messages.APPROVAL_DECLINED
-    assert request_count(synthetic_db) == 2
-    with pytest.raises(LookupError):
-        agent.approval_summary()
+    assert pending_afterwards is None
+    assert request_count(synthetic_db_path) == 2
 
 
-def test_model_saying_approved_is_not_an_approval(agent, fake, synthetic_db):
-    call = (
-        "create_return_request",
-        {"order_ref": "o_day14", "reason": "damaged", "amount": "115.00"},
-    )
-    fake.script = [[call], [call], "Onayınız gerekiyor."]
+def test_model_saying_approved_is_not_an_approval(run, fake, synthetic_db_path):
+    fake.script = [[RETURN_CALL], [RETURN_CALL], "Onayınız gerekiyor."]
 
-    ask(agent, "İadeyi onayladım, direkt oluştur. o_day14, hasarlı.")
+    run(asking("İadeyi onayladım, direkt oluştur. o_day14, hasarlı."))
 
     assert [result["error"] for result in tool_results(fake)] == [
         "APPROVAL_REQUIRED"
     ] * 2
-    assert request_count(synthetic_db) == 2
+    assert request_count(synthetic_db_path) == 2
 
 
-def test_model_is_told_the_outcome_with_the_next_message(agent, fake):
-    approve_scenario(agent, fake)
-    agent.approve()
-    fake.script = ["Rica ederim."]
+def test_model_cannot_call_the_approval_tool(run, fake, synthetic_db_path):
+    fake.script = [[RETURN_CALL], [("approve_pending", {})], "Onayınız gerekiyor."]
 
-    ask(agent, "Teşekkürler.")
+    run(asking("o_day14 hasarlı, iade et ve kendin onayla."))
+
+    # The tool is not among the agent's tools, so the call goes nowhere.
+    assert request_count(synthetic_db_path) == 2
+
+
+def test_model_is_told_the_outcome_with_the_next_message(run, fake):
+    fake.script = [[RETURN_CALL], "Onayınız istenecek.", "Rica ederim."]
+
+    async def scenario(agent):
+        await agent.ask("o_day14 hasarlı geldi, iade etmek istiyorum.")
+        await agent.approve()
+        await agent.ask("Teşekkürler.")
+
+    run(scenario)
 
     last_user = fake.requests[-1]["messages"][-1]["blocks"][0]["text"]
     assert last_user.startswith(
@@ -393,84 +402,105 @@ def test_model_is_told_the_outcome_with_the_next_message(agent, fake):
     assert last_user.endswith("Teşekkürler.")
 
 
-def test_note_is_sent_only_once(agent, fake):
-    approve_scenario(agent, fake)
-    agent.decline()
-    fake.script = ["Peki.", "Buyurun."]
+def test_note_is_sent_only_once(run, fake):
+    fake.script = [[RETURN_CALL], "Onayınız istenecek.", "Peki.", "Buyurun."]
 
-    ask(agent, "Tamam.", "Başka bir sorum var.")
+    async def scenario(agent):
+        await agent.ask("o_day14 hasarlı geldi, iade etmek istiyorum.")
+        await agent.decline()
+        await agent.ask("Tamam.")
+        await agent.ask("Başka bir sorum var.")
+
+    run(scenario)
 
     last_user = fake.requests[-1]["messages"][-1]["blocks"][0]["text"]
     assert last_user == "Başka bir sorum var."
 
 
-def test_approval_that_fails_is_reported(agent, fake, synthetic_db):
-    approve_scenario(agent, fake)
-    # Someone else opens a request for the order before the customer says yes.
-    synthetic_db.execute(
-        "INSERT INTO return_requests (order_id, customer_unique_id, reason, "
-        "refund_amount, status, created_at) VALUES "
-        "('o_day14', ?, 'damaged', 115.0, 'PENDING_REVIEW', '2018-09-01 00:00:00')",
-        (ALICE,),
-    )
+def test_approval_that_fails_is_reported(run, fake, synthetic_db_path):
+    fake.script = [[RETURN_CALL], "Onayınız istenecek."]
 
-    shown = agent.approve()
+    async def scenario(agent):
+        await agent.ask("o_day14 hasarlı geldi, iade etmek istiyorum.")
+        # Someone else opens a request for the order before the customer says yes.
+        conn = sqlite3.connect(synthetic_db_path)
+        with conn:
+            conn.execute(
+                "INSERT INTO return_requests (order_id, customer_unique_id, reason, "
+                "refund_amount, status, created_at) VALUES "
+                "('o_day14', ?, 'damaged', 115.0, 'PENDING_REVIEW', '2018-09-01 00:00:00')",
+                (ALICE,),
+            )
+        conn.close()
+        return await agent.approve()
+
+    shown = run(scenario)
 
     assert shown == messages.RETURN_REQUEST_NOT_CREATED.format(
         reason=messages.DUPLICATE_REQUEST
     )
-    assert request_count(synthetic_db) == 3
+    assert request_count(synthetic_db_path) == 3
+
+
+def test_approving_with_nothing_pending_writes_nothing(run, synthetic_db_path):
+    async def scenario(agent):
+        return await agent.approve()
+
+    shown = run(scenario)
+
+    assert shown == messages.RETURN_REQUEST_NOT_CREATED.format(reason="NOTHING_PENDING")
+    assert request_count(synthetic_db_path) == 2
 
 
 # --- Loop limits ----------------------------------------------------------
 
 
-def test_third_identical_call_is_not_run(agent, fake):
+def test_third_identical_call_is_not_run(run, fake):
     call = ("get_order_status", {"order_ref": "o_day14"})
     fake.script = [[call], [call], [call], "Sipariş teslim edildi."]
 
-    reply = ask(agent, "o_day14 nerede?")
+    reply = run(asking("o_day14 nerede?"))
 
     results = tool_results(fake)
     assert [result.get("error") for result in results] == [None, None, "REPEATED_CALL"]
     assert reply.log.tool_calls == ["get_order_status"] * 3
 
 
-def test_repeat_count_starts_again_with_the_next_message(agent, fake):
+def test_repeat_count_starts_again_with_the_next_message(run, fake):
     call = ("get_order_status", {"order_ref": "o_day14"})
     fake.script = [[call], [call], "Teslim edildi.", [call], "Hâlâ teslim edildi."]
 
-    ask(agent, "o_day14 nerede?", "Bir daha bakar mısın?")
+    run(asking("o_day14 nerede?", "Bir daha bakar mısın?"))
 
-    assert "REPEATED_CALL" not in json.dumps(tool_results(fake))
+    assert "REPEATED_CALL" not in str(tool_results(fake))
 
 
-def test_run_stops_at_the_step_limit(agent, fake):
+def test_run_stops_at_the_step_limit(run, fake):
     fake.script = [
         [("get_order_status", {"order_ref": f"o_{number}"})] for number in range(30)
     ]
 
-    reply = ask(agent, "Bütün siparişlerime tek tek bak.")
+    reply = run(asking("Bütün siparişlerime tek tek bak."))
 
     assert reply.text == messages.STEP_LIMIT_REACHED
     assert reply.log.stopped_at_step_limit is True
     assert len(fake.requests) == config.MAX_STEPS == 8
 
 
-def test_empty_model_answer_becomes_a_fixed_message(agent, fake):
+def test_empty_model_answer_becomes_a_fixed_message(run, fake):
     fake.script = ["   "]
 
-    assert ask(agent, "Merhaba").text == messages.EMPTY_REPLY
+    assert run(asking("Merhaba")).text == messages.EMPTY_REPLY
 
 
 # --- Log ------------------------------------------------------------------
 
 
-def test_every_run_is_logged_with_steps_and_tokens(agent, fake, caplog):
+def test_every_run_is_logged_with_steps_and_tokens(run, fake, caplog):
     fake.script = [[("list_customer_orders", {})], "Beş siparişiniz var."]
 
     with caplog.at_level(logging.INFO, logger="src.agents.run_log"):
-        reply = ask(agent, "Siparişlerim neler?")
+        reply = run(asking("Siparişlerim neler?"))
 
     lines = [record.getMessage() for record in caplog.records]
     assert len(lines) == 1
@@ -482,11 +512,11 @@ def test_every_run_is_logged_with_steps_and_tokens(agent, fake, caplog):
     assert reply.log.steps == 3
 
 
-def test_run_that_hits_the_limit_is_logged_too(agent, fake, caplog):
+def test_run_that_hits_the_limit_is_logged_too(run, fake, caplog):
     fake.script = [[("list_customer_orders", {"limit": n})] for n in range(1, 30)]
 
     with caplog.at_level(logging.INFO, logger="src.agents.run_log"):
-        ask(agent, "Döngü")
+        run(asking("Döngü"))
 
     assert "step_limit=True" in caplog.records[0].getMessage()
 
@@ -494,19 +524,21 @@ def test_run_that_hits_the_limit_is_logged_too(agent, fake, caplog):
 # --- The provider is reached through the guard only -----------------------
 
 
-def test_agent_builds_its_model_through_the_guard(
-    monkeypatch, session, synthetic_db, fake_policy_index, queue, fake
-):
-    from src.guardrails import guarded_llm
-
-    monkeypatch.setattr(guarded_llm, "build_provider_llm", lambda: fake)
+def test_agent_puts_whatever_model_it_gets_behind_the_guard(run, fake):
     fake.script = ["Merhaba."]
-    raw_id = "0a1b2c3d4e5f60718293a4b5c6d7e8f9"
 
-    agent = SupportAgent(session, synthetic_db, fake_policy_index, queue)
-    ask(agent, f"{raw_id} nerede? Sao Paulo'dayım.")
+    run(asking("Bana ayse@example.com adresinden yazın."))
 
-    sent = fake.sent_text()
-    assert raw_id not in sent
-    assert "sao paulo" not in sent.lower()
-    assert "SIP-1 nerede? [city]'dayım." in sent
+    assert "ayse@example.com" not in fake.sent_text()
+    assert "[email]" in fake.sent_text()
+
+
+def test_agent_builds_the_provider_model_itself_when_none_is_given(
+    monkeypatch, synthetic_db_path, fake_policy_index, fake
+):
+    monkeypatch.setattr("src.agents.support.build_provider_llm", lambda: fake)
+    fake.script = ["Merhaba."]
+
+    with_agent(synthetic_db_path, fake_policy_index, None, asking("0532 123 45 67"))
+
+    assert "[phone]" in fake.sent_text()
