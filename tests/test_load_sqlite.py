@@ -213,6 +213,7 @@ def test_return_requests_table_exists_and_is_empty(db):
         "order_id",
         "customer_unique_id",
         "reason",
+        "refund_amount",
         "status",
         "created_at",
     ]
@@ -231,8 +232,9 @@ def test_rebuild_replaces_the_existing_database(raw_dir, tmp_path):
     load_sqlite.build_database(raw_dir, db_path, SIMULATED_TODAY)
     conn = sqlite3.connect(db_path)
     conn.execute(
-        "INSERT INTO return_requests (order_id, customer_unique_id, status, created_at) "
-        "VALUES ('o1', 'u1', 'PENDING_REVIEW', '2018-09-01')"
+        "INSERT INTO return_requests "
+        "(order_id, customer_unique_id, refund_amount, status, created_at) "
+        "VALUES ('o1', 'u1', 100.0, 'PENDING_REVIEW', '2018-09-01')"
     )
     conn.commit()
     conn.close()

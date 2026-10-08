@@ -148,8 +148,9 @@ def test_missing_return_requests_table_is_reported(db_path, raw_dir):
 def test_rows_in_return_requests_do_not_fail_the_check(db_path, raw_dir):
     execute(
         db_path,
-        "INSERT INTO return_requests (order_id, customer_unique_id, status, created_at) "
-        "VALUES ('o1', 'u1', 'PENDING_REVIEW', '2018-09-01')",
+        "INSERT INTO return_requests "
+        "(order_id, customer_unique_id, refund_amount, status, created_at) "
+        "VALUES ('o1', 'u1', 100.0, 'PENDING_REVIEW', '2018-09-01')",
     )
 
     assert failed_names(run(db_path, raw_dir)) == []

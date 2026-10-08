@@ -27,8 +27,9 @@ def synthetic_db_template(tmp_path_factory):
     with conn:
         conn.executemany(
             "INSERT INTO return_requests "
-            "(order_id, customer_unique_id, reason, status, created_at) "
-            "VALUES (:order_id, :customer_unique_id, :reason, :status, :created_at)",
+            "(order_id, customer_unique_id, reason, refund_amount, status, created_at) "
+            "VALUES (:order_id, :customer_unique_id, :reason, :refund_amount, "
+            ":status, :created_at)",
             synthetic_data.RETURN_REQUESTS,
         )
     conn.close()

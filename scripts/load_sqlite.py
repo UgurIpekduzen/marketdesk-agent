@@ -172,6 +172,7 @@ CREATE TABLE return_requests (
     order_id TEXT NOT NULL,
     customer_unique_id TEXT NOT NULL,
     reason TEXT,
+    refund_amount REAL NOT NULL,
     status TEXT NOT NULL,
     created_at TEXT NOT NULL
 )
