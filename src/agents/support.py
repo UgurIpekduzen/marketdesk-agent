@@ -22,21 +22,16 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Self
 
-from llama_index.core.agent.workflow import (
-    AgentOutput,
-    FunctionAgent,
-    ToolCall,
-    ToolCallResult,
-)
+from llama_index.core.agent.workflow import FunctionAgent
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.tools import FunctionTool
 from llama_index.core.workflow import Context
-from workflows.errors import WorkflowRuntimeError
 
 import config
 from src import messages
 from src.agents.loop_guard import REPEATED_CALL, LoopGuard
 from src.agents.run_log import RunLog
+from src.agents.runner import run_agent
 from src.guardrails.guarded_llm import GuardedLLM, build_provider_llm
 from src.guardrails.outbound import Redactor
 from src.guardrails.pii import RAW_ID_PATTERN
@@ -124,6 +119,11 @@ class Reply:
     # Set when a return request is waiting for the person's approval: the
     # order alias, reason, refund amount and the status it would start in.
     awaiting_approval: dict | None = None
+
+    @property
+    def display(self) -> str:
+        """What to show the person."""
+        return self.text
 
 
 def build_tools(
@@ -281,27 +281,9 @@ class SupportAgent:
             self._note = None
         self._guard.reset()
 
-        log = RunLog()
-        try:
-            handler = self._agent.run(
-                message, ctx=self._context, max_iterations=config.MAX_STEPS
-            )
-            async for event in handler.stream_events():
-                if isinstance(event, AgentOutput):
-                    log.add_llm_call(event.raw)
-                elif isinstance(event, ToolCall) and not isinstance(
-                    event, ToolCallResult
-                ):
-                    log.add_tool_call(event.tool_name, event.tool_kwargs)
-            text = str(await handler).strip() or messages.EMPTY_REPLY
-        except WorkflowRuntimeError as error:
-            if "Max iterations" not in str(error):
-                raise
-            log.stopped_at_step_limit = True
-            text = messages.STEP_LIMIT_REACHED
-        finally:
-            log.write(AGENT_NAME, self._customer_unique_id)
-
+        text, log = await run_agent(
+            self._agent, self._context, message, self._customer_unique_id
+        )
         return Reply(text, log, await self._orders.pending_approval())
 
     # --- Human approval: code only, the model takes no part --------------
