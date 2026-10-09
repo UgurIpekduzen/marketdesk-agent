@@ -171,6 +171,11 @@ tasks:
     cmds:
       - "{{.RUN}} uv run python scripts/try_support_agent.py {{.CLI_ARGS}}"
 
+  agent:check:ops:
+    desc: Run example operations questions through the Ops Data Agent with the real model (uses LLM quota)
+    cmds:
+      - "{{.RUN}} uv run python scripts/try_ops_agent.py {{.CLI_ARGS}}"
+
   chat:
     desc: Chat with an agent (uses LLM quota); pass --demo, --customer <id> or --ops after --
     cmds:
