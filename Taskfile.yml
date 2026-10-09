@@ -172,7 +172,7 @@ tasks:
       - "{{.RUN}} uv run python scripts/try_support_agent.py {{.CLI_ARGS}}"
 
   chat:
-    desc: Chat with the Support Agent (uses LLM quota); pass --demo or --customer <id> after --
+    desc: Chat with an agent (uses LLM quota); pass --demo, --customer <id> or --ops after --
     cmds:
       - "{{.RUN}} uv run python -m src.cli {{.CLI_ARGS}}"
 

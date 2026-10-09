@@ -1,12 +1,15 @@
-"""Chat with the Support Agent from the command line.
+"""Chat with an agent from the command line.
 
 Usage:  python -m src.cli --customer <customer_unique_id>
         python -m src.cli --demo
+        python -m src.cli --ops
 
-The customer is chosen when the program starts, the way a login would: it
-never comes from what is typed into the chat. When the agent asks to open a
-return request, the request is shown and the person answers e (yes) or h
-(no); only then does code write it.
+Who is signed in, and as what, is chosen when the program starts, the way a
+login would: a customer session talks to the Support Agent, an operations
+session (--ops) to the Ops Data Agent. Neither ever comes from what is typed
+into the chat. When the Support Agent asks to open a return request, the
+request is shown and the person answers e (yes) or h (no); only then does
+code write it.
 """
 
 import argparse
@@ -18,6 +21,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from src import messages
+from src.agents.ops import OpsAgent
 from src.agents.support import SupportAgent
 from src.knowledge.embedding import load_embedder
 from src.knowledge.policy_index import PolicyIndex
@@ -31,12 +35,13 @@ YES_WORDS = ("e", "evet")
 
 
 async def chat(
-    agent: SupportAgent,
+    agent: SupportAgent | OpsAgent,
     read: Callable[[str], str] = input,
     write: Callable[[str], None] = print,
+    banner: str = messages.CHAT_BANNER,
 ) -> None:
     """Run the conversation until the person leaves."""
-    write(messages.CHAT_BANNER)
+    write(banner)
     while True:
         try:
             line = read(messages.CHAT_PROMPT).strip()
@@ -48,9 +53,10 @@ async def chat(
             continue
 
         reply = await agent.ask(line)
-        write(reply.text)
+        write(reply.display)
 
-        if reply.awaiting_approval is not None:
+        # Only a customer session can have a return request waiting.
+        if getattr(reply, "awaiting_approval", None) is not None:
             write(agent.approval_summary(reply.awaiting_approval))
             answer = read(messages.APPROVAL_QUESTION).strip().lower()
             # Anything but a clear yes is a no.
@@ -79,16 +85,30 @@ async def run(db_path: Path, customer: str) -> None:
         await chat(agent)
 
 
+async def run_ops(db_path: Path) -> None:
+    """Chat with the Ops Data Agent until the person leaves."""
+    agent = OpsAgent(db_path)
+    try:
+        await chat(agent, banner=messages.CHAT_BANNER_OPS)
+    finally:
+        agent.close()
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     who = parser.add_mutually_exclusive_group(required=True)
     who.add_argument("--customer", help="customer_unique_id to sign in as")
     who.add_argument("--demo", action="store_true", help="sign in as a demo customer")
+    who.add_argument("--ops", action="store_true", help="sign in as operations staff")
     parser.add_argument("--db", type=Path, default=DEFAULT_DB_PATH)
     args = parser.parse_args(argv)
 
     # The step and token log of every run goes to stderr.
     logging.basicConfig(level=logging.INFO, stream=sys.stderr, format="%(message)s")
+
+    if args.ops:
+        asyncio.run(run_ops(args.db))
+        return 0
 
     conn = sqlite3.connect(f"file:{args.db.as_posix()}?mode=ro", uri=True)
     try:

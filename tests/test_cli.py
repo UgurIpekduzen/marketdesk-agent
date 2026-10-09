@@ -1,8 +1,11 @@
 """Tests for the chat command, with scripted typing and a stand-in model."""
 
+import asyncio
+
 import pytest
 
 from src import messages
+from src.agents.ops import OpsAgent
 from src.cli import chat, demo_customer
 from tests.agent_harness import request_count, with_agent
 from tests.fakes import FakeLLM
@@ -135,3 +138,25 @@ def test_no_approval_question_without_a_pending_request(run_chat, fake):
 
 def test_demo_customer_is_the_one_with_the_most_orders(synthetic_db):
     assert demo_customer(synthetic_db) == ALICE
+
+
+def test_ops_chat_shows_the_answer_with_its_sources(synthetic_db_path):
+    fake = FakeLLM(
+        script=[[("run_metric", {"metric_name": "order_count"})], "29 sipariş var."]
+    )
+    agent = OpsAgent(synthetic_db_path, fake)
+    lines = iter(["Kaç sipariş var?", "çık"])
+    prompts, shown = [], []
+
+    def read(prompt):
+        prompts.append(prompt)
+        return next(lines)
+
+    asyncio.run(chat(agent, read, shown.append, messages.CHAT_BANNER_OPS))
+    agent.close()
+
+    assert shown[0] == messages.CHAT_BANNER_OPS
+    assert shown[1].startswith("29 sipariş var.\n\nNot:\n- ")
+    assert "Kullanılan SQL:\nSELECT numerator" in shown[1]
+    # An operations session never asks for an approval.
+    assert messages.APPROVAL_QUESTION not in prompts
