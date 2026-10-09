@@ -48,6 +48,10 @@ SQL_MAX_ROWS = 1000
 # A free SQL query that runs longer than this many seconds is stopped.
 SQL_TIMEOUT_SECONDS = 5
 
+# After a free SQL query fails, the agent may correct it this many times
+# within one question. Then it has to say that it could not answer.
+SQL_MAX_CORRECTIONS = 2
+
 # --- Embedding ----------------------------------------------------------
 
 # multilingual-e5-small as a quantized ONNX file: the same model, small
