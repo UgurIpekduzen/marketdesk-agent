@@ -101,3 +101,16 @@ CHAT_BANNER = "MarketDesk müşteri desteği. Çıkmak için 'çık' yazın.\nSo
 CHAT_PROMPT = "> "
 CHAT_GOODBYE = "Görüşmek üzere."
 CHAT_UNKNOWN_CUSTOMER = "Bu müşteri için kayıtlı sipariş bulunamadı."
+
+# --- Ops data agent -----------------------------------------------------
+
+SQL_GAVE_UP = (
+    "Bu soruyu cevaplayamadım: denediğim sorgular çalışmadı ve izin verilen "
+    "düzeltme sayısı doldu."
+)
+OPS_USED_SQL_HEADING = "Kullanılan SQL:"
+OPS_TRIED_SQL_HEADING = "Denenen SQL:"
+OPS_CAVEAT_HEADING = "Not:"
+CHAT_BANNER_OPS = (
+    "MarketDesk operasyon verileri. Çıkmak için 'çık' yazın.\nSorunuzu yazın:"
+)
