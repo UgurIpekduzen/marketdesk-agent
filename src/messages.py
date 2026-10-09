@@ -38,6 +38,10 @@ INVALID_FILTER_VALUE = (
     "{name} filtresinin değeri bir metin ya da metin listesi olmalıdır."
 )
 INVALID_PERIOD_FILTER = "{name} filtresi YYYY-AA-GG biçiminde bir tarih olmalıdır."
+INVALID_RANKING = (
+    "Sıralama seçenekleri geçersiz: order 'value_desc' ya da 'value_asc', "
+    "top ve min_count pozitif tam sayı olmalıdır."
+)
 
 SQL_REJECTED = {
     "EMPTY_QUERY": "Sorgu boş.",

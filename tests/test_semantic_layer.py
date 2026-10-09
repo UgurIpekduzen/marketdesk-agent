@@ -400,6 +400,86 @@ def test_filter_value_is_bound_not_written_into_the_sql(synthetic_db):
     assert answer["rows"] == [[0, 0]]
 
 
+# --- Ranking groups -----------------------------------------------------
+
+
+def test_groups_can_be_ordered_by_value_and_cut(varied_db):
+    answer = run_metric(
+        varied_db,
+        "order_count",
+        group_by=["product_category_en"],
+        order="value_desc",
+        top=1,
+    )
+
+    assert answer["rows"] == [["furniture_decor", 29, 29]]
+    assert answer["sql"].endswith("ORDER BY value DESC, product_category_en LIMIT 1")
+
+
+def test_ascending_order(varied_db):
+    answer = run_metric(
+        varied_db, "order_count", group_by=["product_category_en"], order="value_asc"
+    )
+
+    assert [row[0] for row in answer["rows"]] == ["lighting", "furniture_decor"]
+
+
+def test_min_count_keeps_groups_of_that_size_by_the_denominator(varied_db):
+    # late_delivery_rate by category: furniture_decor has 20 delivered orders,
+    # lighting has 1.
+    answer = run_metric(
+        varied_db, "late_delivery_rate", group_by=["product_category_en"], min_count=2
+    )
+
+    assert [row[0] for row in answer["rows"]] == ["furniture_decor"]
+    assert "WHERE denominator >= :min_count" in answer["sql"]
+    assert answer["params"]["min_count"] == 2
+
+
+def test_min_count_uses_the_numerator_for_a_plain_total(varied_db):
+    answer = run_metric(
+        varied_db, "order_count", group_by=["customer_state"], min_count=2
+    )
+
+    assert [row[0] for row in answer["rows"]] == ["SP"]
+    assert "WHERE numerator >= :min_count" in answer["sql"]
+
+
+def test_equal_values_come_back_in_a_fixed_order(varied_db):
+    answer = run_metric(
+        varied_db, "cancel_rate", group_by=["customer_state"], order="value_desc"
+    )
+
+    # RJ has no cancelled order (0.0); SP has one.
+    assert [row[0] for row in answer["rows"]] == ["SP", "RJ"]
+
+
+def test_result_without_ranking_is_unchanged(synthetic_db):
+    plain = run_metric(synthetic_db, "order_count", group_by=["customer_state"])
+
+    assert plain["sql"].endswith("ORDER BY customer_state LIMIT 1000")
+    assert "min_count" not in plain["params"]
+
+
+@pytest.mark.parametrize(
+    "ranking",
+    [
+        {"order": "biggest"},
+        {"order": "value_desc; DROP TABLE orders"},
+        {"top": 0},
+        {"top": 5000},
+        {"top": "5"},
+        {"min_count": 0},
+        {"min_count": "100"},
+    ],
+)
+def test_invalid_ranking_is_refused(synthetic_db, ranking):
+    answer = run_metric(synthetic_db, "order_count", **ranking)
+
+    assert answer["error"] == "INVALID_RANKING"
+    assert "sql" not in answer
+
+
 # --- What comes back ----------------------------------------------------
 
 

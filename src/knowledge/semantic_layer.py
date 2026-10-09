@@ -33,6 +33,8 @@ MAX_GROUP_BY = 2
 GRAINS = ("order", "item")
 LEVELS = ("order", "item")
 PERIOD_FILTERS = ("purchase_from", "purchase_to")
+# How the groups of a result can be ordered by the metric's value.
+ORDERS = {"value_desc": "DESC", "value_asc": "ASC"}
 
 # Joins a dimension needs, by the alias its expression uses.
 ORDER_LEVEL_JOINS = "JOIN customers AS c ON c.customer_id = o.customer_id"
@@ -215,6 +217,9 @@ def build_sql(
     group_by: list[str],
     filter_conditions: list[str],
     filtered: list[str],
+    with_min_count: bool = False,
+    order: str | None = None,
+    limit: int = MAX_ROWS,
 ) -> str:
     """Build the SQL of a metric from its template."""
     select_dimensions = [
@@ -266,9 +271,15 @@ def build_sql(
             f"{grouping}"
         )
 
+    # Ranking: keep groups of a minimum size, order by the value, cut.
+    size = "denominator" if metric.denominator is not None else "numerator"
+    having = f" WHERE {size} >= :min_count" if with_min_count else ""
+    if order is not None:
+        tie_break = "".join(f", {name}" for name in group_by)
+        ordering = f" ORDER BY value {ORDERS[order]}{tie_break}"
     return (
         f"SELECT {', '.join(result_columns)}, {value} AS value "
-        f"FROM ({inner}) AS result{ordering} LIMIT {MAX_ROWS}"
+        f"FROM ({inner}) AS result{having}{ordering} LIMIT {limit}"
     )
 
 
@@ -278,6 +289,9 @@ def run_metric(
     filters: dict | None = None,
     group_by: list[str] | None = None,
     today: date = config.SIMULATED_TODAY,
+    min_count: int | None = None,
+    order: str | None = None,
+    top: int | None = None,
 ) -> dict:
     """Compute one metric from its definition and return the result table.
 
@@ -285,6 +299,10 @@ def run_metric(
     two of the metric's dimensions. filters maps a dimension to one value or
     a list of values (for example {"customer_state": ["SP", "RJ"]}); the
     keys purchase_from and purchase_to (YYYY-MM-DD) limit the purchase day.
+
+    To rank groups: min_count keeps groups with at least that many orders
+    (or items, for an item metric), order is "value_desc" or "value_asc",
+    and top keeps that many groups.
 
     The result holds the columns, the rows (at most 1000), the SQL that was
     run and the metric's caveat. Always repeat the caveat when reporting the
@@ -323,13 +341,32 @@ def run_metric(
             messages.ITEM_DIMENSIONS_TOGETHER.format(names=", ".join(item_level)),
         )
 
+    ranking_is_valid = (
+        (order is None or order in ORDERS)
+        and (top is None or (isinstance(top, int) and 1 <= top <= MAX_ROWS))
+        and (min_count is None or (isinstance(min_count, int) and min_count >= 1))
+    )
+    if not ranking_is_valid:
+        return error("INVALID_RANKING", messages.INVALID_RANKING)
+
     built = build_filters(metric, layer, filters)
     if isinstance(built, dict):
         return built
     filter_conditions, params = built
     filtered = [name for name in filters if name not in PERIOD_FILTERS]
 
-    sql = build_sql(metric, layer, group_by, filter_conditions, filtered)
+    sql = build_sql(
+        metric,
+        layer,
+        group_by,
+        filter_conditions,
+        filtered,
+        with_min_count=min_count is not None,
+        order=order,
+        limit=top or MAX_ROWS,
+    )
+    if min_count is not None:
+        params["min_count"] = min_count
     params["simulated_today"] = today.isoformat()
     cursor = conn.execute(sql, params)
     columns = [column[0] for column in cursor.description]
