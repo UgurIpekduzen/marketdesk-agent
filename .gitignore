@@ -227,3 +227,6 @@ ARCHIVE.md
 # Raw Olist data and the SQLite DB built from it (licence: CC BY-NC-SA 4.0)
 data/*
 !data/download.py
+
+# Cached model responses of evaluation runs
+eval/cache/
