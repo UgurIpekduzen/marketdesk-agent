@@ -411,6 +411,8 @@ def main() -> int:
             "model": model,
             "temperature": config.LLM_TEMPERATURE,
             "summary": summary,
+            # Per group over both splits, for the comparison with the baselines.
+            "summary_all_splits": summarise_by_group(rows),
             # The answers of the test split are not written down.
             "examples": [row for row in rows if row["split"] == "dev"],
         }

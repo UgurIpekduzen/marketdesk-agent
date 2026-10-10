@@ -192,3 +192,8 @@ tasks:
     desc: Run the full evaluation (uses LLM free-tier quota)
     cmds:
       - "{{.RUN}} uv run python eval/run_eval.py {{.CLI_ARGS}}"
+
+  eval:baselines:
+    desc: Run the baselines B0, B1 and B2 on the golden set (uses LLM free-tier quota)
+    cmds:
+      - "{{.RUN}} uv run python eval/baselines.py {{.CLI_ARGS}}"
