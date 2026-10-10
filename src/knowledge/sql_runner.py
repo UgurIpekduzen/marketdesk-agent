@@ -10,6 +10,10 @@ write on its own:
 
 A query is also stopped when it runs too long and never returns more rows
 than the limit.
+
+The agents always run with the safe views. Only the raw-schema baseline of
+the evaluation passes another list of tables, and it never sends the rows
+to a model.
 """
 
 import sqlite3
@@ -42,6 +46,7 @@ def run_sql(
     query: str,
     timeout_seconds: float = config.SQL_TIMEOUT_SECONDS,
     max_rows: int = config.SQL_MAX_ROWS,
+    allowed_tables: tuple[str, ...] = ALLOWED_VIEWS,
 ) -> dict:
     """Run one read-only SELECT over the safe views and return its rows.
 
@@ -61,14 +66,16 @@ def run_sql(
     conn = connect_read_only(db_path)
     try:
         try:
-            sql = validate(query, existing_names(conn), max_rows=max_rows)
+            sql = validate(
+                query, existing_names(conn), allowed_tables, max_rows=max_rows
+            )
         except SqlRejected as rejected:
             return {
                 "error": "SQL_REJECTED",
                 "reason": rejected.code,
                 "detail": rejected.detail,
                 "message": messages.SQL_REJECTED[rejected.code].format(
-                    allowed=", ".join(ALLOWED_VIEWS)
+                    allowed=", ".join(allowed_tables)
                 ),
             }
 

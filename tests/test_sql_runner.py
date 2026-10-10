@@ -262,3 +262,12 @@ def test_quick_query_is_not_stopped(synthetic_db_path):
     answer = run_sql(synthetic_db_path, "SELECT COUNT(*) FROM v_orders")
 
     assert answer["rows"] == [[29]]
+
+
+def test_raw_tables_are_readable_only_when_asked_for(synthetic_db_path):
+    # The agents never ask: the safe views stay the default.
+    query = "SELECT COUNT(*) FROM orders"
+
+    assert run_sql(synthetic_db_path, query)["error"] == "SQL_REJECTED"
+    answer = run_sql(synthetic_db_path, query, allowed_tables=("orders",))
+    assert answer["rows"][0][0] > 0
