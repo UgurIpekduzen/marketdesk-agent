@@ -28,13 +28,13 @@ from llama_index.core.tools import FunctionTool
 from llama_index.core.workflow import Context
 
 import config
-from src import messages
+from src import messages, tracing
 from src.agents.loop_guard import REPEATED_CALL, LoopGuard
 from src.agents.run_log import RunLog
 from src.agents.runner import run_agent
 from src.guardrails.guarded_llm import GuardedLLM, build_provider_llm
 from src.guardrails.outbound import Redactor
-from src.guardrails.pii import RAW_ID_PATTERN
+from src.guardrails.pii import RAW_ID_PATTERN, hash_id
 from src.knowledge.policy_index import PolicyIndex
 from src.mcp_server.client import OrdersClient
 from src.tools.eligibility import check_return_eligibility
@@ -266,6 +266,8 @@ class SupportAgent:
         # Raw ids that reach the guard are masked. Order numbers the customer
         # types are turned into aliases before that, in ask.
         redactor = Redactor(known_values=info["personal_values"])
+        # The same values are masked in the spans of a traced run.
+        tracing.register_personal_values(info["personal_values"])
         return cls(
             orders, customer_unique_id, policy_index, queue, redactor, provider_llm
         )
@@ -304,9 +306,23 @@ class SupportAgent:
             status=messages.REQUEST_STATUS_LABELS[pending["request_status"]],
         )
 
+    def _trace_approval(self, answer: str, result: dict) -> None:
+        """Record the person's answer to an approval request as a span."""
+        with tracing.span(
+            "human approval",
+            answer=answer,
+            customer=hash_id(self._customer_unique_id),
+            order=result.get("order"),
+            request_status=result.get("status"),
+            written="return_request_id" in result,
+            error=result.get("error"),
+        ):
+            pass
+
     async def approve(self) -> str:
         """The person said yes: have the server write the request."""
         result = await self._orders.approve_pending()
+        self._trace_approval("approved", result)
         if "error" in result:
             self._note = (
                 "the customer approved on screen, but the return request was "
@@ -327,5 +343,6 @@ class SupportAgent:
     async def decline(self) -> str:
         """The person said no: nothing is written."""
         await self._orders.decline_pending()
+        self._trace_approval("declined", {})
         self._note = "the customer declined on screen; no return request was created."
         return messages.APPROVAL_DECLINED

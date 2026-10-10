@@ -22,6 +22,13 @@ LLM_USE_FALLBACK = False
 # question gives the same answer, which the evaluation needs.
 LLM_TEMPERATURE = 0
 
+# List price of the main model in USD per million tokens, used only to
+# estimate what a traced model call would cost; the free tier costs
+# nothing. None leaves the estimate out. Not set: the price has to be
+# taken from the provider's own price page first.
+LLM_PRICE_INPUT_PER_MTOK = None
+LLM_PRICE_OUTPUT_PER_MTOK = None
+
 # --- Return rules -------------------------------------------------------
 
 # Return windows in calendar days. The delivery day is day 0 and the last
@@ -69,3 +76,14 @@ EMBEDDING_MAX_TOKENS = 512
 
 # Upper limit on the steps an agent may take for one user message.
 MAX_STEPS = 8
+
+# --- Tracing ------------------------------------------------------------
+
+# Where the spans of a run are sent: "off", "phoenix" (the local
+# container, start it with `task up -- phoenix`) or "langfuse" (Langfuse
+# Cloud; needs LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY). Personal data
+# is masked for every target; a hosted target also gets no message texts.
+TRACING_TARGET = "off"
+# "phoenix" is the service name inside the Compose network.
+TRACING_PHOENIX_ENDPOINT = "http://phoenix:6006/v1/traces"
+TRACING_LANGFUSE_ENDPOINT = "https://cloud.langfuse.com/api/public/otel/v1/traces"

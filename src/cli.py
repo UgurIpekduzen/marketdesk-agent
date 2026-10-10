@@ -20,7 +20,7 @@ import sys
 from collections.abc import Callable
 from pathlib import Path
 
-from src import messages
+from src import messages, tracing
 from src.agents.ops import OpsAgent
 from src.agents.support import SupportAgent
 from src.knowledge.embedding import load_embedder
@@ -107,6 +107,16 @@ def main(argv: list[str] | None = None) -> int:
     # The step and token log of every run goes to stderr.
     logging.basicConfig(level=logging.INFO, stream=sys.stderr, format="%(message)s")
 
+    # Does nothing unless a tracing target is set in config.py.
+    tracing.setup_tracing()
+    try:
+        return sign_in_and_chat(args)
+    finally:
+        # Send the spans that are still waiting.
+        tracing.shutdown_tracing()
+
+
+def sign_in_and_chat(args: argparse.Namespace) -> int:
     if args.ops:
         asyncio.run(run_ops(args.db))
         return 0
