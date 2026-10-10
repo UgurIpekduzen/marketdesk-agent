@@ -93,7 +93,8 @@ APPROVAL_SUMMARY = (
 )
 APPROVAL_QUESTION = "Onaylıyor musunuz? [e/h] "
 RETURN_REQUEST_CREATED_DETAIL = (
-    "İade talebiniz oluşturuldu. Talep numarası: {request_id}, durum: {status}."
+    "İade talebiniz oluşturuldu. Talep numarası: {request_id}, durum: {status}. "
+    "Talebiniz bir müşteri temsilcisi tarafından incelenecektir."
 )
 RETURN_REQUEST_NOT_CREATED = "İade talebi oluşturulmadı: {reason}"
 APPROVAL_DECLINED = "Onay vermediniz; iade talebi oluşturulmadı."

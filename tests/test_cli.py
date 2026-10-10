@@ -90,7 +90,8 @@ def test_yes_writes_the_return_request(run_chat, fake, synthetic_db_path):
     assert shown[2].startswith("Oluşturulacak iade talebi:")
     assert "İade tutarı: 115.00 BRL" in shown[2]
     assert shown[3] == (
-        "İade talebiniz oluşturuldu. Talep numarası: 3, durum: inceleme bekliyor."
+        "İade talebiniz oluşturuldu. Talep numarası: 3, durum: inceleme bekliyor. "
+        "Talebiniz bir müşteri temsilcisi tarafından incelenecektir."
     )
     assert request_count(synthetic_db_path) == 3
 

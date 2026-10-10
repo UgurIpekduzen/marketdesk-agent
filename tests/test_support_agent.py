@@ -350,9 +350,9 @@ def test_approval_writes_one_row_without_the_model(run, fake, synthetic_db_path)
 
     shown, model_calls_for_the_write = run(scenario)
 
-    assert (
-        shown
-        == "İade talebiniz oluşturuldu. Talep numarası: 3, durum: inceleme bekliyor."
+    assert shown == (
+        "İade talebiniz oluşturuldu. Talep numarası: 3, durum: inceleme bekliyor. "
+        "Talebiniz bir müşteri temsilcisi tarafından incelenecektir."
     )
     assert request_count(synthetic_db_path) == 3
     # The write was done by the server on the application's request.
