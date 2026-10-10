@@ -176,6 +176,11 @@ tasks:
     cmds:
       - "{{.RUN}} uv run python scripts/try_ops_agent.py {{.CLI_ARGS}}"
 
+  agent:check:router:
+    desc: Run example messages through the router with the real model (uses LLM quota)
+    cmds:
+      - "{{.RUN}} uv run python scripts/try_router.py {{.CLI_ARGS}}"
+
   chat:
     desc: Chat with an agent (uses LLM quota); pass --demo, --customer <id> or --ops after --
     cmds:
