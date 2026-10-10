@@ -112,7 +112,9 @@ async def list_customer_orders_tool(
 @server.tool(
     name="check_return_eligibility", description=describe(check_return_eligibility)
 )
-async def check_return_eligibility_tool(order_ref: str, reason: str) -> dict:
+async def check_return_eligibility_tool(
+    order_ref: str, reason: str | None = None
+) -> dict:
     current = state()
     return check_return_eligibility(
         current.session, current.conn, order_ref, reason, current.simulated_today

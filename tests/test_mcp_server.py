@@ -192,6 +192,13 @@ def test_eligibility_comes_from_the_rule_engine(synthetic_db_path):
     assert (answer["decision"], answer["rule"]) == ("NOT_ELIGIBLE_WINDOW", "R6")
 
 
+def test_eligibility_without_a_reason_asks_for_one(synthetic_db_path):
+    async def scenario(orders):
+        return await orders.call("check_return_eligibility", {"order_ref": "o_day14"})
+
+    assert with_server(synthetic_db_path, scenario)["error"] == "REASON_REQUIRED"
+
+
 def test_session_info_gives_a_hash_and_the_personal_values(synthetic_db_path):
     info = with_server(synthetic_db_path, lambda orders: orders.session_info())
 

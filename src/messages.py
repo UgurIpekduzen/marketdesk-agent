@@ -6,6 +6,9 @@ ORDER_NOT_FOUND = "Bu numarayla size ait bir sipariş bulunamadı."
 
 INVALID_ORDER_STATUS = "Geçersiz sipariş durumu. Geçerli değerler: {allowed}."
 INVALID_RETURN_REASON = "Geçersiz iade nedeni. Geçerli değerler: {allowed}."
+RETURN_REASON_REQUIRED = (
+    "İade nedeni belirtilmedi. Müşteriye siparişi neden iade etmek istediğini sorun."
+)
 
 INVALID_AMOUNT = "Geçersiz iade tutarı."
 AMOUNT_MISMATCH = "İade tutarı, bu sipariş için hesaplanan tutarla uyuşmuyor."

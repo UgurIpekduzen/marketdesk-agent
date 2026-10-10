@@ -20,15 +20,15 @@ def check_return_eligibility(
     session: Session,
     conn: sqlite3.Connection,
     order_ref: str,
-    reason: str,
+    reason: str | None = None,
     today: date = config.SIMULATED_TODAY,
 ) -> dict:
     """Decide whether one order of the current customer can be returned.
 
     order_ref is the order alias from an earlier answer (for example SIP-1)
-    or the order number the customer wrote. reason is why the customer wants
-    to return it: changed_mind, late, damaged or wrong_item. Ask the customer
-    if the reason is not clear; do not guess it.
+    or the order number the customer wrote. reason is why they want to
+    return it: changed_mind, late, damaged or wrong_item. Leave reason out
+    if the customer has not said why; never guess it.
 
     The decision comes from fixed rules and is final: report it, do not
     change it. decision is NOT_DELIVERED_CANCELLABLE, IN_TRANSIT,
@@ -40,6 +40,9 @@ def check_return_eligibility(
     returned but the freight can still be claimed. An unknown order answers
     {"error": "NOT_FOUND", "message": ...}.
     """
+    if reason is None:
+        # Asked before any order is looked up, so it says nothing about one.
+        return {"error": "REASON_REQUIRED", "message": messages.RETURN_REASON_REQUIRED}
     if reason not in RETURN_REASONS:
         return {
             "error": "INVALID_REASON",

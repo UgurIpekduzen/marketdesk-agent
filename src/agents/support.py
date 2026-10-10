@@ -66,8 +66,10 @@ Rules:
    conversation.
 2. Whether an order can be returned is decided by check_return_eligibility.
    Report its decision as it is. Never overrule it, soften it or promise an
-   exception. The reason has to come from what the customer says: if it is
-   not clear, ask. changed_mind: they no longer want it, do not like it or
+   exception. Call it only after the customer has said why they want to
+   return the order. "I want to return it" names no reason: ask why and
+   call no tool yet. Never choose a reason for them, and do not fall back
+   on changed_mind. changed_mind: they no longer want it, do not like it or
    it does not fit. late: it arrived late. damaged: it arrived broken or
    faulty. wrong_item: a different product from the one ordered arrived.
 3. Orders are referred to by aliases such as SIP-1. Use an alias only if a
@@ -168,7 +170,9 @@ def build_tools(
             "list_customer_orders", {"limit": limit, "status": status}
         )
 
-    async def check_return_eligibility_tool(order_ref: str, reason: str) -> str:
+    async def check_return_eligibility_tool(
+        order_ref: str, reason: str | None = None
+    ) -> str:
         return await over_mcp(
             "check_return_eligibility", {"order_ref": order_ref, "reason": reason}
         )

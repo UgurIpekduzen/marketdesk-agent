@@ -110,6 +110,15 @@ def test_tool_descriptions_are_the_docstrings_written_for_the_model(tools):
     assert "citation" in by_name["search_policies"]
 
 
+def test_return_reason_is_not_a_required_argument(tools):
+    # A required reason gets filled in with a guess when the customer gave
+    # none; left out, the tool answers that the reason has to be asked for.
+    by_name = {tool.metadata.name: tool for tool in tools}
+    schema = by_name["check_return_eligibility"].metadata.get_parameters_dict()
+
+    assert schema["required"] == ["order_ref"]
+
+
 def test_tool_descriptions_fit_the_strictest_provider_limit(tools):
     # OpenAI-style APIs refuse a description longer than 1,024 characters.
     for tool in tools:
@@ -133,6 +142,7 @@ def test_system_prompt_holds_the_rules_the_agent_must_follow():
         "Facts come from tools only",
         "decided by check_return_eligibility",
         "never make one up",
+        "Never choose a reason for them",
         "ask one clarifying question",
         "only when the customer has clearly asked",
         "You cannot approve on their behalf",

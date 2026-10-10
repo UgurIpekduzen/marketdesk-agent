@@ -142,6 +142,19 @@ def test_unknown_reason_is_refused_with_the_allowed_values(
         assert reason in answer["message"]
 
 
+@pytest.mark.parametrize("order_ref", ["o_day14", "o_other_customer"])
+def test_missing_reason_is_asked_for_and_nothing_is_decided(
+    synthetic_db, alice, order_ref
+):
+    # The same answer whether or not the order is the customer's own.
+    answer = check_return_eligibility(alice, synthetic_db, order_ref)
+
+    assert answer == {
+        "error": "REASON_REQUIRED",
+        "message": messages.RETURN_REASON_REQUIRED,
+    }
+
+
 def test_checking_writes_nothing(synthetic_db, alice):
     before = synthetic_db.execute("SELECT COUNT(*) FROM return_requests").fetchone()[0]
 
