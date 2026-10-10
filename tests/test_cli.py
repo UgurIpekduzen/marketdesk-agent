@@ -7,7 +7,7 @@ import pytest
 from src import messages
 from src.agents.ops import OpsAgent
 from src.cli import chat, demo_customer
-from tests.agent_harness import request_count, with_agent
+from tests.agent_harness import request_count, with_agent, with_customer_router
 from tests.fakes import FakeLLM
 from tests.synthetic_data import ALICE
 
@@ -160,3 +160,38 @@ def test_ops_chat_shows_the_answer_with_its_sources(synthetic_db_path):
     assert "Kullanılan SQL:\nSELECT numerator" in shown[1]
     # An operations session never asks for an approval.
     assert messages.APPROVAL_QUESTION not in prompts
+
+
+def test_chat_through_the_router_refuses_an_ops_question_from_a_customer(
+    synthetic_db_path, fake_policy_index, fake
+):
+    fake.script = ["ops_metric", "support", "Teslim edildi."]
+    lines = iter(["Tüm siparişlerin cirosu?", "o_day14 nerede?", "çık"])
+    shown = []
+
+    with_customer_router(
+        synthetic_db_path,
+        fake_policy_index,
+        fake,
+        lambda router: chat(router, lambda prompt: next(lines), shown.append),
+    )
+
+    assert shown[1] == messages.ROUTER_OPS_NOT_ALLOWED
+    assert shown[2] == "Teslim edildi."
+
+
+def test_approval_through_the_router(synthetic_db_path, fake_policy_index, fake):
+    fake.script = ["support", [RETURN_CALL], "Onayınız istenecek."]
+    lines = iter(["o_day14 hasarlı geldi, iade istiyorum", "e", "çık"])
+    shown = []
+
+    with_customer_router(
+        synthetic_db_path,
+        fake_policy_index,
+        fake,
+        lambda router: chat(router, lambda prompt: next(lines), shown.append),
+    )
+
+    assert shown[2].startswith("Oluşturulacak iade talebi:")
+    assert "Talep numarası: 3" in shown[3]
+    assert request_count(synthetic_db_path) == 3

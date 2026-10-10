@@ -5,9 +5,9 @@ Usage:  python -m src.cli --customer <customer_unique_id>
         python -m src.cli --ops
 
 Who is signed in, and as what, is chosen when the program starts, the way a
-login would: a customer session talks to the Support Agent, an operations
-session (--ops) to the Ops Data Agent. Neither ever comes from what is typed
-into the chat. When the Support Agent asks to open a return request, the
+login would, and never comes from what is typed into the chat. Every message
+goes through the router: a customer session can reach the Support Agent, an
+operations session (--ops) the Ops Data Agent, and nothing else. When the Support Agent asks to open a return request, the
 request is shown and the person answers e (yes) or h (no); only then does
 code write it.
 """
@@ -26,6 +26,7 @@ from src.agents.support import SupportAgent
 from src.knowledge.embedding import load_embedder
 from src.knowledge.policy_index import PolicyIndex
 from src.mcp_server.client import OrdersClient
+from src.orchestrator import Orchestrator
 from src.tools.escalation import EscalationQueue
 
 DEFAULT_DB_PATH = Path("data/marketdesk.db")
@@ -35,7 +36,7 @@ YES_WORDS = ("e", "evet")
 
 
 async def chat(
-    agent: SupportAgent | OpsAgent,
+    agent: Orchestrator | SupportAgent | OpsAgent,
     read: Callable[[str], str] = input,
     write: Callable[[str], None] = print,
     banner: str = messages.CHAT_BANNER,
@@ -79,19 +80,19 @@ async def run(db_path: Path, customer: str) -> None:
     """Start the order server for the customer and chat until they leave."""
     policy_index = PolicyIndex(load_embedder())
     async with OrdersClient(db_path, customer) as orders:
-        agent = await SupportAgent.create(
+        router = await Orchestrator.for_customer(
             orders, customer, policy_index, EscalationQueue()
         )
-        await chat(agent)
+        await chat(router)
 
 
 async def run_ops(db_path: Path) -> None:
-    """Chat with the Ops Data Agent until the person leaves."""
-    agent = OpsAgent(db_path)
+    """Chat as operations staff until the person leaves."""
+    router = Orchestrator.for_ops(db_path)
     try:
-        await chat(agent, banner=messages.CHAT_BANNER_OPS)
+        await chat(router, banner=messages.CHAT_BANNER_OPS)
     finally:
-        agent.close()
+        router.close()
 
 
 def main(argv: list[str] | None = None) -> int:
