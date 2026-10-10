@@ -226,6 +226,8 @@ class SupportAgent:
         """Use SupportAgent.create, which asks the order server what to redact."""
         self._orders = orders
         self._customer_unique_id = customer_unique_id
+        # Also used by the router, for its own call to the model.
+        self.redactor = redactor
         self._guard = LoopGuard()
         # Who the customer is, for the hand-over log only. Order aliases and
         # approvals are not kept here: they live on the order server.

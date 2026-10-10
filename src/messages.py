@@ -114,3 +114,23 @@ OPS_CAVEAT_HEADING = "Not:"
 CHAT_BANNER_OPS = (
     "MarketDesk operasyon verileri. Çıkmak için 'çık' yazın.\nSorunuzu yazın:"
 )
+
+# --- Router -------------------------------------------------------------
+
+ROUTER_OPS_NOT_ALLOWED = (
+    "Bu bilgi müşteri hesabından görüntülenemez. Kendi siparişleriniz, "
+    "iadeler, kargo, ödemeler ve politikalarla ilgili sorularınızda yardımcı "
+    "olabilirim."
+)
+ROUTER_SUPPORT_NOT_ALLOWED = (
+    "Operasyon oturumunda müşteri destek işlemleri yapılamaz. Operasyon "
+    "verileriyle ilgili sorularınızı yanıtlayabilirim."
+)
+ROUTER_OUT_OF_SCOPE_CUSTOMER = (
+    "Bu konuda yardımcı olamıyorum. Siparişleriniz, iadeler, kargo, ödemeler "
+    "ve politikalarla ilgili sorularınızı yanıtlayabilirim."
+)
+ROUTER_OUT_OF_SCOPE_OPS = (
+    "Bu konuda yardımcı olamıyorum. Yalnızca operasyon verileriyle ilgili "
+    "soruları yanıtlayabilirim."
+)

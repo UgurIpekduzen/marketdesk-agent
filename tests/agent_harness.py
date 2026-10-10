@@ -6,6 +6,7 @@ import sqlite3
 
 from src.agents.support import SupportAgent
 from src.mcp_server.client import OrdersClient
+from src.orchestrator import Orchestrator
 from src.tools.escalation import EscalationQueue
 from tests.synthetic_data import ALICE
 
@@ -23,6 +24,19 @@ def with_agent(db_path, policy_index, fake, scenario, customer=ALICE, queue=None
                 orders, customer, policy_index, queue or EscalationQueue(), fake
             )
             return await scenario(agent)
+
+    return asyncio.run(run())
+
+
+def with_customer_router(db_path, policy_index, fake, scenario, customer=ALICE):
+    """Like with_agent, but the scenario gets the router of a customer session."""
+
+    async def run():
+        async with OrdersClient(db_path, customer) as orders:
+            router = await Orchestrator.for_customer(
+                orders, customer, policy_index, EscalationQueue(), fake
+            )
+            return await scenario(router)
 
     return asyncio.run(run())
 

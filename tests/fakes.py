@@ -43,6 +43,8 @@ class FakeLLM(FunctionCallingLLM):
             {
                 "messages": [message.model_dump() for message in messages],
                 "kwargs": {key: str(value) for key, value in kwargs.items()},
+                # Names of the tools this request offered to the model.
+                "tools": [tool["function"]["name"] for tool in kwargs.get("tools", [])],
             }
         )
         step = self.script.pop(0) if self.script else "(end of script)"
