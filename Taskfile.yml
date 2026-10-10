@@ -188,6 +188,11 @@ tasks:
 
   # --- Evaluation --------------------------------------------------------
 
+  env:hash-key:
+    desc: Write a secret key for the id hashes into .env, unless it has one (the key is not printed)
+    cmds:
+      - "{{.RUN}} uv run python scripts/set_hash_key.py {{.CLI_ARGS}}"
+
   eval:
     desc: Run the full evaluation (uses LLM free-tier quota)
     cmds:
