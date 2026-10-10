@@ -12,6 +12,7 @@ import sqlite3
 import pytest
 
 from src import messages
+from src.guardrails.pii import hash_id
 from src.mcp_server import server as server_module
 from src.mcp_server.client import OrdersClient, call_tool
 from src.mcp_server.server import MODEL_TOOLS
@@ -205,6 +206,8 @@ def test_session_info_gives_a_hash_and_the_personal_values(synthetic_db_path):
     assert info["personal_values"] == {"sao paulo": "[city]", "01310": "[zip]"}
     assert ALICE not in str(info)
     assert len(info["customer_hash"]) == 10
+    # The server was given this process's key, so both hash alike.
+    assert info["customer_hash"] == hash_id(ALICE)
 
 
 # --- The session is kept for the life of the connection -------------------

@@ -1,7 +1,18 @@
 """Keeping identifiers out of logs and free text."""
 
 import hashlib
+import hmac
+import logging
+import os
 import re
+import secrets
+
+logger = logging.getLogger(__name__)
+
+# The environment variable that holds the secret key of the id hashes.
+HASH_KEY_VARIABLE = "LOG_HASH_KEY"
+# Used when the variable is not set: made once per process, never stored.
+_generated_key: str | None = None
 
 # Order, customer, product and seller ids are 32 hexadecimal characters.
 RAW_ID_PATTERN = re.compile(r"\b[0-9a-f]{32}\b", re.IGNORECASE)
@@ -19,9 +30,35 @@ PHONE_MASK = "[phone]"
 DATE_PATTERN = re.compile(r"\d{4}-\d{2}-\d{2}")
 
 
+def hash_key() -> str:
+    """The secret key of the id hashes.
+
+    It comes from the environment. Without one a random key is made for
+    this process: the hashes then differ from run to run, but they still
+    cannot be turned back into ids.
+    """
+    global _generated_key
+    key = os.environ.get(HASH_KEY_VARIABLE)
+    if key:
+        return key
+    if _generated_key is None:
+        _generated_key = secrets.token_hex(32)
+        logger.warning(
+            "%s is not set: id hashes use a random key and will not match "
+            "those of another run",
+            HASH_KEY_VARIABLE,
+        )
+    return _generated_key
+
+
 def hash_id(raw_id: str) -> str:
-    """Return the short hash that stands for an id in logs."""
-    return hashlib.sha256(raw_id.encode()).hexdigest()[:10]
+    """Return the short hash that stands for an id in logs and traces.
+
+    A keyed hash (HMAC-SHA256), not a plain one: the ids of the data set
+    are public, so a plain hash could be matched by hashing them all.
+    """
+    digest = hmac.new(hash_key().encode(), raw_id.encode(), hashlib.sha256)
+    return digest.hexdigest()[:10]
 
 
 def mask_raw_ids(text: str) -> str:

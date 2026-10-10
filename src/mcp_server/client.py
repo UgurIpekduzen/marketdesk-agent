@@ -21,6 +21,7 @@ from typing import Self
 from mcp import ClientSession
 from mcp.client.stdio import StdioServerParameters, stdio_client
 
+from src.guardrails.pii import HASH_KEY_VARIABLE, hash_key
 from src.mcp_server.server import CUSTOMER_VARIABLE, DB_VARIABLE
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -50,7 +51,12 @@ class OrdersClient:
         # The customer is given to the server once, when it starts, and is
         # never part of a tool call.
         self._parameters = server_parameters(
-            {DB_VARIABLE: str(db_path), CUSTOMER_VARIABLE: customer_unique_id}
+            {
+                DB_VARIABLE: str(db_path),
+                CUSTOMER_VARIABLE: customer_unique_id,
+                # The same key as here, so both processes hash an id alike.
+                HASH_KEY_VARIABLE: hash_key(),
+            }
         )
         self._stack: AsyncExitStack | None = None
         self._session: ClientSession | None = None
