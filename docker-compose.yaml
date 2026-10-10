@@ -55,8 +55,9 @@ services:
     volumes:
       - phoenix-data:/mnt/data
     ports:
-      - "6006:6006" # UI and OTLP over HTTP
-      - "4317:4317" # OTLP over gRPC
+      # Bound to this machine only: traces are not for the network.
+      - "127.0.0.1:6006:6006" # UI and OTLP over HTTP
+      - "127.0.0.1:4317:4317" # OTLP over gRPC
 
 volumes:
   app-tmp:
