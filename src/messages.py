@@ -137,3 +137,63 @@ ROUTER_OUT_OF_SCOPE_OPS = (
     "Bu konuda yardımcı olamıyorum. Yalnızca operasyon verileriyle ilgili "
     "soruları yanıtlayabilirim."
 )
+
+# --- User interface -----------------------------------------------------
+
+UI_TITLE = "MarketDesk"
+UI_CAPTION_CUSTOMER = "Müşteri desteği: siparişler, iadeler ve politikalar"
+UI_CAPTION_OPS = "Operasyon verileri: metrikler ve sorgular"
+UI_SESSION_HEADING = "Oturum"
+UI_SESSION_CUSTOMER = "Müşteri"
+UI_SESSION_OPS = "Operasyon"
+UI_CUSTOMER_PICKER = "Örnek müşteri"
+UI_NEW_CONVERSATION = "Yeni konuşma"
+UI_TODAY = "Sistemde bugün: {today}"
+UI_INPUT_CUSTOMER = "Sorunuzu yazın"
+UI_INPUT_OPS = "Bir metrik sorusu yazın"
+UI_INPUT_WAITING_APPROVAL = "Önce aşağıdaki talebi onaylayın ya da vazgeçin"
+UI_THINKING = "Yanıt hazırlanıyor..."
+UI_STEPS = "Adımlar"
+UI_STEPS_AGENT = "Yanıtlayan"
+UI_STEPS_TOOLS = "Çağrılan araçlar"
+UI_STEPS_NO_TOOLS = "yok"
+UI_STEPS_COUNTS = "{steps} adım, {tokens} token"
+UI_AGENT_SUPPORT = "Destek ajanı"
+UI_AGENT_OPS = "Operasyon veri ajanı"
+UI_AGENT_ROUTER = "Yönlendirici (istek bu oturumda yanıtlanmadı)"
+UI_RESULT_TABLE = "Sonuç"
+UI_SOURCES = "Kaynak"
+UI_APPROVAL_HEADING = "Onayınız gerekiyor"
+UI_APPROVAL_ORDER = "Sipariş"
+UI_APPROVAL_REASON = "İade nedeni"
+UI_APPROVAL_AMOUNT = "İade tutarı"
+UI_APPROVAL_LEVEL = "Talep şu durumda açılacak"
+UI_APPROVE = "Onayla"
+UI_DECLINE = "Vazgeç"
+UI_NO_DATABASE = (
+    "Veritabanı bulunamadı. Bu ortamda demo verisi henüz yüklenmemiş; "
+    "yerelde `task data` komutuyla hazırlanır."
+)
+UI_NO_CUSTOMERS = "Veritabanında örnek müşteri bulunamadı."
+UI_ERROR_QUOTA = (
+    "Yapay zekâ servisinin ücretsiz kullanım kotası şu an dolmuş görünüyor. "
+    "Lütfen bir süre sonra tekrar deneyin."
+)
+UI_ERROR_BUSY = (
+    "Yapay zekâ servisi şu an yoğun ya da yanıt vermiyor. Lütfen biraz sonra "
+    "tekrar deneyin."
+)
+UI_ERROR_TIMEOUT = "Yanıt zamanında gelmedi. Lütfen tekrar deneyin."
+UI_ERROR_NOT_CONFIGURED = (
+    "Uygulama henüz yapılandırılmamış: yapay zekâ servisinin anahtarı tanımlı değil."
+)
+UI_ERROR_GENERIC = (
+    "Beklenmeyen bir sorun oluştu ve isteğiniz yanıtlanamadı. Lütfen tekrar deneyin."
+)
+DEMO_CUSTOMER_LABELS = {
+    "recent_delivery": "Siparişi yeni teslim edilmiş müşteri",
+    "late_delivery": "Siparişi geç teslim edilmiş müşteri",
+    "in_transit": "Siparişi kargoda olan müşteri",
+    "window_passed": "İade süresi geçmiş müşteri",
+    "many_orders": "Çok siparişi olan müşteri",
+}
