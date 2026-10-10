@@ -92,3 +92,14 @@ def test_tool_arguments_are_kept_for_inspection_but_not_logged(caplog):
 
     assert log.tool_arguments == [{"order_ref": "SIP-1"}, {}]
     assert "SIP-1" not in caplog.records[0].getMessage()
+
+
+def test_tool_results_are_parsed_when_they_are_json():
+    log = RunLog()
+    log.add_tool_result("get_order_status", '{"order": "SIP-1", "status": "delivered"}')
+    log.add_tool_result("echo", "plain text")
+
+    assert log.tool_results == [
+        ("get_order_status", {"order": "SIP-1", "status": "delivered"}),
+        ("echo", "plain text"),
+    ]

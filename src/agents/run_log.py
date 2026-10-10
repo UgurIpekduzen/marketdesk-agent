@@ -4,6 +4,7 @@ A run is everything that happens for one user message. The counts are
 logged as one line; the customer appears as a short hash, never as the id.
 """
 
+import json
 import logging
 from dataclasses import dataclass, field
 
@@ -48,6 +49,9 @@ class RunLog:
     # The arguments of each call, for a person inspecting a run. They are
     # kept here only and are not part of the log line.
     tool_arguments: list[dict] = field(default_factory=list)
+    # What each tool answered, in the order the answers came back. Like the
+    # arguments, kept for inspection and evaluation only, never logged.
+    tool_results: list[tuple[str, object]] = field(default_factory=list)
     input_tokens: int = 0
     output_tokens: int = 0
     stopped_at_step_limit: bool = False
@@ -66,6 +70,14 @@ class RunLog:
     def add_tool_call(self, tool_name: str, arguments: dict | None = None) -> None:
         self.tool_calls.append(tool_name)
         self.tool_arguments.append(arguments or {})
+
+    def add_tool_result(self, tool_name: str, content: str) -> None:
+        """Keep a tool's answer: parsed when it is JSON, as text otherwise."""
+        try:
+            result: object = json.loads(content)
+        except ValueError:
+            result = content
+        self.tool_results.append((tool_name, result))
 
     def write(self, agent: str, customer_unique_id: str | None) -> None:
         """Log the run as one line."""

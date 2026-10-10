@@ -32,7 +32,9 @@ async def run_agent(
         async for event in handler.stream_events():
             if isinstance(event, AgentOutput):
                 log.add_llm_call(event.raw)
-            elif isinstance(event, ToolCall) and not isinstance(event, ToolCallResult):
+            elif isinstance(event, ToolCallResult):
+                log.add_tool_result(event.tool_name, str(event.tool_output.content))
+            elif isinstance(event, ToolCall):
                 log.add_tool_call(event.tool_name, event.tool_kwargs)
         text = str(await handler).strip() or messages.EMPTY_REPLY
     except WorkflowRuntimeError as error:

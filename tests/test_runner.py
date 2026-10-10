@@ -37,6 +37,7 @@ def test_answer_and_counts():
     assert text == "bitti"
     assert (log.llm_calls, log.tool_calls) == (2, ["echo"])
     assert log.tool_arguments == [{"text": "a"}]
+    assert log.tool_results == [("echo", "a")]
     assert log.stopped_at_step_limit is False
 
 
