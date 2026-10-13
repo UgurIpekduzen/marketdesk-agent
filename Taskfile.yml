@@ -198,6 +198,11 @@ tasks:
     cmds:
       - "{{.RUN}} uv run python eval/run_eval.py {{.CLI_ARGS}}"
 
+  eval:judge-check:
+    desc: Write the sheet for checking the judge's scores by hand; `-- --agreement` counts the filled-in sheet
+    cmds:
+      - "{{.RUN}} uv run python eval/judge_check.py {{.CLI_ARGS}}"
+
   eval:baselines:
     desc: Run the baselines B0, B1 and B2 on the golden set (uses LLM free-tier quota)
     cmds:
