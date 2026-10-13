@@ -127,13 +127,14 @@ async def ask(
     example: dict, prepared: dict, db_path: Path, index: PolicyIndex, llm: CachedLLM
 ):
     """Send the example's question through the router of its session type."""
+    # An order number is typed as it is; the guard masks it on the way out.
+    question = example["question"].replace("{order}", prepared["order_id"] or "")
     if example["session"] == "ops":
         router = Orchestrator.for_ops(db_path, llm)
         try:
-            return await router.ask(example["question"])
+            return await router.ask(question)
         finally:
             router.close()
-    question = example["question"].replace("{order}", prepared["order_id"] or "")
     async with OrdersClient(db_path, prepared["customer"]) as orders:
         router = await Orchestrator.for_customer(
             orders, prepared["customer"], index, EscalationQueue(), llm

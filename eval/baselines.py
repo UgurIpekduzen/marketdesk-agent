@@ -183,13 +183,15 @@ async def complete(llm: CachedLLM, system: str, question: str) -> tuple[str, int
 
 def score_policy(example: dict, answer: str) -> dict:
     expected = example["expected"]
-    sources = example["source"]
-    sources = sources if isinstance(sources, list) else [sources]
     checks = {
         "text": scoring.contains_all(answer, expected.get("must_contain", []))
         and scoring.matches_none(answer, expected.get("must_not_match", [])),
-        "source": any(source in answer for source in sources),
     }
+    # A topic no section mentions has no source to cite.
+    if "source" in example:
+        sources = example["source"]
+        sources = sources if isinstance(sources, list) else [sources]
+        checks["source"] = any(source in answer for source in sources)
     row = {"checks": checks, "success": all(checks.values())}
     if "must_not_match" in expected:
         # The example lists what would be an invented rule.
@@ -273,6 +275,9 @@ def run(
     for baseline, groups in BASELINES.items():
         for example in examples:
             if example["group"] not in groups:
+                continue
+            if baseline == "B2" and "golden_sql" not in example:
+                # Scored by the judge only: there are no rows to compare.
                 continue
             seconds_before, live_before = llm.seconds, llm.live_calls
             row = asyncio.run(run_example(baseline, example, db_path, index, llm))

@@ -132,6 +132,15 @@ def test_policy_answer_without_the_source_fails(run):
     assert rows[1]["success"]
 
 
+def test_policy_example_without_a_source_is_scored_on_its_text_alone(run):
+    no_source = {key: value for key, value in POLICY_EXAMPLE.items() if key != "source"}
+
+    rows, _ = run([no_source], ["14 gün içinde.", "14 gün içinde."])
+
+    assert rows[0]["checks"] == {"text": True}
+    assert rows[0]["success"]
+
+
 def test_invented_rule_in_a_policy_answer_counts_as_made_up(run):
     answer = "14 gün, para 5 iş günü içinde döner (İade Politikası, Bölüm 2)."
     rows, _ = run([POLICY_EXAMPLE], [answer, GOOD_POLICY_ANSWER])

@@ -44,7 +44,7 @@ def test_file_is_one_json_object_per_line():
 
 
 def test_set_has_its_examples_in_four_groups():
-    assert len(EXAMPLES) == 54
+    assert len(EXAMPLES) == 84
     assert {example["group"] for example in EXAMPLES} == {
         "support",
         "ops",
@@ -135,6 +135,10 @@ def test_every_decision_code_of_the_rule_engine_has_an_example():
 
 @pytest.mark.parametrize("example", of_group("ops"), ids=by_id)
 def test_ops_example_has_a_golden_select(example):
+    if example.get("judge_only"):
+        # No rows to compare: only the judge scores the answer.
+        assert "golden_sql" not in example
+        return
     sql = example["golden_sql"]
 
     assert sql.lstrip().upper().startswith("SELECT")
@@ -148,12 +152,18 @@ def test_ops_example_has_a_golden_select(example):
 
 @pytest.mark.parametrize("example", of_group("policy"), ids=by_id)
 def test_policy_example_cites_a_section_that_exists(example):
+    assert example["reference_answer"].strip()
+    assert {"name": "search_policies"} in example["expected"]["tools"]
+    if "source" not in example:
+        # A topic no section mentions: nothing to cite, but the answer has
+        # to say so and may not invent a rule.
+        assert example["expected"]["must_contain"]
+        assert example["expected"]["must_not_match"]
+        return
     sources = example["source"]
     sources = sources if isinstance(sources, list) else [sources]
 
     assert set(sources) <= CITATIONS
-    assert example["reference_answer"].strip()
-    assert {"name": "search_policies"} in example["expected"]["tools"]
 
 
 @pytest.mark.parametrize("example", of_group("attack"), ids=by_id)
@@ -195,3 +205,16 @@ def test_every_example_is_in_one_split_and_test_covers_every_group():
     }
     # Enough held out for the total to mean something.
     assert len(held_out) >= 25
+
+
+def test_questions_from_another_source_are_held_out_unless_inspected():
+    # Written by another model from a list of situations, so that their
+    # wording owes nothing to the prompts; they start in the test split.
+    from_outside = [example for example in EXAMPLES if example["id"].startswith("U")]
+    inspected = {"U9a", "U9b", "U13a"}
+
+    assert len(from_outside) == 30
+    # An example whose outcome was read one by one has moved to dev.
+    assert {
+        example["id"] for example in from_outside if example["split"] == "dev"
+    } == inspected
