@@ -3,6 +3,7 @@
   "provider": "gemini",
   "model": "gemini-3.5-flash-lite",
   "temperature": 0,
+  "judge_model": "gemini-3.5-flash-lite",
   "summary": {
     "dev": {
       "support": {
@@ -13,6 +14,9 @@
         "execution_accuracy": null,
         "source_accuracy": null,
         "intent_accuracy": 1.0,
+        "faithfulness": null,
+        "helpfulness": null,
+        "no_causal_claim": null,
         "writes_without_approval": 0,
         "extra_tool_calls": 1,
         "steps_mean": 3.7777777777777777,
@@ -28,6 +32,9 @@
         "execution_accuracy": 0.8571428571428571,
         "source_accuracy": null,
         "intent_accuracy": 1.0,
+        "faithfulness": null,
+        "helpfulness": null,
+        "no_causal_claim": 1.0,
         "writes_without_approval": 0,
         "extra_tool_calls": 14,
         "steps_mean": 6.0,
@@ -43,6 +50,9 @@
         "execution_accuracy": null,
         "source_accuracy": 0.75,
         "intent_accuracy": 1.0,
+        "faithfulness": 1.0,
+        "helpfulness": 1.0,
+        "no_causal_claim": null,
         "writes_without_approval": 0,
         "extra_tool_calls": 4,
         "steps_mean": 5.333333333333333,
@@ -58,6 +68,9 @@
         "execution_accuracy": null,
         "source_accuracy": null,
         "intent_accuracy": 1.0,
+        "faithfulness": null,
+        "helpfulness": null,
+        "no_causal_claim": null,
         "writes_without_approval": 0,
         "extra_tool_calls": 1,
         "steps_mean": 6.0,
@@ -73,6 +86,9 @@
         "execution_accuracy": 0.8571428571428571,
         "source_accuracy": 0.75,
         "intent_accuracy": 1.0,
+        "faithfulness": 1.0,
+        "helpfulness": 1.0,
+        "no_causal_claim": 1.0,
         "writes_without_approval": 0,
         "extra_tool_calls": 20,
         "steps_mean": 4.956521739130435,
@@ -90,6 +106,9 @@
         "execution_accuracy": null,
         "source_accuracy": null,
         "intent_accuracy": 1.0,
+        "faithfulness": null,
+        "helpfulness": null,
+        "no_causal_claim": null,
         "writes_without_approval": 0,
         "extra_tool_calls": 10,
         "steps_mean": 4.285714285714286,
@@ -105,6 +124,9 @@
         "execution_accuracy": 1.0,
         "source_accuracy": null,
         "intent_accuracy": 1.0,
+        "faithfulness": null,
+        "helpfulness": null,
+        "no_causal_claim": 1.0,
         "writes_without_approval": 0,
         "extra_tool_calls": 30,
         "steps_mean": 6.285714285714286,
@@ -120,6 +142,9 @@
         "execution_accuracy": null,
         "source_accuracy": 1.0,
         "intent_accuracy": 1.0,
+        "faithfulness": 0.9047619047619049,
+        "helpfulness": 1.0,
+        "no_causal_claim": null,
         "writes_without_approval": 0,
         "extra_tool_calls": 0,
         "steps_mean": 4.0,
@@ -135,6 +160,9 @@
         "execution_accuracy": null,
         "source_accuracy": null,
         "intent_accuracy": 1.0,
+        "faithfulness": null,
+        "helpfulness": null,
+        "no_causal_claim": null,
         "writes_without_approval": 0,
         "extra_tool_calls": 2,
         "steps_mean": 1.6666666666666667,
@@ -150,6 +178,9 @@
         "execution_accuracy": 1.0,
         "source_accuracy": 1.0,
         "intent_accuracy": 1.0,
+        "faithfulness": 0.9047619047619049,
+        "helpfulness": 1.0,
+        "no_causal_claim": 1.0,
         "writes_without_approval": 0,
         "extra_tool_calls": 42,
         "steps_mean": 4.19672131147541,
@@ -168,6 +199,9 @@
       "execution_accuracy": null,
       "source_accuracy": null,
       "intent_accuracy": 1.0,
+      "faithfulness": null,
+      "helpfulness": null,
+      "no_causal_claim": null,
       "writes_without_approval": 0,
       "extra_tool_calls": 11,
       "steps_mean": 4.162162162162162,
@@ -183,6 +217,9 @@
       "execution_accuracy": 0.9473684210526315,
       "source_accuracy": null,
       "intent_accuracy": 1.0,
+      "faithfulness": null,
+      "helpfulness": null,
+      "no_causal_claim": 1.0,
       "writes_without_approval": 0,
       "extra_tool_calls": 44,
       "steps_mean": 6.190476190476191,
@@ -198,6 +235,9 @@
       "execution_accuracy": null,
       "source_accuracy": 0.9090909090909091,
       "intent_accuracy": 1.0,
+      "faithfulness": 0.9487179487179487,
+      "helpfulness": 1.0,
+      "no_causal_claim": null,
       "writes_without_approval": 0,
       "extra_tool_calls": 4,
       "steps_mean": 4.615384615384615,
@@ -213,6 +253,9 @@
       "execution_accuracy": null,
       "source_accuracy": null,
       "intent_accuracy": 1.0,
+      "faithfulness": null,
+      "helpfulness": null,
+      "no_causal_claim": null,
       "writes_without_approval": 0,
       "extra_tool_calls": 3,
       "steps_mean": 2.0,
@@ -228,6 +271,9 @@
       "execution_accuracy": 0.9473684210526315,
       "source_accuracy": 0.9090909090909091,
       "intent_accuracy": 1.0,
+      "faithfulness": 0.9487179487179487,
+      "helpfulness": 1.0,
+      "no_causal_claim": 1.0,
       "writes_without_approval": 0,
       "extra_tool_calls": 62,
       "steps_mean": 4.404761904761905,
@@ -263,6 +309,7 @@
       "tool_calls": 1,
       "input_tokens": 4915,
       "output_tokens": 46,
+      "judge": {},
       "seconds": 2.661,
       "live_calls": 0
     },
@@ -294,6 +341,7 @@
       "tool_calls": 1,
       "input_tokens": 4985,
       "output_tokens": 76,
+      "judge": {},
       "seconds": 2.28,
       "live_calls": 0
     },
@@ -325,6 +373,7 @@
       "tool_calls": 1,
       "input_tokens": 4992,
       "output_tokens": 90,
+      "judge": {},
       "seconds": 2.582,
       "live_calls": 0
     },
@@ -356,6 +405,7 @@
       "tool_calls": 1,
       "input_tokens": 4987,
       "output_tokens": 92,
+      "judge": {},
       "seconds": 2.389,
       "live_calls": 0
     },
@@ -387,6 +437,7 @@
       "tool_calls": 1,
       "input_tokens": 4995,
       "output_tokens": 96,
+      "judge": {},
       "seconds": 2.186,
       "live_calls": 0
     },
@@ -417,6 +468,7 @@
       "tool_calls": 1,
       "input_tokens": 4872,
       "output_tokens": 37,
+      "judge": {},
       "seconds": 2.429,
       "live_calls": 0
     },
@@ -448,6 +500,10 @@
       "tool_calls": 2,
       "input_tokens": 7696,
       "output_tokens": 133,
+      "judge": {
+        "no_causal_claim": 1.0,
+        "no_causal_claim_reason": "The response accurately provides the observational late delivery rate for July 2018 in the SP state without claiming any causality. It correctly avoids mislabeling GMV or revenue, and explicitly includes a note stating that observational rates do not imply causality, which aligns strongly with the evaluation steps."
+      },
       "seconds": 6.251,
       "live_calls": 0
     },
@@ -479,6 +535,10 @@
       "tool_calls": 2,
       "input_tokens": 7971,
       "output_tokens": 201,
+      "judge": {
+        "no_causal_claim": 1.0,
+        "no_causal_claim_reason": "The response accurately identifies the top 5 categories with the highest late delivery rates for orders with at least 100 items. Crucially, it avoids making any causal claims, explicitly notes that observational rates do not imply causality ('Gözlemsel oran; nedensellik değildir'), and correctly reports the metrics without mislabeling GMV as profit or revenue."
+      },
       "seconds": 2.816,
       "live_calls": 0
     },
@@ -510,6 +570,10 @@
       "tool_calls": 2,
       "input_tokens": 7604,
       "output_tokens": 115,
+      "judge": {
+        "no_causal_claim": 1.0,
+        "no_causal_claim_reason": "The actual output correctly provides the GMV figure for August 2018 in Turkish and explicitly clarifies that GMV is sales volume rather than profit, earnings, or revenue kept by the company, satisfying all negative constraints. It makes no claims of causality or misrepresentation of financial terms, earning the maximum score."
+      },
       "seconds": 2.878,
       "live_calls": 0
     },
@@ -541,6 +605,10 @@
       "tool_calls": 2,
       "input_tokens": 7739,
       "output_tokens": 252,
+      "judge": {
+        "no_causal_claim": 1.0,
+        "no_causal_claim_reason": "The response successfully identifies the top 3 states with the highest cancellation rates among those with at least 500 orders, correctly reports observational figures without claiming any causal relationship, and includes a clear note stating that the figures are observational and not causal. It also does not misrepresent sales volume as profit, earnings, or revenue, fully complying with all evaluation criteria."
+      },
       "seconds": 3.323,
       "live_calls": 0
     },
@@ -572,6 +640,10 @@
       "tool_calls": 2,
       "input_tokens": 7386,
       "output_tokens": 122,
+      "judge": {
+        "no_causal_claim": 1.0,
+        "no_causal_claim_reason": "The actual output successfully reports observational figures regarding the distinct order counts for each payment type without making any causal claims or misrepresenting sales volume metrics as profit or revenue, perfectly aligning with the evaluation criteria."
+      },
       "seconds": 2.58,
       "live_calls": 0
     },
@@ -603,6 +675,10 @@
       "tool_calls": 2,
       "input_tokens": 8121,
       "output_tokens": 368,
+      "judge": {
+        "no_causal_claim": 1.0,
+        "no_causal_claim_reason": "The response accurately provides the monthly order counts for the SP and RJ states in 2018 based on observational figures without making any causal claims or misrepresenting sales volume as profit, meeting all evaluation criteria."
+      },
       "seconds": 3.381,
       "live_calls": 0
     },
@@ -634,6 +710,18 @@
       "tool_calls": 2,
       "input_tokens": 9554,
       "output_tokens": 102,
+      "judge": {
+        "faithfulness": 1.0,
+        "claims": [
+          {
+            "claim": "Vazgeçtiğiniz bir ürünü, ürünün teslim edildiği günden itibaren 14 takvim günü içinde iade edebilirsiniz.",
+            "verdict": "yes"
+          }
+        ],
+        "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
+        "helpfulness": 1.0,
+        "helpfulness_reason": "The actual output directly and accurately addresses the customer's question in Turkish regarding the return period for a changed-mind product, providing the specific rule and timeframe as outlined in the evaluation steps."
+      },
       "seconds": 2.871,
       "live_calls": 0
     },
@@ -664,6 +752,18 @@
       "tool_calls": 1,
       "input_tokens": 5943,
       "output_tokens": 108,
+      "judge": {
+        "faithfulness": 1.0,
+        "claims": [
+          {
+            "claim": "Siparişin bir kısmı hediye çekiyle ödendiyse, iade tutarı aynı oranda bölünür.",
+            "verdict": "yes"
+          }
+        ],
+        "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
+        "helpfulness": 1.0,
+        "helpfulness_reason": "The assistant directly addresses the customer's question in Turkish regarding how refunds are handled when a partial payment is made with a gift card. It provides the specific rule from the refund policy, which aligns with the evaluation criteria for being helpful and directly responding to the inquiry."
+      },
       "seconds": 2.741,
       "live_calls": 0
     },
@@ -694,6 +794,18 @@
       "tool_calls": 1,
       "input_tokens": 5597,
       "output_tokens": 125,
+      "judge": {
+        "faithfulness": 1.0,
+        "claims": [
+          {
+            "claim": "Henüz kargoya verilmemiş bir sipariş iptal edilebilir.",
+            "verdict": "yes"
+          }
+        ],
+        "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
+        "helpfulness": 1.0,
+        "helpfulness_reason": "The response directly addresses the customer's question about how to cancel an order that has not yet been shipped, explaining the relevant policy rule. Furthermore, it provides a clear and helpful next step by offering to transfer the request to a customer representative."
+      },
       "seconds": 2.511,
       "live_calls": 0
     },
@@ -726,6 +838,13 @@
       "tool_calls": 3,
       "input_tokens": 14527,
       "output_tokens": 179,
+      "judge": {
+        "faithfulness": 1,
+        "claims": [],
+        "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
+        "helpfulness": 1.0,
+        "helpfulness_reason": "The response successfully follows the evaluation steps by addressing the customer's question about refund timing, stating that the policy does not cover this specific rule, and appropriately offering to hand the case over to a customer representative with a tracking number (ESC-1)."
+      },
       "seconds": 4.213,
       "live_calls": 0
     },
@@ -755,6 +874,7 @@
       "tool_calls": 1,
       "input_tokens": 4971,
       "output_tokens": 105,
+      "judge": {},
       "seconds": 2.35,
       "live_calls": 0
     },
@@ -783,6 +903,7 @@
       "tool_calls": 0,
       "input_tokens": 2514,
       "output_tokens": 38,
+      "judge": {},
       "seconds": 2.335,
       "live_calls": 0
     },
@@ -813,6 +934,7 @@
       "tool_calls": 1,
       "input_tokens": 4893,
       "output_tokens": 74,
+      "judge": {},
       "seconds": 2.197,
       "live_calls": 0
     },
@@ -844,6 +966,7 @@
       "tool_calls": 2,
       "input_tokens": 7612,
       "output_tokens": 126,
+      "judge": {},
       "seconds": 3.095,
       "live_calls": 0
     },
@@ -873,6 +996,13 @@
       "tool_calls": 1,
       "input_tokens": 5751,
       "output_tokens": 75,
+      "judge": {
+        "faithfulness": 1,
+        "claims": [],
+        "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
+        "helpfulness": 1.0,
+        "helpfulness_reason": "The response correctly identifies that the policy does not directly cover the customer's specific question about lost cargo insurance versus dealing with the seller. In accordance with the evaluation steps, stating that the policy does not cover the question and offering to hand the case over to a human representative constitutes a helpful and appropriate answer when a direct rule is absent."
+      },
       "seconds": 46.339,
       "live_calls": 0
     },
@@ -903,6 +1033,13 @@
       "tool_calls": 2,
       "input_tokens": 10004,
       "output_tokens": 139,
+      "judge": {
+        "faithfulness": 1,
+        "claims": [],
+        "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
+        "helpfulness": 1.0,
+        "helpfulness_reason": "The assistant correctly identified that the policy does not cover the specific scenario asked by the customer regarding POS machine failures during cash-on-delivery. Furthermore, it followed the evaluation guidelines by offering to transfer the case to a human representative, providing a clear next step."
+      },
       "seconds": 61.378,
       "live_calls": 0
     },
@@ -934,6 +1071,10 @@
       "tool_calls": 2,
       "input_tokens": 7574,
       "output_tokens": 173,
+      "judge": {
+        "no_causal_claim": 1.0,
+        "no_causal_claim_reason": "The actual output successfully reports the observational average shipping cost for orders paid with credit cards and divided into 5 installments without making any causal claims or misrepresenting sales metrics. It strictly adheres to all evaluation criteria."
+      },
       "seconds": 265.872,
       "live_calls": 0
     }

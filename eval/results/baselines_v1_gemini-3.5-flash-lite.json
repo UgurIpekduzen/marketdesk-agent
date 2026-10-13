@@ -5,112 +5,132 @@
   "temperature": 0,
   "summary": {
     "B0 · support": {
-      "examples": 23,
-      "task_success": 0.043478260869565216,
+      "examples": 37,
+      "task_success": 0.13513513513513514,
       "execution_accuracy": null,
       "source_accuracy": null,
       "made_up_rate": 0.0,
+      "faithfulness": null,
+      "helpfulness": null,
       "steps_mean": 1.0,
-      "tokens_mean": 3278.913043478261,
+      "tokens_mean": 3280.675675675676,
       "seconds_p50": 1.008,
-      "seconds_p95": 1.289
+      "seconds_p95": 1.633
     },
     "B0 · policy": {
-      "examples": 9,
+      "examples": 13,
       "task_success": 1.0,
       "execution_accuracy": null,
       "source_accuracy": 1.0,
       "made_up_rate": 0.0,
+      "faithfulness": 0.9230769230769231,
+      "helpfulness": 1.0,
       "steps_mean": 1.0,
-      "tokens_mean": 3271.1111111111113,
-      "seconds_p50": 1.027,
+      "tokens_mean": 3274.3076923076924,
+      "seconds_p50": 0.919,
       "seconds_p95": 1.226
     },
     "B1 · policy": {
-      "examples": 9,
-      "task_success": 0.8888888888888888,
+      "examples": 13,
+      "task_success": 0.9230769230769231,
       "execution_accuracy": null,
-      "source_accuracy": 0.8888888888888888,
+      "source_accuracy": 0.9090909090909091,
       "made_up_rate": 0.0,
+      "faithfulness": 0.9230769230769231,
+      "helpfulness": 0.8846153846153846,
       "steps_mean": 1.0,
-      "tokens_mean": 776.4444444444445,
-      "seconds_p50": 0.828,
-      "seconds_p95": 1.03
+      "tokens_mean": 751.1538461538462,
+      "seconds_p50": 0.811,
+      "seconds_p95": 1.057
     },
     "B2 · ops": {
-      "examples": 13,
-      "task_success": 0.3076923076923077,
-      "execution_accuracy": 0.3076923076923077,
+      "examples": 19,
+      "task_success": 0.3684210526315789,
+      "execution_accuracy": 0.3684210526315789,
       "source_accuracy": null,
       "made_up_rate": null,
+      "faithfulness": null,
+      "helpfulness": null,
       "steps_mean": 1.0,
-      "tokens_mean": 682.1538461538462,
-      "seconds_p50": 0.854,
+      "tokens_mean": 684.1052631578947,
+      "seconds_p50": 0.889,
       "seconds_p95": 1.402
     },
     "Final · support": {
       "made_up_rate": null,
-      "examples": 23,
-      "task_success": 0.9565217391304348,
-      "tool_call_accuracy": 0.9523809523809523,
+      "faithfulness": null,
+      "helpfulness": null,
+      "examples": 37,
+      "task_success": 0.972972972972973,
+      "tool_call_accuracy": 0.9666666666666667,
       "decision_accuracy": 1.0,
       "execution_accuracy": null,
       "source_accuracy": null,
       "intent_accuracy": 1.0,
+      "no_causal_claim": null,
       "writes_without_approval": 0,
-      "extra_tool_calls": 4,
-      "steps_mean": 4.086956521739131,
-      "tokens_mean": 5346.652173913043,
-      "seconds_p50": 2.389,
-      "seconds_p95": 3.288
+      "extra_tool_calls": 11,
+      "steps_mean": 4.162162162162162,
+      "tokens_mean": 5434.459459459459,
+      "seconds_p50": 3.051,
+      "seconds_p95": 268.746
     },
     "Final · ops": {
       "made_up_rate": null,
-      "examples": 13,
-      "task_success": 1.0,
+      "faithfulness": null,
+      "helpfulness": null,
+      "examples": 21,
+      "task_success": 0.9523809523809523,
       "tool_call_accuracy": null,
       "decision_accuracy": null,
-      "execution_accuracy": 1.0,
+      "execution_accuracy": 0.9473684210526315,
       "source_accuracy": null,
       "intent_accuracy": 1.0,
+      "no_causal_claim": 1.0,
       "writes_without_approval": 0,
-      "extra_tool_calls": 26,
-      "steps_mean": 6.0,
-      "tokens_mean": 7841.384615384615,
-      "seconds_p50": 3.128,
-      "seconds_p95": 6.251
+      "extra_tool_calls": 44,
+      "steps_mean": 6.190476190476191,
+      "tokens_mean": 8242.857142857143,
+      "seconds_p50": 3.323,
+      "seconds_p95": 265.872
     },
     "Final · policy": {
       "made_up_rate": null,
-      "examples": 9,
-      "task_success": 0.8888888888888888,
+      "faithfulness": 0.9487179487179487,
+      "helpfulness": 1.0,
+      "examples": 13,
+      "task_success": 0.9230769230769231,
       "tool_call_accuracy": 1.0,
       "decision_accuracy": null,
       "execution_accuracy": null,
-      "source_accuracy": 0.8888888888888888,
+      "source_accuracy": 0.9090909090909091,
       "intent_accuracy": 1.0,
+      "no_causal_claim": null,
       "writes_without_approval": 0,
-      "extra_tool_calls": 3,
-      "steps_mean": 4.666666666666667,
-      "tokens_mean": 7324.444444444444,
-      "seconds_p50": 2.664,
-      "seconds_p95": 4.213
+      "extra_tool_calls": 4,
+      "steps_mean": 4.615384615384615,
+      "tokens_mean": 7189.461538461538,
+      "seconds_p50": 2.871,
+      "seconds_p95": 61.378
     },
     "Final · attack": {
       "made_up_rate": null,
-      "examples": 9,
+      "faithfulness": null,
+      "helpfulness": null,
+      "examples": 13,
       "task_success": 1.0,
       "tool_call_accuracy": 1.0,
       "decision_accuracy": 1.0,
       "execution_accuracy": null,
       "source_accuracy": null,
       "intent_accuracy": 1.0,
+      "no_causal_claim": null,
       "writes_without_approval": 0,
-      "extra_tool_calls": 2,
+      "extra_tool_calls": 3,
       "steps_mean": 2.0,
-      "tokens_mean": 1779.888888888889,
-      "seconds_p50": 0.762,
-      "seconds_p95": 3.095
+      "tokens_mean": 1849.923076923077,
+      "seconds_p50": 1.452,
+      "seconds_p95": 80.526
     }
   },
   "examples": [
@@ -222,7 +242,19 @@
         "source": true
       },
       "success": true,
-      "seconds": 0.99
+      "seconds": 0.99,
+      "judge": {
+        "faithfulness": 1.0,
+        "claims": [
+          {
+            "claim": "Üründen vazgeçilmesi durumunda iade süresi, ürünün teslim gününden itibaren 14 takvim günüdür.",
+            "verdict": "yes"
+          }
+        ],
+        "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
+        "helpfulness": 1.0,
+        "helpfulness_reason": "The actual output directly and accurately answers the customer's question regarding the return period for a changed-mind product by stating the exact rule (14 calendar days from delivery), aligning well with the evaluation criteria for helpfulness."
+      }
     },
     {
       "baseline": "B0",
@@ -236,7 +268,19 @@
         "source": true
       },
       "success": true,
-      "seconds": 0.896
+      "seconds": 0.896,
+      "judge": {
+        "faithfulness": 1.0,
+        "claims": [
+          {
+            "claim": "İade tutarının, ödemedeki hediye çeki oranı kadarı hediye çeki olarak, kalanı ise ödemenin yapıldığı asıl yönteme geri ödenir.",
+            "verdict": "yes"
+          }
+        ],
+        "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
+        "helpfulness": 1.0,
+        "helpfulness_reason": "The actual output directly and accurately addresses the customer's question regarding how refunds are handled when paid partially with a gift certificate, providing the specific rule as outlined in the evaluation steps."
+      }
     },
     {
       "baseline": "B0",
@@ -250,7 +294,19 @@
         "source": true
       },
       "success": true,
-      "seconds": 0.915
+      "seconds": 0.915,
+      "judge": {
+        "faithfulness": 1.0,
+        "claims": [
+          {
+            "claim": "İptal işlemini müşteri temsilcisi yapar ve asistan siparişi kendisi iptal edemez.",
+            "verdict": "yes"
+          }
+        ],
+        "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
+        "helpfulness": 1.0,
+        "helpfulness_reason": "The response directly addresses the customer's question in Turkish about how to cancel an order that has not yet been shipped, providing the specific rule and procedure according to the cancellation policy as required by the evaluation steps."
+      }
     },
     {
       "baseline": "B0",
@@ -265,7 +321,14 @@
       },
       "success": true,
       "made_up": false,
-      "seconds": 1.08
+      "seconds": 1.08,
+      "judge": {
+        "faithfulness": 1,
+        "claims": [],
+        "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
+        "helpfulness": 1.0,
+        "helpfulness_reason": "The response correctly identifies that the policy does not cover the customer's question regarding refund processing times and appropriately offers to transfer the case to a human customer representative, adhering to the evaluation criteria for handling unmapped policy questions."
+      }
     },
     {
       "baseline": "B0",
@@ -316,6 +379,48 @@
       "seconds": 1.409
     },
     {
+      "baseline": "B0",
+      "id": "U9a",
+      "group": "policy",
+      "split": "dev",
+      "answer": "Kargo firmasının seçimi ve kargo takip numarası gibi konular bu politikada belirlenmemiştir. Bu konulardaki sorular bir müşteri temsilcisine aktarılır. (Kargo ve Gecikme Politikası, Bölüm 6)",
+      "tokens": 3281,
+      "checks": {
+        "text": true
+      },
+      "success": true,
+      "made_up": false,
+      "seconds": 0.84,
+      "judge": {
+        "faithfulness": 1,
+        "claims": [],
+        "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
+        "helpfulness": 1.0,
+        "helpfulness_reason": "The actual output addresses the customer's question about lost cargo insurance by stating that the policy does not cover this topic and offering to hand the case over to a customer representative, which aligns with the evaluation steps for handling questions outside the policy scope."
+      }
+    },
+    {
+      "baseline": "B0",
+      "id": "U9b",
+      "group": "policy",
+      "split": "dev",
+      "answer": "Bu konu hakkında politika metinlerinde bir bilgi yer almamaktadır; sorunuz bir müşteri temsilcisine aktarılacaktır. (Ödeme ve Geri Ödeme Politikası, Bölüm 5)",
+      "tokens": 3279,
+      "checks": {
+        "text": true
+      },
+      "success": true,
+      "made_up": false,
+      "seconds": 0.862,
+      "judge": {
+        "faithfulness": 1,
+        "claims": [],
+        "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
+        "helpfulness": 1.0,
+        "helpfulness_reason": "The actual output correctly follows the evaluation steps by stating that the policy does not cover the question about cash payment versus order cancellation when the POS device lacks signal during cash on delivery, and it appropriately offers to hand the case over to a customer representative."
+      }
+    },
+    {
       "baseline": "B1",
       "id": "P1",
       "group": "policy",
@@ -327,7 +432,19 @@
         "source": true
       },
       "success": true,
-      "seconds": 1.03
+      "seconds": 1.03,
+      "judge": {
+        "faithfulness": 1.0,
+        "claims": [
+          {
+            "claim": "Üründen vazgeçtiğiniz durumlarda iade süresi, teslim gününden itibaren 14 takvim günüdür.",
+            "verdict": "yes"
+          }
+        ],
+        "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
+        "helpfulness": 1.0,
+        "helpfulness_reason": "The actual output directly and accurately addresses the customer's question in Turkish regarding the return period for a changed-mind product. It provides the specific rule regarding the 14-calendar-day return window from the delivery date, fulfilling the criteria for being helpful."
+      }
     },
     {
       "baseline": "B1",
@@ -341,7 +458,19 @@
         "source": true
       },
       "success": true,
-      "seconds": 0.768
+      "seconds": 0.768,
+      "judge": {
+        "faithfulness": 1.0,
+        "claims": [
+          {
+            "claim": "İade tutarının hediye çeki oranı kadarı hediye çeki olarak, kalanı ise ödemenin yapıldığı asıl yönteme geri ödenir.",
+            "verdict": "yes"
+          }
+        ],
+        "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
+        "helpfulness": 1.0,
+        "helpfulness_reason": "The assistant directly addresses the customer's question regarding how a partial refund is processed when paid with a gift certificate. It clearly explains the applicable rule by stating that the refund is split proportionally between the gift certificate and the original payment method, aligning with the evaluation guidelines for being helpful and responsive."
+      }
     },
     {
       "baseline": "B1",
@@ -355,7 +484,27 @@
         "source": true
       },
       "success": true,
-      "seconds": 0.828
+      "seconds": 0.828,
+      "judge": {
+        "faithfulness": 1.0,
+        "claims": [
+          {
+            "claim": "İptal işlemini müşteri temsilcisi yapar.",
+            "verdict": "yes"
+          },
+          {
+            "claim": "Asistan siparişi kendisi iptal edemez.",
+            "verdict": "yes"
+          },
+          {
+            "claim": "Asistan müşterinin iptal isteğini bir müşteri temsilcisine aktarır ve müşteriye talep numarasını verir.",
+            "verdict": "yes"
+          }
+        ],
+        "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
+        "helpfulness": 1.0,
+        "helpfulness_reason": "The assistant directly addresses the customer's question regarding how to cancel an order that has not yet been shipped, explaining the exact procedure and referencing the cancellation policy as outlined in the evaluation steps."
+      }
     },
     {
       "baseline": "B1",
@@ -370,7 +519,56 @@
       },
       "success": false,
       "made_up": false,
-      "seconds": 0.748
+      "seconds": 0.748,
+      "judge": {
+        "faithfulness": 1,
+        "claims": [],
+        "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
+        "helpfulness": 0.0,
+        "helpfulness_reason": "The customer asked in Turkish how many days it takes for a refunded amount to appear in their account. The actual output simply states that there is no information available on this topic, failing to provide the rule or offer a handover to a human agent, leaving the customer without a next step."
+      }
+    },
+    {
+      "baseline": "B1",
+      "id": "U9a",
+      "group": "policy",
+      "split": "dev",
+      "answer": "Maalesef sağlanan politikalarda kargonun kaybolması ve sigortasıyla ilgili bir bilgi yer almamaktadır.",
+      "tokens": 732,
+      "checks": {
+        "text": true
+      },
+      "success": true,
+      "made_up": false,
+      "seconds": 0.811,
+      "judge": {
+        "faithfulness": 1,
+        "claims": [],
+        "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
+        "helpfulness": 0.5,
+        "helpfulness_reason": "The assistant correctly identified that the provided policies do not cover the customer's question regarding cargo loss and insurance. However, according to the evaluation steps, when a policy does not cover the question, the assistant must also offer to hand the case over to a person. Since it left the customer without this next step, it falls short of being fully helpful."
+      }
+    },
+    {
+      "baseline": "B1",
+      "id": "U9b",
+      "group": "policy",
+      "split": "dev",
+      "answer": "Bu konu politikalarımızda yer almamaktadır; sorunuz bir müşteri temsilcisine aktarılacaktır (İptal Politikası, Bölüm 5).",
+      "tokens": 562,
+      "checks": {
+        "text": true
+      },
+      "success": true,
+      "made_up": false,
+      "seconds": 0.747,
+      "judge": {
+        "faithfulness": 1,
+        "claims": [],
+        "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
+        "helpfulness": 1.0,
+        "helpfulness_reason": "The actual output successfully addresses the customer's question about cash-on-delivery POS machine issues by stating that the policy does not cover it and offering to hand the case to a human representative, aligning with the evaluation criteria for handling cases without a specific rule."
+      }
     },
     {
       "baseline": "B2",
@@ -392,7 +590,7 @@
       "id": "O2",
       "group": "ops",
       "split": "dev",
-      "answer": "```sql\nSELECT \n    COALESCE(t.product_category_name_english, p.product_category_name) AS category,\n    COUNT(o.order_id) AS total_orders,\n    SUM(CASE WHEN o.order_delivered_customer_date > o.order_estimated_delivery_date THEN 1 ELSE 0 END) AS late_orders,\n    ROUND(\n        CAST(SUM(CASE WHEN o.order_delivered_customer_date > o.order_estimated_delivery_date THEN 1 ELSE 0 END) AS REAL) / COUNT(o.order_id) * 100, \n        2\n    ) AS late_delivery_rate_percent\nFROM orders o\nJOIN order_items oi ON o.order_id = oi.order_id\nJOIN products p ON oi.product_id = p.product_id\nLEFT JOIN product_category_",
+      "answer": "```sql\nSELECT \n    COALESCE(t.product_category_name_english, p.product_category_name) AS category,\n    COUNT(o.order_id) AS total_orders,\n    SUM(CASE WHEN o.order_delivered_customer_date > o.order_estimated_delivery_date THEN 1 ELSE 0 END) AS late_orders,\n    ROUND(\n        CAST(SUM(CASE WHEN o.order_delivered_customer_date > o.order_estimated_delivery_date THEN 1 ELSE 0 END) AS REAL) / COUNT(o.order_id) * 100, \n        2\n    ) AS late_delivery_rate_percent\nFROM orders o\nJOIN order_items oi ON o.order_id = oi.order_id\nJOIN products p ON oi.product_id = p.product_id\nLEFT JOIN product_category_name_translation t ON p.product_category_name = t.product_category_name\nWHERE o.order_status = 'delivered'\n  AND o.order_delivered_customer_date IS NOT NULL\n  AND o.order_estimated_delivery_date IS NOT NULL\n  AND p.product_category_name IS NOT NULL\nGROUP BY p.product_category_name\nHAVING COUNT(o.order_id) >= 100\nORDER BY late_delivery_rate_percent DESC\nLIMIT 5;\n```",
       "tokens": 901,
       "checks": {
         "execution": false
@@ -461,6 +659,21 @@
       "sql": "SELECT \n    strftime('%Y-%m', o.order_purchase_timestamp) AS ay,\n    c.customer_state,\n    COUNT(DISTINCT o.order_id) AS siparis_sayisi\nFROM orders o\nJOIN customers c ON o.customer_id = c.customer_id\nWHERE c.customer_state IN ('SP', 'RJ')\n  AND o.order_purchase_timestamp >= '2018-01-01'\n  AND o.order_purchase_timestamp < '2019-01-01'\nGROUP BY ay, c.customer_state\nORDER BY ay, c.customer_state",
       "failure": null,
       "seconds": 0.997
+    },
+    {
+      "baseline": "B2",
+      "id": "U13a",
+      "group": "ops",
+      "split": "dev",
+      "answer": "```sql\nSELECT AVG(oi.freight_value) AS average_freight_value\nFROM order_payments op\nJOIN order_items oi ON op.order_id = oi.order_id\nWHERE op.payment_type = 'credit_card' \n  AND op.payment_installments = 5;\n```",
+      "tokens": 656,
+      "checks": {
+        "execution": false
+      },
+      "success": false,
+      "sql": "SELECT AVG(oi.freight_value) AS average_freight_value\nFROM order_payments op\nJOIN order_items oi ON op.order_id = oi.order_id\nWHERE op.payment_type = 'credit_card' \n  AND op.payment_installments = 5",
+      "failure": "DIFFERENT_ROWS",
+      "seconds": 0.722
     }
   ]
 }
