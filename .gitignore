@@ -230,3 +230,6 @@ data/*
 
 # Cached model responses of evaluation runs
 eval/cache/
+
+# Working folder DeepEval creates where it runs
+.deepeval/

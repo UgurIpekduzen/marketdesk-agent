@@ -25,12 +25,16 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "deepeval==4.2.8",
     "kagglehub==1.0.2",
     "pytest==9.1.1",
     "ruff==0.16.10",
 ]
 
 [tool.uv]
+# deepeval caps click below 8.4, huggingface-hub needs 8.4.2 or later. click
+# is only used by deepeval's command line, which this project does not run.
+override-dependencies = ["click>=8.4.2"]
 # An application, not a library: nothing to build or install as a package.
 package = false
 
@@ -41,7 +45,9 @@ testpaths = ["tests"]
 # Tests marked "model" load the real embedding model, which needs the
 # network once. They are left out by default; run them with `task test:model`.
 markers = ["model: needs the real embedding model"]
-addopts = "-m 'not model'"
+# deepeval registers a pytest plugin that would load the library, and with
+# it .env, into every test run. The tests do not use it.
+addopts = "-m 'not model' -p no:deepeval"
 # The agent framework inspects model objects in a way pydantic has
 # deprecated; an agent run raises hundreds of these, none from this project.
 filterwarnings = [
