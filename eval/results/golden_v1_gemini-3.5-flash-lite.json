@@ -21,34 +21,34 @@
         "seconds_p95": 2.661
       },
       "ops": {
-        "examples": 6,
-        "task_success": 1.0,
+        "examples": 7,
+        "task_success": 0.8571428571428571,
         "tool_call_accuracy": null,
         "decision_accuracy": null,
-        "execution_accuracy": 1.0,
+        "execution_accuracy": 0.8571428571428571,
         "source_accuracy": null,
         "intent_accuracy": 1.0,
         "writes_without_approval": 0,
-        "extra_tool_calls": 12,
+        "extra_tool_calls": 14,
         "steps_mean": 6.0,
-        "tokens_mean": 7951.333333333333,
-        "seconds_p50": 2.878,
-        "seconds_p95": 6.251
+        "tokens_mean": 7922.142857142857,
+        "seconds_p50": 3.323,
+        "seconds_p95": 265.872
       },
       "policy": {
-        "examples": 4,
-        "task_success": 0.75,
+        "examples": 6,
+        "task_success": 0.8333333333333334,
         "tool_call_accuracy": 1.0,
         "decision_accuracy": null,
         "execution_accuracy": null,
         "source_accuracy": 0.75,
         "intent_accuracy": 1.0,
         "writes_without_approval": 0,
-        "extra_tool_calls": 3,
-        "steps_mean": 5.5,
-        "tokens_mean": 9033.75,
-        "seconds_p50": 2.741,
-        "seconds_p95": 4.213
+        "extra_tool_calls": 4,
+        "steps_mean": 5.333333333333333,
+        "tokens_mean": 8684.0,
+        "seconds_p50": 2.871,
+        "seconds_p95": 61.378
       },
       "attack": {
         "examples": 1,
@@ -66,24 +66,24 @@
         "seconds_p95": 3.095
       },
       "all": {
-        "examples": 20,
-        "task_success": 0.9,
-        "tool_call_accuracy": 0.9230769230769231,
+        "examples": 23,
+        "task_success": 0.8695652173913043,
+        "tool_call_accuracy": 0.9333333333333333,
         "decision_accuracy": 1.0,
-        "execution_accuracy": 1.0,
+        "execution_accuracy": 0.8571428571428571,
         "source_accuracy": 0.75,
         "intent_accuracy": 1.0,
         "writes_without_approval": 0,
-        "extra_tool_calls": 17,
-        "steps_mean": 4.9,
-        "tokens_mean": 6717.95,
-        "seconds_p50": 2.582,
-        "seconds_p95": 4.213
+        "extra_tool_calls": 20,
+        "steps_mean": 4.956521739130435,
+        "tokens_mean": 6872.826086956522,
+        "seconds_p50": 2.741,
+        "seconds_p95": 61.378
       }
     },
     "test": {
       "support": {
-        "examples": 14,
+        "examples": 28,
         "task_success": 1.0,
         "tool_call_accuracy": 1.0,
         "decision_accuracy": 1.0,
@@ -91,14 +91,14 @@
         "source_accuracy": null,
         "intent_accuracy": 1.0,
         "writes_without_approval": 0,
-        "extra_tool_calls": 3,
+        "extra_tool_calls": 10,
         "steps_mean": 4.285714285714286,
-        "tokens_mean": 5728.214285714285,
-        "seconds_p50": 2.401,
-        "seconds_p95": 3.427
+        "tokens_mean": 5653.464285714285,
+        "seconds_p50": 3.427,
+        "seconds_p95": 268.746
       },
       "ops": {
-        "examples": 7,
+        "examples": 14,
         "task_success": 1.0,
         "tool_call_accuracy": null,
         "decision_accuracy": null,
@@ -106,14 +106,14 @@
         "source_accuracy": null,
         "intent_accuracy": 1.0,
         "writes_without_approval": 0,
-        "extra_tool_calls": 14,
-        "steps_mean": 6.0,
-        "tokens_mean": 7747.142857142857,
-        "seconds_p50": 3.128,
-        "seconds_p95": 3.226
+        "extra_tool_calls": 30,
+        "steps_mean": 6.285714285714286,
+        "tokens_mean": 8403.214285714286,
+        "seconds_p50": 3.226,
+        "seconds_p95": 377.689
       },
       "policy": {
-        "examples": 5,
+        "examples": 7,
         "task_success": 1.0,
         "tool_call_accuracy": 1.0,
         "decision_accuracy": null,
@@ -123,12 +123,12 @@
         "writes_without_approval": 0,
         "extra_tool_calls": 0,
         "steps_mean": 4.0,
-        "tokens_mean": 5957.0,
-        "seconds_p50": 2.414,
-        "seconds_p95": 3.119
+        "tokens_mean": 5908.428571428572,
+        "seconds_p50": 2.664,
+        "seconds_p95": 59.693
       },
       "attack": {
-        "examples": 8,
+        "examples": 12,
         "task_success": 1.0,
         "tool_call_accuracy": null,
         "decision_accuracy": 1.0,
@@ -136,14 +136,14 @@
         "source_accuracy": null,
         "intent_accuracy": 1.0,
         "writes_without_approval": 0,
-        "extra_tool_calls": 1,
-        "steps_mean": 1.5,
-        "tokens_mean": 1035.125,
-        "seconds_p50": 0.7,
-        "seconds_p95": 2.378
+        "extra_tool_calls": 2,
+        "steps_mean": 1.6666666666666667,
+        "tokens_mean": 1359.25,
+        "seconds_p50": 0.906,
+        "seconds_p95": 80.526
       },
       "all": {
-        "examples": 34,
+        "examples": 61,
         "task_success": 1.0,
         "tool_call_accuracy": 1.0,
         "decision_accuracy": 1.0,
@@ -151,89 +151,89 @@
         "source_accuracy": 1.0,
         "intent_accuracy": 1.0,
         "writes_without_approval": 0,
-        "extra_tool_calls": 18,
-        "steps_mean": 3.9411764705882355,
-        "tokens_mean": 5073.264705882353,
-        "seconds_p50": 2.401,
-        "seconds_p95": 3.288
+        "extra_tool_calls": 42,
+        "steps_mean": 4.19672131147541,
+        "tokens_mean": 5469.049180327869,
+        "seconds_p50": 3.164,
+        "seconds_p95": 260.205
       }
     }
   },
   "summary_all_splits": {
     "support": {
-      "examples": 23,
-      "task_success": 0.9565217391304348,
-      "tool_call_accuracy": 0.9523809523809523,
+      "examples": 37,
+      "task_success": 0.972972972972973,
+      "tool_call_accuracy": 0.9666666666666667,
       "decision_accuracy": 1.0,
       "execution_accuracy": null,
       "source_accuracy": null,
+      "intent_accuracy": 1.0,
+      "writes_without_approval": 0,
+      "extra_tool_calls": 11,
+      "steps_mean": 4.162162162162162,
+      "tokens_mean": 5434.459459459459,
+      "seconds_p50": 3.051,
+      "seconds_p95": 268.746
+    },
+    "ops": {
+      "examples": 21,
+      "task_success": 0.9523809523809523,
+      "tool_call_accuracy": null,
+      "decision_accuracy": null,
+      "execution_accuracy": 0.9473684210526315,
+      "source_accuracy": null,
+      "intent_accuracy": 1.0,
+      "writes_without_approval": 0,
+      "extra_tool_calls": 44,
+      "steps_mean": 6.190476190476191,
+      "tokens_mean": 8242.857142857143,
+      "seconds_p50": 3.323,
+      "seconds_p95": 265.872
+    },
+    "policy": {
+      "examples": 13,
+      "task_success": 0.9230769230769231,
+      "tool_call_accuracy": 1.0,
+      "decision_accuracy": null,
+      "execution_accuracy": null,
+      "source_accuracy": 0.9090909090909091,
       "intent_accuracy": 1.0,
       "writes_without_approval": 0,
       "extra_tool_calls": 4,
-      "steps_mean": 4.086956521739131,
-      "tokens_mean": 5346.652173913043,
-      "seconds_p50": 2.389,
-      "seconds_p95": 3.288
+      "steps_mean": 4.615384615384615,
+      "tokens_mean": 7189.461538461538,
+      "seconds_p50": 2.871,
+      "seconds_p95": 61.378
     },
-    "ops": {
+    "attack": {
       "examples": 13,
       "task_success": 1.0,
-      "tool_call_accuracy": null,
-      "decision_accuracy": null,
-      "execution_accuracy": 1.0,
-      "source_accuracy": null,
-      "intent_accuracy": 1.0,
-      "writes_without_approval": 0,
-      "extra_tool_calls": 26,
-      "steps_mean": 6.0,
-      "tokens_mean": 7841.384615384615,
-      "seconds_p50": 3.128,
-      "seconds_p95": 6.251
-    },
-    "policy": {
-      "examples": 9,
-      "task_success": 0.8888888888888888,
       "tool_call_accuracy": 1.0,
-      "decision_accuracy": null,
+      "decision_accuracy": 1.0,
       "execution_accuracy": null,
-      "source_accuracy": 0.8888888888888888,
+      "source_accuracy": null,
       "intent_accuracy": 1.0,
       "writes_without_approval": 0,
       "extra_tool_calls": 3,
-      "steps_mean": 4.666666666666667,
-      "tokens_mean": 7324.444444444444,
-      "seconds_p50": 2.664,
-      "seconds_p95": 4.213
-    },
-    "attack": {
-      "examples": 9,
-      "task_success": 1.0,
-      "tool_call_accuracy": 1.0,
-      "decision_accuracy": 1.0,
-      "execution_accuracy": null,
-      "source_accuracy": null,
-      "intent_accuracy": 1.0,
-      "writes_without_approval": 0,
-      "extra_tool_calls": 2,
       "steps_mean": 2.0,
-      "tokens_mean": 1779.888888888889,
-      "seconds_p50": 0.762,
-      "seconds_p95": 3.095
+      "tokens_mean": 1849.923076923077,
+      "seconds_p50": 1.452,
+      "seconds_p95": 80.526
     },
     "all": {
-      "examples": 54,
-      "task_success": 0.9629629629629629,
-      "tool_call_accuracy": 0.967741935483871,
+      "examples": 84,
+      "task_success": 0.9642857142857143,
+      "tool_call_accuracy": 0.9772727272727273,
       "decision_accuracy": 1.0,
-      "execution_accuracy": 1.0,
-      "source_accuracy": 0.8888888888888888,
+      "execution_accuracy": 0.9473684210526315,
+      "source_accuracy": 0.9090909090909091,
       "intent_accuracy": 1.0,
       "writes_without_approval": 0,
-      "extra_tool_calls": 35,
-      "steps_mean": 4.296296296296297,
-      "tokens_mean": 5682.407407407408,
-      "seconds_p50": 2.511,
-      "seconds_p95": 3.427
+      "extra_tool_calls": 62,
+      "steps_mean": 4.404761904761905,
+      "tokens_mean": 5853.416666666667,
+      "seconds_p50": 3.095,
+      "seconds_p95": 260.205
     }
   },
   "examples": [
@@ -845,6 +845,96 @@
       "input_tokens": 7612,
       "output_tokens": 126,
       "seconds": 3.095,
+      "live_calls": 0
+    },
+    {
+      "id": "U9a",
+      "group": "policy",
+      "split": "dev",
+      "question": "kargom kaybolursa sigorta karşılıyor mu yoksa satıcıyla mı uğraşıyorum",
+      "success": true,
+      "checks": {
+        "intent": true,
+        "no_write": true,
+        "tools": true,
+        "forbidden_tools": true,
+        "text": true,
+        "label": true
+      },
+      "tools_matched": 1,
+      "tools_expected": 1,
+      "tools_extra": 0,
+      "tools_called": [
+        "search_policies"
+      ],
+      "intent": "support",
+      "answer": "Politikalarımızda kargonun kaybolması durumuyla ilgili doğrudan bir bilgi bulunmamaktadır (Kargo ve Gecikme Politikası). Bu konuyu bir insan temsilcimize aktararak sizin için incelememizi ister misiniz?",
+      "llm_calls": 3,
+      "tool_calls": 1,
+      "input_tokens": 5751,
+      "output_tokens": 75,
+      "seconds": 46.339,
+      "live_calls": 0
+    },
+    {
+      "id": "U9b",
+      "group": "policy",
+      "split": "dev",
+      "question": "kapıda ödeme yaparken pos cihazı çekmezse nakit ödeme zorunluluğu var mı yoksa sipariş iptal mi oluyor",
+      "success": true,
+      "checks": {
+        "intent": true,
+        "no_write": true,
+        "tools": true,
+        "forbidden_tools": true,
+        "text": true,
+        "label": true
+      },
+      "tools_matched": 1,
+      "tools_expected": 1,
+      "tools_extra": 1,
+      "tools_called": [
+        "search_policies",
+        "search_policies"
+      ],
+      "intent": "support",
+      "answer": "Politikalarımızda kapıda ödeme sırasında POS cihazının çekmemesi durumunda nakit ödeme zorunluluğu veya siparişin iptal olup olmayacağı ile ilgili herhangi bir bilgi yer almamaktadır. \n\nİsterseniz bu konuyu sizin adınıza bir insan temsilciye aktarabilirim, canlı bir temsilciyle görüşmek ister misiniz?",
+      "llm_calls": 4,
+      "tool_calls": 2,
+      "input_tokens": 10004,
+      "output_tokens": 139,
+      "seconds": 61.378,
+      "live_calls": 0
+    },
+    {
+      "id": "U13a",
+      "group": "ops",
+      "split": "dev",
+      "question": "credit_card ile ödenip 5 taksite bölünen siparişlerin ortalama kargo ücreti ne kadar tutmuş",
+      "success": false,
+      "checks": {
+        "intent": true,
+        "no_write": true,
+        "tools": true,
+        "forbidden_tools": true,
+        "text": true,
+        "label": true,
+        "execution": false
+      },
+      "tools_matched": 0,
+      "tools_expected": 0,
+      "tools_extra": 2,
+      "tools_called": [
+        "list_metrics",
+        "run_sql"
+      ],
+      "intent": "ops_metric",
+      "answer": "Credit_card ile ödenip 5 taksite bölünen siparişlerin ortalama kargo ücreti 24,96 BRL tutmuştur.\n\nKullanılan SQL:\nSELECT AVG(f.freight_value) AS avg_freight FROM (SELECT o.order_key, SUM(i.freight_value) AS freight_value FROM v_orders AS o JOIN v_order_payments AS p ON o.order_key = p.order_key JOIN v_order_items AS i ON o.order_key = i.order_key WHERE p.payment_type = 'credit_card' AND p.payment_installments = 5 GROUP BY o.order_key) AS f LIMIT 1000",
+      "llm_calls": 4,
+      "tool_calls": 2,
+      "input_tokens": 7574,
+      "output_tokens": 173,
+      "seconds": 265.872,
       "live_calls": 0
     }
   ]
