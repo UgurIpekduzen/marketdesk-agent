@@ -303,3 +303,33 @@ def test_final_rows_come_from_the_results_of_the_system(tmp_path):
 
 def test_no_final_rows_without_a_results_file(tmp_path):
     assert baselines.final_rows(tmp_path / "missing.json") == {}
+
+
+# --- The judge ---------------------------------------------------------------
+
+
+class StubJudge:
+    def __init__(self):
+        self.seen = []
+
+    def policy_answer(self, question, answer, documents=None):
+        self.seen.append((question, answer))
+        return {"faithfulness": 1.0, "helpfulness": 0.5}
+
+
+def test_judge_scores_the_policy_answers_of_the_baselines_only(run):
+    judge = StubJudge()
+
+    rows, _ = run(EXAMPLES, GOOD_SCRIPT, judge=judge)
+    summary = baselines.summarise_baselines(rows)
+
+    # B0 and B1 on the one policy example; not support, not B2.
+    assert judge.seen == [(POLICY_EXAMPLE["question"], GOOD_POLICY_ANSWER)] * 2
+    assert summary["B0 · policy"]["faithfulness"] == 1.0
+    assert summary["B1 · policy"]["helpfulness"] == 0.5
+    assert summary["B0 · support"]["faithfulness"] is None
+    assert summary["B2 · ops"]["helpfulness"] is None
+    table = baselines.markdown_table(summary).splitlines()
+    assert table[0].endswith("| Faithful | Helpful |")
+    assert table[3].endswith("| 1.00 | 0.50 |")
+    assert table[5].endswith("| — | — |")

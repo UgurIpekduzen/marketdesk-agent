@@ -504,3 +504,88 @@ def test_failed_dev_example_is_named(run):
 
     assert "Failed in dev: P" in text
     assert "Failed in test" not in text
+
+
+# --- The judge ---------------------------------------------------------------
+
+
+class StubJudge:
+    """Stands in for the judge: fixed scores, and a record of what it saw."""
+
+    def __init__(self):
+        self.seen = []
+
+    def policy_answer(self, question, answer, documents=None):
+        self.documents = documents
+        self.seen.append(("policy", question, answer))
+        return {"faithfulness": 0.5, "helpfulness": 1.0}
+
+    def ops_answer(self, question, answer):
+        self.seen.append(("ops", question, answer))
+        return {"no_causal_claim": 1.0}
+
+
+def judged_run(synthetic_db_path, fake_policy_index, tmp_path, examples, judge):
+    llm = CachedLLM(inner=FakeLLM(script=list(GOOD_SCRIPT)), cache_dir=tmp_path / "c")
+    return run_eval.run(
+        examples,
+        synthetic_db_path,
+        fake_policy_index,
+        llm,
+        report=lambda line: None,
+        judge=judge,
+    )
+
+
+def test_judge_scores_policy_and_ops_answers_and_leaves_support_alone(
+    synthetic_db_path, fake_policy_index, tmp_path
+):
+    judge = StubJudge()
+    examples = [SUPPORT_EXAMPLE, OPS_EXAMPLE, POLICY_EXAMPLE]
+
+    rows = judged_run(synthetic_db_path, fake_policy_index, tmp_path, examples, judge)
+
+    assert [kind for kind, _, _ in judge.seen] == ["ops", "policy"]
+    assert rows[0]["judge"] == {}
+    assert rows[1]["judge"] == {"no_causal_claim": 1.0}
+    assert rows[2]["judge"] == {"faithfulness": 0.5, "helpfulness": 1.0}
+    # The judge reads the question and the answer as the person saw them.
+    assert judge.seen[1][1] == POLICY_EXAMPLE["question"]
+    assert "14 takvim günü" in judge.seen[1][2]
+    # ... against the document its source names.
+    assert judge.documents == ["İade Politikası"]
+
+
+def test_documents_of_an_example_come_from_its_sources():
+    several = {"source": ["İade Politikası, Bölüm 7", "İptal Politikası, Bölüm 5"]}
+
+    assert run_eval.source_documents(POLICY_EXAMPLE) == ["İade Politikası"]
+    assert run_eval.source_documents(several) == ["İade Politikası", "İptal Politikası"]
+    assert run_eval.source_documents({"question": "x"}) is None
+
+
+def test_judge_scores_are_averaged_in_the_summary_and_shown_in_the_table(
+    synthetic_db_path, fake_policy_index, tmp_path
+):
+    examples = [SUPPORT_EXAMPLE, OPS_EXAMPLE, POLICY_EXAMPLE]
+    rows = judged_run(
+        synthetic_db_path, fake_policy_index, tmp_path, examples, StubJudge()
+    )
+
+    summary = run_eval.summarise_by_group(rows)
+
+    assert summary["policy"]["faithfulness"] == 0.5
+    assert summary["policy"]["helpfulness"] == 1.0
+    assert summary["ops"]["no_causal_claim"] == 1.0
+    assert summary["support"]["faithfulness"] is None
+    table = run_eval.markdown_table(summary).splitlines()
+    assert table[0].endswith("| Faithful | Helpful | No causal claim |")
+    assert table[2].endswith("| — | — | — |")
+    assert table[4].endswith("| 0.50 | 1.00 | — |")
+
+
+def test_run_without_a_judge_has_dashes_in_the_judge_columns(run):
+    rows, _ = run([POLICY_EXAMPLE], GOOD_SCRIPT[7:])
+
+    assert "judge" not in rows[0]
+    assert run_eval.summarise(rows)["faithfulness"] is None

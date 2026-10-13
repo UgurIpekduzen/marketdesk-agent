@@ -22,6 +22,11 @@ LLM_USE_FALLBACK = False
 # question gives the same answer, which the evaluation needs.
 LLM_TEMPERATURE = 0
 
+# The model that scores free-text answers in the evaluation. The same
+# provider as the main model, so the evaluation stays on the free tier.
+JUDGE_PROVIDER = "gemini"
+JUDGE_MODEL = "gemini-3.5-flash-lite"
+
 # List price of the main model in USD per million tokens, used only to
 # estimate what a traced model call would cost; the free tier costs
 # nothing. None leaves the estimate out. Not set: the price has to be

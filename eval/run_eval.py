@@ -2,6 +2,7 @@
 
 Usage:  python eval/run_eval.py [--db data/marketdesk.db] [--only S1,O2]
                                 [--pause 20] [--no-cache] [--show-test]
+                                [--judge]
 
 Every example goes through the router, as a real message would, on a
 temporary copy of the database, so nothing is written to the real one.
@@ -34,7 +35,11 @@ sys.path.insert(0, str(PROJECT_ROOT))
 import config
 from eval import scoring
 from eval.llm_cache import DEFAULT_CACHE_DIR, CachedLLM
-from src.guardrails.guarded_llm import build_provider_llm, configured_model
+from src.guardrails.guarded_llm import (
+    build_judge_provider_llm,
+    build_provider_llm,
+    configured_model,
+)
 from src.knowledge.embedding import load_embedder
 from src.knowledge.policy_index import PolicyIndex
 from src.mcp_server.client import OrdersClient
@@ -219,6 +224,35 @@ def score(example: dict, prepared: dict, answer, requests_after: int) -> dict:
     }
 
 
+def source_documents(example: dict) -> list[str] | None:
+    """Titles of the policy documents an example's sources belong to."""
+    if "source" not in example:
+        return None
+    sources = example["source"]
+    sources = sources if isinstance(sources, list) else [sources]
+    # A citation reads "<document title>, Bölüm <number>".
+    return sorted({source.rsplit(",", 1)[0] for source in sources})
+
+
+def judged(judge, example: dict, answer: str) -> dict:
+    """The judge's scores for an answer; empty for groups it does not score."""
+    if example["group"] == "policy":
+        return judge.policy_answer(
+            example["question"], answer, source_documents(example)
+        )
+    if example["group"] == "ops":
+        return judge.ops_answer(example["question"], answer)
+    return {}
+
+
+def judge_mean(rows: list[dict], name: str) -> float | None:
+    """The mean of one judge score over the rows that have it."""
+    scores = [
+        row["judge"][name] for row in rows if row.get("judge", {}).get(name) is not None
+    ]
+    return sum(scores) / len(scores) if scores else None
+
+
 def summarise(rows: list[dict]) -> dict:
     """The numbers of the result table, for one group or for all."""
 
@@ -241,6 +275,9 @@ def summarise(rows: list[dict]) -> dict:
         "execution_accuracy": check_rate("execution"),
         "source_accuracy": check_rate("source"),
         "intent_accuracy": check_rate("intent"),
+        "faithfulness": judge_mean(rows, "faithfulness"),
+        "helpfulness": judge_mean(rows, "helpfulness"),
+        "no_causal_claim": judge_mean(rows, "no_causal_claim"),
         "writes_without_approval": sum(not row["checks"]["no_write"] for row in rows),
         "extra_tool_calls": sum(row["tools_extra"] for row in rows),
         "steps_mean": sum(row["llm_calls"] + row["tool_calls"] for row in rows)
@@ -298,11 +335,17 @@ def show(value: float | None, percent: bool = True) -> str:
     return f"{value * 100:.0f}%" if percent else f"{value:.1f}"
 
 
+def show_score(value: float | None) -> str:
+    """A judge score between 0 and 1; a dash when nothing was judged."""
+    return "—" if value is None else f"{value:.2f}"
+
+
 def markdown_table(summary: dict) -> str:
     header = (
         "| Group | n | Task success | Tool-call accuracy | Decision | SQL execution "
-        "| Source | Intent | Steps | Tokens | p50 s | p95 s |\n"
-        "|---|---|---|---|---|---|---|---|---|---|---|---|"
+        "| Source | Intent | Steps | Tokens | p50 s | p95 s "
+        "| Faithful | Helpful | No causal claim |\n"
+        "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"
     )
     lines = [header]
     for name, numbers in summary.items():
@@ -316,7 +359,10 @@ def markdown_table(summary: dict) -> str:
             f"| {show(numbers['steps_mean'], percent=False)} "
             f"| {numbers['tokens_mean']:.0f} "
             f"| {show(numbers['seconds_p50'], percent=False)} "
-            f"| {show(numbers['seconds_p95'], percent=False)} |"
+            f"| {show(numbers['seconds_p95'], percent=False)} "
+            f"| {show_score(numbers['faithfulness'])} "
+            f"| {show_score(numbers['helpfulness'])} "
+            f"| {show_score(numbers['no_causal_claim'])} |"
         )
     return "\n".join(lines)
 
@@ -329,10 +375,13 @@ def run(
     pause: float = 0.0,
     report=print,
     show_test: bool = False,
+    judge=None,
 ) -> list[dict]:
     """Run and score the examples one after another.
 
     The outcome of a test example is not reported unless show_test is set.
+    With a judge, policy answers are also scored for faithfulness and
+    helpfulness and ops answers for causal claims.
     """
     # The run works on a copy of the database, so it may write to it.
     conn = sqlite3.connect(db_path)
@@ -343,6 +392,8 @@ def run(
             seconds_before, live_before = llm.seconds, llm.live_calls
             answer = asyncio.run(ask(example, prepared, db_path, index, llm))
             row = score(example, prepared, answer, request_count(conn))
+            if judge is not None:
+                row["judge"] = judged(judge, example, answer.display)
             # Time spent in model calls: the real time of each call, also
             # when the answer came from the cache.
             row["seconds"] = round(llm.seconds - seconds_before, 3)
@@ -364,6 +415,14 @@ def run(
     return rows
 
 
+def build_judge(cache_dir: Path):
+    """The judge on the judge model, behind the same response cache."""
+    # Imported here: only a judged run needs the judge's library.
+    from eval.judge import Judge
+
+    return Judge(CachedLLM(inner=build_judge_provider_llm(), cache_dir=cache_dir))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--db", type=Path, default=DEFAULT_DB_PATH)
@@ -379,6 +438,11 @@ def main() -> int:
         "--show-test",
         action="store_true",
         help="print the outcome of each test example (they then belong in dev)",
+    )
+    parser.add_argument(
+        "--judge",
+        action="store_true",
+        help="also score policy and ops answers with the judge model (more quota)",
     )
     args = parser.parse_args()
 
@@ -396,7 +460,16 @@ def main() -> int:
         db_copy = Path(folder) / "eval.db"
         shutil.copy(args.db, db_copy)
         print(f"Provider: {provider}   Model: {model}   Examples: {len(examples)}\n")
-        rows = run(examples, db_copy, index, llm, args.pause, show_test=args.show_test)
+        judge = build_judge(cache_dir) if args.judge else None
+        rows = run(
+            examples,
+            db_copy,
+            index,
+            llm,
+            args.pause,
+            show_test=args.show_test,
+            judge=judge,
+        )
 
     summary = summarise_by_split(rows)
     text = results_text(summary, rows)
@@ -411,6 +484,7 @@ def main() -> int:
             "provider": provider,
             "model": model,
             "temperature": config.LLM_TEMPERATURE,
+            "judge_model": config.JUDGE_MODEL if args.judge else None,
             "summary": summary,
             # Per group over both splits, for the comparison with the baselines.
             "summary_all_splits": summarise_by_group(rows),

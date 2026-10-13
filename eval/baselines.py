@@ -2,6 +2,7 @@
 
 Usage:  python eval/baselines.py [--db data/marketdesk.db] [--only P1,O2]
                                  [--pause 12] [--no-cache] [--show-test]
+                                 [--judge]
 
 Each baseline is one model call per example, with no tools:
 
@@ -42,8 +43,12 @@ from eval.run_eval import (
     DEFAULT_DB_PATH,
     GOLDEN_SET,
     RESULTS_DIR,
+    build_judge,
+    judge_mean,
     load_golden,
     show,
+    show_score,
+    source_documents,
 )
 from src.agents.run_log import token_usage
 from src.guardrails.guarded_llm import (
@@ -255,7 +260,8 @@ async def run_example(
         "id": example["id"],
         "group": example["group"],
         "split": example.get("split", "dev"),
-        "answer": answer[:600],
+        # Long enough to hold a whole policy answer, which the judge reads.
+        "answer": answer[:2000],
         "tokens": tokens,
         **row,
     }
@@ -269,8 +275,13 @@ def run(
     pause: float = 0.0,
     report=print,
     show_test: bool = False,
+    judge=None,
 ) -> list[dict]:
-    """Run every baseline on the examples of its groups."""
+    """Run every baseline on the examples of its groups.
+
+    With a judge, the policy answers are also scored for faithfulness and
+    helpfulness.
+    """
     rows = []
     for baseline, groups in BASELINES.items():
         for example in examples:
@@ -282,6 +293,10 @@ def run(
             seconds_before, live_before = llm.seconds, llm.live_calls
             row = asyncio.run(run_example(baseline, example, db_path, index, llm))
             row["seconds"] = round(llm.seconds - seconds_before, 3)
+            if judge is not None and example["group"] == "policy":
+                row["judge"] = judge.policy_answer(
+                    example["question"], row["answer"], source_documents(example)
+                )
             rows.append(row)
             if row["split"] == "test" and not show_test:
                 report(f"{baseline} {row['id']:>3}  held out")
@@ -313,6 +328,8 @@ def summarise(rows: list[dict]) -> dict:
         "made_up_rate": scoring.rate(
             [row["made_up"] for row in rows if "made_up" in row]
         ),
+        "faithfulness": judge_mean(rows, "faithfulness"),
+        "helpfulness": judge_mean(rows, "helpfulness"),
         "steps_mean": 1.0,
         "tokens_mean": sum(row["tokens"] for row in rows) / len(rows),
         "seconds_p50": scoring.percentile(seconds, 50),
@@ -343,7 +360,13 @@ def final_rows(results_path: Path) -> dict:
         "summary_all_splits", {}
     )
     return {
-        f"Final · {group}": {"made_up_rate": None, **numbers}
+        f"Final · {group}": {
+            "made_up_rate": None,
+            # Missing in a results file written without the judge.
+            "faithfulness": None,
+            "helpfulness": None,
+            **numbers,
+        }
         for group, numbers in groups.items()
         if group != "all"
     }
@@ -353,9 +376,9 @@ def markdown_table(summary: dict) -> str:
     lines = [
         (
             "| System · group | n | Task success | SQL execution | Source "
-            "| Made up | Steps | Tokens | p50 s | p95 s |"
+            "| Made up | Steps | Tokens | p50 s | p95 s | Faithful | Helpful |"
         ),
-        "|---|---|---|---|---|---|---|---|---|---|",
+        "|---|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     for name, numbers in summary.items():
         lines.append(
@@ -366,7 +389,9 @@ def markdown_table(summary: dict) -> str:
             f"| {show(numbers['steps_mean'], percent=False)} "
             f"| {numbers['tokens_mean']:.0f} "
             f"| {show(numbers['seconds_p50'], percent=False)} "
-            f"| {show(numbers['seconds_p95'], percent=False)} |"
+            f"| {show(numbers['seconds_p95'], percent=False)} "
+            f"| {show_score(numbers['faithfulness'])} "
+            f"| {show_score(numbers['helpfulness'])} |"
         )
     return "\n".join(lines)
 
@@ -387,6 +412,11 @@ def main() -> int:
         action="store_true",
         help="print the outcome of each test example (they then belong in dev)",
     )
+    parser.add_argument(
+        "--judge",
+        action="store_true",
+        help="also score the policy answers with the judge model (more quota)",
+    )
     args = parser.parse_args()
 
     examples = load_golden(args.golden)
@@ -400,7 +430,16 @@ def main() -> int:
         cache_dir = Path(folder) / "cache" if args.no_cache else DEFAULT_CACHE_DIR
         llm = CachedLLM(inner=build_provider_llm(), cache_dir=cache_dir)
         print(f"Provider: {provider}   Model: {model}\n")
-        rows = run(examples, args.db, index, llm, args.pause, show_test=args.show_test)
+        judge = build_judge(cache_dir) if args.judge else None
+        rows = run(
+            examples,
+            args.db,
+            index,
+            llm,
+            args.pause,
+            show_test=args.show_test,
+            judge=judge,
+        )
 
     name = model.replace("/", "_")
     summary = summarise_baselines(rows)

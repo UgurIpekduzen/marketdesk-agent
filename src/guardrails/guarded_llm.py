@@ -134,9 +134,12 @@ def configured_model() -> tuple[str, str]:
     return config.LLM_PROVIDER, config.LLM_MODEL
 
 
-def build_provider_llm() -> FunctionCallingLLM:
-    """Create the provider's model named in config.py."""
-    provider, model = configured_model()
+def build_provider_llm(
+    provider: str | None = None, model: str | None = None
+) -> FunctionCallingLLM:
+    """Create a provider's model: by default the one config.py names."""
+    if provider is None or model is None:
+        provider, model = configured_model()
     if provider not in API_KEY_VARIABLES:
         raise ValueError(f"unknown LLM provider in config.py: {provider!r}")
     api_key = os.environ[API_KEY_VARIABLES[provider]]
@@ -151,6 +154,11 @@ def build_provider_llm() -> FunctionCallingLLM:
     from llama_index.llms.groq import Groq
 
     return Groq(model=model, api_key=api_key, temperature=config.LLM_TEMPERATURE)
+
+
+def build_judge_provider_llm() -> FunctionCallingLLM:
+    """The provider's model that scores answers in the evaluation."""
+    return build_provider_llm(config.JUDGE_PROVIDER, config.JUDGE_MODEL)
 
 
 def build_llm(redactor: Redactor | None = None) -> GuardedLLM:
