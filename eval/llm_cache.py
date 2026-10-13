@@ -12,8 +12,10 @@ call took, so a run answered from the cache reports the same cost as the
 run that filled it.
 """
 
+import asyncio
 import hashlib
 import json
+import logging
 import time
 from collections.abc import Sequence
 from pathlib import Path
@@ -26,7 +28,18 @@ from pydantic import ConfigDict, Field
 import config
 from src.agents.run_log import token_usage
 
+logger = logging.getLogger(__name__)
+
 DEFAULT_CACHE_DIR = Path(__file__).resolve().parent / "cache"
+# Marks, lower case, of an error that passes by itself: the provider is
+# overloaded or the rate limit of the minute is used up.
+TRANSIENT_MARKS = ("503", "unavailable", "overloaded", "429", "resource_exhausted")
+
+
+def is_transient(failure: BaseException) -> bool:
+    """Whether an error of the provider is worth waiting out."""
+    text = f"{type(failure).__name__} {failure}".lower()
+    return any(mark in text for mark in TRANSIENT_MARKS)
 
 
 class CachedLLM(FunctionCallingLLM):
@@ -38,6 +51,9 @@ class CachedLLM(FunctionCallingLLM):
     hits: int = 0
     live_calls: int = 0
     seconds: float = 0.0
+    # A busy provider is asked again this many times, this far apart.
+    retries: int = 4
+    retry_seconds: float = 30.0
 
     @classmethod
     def class_name(cls) -> str:
@@ -87,8 +103,7 @@ class CachedLLM(FunctionCallingLLM):
         key = self._key(messages, kwargs)
         entry = self._load(key)
         if entry is None:
-            started = time.perf_counter()
-            response = await self.inner.achat(messages, **kwargs)
+            response, started = await self._call_with_retries(messages, kwargs)
             input_tokens, output_tokens = token_usage(response.raw)
             entry = {
                 "message": response.message.model_dump(mode="json"),
@@ -101,6 +116,30 @@ class CachedLLM(FunctionCallingLLM):
         else:
             self.hits += 1
         return self._from_entry(entry)
+
+    async def _call_with_retries(
+        self, messages: Sequence[ChatMessage], kwargs: dict
+    ) -> tuple[ChatResponse, float]:
+        """Call the provider; wait and try again when it is only busy.
+
+        Returns the response and when the attempt that got it started, so
+        the waiting is not counted as the model's time.
+        """
+        for attempt in range(self.retries + 1):
+            started = time.perf_counter()
+            try:
+                return await self.inner.achat(messages, **kwargs), started
+            except Exception as failure:
+                if attempt == self.retries or not is_transient(failure):
+                    raise
+                logger.warning(
+                    "provider is busy (attempt %d of %d), waiting %.0f s",
+                    attempt + 1,
+                    self.retries + 1,
+                    self.retry_seconds,
+                )
+                await asyncio.sleep(self.retry_seconds)
+        raise AssertionError("unreachable")
 
     async def astream_chat(self, messages: Sequence[ChatMessage], **kwargs: Any):
         # One whole response instead of pieces: a cached answer has no pieces.

@@ -7,6 +7,7 @@ from llama_index.core.agent.workflow import FunctionAgent
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.tools import FunctionTool
 from llama_index.core.workflow import Context
+from pydantic import Field
 
 import config
 from eval.llm_cache import CachedLLM
@@ -148,3 +149,67 @@ def test_calls_that_would_go_round_the_cache_are_refused(cached):
         cached.chat([user("merhaba")])
     with pytest.raises(NotImplementedError):
         cached.complete("merhaba")
+
+
+# --- A busy provider is asked again ----------------------------------------
+
+
+class BusyThenFine(FakeLLM):
+    """Fails with the given errors, one per call, then answers."""
+
+    failures: list = Field(default_factory=list)
+
+    async def achat(self, messages, **kwargs):
+        if self.failures:
+            raise self.failures.pop(0)
+        return await super().achat(messages, **kwargs)
+
+
+def busy(tmp_path, failures, **options):
+    inner = BusyThenFine(script=["tamam"], failures=list(failures))
+    return CachedLLM(
+        inner=inner, cache_dir=tmp_path / "cache", retry_seconds=0, **options
+    )
+
+
+def test_busy_provider_is_asked_again_until_it_answers(tmp_path, caplog):
+    errors = [
+        RuntimeError("503 UNAVAILABLE. high demand"),
+        RuntimeError("429 RESOURCE_EXHAUSTED"),
+    ]
+    cached = busy(tmp_path, errors)
+
+    with caplog.at_level("WARNING"):
+        response = chat(cached, "merhaba")
+
+    assert response.message.content == "tamam"
+    assert cached.live_calls == 1
+    assert caplog.text.count("provider is busy") == 2
+
+
+def test_provider_that_stays_busy_fails_after_the_last_try(tmp_path):
+    cached = busy(tmp_path, [RuntimeError("503 UNAVAILABLE")] * 3, retries=2)
+
+    with pytest.raises(RuntimeError, match="503"):
+        chat(cached, "merhaba")
+
+    assert cached.live_calls == 0
+
+
+def test_other_errors_are_not_retried(tmp_path):
+    cached = busy(tmp_path, [ValueError("400 INVALID_ARGUMENT"), RuntimeError("503")])
+
+    with pytest.raises(ValueError, match="400"):
+        chat(cached, "merhaba")
+
+    # The second error was never reached: there was no second call.
+    assert len(cached.inner.failures) == 1
+
+
+def test_waiting_is_not_counted_as_model_time(tmp_path):
+    cached = busy(tmp_path, [RuntimeError("503 UNAVAILABLE")])
+    cached.retry_seconds = 0.2
+
+    chat(cached, "merhaba")
+
+    assert cached.seconds < 0.2
