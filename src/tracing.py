@@ -4,7 +4,7 @@ setup_tracing() switches it on for the target chosen in config.py:
 
 - "off": nothing is recorded or sent;
 - "phoenix": to the local Phoenix container;
-- "langfuse": to Langfuse Cloud, without the text of inputs and outputs.
+- "langfuse": to Langfuse Cloud, with only the attributes on an allowlist.
 
 The spans of the agent steps, model calls and tool calls come from the
 OpenInference instrumentation of LlamaIndex. The project adds what
@@ -16,7 +16,10 @@ its spans the current context, so that span starts a trace of its own.
 Whatever the target, every span passes MaskingExporter on its way out.
 Raw ids become short keyed hashes, e-mail addresses, phone numbers and the
 known personal values of the sessions are masked, and the values of the
-secret environment variables are removed.
+secret environment variables are removed. A hosted target then gets only
+the attributes on HOSTED_ATTRIBUTES and the project's own: no message,
+tool argument or tool result, no event detail and no error text. An
+attribute nobody has thought about stays in this process.
 """
 
 import base64
@@ -26,7 +29,6 @@ import os
 from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
 
-from openinference.instrumentation import TraceConfig
 from openinference.instrumentation.llama_index import LlamaIndexInstrumentor
 from opentelemetry import trace
 from opentelemetry.sdk.resources import Resource
@@ -63,6 +65,20 @@ SPAN_KIND = "openinference.span.kind"
 # Prefix of the attributes the project adds itself.
 OWN_PREFIX = "marketdesk."
 COST_ATTRIBUTE = f"{OWN_PREFIX}cost_usd_estimate"
+# All a hosted target receives of a span, besides the project's own
+# attributes: what kind of step it was, which tool or model, and the tokens.
+HOSTED_ATTRIBUTES = frozenset(
+    {
+        SPAN_KIND,
+        "tool.name",
+        "llm.model_name",
+        "llm.provider",
+        "llm.system",
+        INPUT_TOKENS,
+        OUTPUT_TOKENS,
+        "llm.token_count.total",
+    }
+)
 
 # Personal values of the sessions seen by this process (city, zip code
 # prefix), with the mask for each. Sessions add to it when they start.
@@ -156,16 +172,35 @@ def own_attributes(attributes: Mapping) -> dict:
     }
 
 
-def masked(span: ReadableSpan) -> ReadableSpan:
-    """A copy of a finished span with every text cleaned."""
+def allowed_for_hosted(attributes: Mapping) -> dict:
+    """The attributes a hosted target may receive."""
+    return {
+        key: value
+        for key, value in attributes.items()
+        if key in HOSTED_ATTRIBUTES or key.startswith(OWN_PREFIX)
+    }
+
+
+def masked(span: ReadableSpan, hosted: bool = False) -> ReadableSpan:
+    """A copy of a finished span with every text cleaned.
+
+    For a hosted target only the allowed attributes are kept, events lose
+    their details and the status its description. The project's own
+    attributes are read from the full span first, so the decision of a
+    tool still arrives when its answer does not.
+    """
     attributes = scrub_attributes(
         {**span.attributes, **own_attributes(span.attributes)}
     )
     cost = estimated_cost(attributes)
     if cost is not None:
         attributes[COST_ATTRIBUTE] = round(cost, 8)
+    if hosted:
+        attributes = allowed_for_hosted(attributes)
     status = span.status
-    if status.description:
+    if hosted:
+        status = Status(status.status_code)
+    elif status.description:
         status = Status(status.status_code, scrub(status.description))
     return ReadableSpan(
         name=scrub(span.name),
@@ -175,7 +210,9 @@ def masked(span: ReadableSpan) -> ReadableSpan:
         attributes=attributes,
         events=[
             Event(
-                scrub(event.name), scrub_attributes(event.attributes), event.timestamp
+                scrub(event.name),
+                {} if hosted else scrub_attributes(event.attributes),
+                event.timestamp,
             )
             for event in span.events
         ],
@@ -191,11 +228,12 @@ def masked(span: ReadableSpan) -> ReadableSpan:
 class MaskingExporter(SpanExporter):
     """Cleans every span, then hands it to the real exporter."""
 
-    def __init__(self, inner: SpanExporter) -> None:
+    def __init__(self, inner: SpanExporter, hosted: bool = False) -> None:
         self._inner = inner
+        self._hosted = hosted
 
     def export(self, spans: Sequence[ReadableSpan]) -> SpanExportResult:
-        return self._inner.export([masked(span) for span in spans])
+        return self._inner.export([masked(span, self._hosted) for span in spans])
 
     def shutdown(self) -> None:
         self._inner.shutdown()
@@ -228,14 +266,9 @@ def target_exporter(target: str) -> SpanExporter:
     return OTLPSpanExporter(endpoint=endpoint, headers=headers)
 
 
-def trace_config(target: str) -> TraceConfig:
-    """What the instrumentation may record for a target.
-
-    Phoenix runs on this machine, so it gets the (masked) texts. Anything
-    hosted elsewhere gets the steps, times and token counts only.
-    """
-    local = target == "phoenix"
-    return TraceConfig(hide_inputs=not local, hide_outputs=not local)
+def is_hosted(target: str) -> bool:
+    """Whether a target runs outside this machine."""
+    return target != "phoenix"
 
 
 def setup_tracing(
@@ -251,13 +284,15 @@ def setup_tracing(
     target = config.TRACING_TARGET if target is None else target
     if target == "off":
         return None
-    exporter = MaskingExporter(exporter or target_exporter(target))
+    exporter = MaskingExporter(
+        exporter or target_exporter(target), hosted=is_hosted(target)
+    )
     provider = TracerProvider(resource=Resource({"service.name": SERVICE_NAME}))
     processor = BatchSpanProcessor if batch else SimpleSpanProcessor
     provider.add_span_processor(processor(exporter))
-    LlamaIndexInstrumentor().instrument(
-        tracer_provider=provider, config=trace_config(target)
-    )
+    # The instrumentation records everything; what may leave is decided in
+    # MaskingExporter, after the project's own attributes are read.
+    LlamaIndexInstrumentor().instrument(tracer_provider=provider)
     global _provider
     _provider = provider
     logger.info("tracing is on, target=%s", target)

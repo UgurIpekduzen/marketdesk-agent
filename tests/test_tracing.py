@@ -272,6 +272,12 @@ def test_tracing_is_off_unless_switched_on_in_the_settings():
     assert config.TRACING_TARGET == "off"
 
 
+def test_only_a_local_target_counts_as_local():
+    assert not tracing.is_hosted("phoenix")
+    assert tracing.is_hosted("langfuse")
+    assert tracing.is_hosted("anything else")
+
+
 def test_hosted_target_gets_no_message_text(
     traced, synthetic_db_path, fake_policy_index
 ):
@@ -283,8 +289,57 @@ def test_hosted_target_gets_no_message_text(
     text = dump(exporter)
     assert "Gizli soru metni" not in text
     assert "Gizli cevap metni" not in text
+    # Not the tool's arguments or its whole answer either; the order status
+    # arrives only as the project's own attribute.
+    assert "o_day14" not in text
+    assert "output.value" not in text
+    assert "input.value" not in text
     # Steps and tool names still arrive.
     assert "get_order_status" in text
+
+
+def test_hosted_target_gets_only_allowed_attributes(
+    traced, synthetic_db_path, fake_policy_index
+):
+    exporter = traced("langfuse")
+    script = [[("get_order_status", {"order_ref": "o_day14"})], "Teslim edildi."]
+
+    support_run(synthetic_db_path, fake_policy_index, script, "o_day14 nerede?")
+
+    for span in exporter.get_finished_spans():
+        for key in span.attributes:
+            assert key in tracing.HOSTED_ATTRIBUTES or key.startswith(
+                tracing.OWN_PREFIX
+            ), key
+
+
+def test_hosted_target_still_gets_the_rule_decision(
+    traced, synthetic_db_path, fake_policy_index
+):
+    exporter = traced("langfuse")
+    script = [
+        [("check_return_eligibility", {"order_ref": "o_day14", "reason": "damaged"})],
+        "Uygun.",
+    ]
+
+    support_run(synthetic_db_path, fake_policy_index, script, "o_day14 hasarlı geldi")
+
+    attributes = tool_spans(exporter)[0].attributes
+    assert attributes["tool.name"] == "check_return_eligibility"
+    assert attributes["marketdesk.decision"] == "ELIGIBLE"
+    assert attributes["marketdesk.rule"] == "R7"
+
+
+def test_hosted_target_gets_no_event_detail_or_error_text(traced):
+    exporter = traced("langfuse")
+
+    with pytest.raises(RuntimeError), tracing.span("lookup") as current:
+        current.add_event("note", {"text": "Gizli olay metni"})
+        raise RuntimeError("Gizli hata metni")
+
+    (exported,) = exporter.get_finished_spans()
+    assert "Gizli" not in exported.to_json()
+    assert not exported.status.description
 
 
 def test_local_target_gets_the_masked_text(
