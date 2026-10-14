@@ -302,6 +302,9 @@ def summarise(rows: list[dict]) -> dict:
         / len(rows),
         "tokens_mean": sum(row["input_tokens"] + row["output_tokens"] for row in rows)
         / len(rows),
+        # Apart, because the two are priced differently.
+        "input_tokens_mean": sum(row["input_tokens"] for row in rows) / len(rows),
+        "output_tokens_mean": sum(row["output_tokens"] for row in rows) / len(rows),
         "seconds_p50": scoring.percentile(seconds, 50),
         "seconds_p95": scoring.percentile(seconds, 95),
     }
