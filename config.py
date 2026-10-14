@@ -95,3 +95,12 @@ TRACING_TARGET = "off"
 # "phoenix" is the service name inside the Compose network.
 TRACING_PHOENIX_ENDPOINT = "http://phoenix:6006/v1/traces"
 TRACING_LANGFUSE_ENDPOINT = "https://cloud.langfuse.com/api/public/otel/v1/traces"
+
+# --- Demo page ----------------------------------------------------------
+
+# A chat session nobody has used for this long is closed, and with it its
+# order server process: a visitor who closes the tab leaves one behind.
+SESSION_IDLE_MINUTES = 15
+# At most this many chat sessions are open at once. Each customer session
+# runs an order server process of about 74 MB; the platform allows 3 GB.
+MAX_OPEN_SESSIONS = 20

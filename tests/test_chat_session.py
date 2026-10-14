@@ -156,6 +156,15 @@ async def _divide():
     return 1 / 0
 
 
+def test_each_question_marks_the_session_as_used(open_session):
+    session = open_session(["support", "Merhaba."])
+    session.last_used = 0.0
+
+    session.ask("Merhaba")
+
+    assert session.last_used > 0.0
+
+
 def test_closing_ends_the_thread_and_refuses_more_work(open_session):
     session = open_session([])
     thread = session._thread

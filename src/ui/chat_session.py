@@ -14,6 +14,7 @@ that task, which closes the connection and with it the server process.
 import asyncio
 import logging
 import threading
+import time
 import weakref
 from collections.abc import Awaitable, Callable
 from concurrent.futures import Future
@@ -65,6 +66,8 @@ class ChatSession:
         self._customer = customer_unique_id
         self._provider_llm = provider_llm
         self._closed = False
+        # When the session was last given work, on the monotonic clock.
+        self.last_used = time.monotonic()
 
         self._loop = asyncio.new_event_loop()
         self._jobs: asyncio.Queue = asyncio.Queue()
@@ -129,6 +132,7 @@ class ChatSession:
         """Run a job on the session's task and wait for what it returns."""
         if self._closed:
             raise SessionClosed("the chat session is closed")
+        self.last_used = time.monotonic()
         done: Future = Future()
         self._loop.call_soon_threadsafe(self._jobs.put_nowait, (job, done))
         return done.result(timeout=ANSWER_TIMEOUT_SECONDS)
