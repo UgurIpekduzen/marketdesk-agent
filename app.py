@@ -16,6 +16,7 @@ import config
 from src import messages, tracing
 from src.ui import resources
 from src.ui.chat_session import ChatSession
+from src.ui.session_pool import SessionPool
 from src.ui.view import AnswerView, approval_card, friendly_error, view_of
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -26,6 +27,14 @@ def start_tracing() -> bool:
     """Once per server process; does nothing while the target is "off"."""
     tracing.setup_tracing()
     return True
+
+
+@st.cache_resource
+def session_pool() -> SessionPool:
+    """One per server process: closes idle sessions, caps open ones."""
+    pool = SessionPool(config.SESSION_IDLE_MINUTES * 60, config.MAX_OPEN_SESSIONS)
+    pool.start_checking()
+    return pool
 
 
 @st.cache_resource
@@ -59,11 +68,10 @@ def open_session(identity: tuple, customer_unique_id: str | None) -> None:
     st.session_state.identity = identity
     st.session_state.turns = []
     st.session_state.pending = None
+    index = policy_index() if customer_unique_id else None
     try:
-        st.session_state.session = ChatSession(
-            resources.db_path(),
-            policy_index() if customer_unique_id else None,
-            customer_unique_id,
+        st.session_state.session = session_pool().open(
+            lambda: ChatSession(resources.db_path(), index, customer_unique_id)
         )
     except Exception as failure:  # noqa: BLE001
         st.session_state.turns.append(("error", friendly_error(failure)))
@@ -101,6 +109,9 @@ def draw_turns() -> None:
     for role, content in st.session_state.turns:
         if role == "error":
             st.error(content)
+            continue
+        if role == "notice":
+            st.info(content)
             continue
         with st.chat_message(role):
             if isinstance(content, AnswerView):
@@ -191,8 +202,13 @@ def main() -> None:
     is_customer = customer is not None
     st.caption(messages.UI_CAPTION_CUSTOMER if is_customer else messages.UI_CAPTION_OPS)
     identity = ("customer", customer.situation) if is_customer else ("ops",)
+    customer_id = customer.customer_unique_id if is_customer else None
     if restart or st.session_state.get("identity") != identity:
-        open_session(identity, customer.customer_unique_id if is_customer else None)
+        open_session(identity, customer_id)
+    elif getattr(st.session_state.get("session"), "closed", False):
+        # Closed by the pool after a long pause: start again and say why.
+        open_session(identity, customer_id)
+        st.session_state.turns.insert(0, ("notice", messages.UI_SESSION_EXPIRED))
 
     draw_turns()
     session = st.session_state.get("session")

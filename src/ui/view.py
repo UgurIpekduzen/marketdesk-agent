@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 
 from src import messages
 from src.orchestrator import Answer, Intent
+from src.ui.session_pool import SessionLimitReached
 
 logger = logging.getLogger(__name__)
 
@@ -112,6 +113,8 @@ def approval_card(pending: dict) -> dict[str, str]:
 def friendly_error(failure: BaseException) -> str:
     """The message shown for a failure. The details go to the log only."""
     logger.error("request failed", exc_info=failure)
+    if isinstance(failure, SessionLimitReached):
+        return messages.UI_ERROR_FULL
     if isinstance(failure, TimeoutError):
         return messages.UI_ERROR_TIMEOUT
     # The whole chain: the provider's error is often wrapped by the framework.

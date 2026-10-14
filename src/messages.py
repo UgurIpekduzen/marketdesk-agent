@@ -183,6 +183,14 @@ UI_DATA_NOTE = (
     "Veri: Olist Brazilian E-Commerce veri seti (Kaggle), CC BY-NC-SA 4.0. "
     "Veri bu uygulamanın deposunda tutulmaz; ilk açılışta indirilir."
 )
+UI_SESSION_EXPIRED = (
+    "Uzun süre işlem yapılmadığı için önceki sohbet kapatıldı; yeni bir sohbet "
+    "başlatıldı."
+)
+UI_ERROR_FULL = (
+    "Demo şu an çok sayıda ziyaretçiye hizmet veriyor. Lütfen birkaç dakika "
+    'sonra "Yeni sohbet" düğmesiyle tekrar deneyin.'
+)
 UI_NO_CUSTOMERS = "Veritabanında örnek müşteri bulunamadı."
 UI_ERROR_QUOTA = (
     "Yapay zekâ servisinin ücretsiz kullanım kotası şu an dolmuş görünüyor. "

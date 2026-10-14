@@ -7,6 +7,7 @@ from src.agents.ops import Reply as OpsReply
 from src.agents.run_log import RunLog
 from src.agents.support import Reply as SupportReply
 from src.orchestrator import Answer, Intent
+from src.ui.session_pool import SessionLimitReached
 from src.ui.view import approval_card, friendly_error, view_of
 
 PENDING = {
@@ -142,6 +143,7 @@ def wrapped(inner: Exception) -> Exception:
         (RuntimeError("503 UNAVAILABLE: high demand"), messages.UI_ERROR_BUSY),
         (wrapped(ValueError("status 429")), messages.UI_ERROR_QUOTA),
         (TimeoutError(), messages.UI_ERROR_TIMEOUT),
+        (SessionLimitReached("20 chat sessions are open"), messages.UI_ERROR_FULL),
         (KeyError("GEMINI_API_KEY"), messages.UI_ERROR_NOT_CONFIGURED),
         (ZeroDivisionError("division by zero"), messages.UI_ERROR_GENERIC),
         (RuntimeError("refund of 500.00 BRL failed"), messages.UI_ERROR_GENERIC),

@@ -8,6 +8,7 @@ import pytest
 import streamlit as st
 from streamlit.testing.v1 import AppTest
 
+import config
 from src import messages
 from src.ui import resources
 from tests.agent_harness import request_count
@@ -146,6 +147,31 @@ def test_a_database_that_cannot_be_built_is_said_plainly(open_page, monkeypatch)
 
     # A failure is not cached: the next page run tries again.
     assert len(attempts) == 2
+
+
+def test_a_session_closed_after_a_pause_is_started_again(open_page):
+    page = open_page()
+    old = page.session_state["session"]
+    old.close()  # what the pool does after the idle time
+
+    page.run()
+
+    assert not page.exception
+    new = page.session_state["session"]
+    assert new is not old
+    assert not new.closed
+    assert page.info[0].value == messages.UI_SESSION_EXPIRED
+    assert page.chat_input
+
+
+def test_a_full_demo_says_so(open_page, monkeypatch):
+    monkeypatch.setattr(config, "MAX_OPEN_SESSIONS", 0)
+
+    page = open_page()
+
+    assert not page.exception
+    assert page.error[0].value == messages.UI_ERROR_FULL
+    assert "session" not in page.session_state
 
 
 # --- A customer conversation ------------------------------------------------
