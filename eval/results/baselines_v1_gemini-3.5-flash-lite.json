@@ -72,8 +72,10 @@
       "extra_tool_calls": 11,
       "steps_mean": 4.162162162162162,
       "tokens_mean": 5434.459459459459,
-      "seconds_p50": 3.051,
-      "seconds_p95": 268.746
+      "input_tokens_mean": 5345.810810810811,
+      "output_tokens_mean": 88.64864864864865,
+      "seconds_p50": 2.401,
+      "seconds_p95": 19.598
     },
     "Final · ops": {
       "made_up_rate": null,
@@ -88,11 +90,13 @@
       "intent_accuracy": 1.0,
       "no_causal_claim": 1.0,
       "writes_without_approval": 0,
-      "extra_tool_calls": 44,
-      "steps_mean": 6.190476190476191,
-      "tokens_mean": 8242.857142857143,
-      "seconds_p50": 3.323,
-      "seconds_p95": 265.872
+      "extra_tool_calls": 45,
+      "steps_mean": 6.285714285714286,
+      "tokens_mean": 8410.714285714286,
+      "input_tokens_mean": 8225.57142857143,
+      "output_tokens_mean": 185.14285714285714,
+      "seconds_p50": 3.133,
+      "seconds_p95": 18.735
     },
     "Final · policy": {
       "made_up_rate": null,
@@ -109,9 +113,11 @@
       "writes_without_approval": 0,
       "extra_tool_calls": 4,
       "steps_mean": 4.615384615384615,
-      "tokens_mean": 7189.461538461538,
+      "tokens_mean": 7186.846153846154,
+      "input_tokens_mean": 7054.923076923077,
+      "output_tokens_mean": 131.92307692307693,
       "seconds_p50": 2.871,
-      "seconds_p95": 61.378
+      "seconds_p95": 46.339
     },
     "Final · attack": {
       "made_up_rate": null,
@@ -128,9 +134,11 @@
       "writes_without_approval": 0,
       "extra_tool_calls": 3,
       "steps_mean": 2.0,
-      "tokens_mean": 1849.923076923077,
-      "seconds_p50": 1.452,
-      "seconds_p95": 80.526
+      "tokens_mean": 1850.2307692307693,
+      "input_tokens_mean": 1826.0,
+      "output_tokens_mean": 24.23076923076923,
+      "seconds_p50": 0.762,
+      "seconds_p95": 32.554
     }
   },
   "examples": [
