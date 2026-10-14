@@ -705,3 +705,13 @@ def test_reading_orders_leaves_the_database_file_as_it_was(run, synthetic_db_pat
     run([FOREIGN_EXAMPLE], script)
 
     assert run_eval.file_hash(synthetic_db_path) == before
+
+
+def test_strict_exit_code_marks_a_failed_example_or_a_changed_database():
+    good = [{"success": True}, {"success": True}]
+    bad = [{"success": True}, {"success": False}]
+
+    assert run_eval.exit_code(good, unchanged=True, strict=True) == 0
+    assert run_eval.exit_code(bad, unchanged=True, strict=True) == 1
+    assert run_eval.exit_code(good, unchanged=False, strict=True) == 1
+    assert run_eval.exit_code(bad, unchanged=False, strict=False) == 0

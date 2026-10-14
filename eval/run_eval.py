@@ -387,6 +387,13 @@ def file_hash(path: Path) -> str:
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+def exit_code(rows: list[dict], unchanged: bool, strict: bool) -> int:
+    """1 under --strict when an example failed or the database copy changed."""
+    if strict and (not unchanged or not all(row["success"] for row in rows)):
+        return 1
+    return 0
+
+
 def result_name(golden: Path, model: str) -> str:
     """The name of the results files of a set, for example golden_v1_<model>."""
     return f"{RESULT_PREFIXES.get(golden.stem, golden.stem)}_{model.replace('/', '_')}"
@@ -503,6 +510,11 @@ def main() -> int:
         help="print the outcome of each test example (they then belong in dev)",
     )
     parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="exit with 1 when an example fails, for a workflow",
+    )
+    parser.add_argument(
         "--judge",
         action="store_true",
         help="also score policy and ops answers with the judge model (more quota)",
@@ -572,7 +584,7 @@ def main() -> int:
             encoding="utf-8",
         )
         print(f"Results written to eval/results/{name}.json and .md")
-    return 0
+    return exit_code(rows, unchanged, args.strict)
 
 
 if __name__ == "__main__":
