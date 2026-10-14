@@ -140,6 +140,11 @@ tasks:
     cmds:
       - "{{.RUN}} uv run python scripts/load_sqlite.py --db data/marketdesk.db"
 
+  data:demo:
+    desc: Build the demo database the deployed page builds on its first start (all orders, no geolocation), unless one exists
+    cmds:
+      - "{{.RUN}} uv run python scripts/build_demo_db.py --db {{.CLI_ARGS | default \"data/marketdesk.db\"}}"
+
   data:smoke:
     desc: Verify the downloaded data and the database against the expected numbers
     cmds:

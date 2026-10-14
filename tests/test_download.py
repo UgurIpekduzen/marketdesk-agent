@@ -13,7 +13,9 @@ def fake_dataset(tmp_path, monkeypatch):
     for name in download_module.EXPECTED_FILES:
         (source / name).write_text("header\nrow\n")
     monkeypatch.setattr(
-        download_module.kagglehub, "dataset_download", lambda handle: str(source)
+        download_module.kagglehub,
+        "dataset_download",
+        lambda handle, output_dir=None: str(source),
     )
     return source
 
@@ -51,3 +53,24 @@ def test_download_fails_when_a_file_is_missing(fake_dataset, tmp_path):
 
 def test_dataset_handle_is_pinned_to_a_version():
     assert "/versions/" in download_module.DATASET
+
+
+def test_fetch_downloads_into_the_given_folder(fake_dataset, tmp_path, monkeypatch):
+    folder = tmp_path / "demo"
+    asked = []
+
+    def fake_download(handle, output_dir=None):
+        asked.append(output_dir)
+        return str(fake_dataset)
+
+    monkeypatch.setattr(download_module.kagglehub, "dataset_download", fake_download)
+
+    assert download_module.fetch(folder) == fake_dataset
+    assert asked == [str(folder)]
+
+
+def test_fetch_fails_when_a_file_is_missing(fake_dataset):
+    (fake_dataset / "olist_sellers_dataset.csv").unlink()
+
+    with pytest.raises(FileNotFoundError, match="olist_sellers_dataset.csv"):
+        download_module.fetch()

@@ -19,7 +19,7 @@ import argparse
 import csv
 import sqlite3
 import sys
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Collection, Iterator
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -246,8 +246,12 @@ def build_database(
     raw_dir: Path = DEFAULT_RAW_DIR,
     db_path: Path = DEFAULT_DB_PATH,
     simulated_today: date = SIMULATED_TODAY,
+    skip_tables: Collection[str] = (),
 ) -> dict[str, int]:
     """Build the database from the CSV files and return rows loaded per table.
+
+    Tables named in skip_tables are not created, nor their indexes; the
+    orders table cannot be skipped.
 
     The database is written to a temporary file first and moved into place
     only when every step has succeeded, so a failed run leaves no half-built
@@ -286,6 +290,8 @@ def build_database(
                 return lambda row: True
 
             for table in OTHER_TABLES:
+                if table.name in skip_tables:
+                    continue
                 create_table(conn, table)
                 counts[table.name] = insert_rows(
                     conn, table, read_rows(raw_dir, table), keep_dependent(table)
@@ -295,6 +301,8 @@ def build_database(
             counts["return_requests"] = 0
 
             for table_name, column in INDEXES:
+                if table_name in skip_tables:
+                    continue
                 conn.execute(
                     f"CREATE INDEX idx_{table_name}_{column} ON {table_name} ({column})"
                 )

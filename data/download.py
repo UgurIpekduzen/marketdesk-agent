@@ -25,15 +25,25 @@ EXPECTED_FILES = (
 )
 
 
-def download(raw_dir: Path = RAW_DIR) -> Path:
-    """Fetch the dataset and copy its CSV files into raw_dir."""
-    source = Path(kagglehub.dataset_download(DATASET))
+def fetch(output_dir: Path | None = None) -> Path:
+    """Fetch the dataset and return the folder that holds its CSV files.
+
+    Without output_dir the files land in kagglehub's cache; with it they
+    are written straight into that folder.
+    """
+    target = None if output_dir is None else str(output_dir)
+    source = Path(kagglehub.dataset_download(DATASET, output_dir=target))
     missing = [name for name in EXPECTED_FILES if not (source / name).is_file()]
     if missing:
         raise FileNotFoundError(
             f"Dataset is missing expected files: {', '.join(missing)}"
         )
+    return source
 
+
+def download(raw_dir: Path = RAW_DIR) -> Path:
+    """Fetch the dataset and copy its CSV files into raw_dir."""
+    source = fetch()
     raw_dir.mkdir(parents=True, exist_ok=True)
     for name in EXPECTED_FILES:
         shutil.copy2(source / name, raw_dir / name)

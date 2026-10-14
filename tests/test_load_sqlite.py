@@ -330,3 +330,26 @@ def test_script_builds_a_database_from_a_given_source_folder(raw_dir, tmp_path):
         assert conn.execute("SELECT COUNT(*) FROM orders").fetchone()[0] == 2
     finally:
         conn.close()
+
+
+def test_skipped_tables_and_their_indexes_are_not_created(raw_dir, tmp_path):
+    db_path = tmp_path / "demo.db"
+
+    counts = load_sqlite.build_database(
+        raw_dir, db_path, SIMULATED_TODAY, skip_tables=("geolocation",)
+    )
+
+    conn = sqlite3.connect(db_path)
+    try:
+        tables = set(
+            column(conn, "SELECT name FROM sqlite_master WHERE type = 'table'")
+        )
+        indexes = set(
+            column(conn, "SELECT name FROM sqlite_master WHERE type = 'index'")
+        )
+    finally:
+        conn.close()
+    assert "geolocation" not in tables
+    assert "geolocation" not in counts
+    assert not any(name.startswith("idx_geolocation_") for name in indexes)
+    assert {"orders", "customers", "return_requests"} <= tables
