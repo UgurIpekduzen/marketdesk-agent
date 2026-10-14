@@ -171,9 +171,17 @@ UI_APPROVAL_AMOUNT = "İade tutarı"
 UI_APPROVAL_LEVEL = "Talep şu durumda açılacak"
 UI_APPROVE = "Onayla"
 UI_DECLINE = "Vazgeç"
+UI_PREPARING_DATABASE = (
+    "Demo verisi hazırlanıyor: veri seti indirilip veritabanı kuruluyor. "
+    "Bu yalnızca uygulamanın ilk açılışında olur ve bir iki dakika sürebilir."
+)
 UI_NO_DATABASE = (
-    "Veritabanı bulunamadı. Bu ortamda demo verisi henüz yüklenmemiş; "
-    "yerelde `task data` komutuyla hazırlanır."
+    "Demo verisi hazırlanamadı. Lütfen sayfayı birkaç dakika sonra yenileyin; "
+    "yerelde veritabanı `task data` komutuyla hazırlanır."
+)
+UI_DATA_NOTE = (
+    "Veri: Olist Brazilian E-Commerce veri seti (Kaggle), CC BY-NC-SA 4.0. "
+    "Veri bu uygulamanın deposunda tutulmaz; ilk açılışta indirilir."
 )
 UI_NO_CUSTOMERS = "Veritabanında örnek müşteri bulunamadı."
 UI_ERROR_QUOTA = (

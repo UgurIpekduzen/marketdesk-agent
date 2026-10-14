@@ -15,6 +15,14 @@ def db_path() -> Path:
     return DB_PATH
 
 
+def build_database(path: Path) -> bool:
+    """Build the demo database at path unless it exists (downloads the data)."""
+    # Imported here: only a page without a database needs the loader.
+    from scripts.build_demo_db import ensure_database
+
+    return ensure_database(path)
+
+
 def load_policy_index() -> PolicyIndex:
     """The policy index with the real embedding model (slow the first time)."""
     return PolicyIndex(load_embedder())

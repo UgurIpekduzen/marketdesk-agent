@@ -1,6 +1,7 @@
 """Tests for the chat page, run without a browser: the real page script on
 the synthetic database, with a stand-in model."""
 
+import shutil
 from pathlib import Path
 
 import pytest
@@ -100,15 +101,51 @@ def test_customers_are_offered_by_situation_and_no_id_is_shown(open_page):
     assert ALICE not in shown(page)
 
 
-def test_missing_database_is_said_plainly(open_page, monkeypatch):
+def test_a_missing_database_is_built_once(open_page, monkeypatch, tmp_path):
     open_page()
+    target = tmp_path / "built.db"
+    synthetic = resources.db_path()
+    builds = []
+
+    def build(path):
+        builds.append(path)
+        shutil.copy(synthetic, path)
+        return True
+
+    monkeypatch.setattr(resources, "db_path", lambda: target)
+    monkeypatch.setattr(resources, "build_database", build)
+
+    page = AppTest.from_file(APP, default_timeout=60).run()
+    page.run()
+
+    assert not page.exception
+    assert not page.error
+    assert page.chat_input
+    assert builds == [target]
+    assert messages.UI_DATA_NOTE in [caption.value for caption in page.caption]
+
+
+def test_a_database_that_cannot_be_built_is_said_plainly(open_page, monkeypatch):
+    open_page()
+    attempts = []
+
+    def fail(path):
+        attempts.append(path)
+        raise OSError("network is down")
+
     monkeypatch.setattr(resources, "db_path", lambda: Path("no/such.db"))
+    monkeypatch.setattr(resources, "build_database", fail)
 
     page = AppTest.from_file(APP, default_timeout=60).run()
 
     assert not page.exception
     assert page.error[0].value == messages.UI_NO_DATABASE
     assert not page.chat_input
+
+    page.run()
+
+    # A failure is not cached: the next page run tries again.
+    assert len(attempts) == 2
 
 
 # --- A customer conversation ------------------------------------------------

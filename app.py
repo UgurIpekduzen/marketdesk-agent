@@ -8,6 +8,7 @@ text live in src/; nothing is decided here.
 """
 
 import logging
+from pathlib import Path
 
 import streamlit as st
 
@@ -30,6 +31,15 @@ def start_tracing() -> bool:
 @st.cache_resource
 def policy_index():
     return resources.load_policy_index()
+
+
+@st.cache_resource(show_spinner=False)
+def database(path: Path) -> Path:
+    """The database, built once per server process if it is missing."""
+    if not path.exists():
+        with st.spinner(messages.UI_PREPARING_DATABASE):
+            resources.build_database(path)
+    return path
 
 
 @st.cache_data
@@ -145,8 +155,11 @@ def main() -> None:
     start_tracing()
     st.title(messages.UI_TITLE)
 
-    path = resources.db_path()
-    if not path.exists():
+    try:
+        path = database(resources.db_path())
+    except Exception:
+        # Not cached: the next page run tries again.
+        logging.getLogger(__name__).exception("the demo database could not be built")
         st.error(messages.UI_NO_DATABASE)
         st.stop()
 
@@ -173,6 +186,7 @@ def main() -> None:
             )
         restart = st.button(messages.UI_NEW_CONVERSATION)
         st.caption(messages.UI_TODAY.format(today=config.SIMULATED_TODAY.isoformat()))
+        st.caption(messages.UI_DATA_NOTE)
 
     is_customer = customer is not None
     st.caption(messages.UI_CAPTION_CUSTOMER if is_customer else messages.UI_CAPTION_OPS)
