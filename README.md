@@ -1,5 +1,7 @@
 # MarketDesk
 
+[![test](https://github.com/UgurIpekduzen/marketdesk-agent/actions/workflows/test.yml/badge.svg)](https://github.com/UgurIpekduzen/marketdesk-agent/actions/workflows/test.yml)
+
 <!-- TODO: final one-sentence description. -->
 A customer-support and operations agent system for an online marketplace.
 
