@@ -1,5 +1,6 @@
 """Project settings. The only place where settings are defined."""
 
+import os
 from datetime import date
 
 # --- Time ---------------------------------------------------------------
@@ -90,8 +91,11 @@ MAX_STEPS = 8
 # Where the spans of a run are sent: "off", "phoenix" (the local
 # container, start it with `task up -- phoenix`) or "langfuse" (Langfuse
 # Cloud; needs LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY). Personal data
-# is masked for every target; a hosted target also gets no message texts.
-TRACING_TARGET = "off"
+# is masked for every target; a hosted target gets only an allowlist of
+# attributes, no texts. Off unless the environment variable TRACING_TARGET
+# says otherwise: the deployed page sets it among its secrets, so local runs
+# and the evaluation stay off.
+TRACING_TARGET = os.environ.get("TRACING_TARGET", "off")
 # "phoenix" is the service name inside the Compose network.
 TRACING_PHOENIX_ENDPOINT = "http://phoenix:6006/v1/traces"
 TRACING_LANGFUSE_ENDPOINT = "https://cloud.langfuse.com/api/public/otel/v1/traces"

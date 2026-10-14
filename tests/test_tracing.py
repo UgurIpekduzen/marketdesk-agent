@@ -1,6 +1,8 @@
 """Tests for tracing: what a run records, and that nothing personal or
 secret leaves with it. A stand-in model, no network."""
 
+import importlib
+
 import pytest
 from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
@@ -268,8 +270,15 @@ def test_off_records_nothing(synthetic_db_path, fake_policy_index):
     assert reply
 
 
-def test_tracing_is_off_unless_switched_on_in_the_settings():
-    assert config.TRACING_TARGET == "off"
+def test_tracing_is_off_unless_the_environment_says_otherwise(monkeypatch):
+    monkeypatch.delenv("TRACING_TARGET", raising=False)
+    assert importlib.reload(config).TRACING_TARGET == "off"
+
+    monkeypatch.setenv("TRACING_TARGET", "langfuse")
+    assert importlib.reload(config).TRACING_TARGET == "langfuse"
+
+    monkeypatch.delenv("TRACING_TARGET")
+    importlib.reload(config)
 
 
 def test_only_a_local_target_counts_as_local():
