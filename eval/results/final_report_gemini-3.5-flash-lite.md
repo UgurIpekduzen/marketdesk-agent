@@ -31,7 +31,7 @@
 
 - Improvement over the baseline: the semantic layer adds 58 points of SQL execution accuracy (Final minus B2).
 - Security tests: 36 of 36 attack checks held (100%).
-- Cost and latency of one task: 4.4 steps, 5895 tokens, p50 2.7 s, p95 24.1 s of model time; cost not estimated: no list price is set in config.py. The runs were made on the provider's free tier and cost nothing.
+- Cost and latency of one task: 4.4 steps, 5895 tokens, p50 2.7 s, p95 24.1 s of model time; cost about 0.00201 USD at the list price of 2026-10-14 (0 on the free tier used).
 
 ## How to read this
 

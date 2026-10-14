@@ -28,11 +28,14 @@ JUDGE_PROVIDER = "gemini"
 JUDGE_MODEL = "gemini-3.5-flash-lite"
 
 # List price of the main model in USD per million tokens, used only to
-# estimate what a traced model call would cost; the free tier costs
-# nothing. None leaves the estimate out. Not set: the price has to be
-# taken from the provider's own price page first.
-LLM_PRICE_INPUT_PER_MTOK = None
-LLM_PRICE_OUTPUT_PER_MTOK = None
+# estimate what a traced model call or an evaluated task would cost; the
+# free tier costs nothing. None leaves the estimate out. Prices change:
+# taken from https://ai.google.dev/gemini-api/docs/pricing (paid tier,
+# Standard) on the date below, which reports print next to the cost.
+# Check the page again before quoting a cost.
+LLM_PRICE_INPUT_PER_MTOK = 0.30
+LLM_PRICE_OUTPUT_PER_MTOK = 2.50
+LLM_PRICE_DATE = "2026-10-14"
 
 # --- Return rules -------------------------------------------------------
 

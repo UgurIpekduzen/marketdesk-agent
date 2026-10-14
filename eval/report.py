@@ -138,7 +138,10 @@ def cost_text(overall: dict) -> str:
             "not estimated: no list price is set in config.py. The runs were "
             "made on the provider's free tier and cost nothing"
         )
-    return f"about {cost:.5f} USD at the list price (0 on the free tier used)"
+    return (
+        f"about {cost:.5f} USD at the list price of {config.LLM_PRICE_DATE} "
+        "(0 on the free tier used)"
+    )
 
 
 def split_line(golden: dict) -> str:

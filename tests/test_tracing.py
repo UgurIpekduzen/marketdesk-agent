@@ -356,12 +356,12 @@ def test_cost_is_written_on_a_span_that_has_token_counts(traced, monkeypatch):
     assert exported.attributes[tracing.COST_ATTRIBUTE] == pytest.approx(0.30)
 
 
-def test_no_cost_is_written_while_no_price_is_set(traced):
+def test_no_cost_is_written_while_no_price_is_set(traced, monkeypatch):
+    monkeypatch.setattr(config, "LLM_PRICE_INPUT_PER_MTOK", None)
     exporter = traced()
 
     with tracing.span("model call") as current:
         current.set_attribute(tracing.INPUT_TOKENS, 1000)
 
     (exported,) = exporter.get_finished_spans()
-    assert config.LLM_PRICE_INPUT_PER_MTOK is None
     assert tracing.COST_ATTRIBUTE not in exported.attributes

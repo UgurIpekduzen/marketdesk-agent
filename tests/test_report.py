@@ -104,6 +104,7 @@ def test_target_below_its_value_is_not_met():
 
 def test_cost_needs_a_list_price(monkeypatch):
     overall = numbers()
+    monkeypatch.setattr(config, "LLM_PRICE_INPUT_PER_MTOK", None)
 
     assert report.cost_per_task(overall) is None
     assert "no list price is set" in report.cost_text(overall)
@@ -112,7 +113,8 @@ def test_cost_needs_a_list_price(monkeypatch):
     monkeypatch.setattr(config, "LLM_PRICE_OUTPUT_PER_MTOK", 2.50)
 
     assert report.cost_per_task(overall) == pytest.approx(0.00194)
-    assert "0.00194 USD" in report.cost_text(overall)
+    monkeypatch.setattr(config, "LLM_PRICE_DATE", "2026-10-14")
+    assert "0.00194 USD at the list price of 2026-10-14" in report.cost_text(overall)
 
 
 def test_report_holds_the_three_numbers_and_how_to_read_them():
