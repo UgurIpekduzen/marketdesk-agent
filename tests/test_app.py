@@ -2,12 +2,14 @@
 the synthetic database, with a stand-in model."""
 
 import shutil
+import sqlite3
 from dataclasses import asdict
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 import streamlit as st
+from streamlit.proto.WidgetStates_pb2 import WidgetState
 from streamlit.testing.v1 import AppTest
 
 import config
@@ -64,6 +66,51 @@ def ask(page, question):
 def click(page, label):
     (button,) = [button for button in page.button if button.label == label]
     return button.click().run()
+
+
+def send_crafted(page, monkeypatch, widget_id, **value):
+    """Run the page once more with a widget value no click could send.
+
+    A visitor can write the messages between the browser and the server by
+    hand: a value missing from a list, text in a closed chat box, a click
+    on a button that is not on the page. The test framework refuses to
+    send those, so the state is added to what it sends.
+    """
+    state = WidgetState(id=widget_id)
+    for field_name, field_value in value.items():
+        target = getattr(state, field_name)
+        if hasattr(target, "data"):
+            target.data = field_value
+        else:
+            setattr(state, field_name, field_value)
+    tree_type = type(page._tree)
+    original = tree_type.get_widget_states
+
+    def with_crafted(tree):
+        states = original(tree)
+        kept = [widget for widget in states.widgets if widget.id != widget_id]
+        del states.widgets[:]
+        states.widgets.extend([*kept, state])
+        return states
+
+    monkeypatch.setattr(tree_type, "get_widget_states", with_crafted)
+    try:
+        return page.run()
+    finally:
+        monkeypatch.setattr(tree_type, "get_widget_states", original)
+
+
+def written_orders(db_path) -> list[str]:
+    conn = sqlite3.connect(db_path)
+    try:
+        return [
+            row[0]
+            for row in conn.execute(
+                "SELECT order_id FROM return_requests ORDER BY rowid"
+            )
+        ]
+    finally:
+        conn.close()
 
 
 def as_ops(page):
@@ -393,6 +440,71 @@ def test_new_conversation_button_forgets_the_old_one(open_page):
 
     assert len(page.chat_message) == 0
     assert messages.UI_STEPS_LATEST not in sidebar_text(page)
+
+
+# --- Crafted messages ------------------------------------------------------
+
+
+def test_a_customer_missing_from_the_list_is_not_taken(open_page, monkeypatch):
+    page = open_page()
+
+    page = send_crafted(
+        page, monkeypatch, page.selectbox[0].id, string_value="someone else"
+    )
+
+    assert not page.exception
+    assert page.session_state["identity"] == ("customer", "recent_delivery")
+    assert page.chat_input
+
+
+@pytest.mark.parametrize("value", ["admin", "7", "-1"])
+def test_an_unknown_session_type_falls_back_to_the_customer_session(
+    open_page, monkeypatch, value
+):
+    page = open_page()
+
+    page = send_crafted(page, monkeypatch, page.sidebar.radio[0].id, string_value=value)
+
+    assert not page.exception
+    assert page.session_state["identity"] == ("customer", "recent_delivery")
+
+
+def test_a_message_through_the_closed_chat_box_leaves_the_approval_as_shown(
+    open_page, monkeypatch, synthetic_db_path
+):
+    page = open_page([*RETURN_SCRIPT, "support", "Önce talebi yanıtlayın."])
+    page = ask(page, "o_day14 hasarlı geldi, iade istiyorum")
+    shown_on_card = page.session_state["pending"]
+
+    page = send_crafted(
+        page,
+        monkeypatch,
+        page.chat_input[0].id,
+        chat_input_value="Başka bir şey soracağım",
+    )
+
+    # The server answered, and the card still shows the request it holds.
+    assert page.session_state["pending"] == shown_on_card
+    before = written_orders(synthetic_db_path)
+    page = click(page, messages.UI_APPROVE)
+    assert written_orders(synthetic_db_path) == [*before, "o_day14"]
+
+
+def test_a_click_on_an_approve_button_that_is_gone_writes_nothing(
+    open_page, monkeypatch, synthetic_db_path
+):
+    page = open_page(RETURN_SCRIPT)
+    page = ask(page, "o_day14 hasarlı geldi, iade istiyorum")
+    (button,) = [b for b in page.button if b.label == messages.UI_APPROVE]
+    page = button.click().run()
+    after_approval = request_count(synthetic_db_path)
+    turns = len(page.session_state["turns"])
+
+    page = send_crafted(page, monkeypatch, button.id, trigger_value=True)
+
+    assert not page.exception
+    assert request_count(synthetic_db_path) == after_approval
+    assert len(page.session_state["turns"]) == turns
 
 
 # --- When something fails ----------------------------------------------------
