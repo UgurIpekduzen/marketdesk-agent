@@ -1,0 +1,11 @@
+# Settings of the page framework that matter for security. A test reads
+# this file, so a change here is a change someone has to mean.
+
+[client]
+# A failure shows the visitor a plain message, never the code behind it.
+showErrorDetails = "none"
+
+[server]
+# The framework's defaults, written down so that turning them off shows.
+enableXsrfProtection = true
+enableCORS = true

@@ -1,6 +1,7 @@
 """Tests for config.py and for the rule that only config.py knows "today"."""
 
 import ast
+import tomllib
 from datetime import date
 from pathlib import Path
 
@@ -87,3 +88,13 @@ def test_no_code_reads_the_machine_clock():
     ]
 
     assert offenders == [], "use config.SIMULATED_TODAY instead of the clock"
+
+
+def test_the_page_shows_no_error_details_and_keeps_its_protections():
+    settings = tomllib.loads(
+        (PROJECT_ROOT / ".streamlit" / "config.toml").read_text(encoding="utf-8")
+    )
+
+    assert settings["client"]["showErrorDetails"] == "none"
+    assert settings["server"]["enableXsrfProtection"] is True
+    assert settings["server"]["enableCORS"] is True
