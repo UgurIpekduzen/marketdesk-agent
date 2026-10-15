@@ -22,6 +22,7 @@ from src.tools.return_requests import create_return_request
 from tests.synthetic_data import ALICE, BOB
 
 NOT_FOUND = {"error": "NOT_FOUND", "message": messages.ORDER_NOT_FOUND}
+NOTHING_PENDING = {"error": "NOTHING_PENDING", "message": messages.NOTHING_PENDING}
 CONTROL_TOOLS = {
     "status",
     "session_info",
@@ -303,7 +304,7 @@ def test_approval_writes_exactly_one_row(synthetic_db_path):
     assert created["return_request_id"] == 3
     assert created["status"] == "PENDING_REVIEW"
     assert pending_after is None
-    assert second_approval == {"error": "NOTHING_PENDING"}
+    assert second_approval == NOTHING_PENDING
     assert request_count(synthetic_db_path) == 3
 
 
@@ -316,14 +317,14 @@ def test_declining_writes_nothing(synthetic_db_path):
     declined, approval_after = with_server(synthetic_db_path, scenario)
 
     assert declined == {"declined": True}
-    assert approval_after == {"error": "NOTHING_PENDING"}
+    assert approval_after == NOTHING_PENDING
     assert request_count(synthetic_db_path) == 2
 
 
 def test_approving_with_nothing_pending_writes_nothing(synthetic_db_path):
     answer = with_server(synthetic_db_path, lambda orders: orders.approve_pending())
 
-    assert answer == {"error": "NOTHING_PENDING"}
+    assert answer == NOTHING_PENDING
     assert request_count(synthetic_db_path) == 2
 
 

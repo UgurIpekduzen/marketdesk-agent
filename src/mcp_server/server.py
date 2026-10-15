@@ -27,6 +27,7 @@ from datetime import date
 from mcp.server.mcpserver import MCPServer
 
 import config
+from src import messages
 from src.guardrails.pii import hash_id
 from src.tools.eligibility import check_return_eligibility
 from src.tools.orders import DEFAULT_LIST_LIMIT, get_order_status, list_customer_orders
@@ -193,7 +194,7 @@ async def approve_pending() -> dict:
     current = state()
     action = current.session.approvals.awaiting
     if action is None:
-        return {"error": "NOTHING_PENDING"}
+        return {"error": "NOTHING_PENDING", "message": messages.NOTHING_PENDING}
     # The token is created, used and gone within this function.
     token = current.session.approvals.approve()
     return create_return_request(

@@ -97,6 +97,7 @@ RETURN_REQUEST_CREATED_DETAIL = (
     "Talebiniz bir müşteri temsilcisi tarafından incelenecektir."
 )
 RETURN_REQUEST_NOT_CREATED = "İade talebi oluşturulmadı: {reason}"
+NOTHING_PENDING = "Onay bekleyen bir iade talebi yok."
 APPROVAL_DECLINED = "Onay vermediniz; iade talebi oluşturulmadı."
 
 # --- Chat command -------------------------------------------------------

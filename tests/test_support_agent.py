@@ -458,7 +458,10 @@ def test_approving_with_nothing_pending_writes_nothing(run, synthetic_db_path):
 
     shown = run(scenario)
 
-    assert shown == messages.RETURN_REQUEST_NOT_CREATED.format(reason="NOTHING_PENDING")
+    assert shown == messages.RETURN_REQUEST_NOT_CREATED.format(
+        reason=messages.NOTHING_PENDING
+    )
+    assert "NOTHING_PENDING" not in shown
     assert request_count(synthetic_db_path) == 2
 
 
