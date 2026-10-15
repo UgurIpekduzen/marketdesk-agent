@@ -97,12 +97,23 @@ def draw_answer(view: AnswerView) -> None:
             for query in view.queries:
                 st.code(query, language="sql")
     with st.expander(messages.UI_STEPS):
-        st.write(f"**{messages.UI_STEPS_AGENT}:** {view.agent}")
-        tools = " → ".join(view.tools) or messages.UI_STEPS_NO_TOOLS
-        st.write(f"**{messages.UI_STEPS_TOOLS}:** {tools}")
-        st.caption(
-            messages.UI_STEPS_COUNTS.format(steps=view.steps, tokens=view.tokens)
-        )
+        draw_steps(view)
+
+
+def draw_steps(view: AnswerView) -> None:
+    """Who answered, which tools were called, steps and tokens."""
+    st.write(f"**{messages.UI_STEPS_AGENT}:** {view.agent}")
+    tools = " → ".join(view.tools) or messages.UI_STEPS_NO_TOOLS
+    st.write(f"**{messages.UI_STEPS_TOOLS}:** {tools}")
+    st.caption(messages.UI_STEPS_COUNTS.format(steps=view.steps, tokens=view.tokens))
+
+
+def latest_answer() -> AnswerView | None:
+    """The newest answer of the conversation, if there is one."""
+    for role, content in reversed(st.session_state.get("turns", [])):
+        if role == "answer":
+            return content
+    return None
 
 
 def draw_turns() -> None:
@@ -215,6 +226,16 @@ def main() -> None:
         # Closed by the pool after a long pause: start again and say why.
         open_session(identity, customer_id)
         st.session_state.turns.insert(0, ("notice", messages.UI_SESSION_EXPIRED))
+
+    # Drawn after the conversation was settled above, so a new one never
+    # shows the steps of the old. Each answer keeps its own steps in the
+    # conversation as well.
+    latest = latest_answer()
+    if latest is not None:
+        with st.sidebar:
+            st.divider()
+            st.subheader(messages.UI_STEPS_LATEST)
+            draw_steps(latest)
 
     draw_turns()
     session = st.session_state.get("session")

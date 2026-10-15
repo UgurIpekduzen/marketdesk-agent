@@ -194,6 +194,38 @@ def test_answer_is_shown_with_its_steps(open_page):
     assert "get_order_status" in text
 
 
+def sidebar_text(page) -> str:
+    parts = [element.value for element in page.sidebar.markdown]
+    parts += [element.value for element in page.sidebar.subheader]
+    parts += [element.value for element in page.sidebar.caption]
+    return "\n".join(str(part) for part in parts)
+
+
+def test_sidebar_shows_the_steps_of_the_newest_answer(open_page):
+    page = open_page(
+        [
+            "support",
+            [("get_order_status", {"order_ref": "o_day14"})],
+            "Teslim edildi.",
+            "support",
+            "Rica ederim.",
+        ]
+    )
+    assert messages.UI_STEPS_LATEST not in sidebar_text(page)
+
+    page = ask(page, "o_day14 nerede?")
+
+    text = sidebar_text(page)
+    assert messages.UI_STEPS_LATEST in text
+    assert "get_order_status" in text
+
+    page = ask(page, "Teşekkürler")
+
+    text = sidebar_text(page)
+    assert "get_order_status" not in text
+    assert messages.UI_STEPS_NO_TOOLS in text
+
+
 def test_policy_answer_shows_its_source(open_page):
     page = open_page(
         [
@@ -348,6 +380,7 @@ def test_new_conversation_button_forgets_the_old_one(open_page):
     page = click(page, messages.UI_NEW_CONVERSATION)
 
     assert len(page.chat_message) == 0
+    assert messages.UI_STEPS_LATEST not in sidebar_text(page)
 
 
 # --- When something fails ----------------------------------------------------
