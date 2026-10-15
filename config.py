@@ -106,5 +106,7 @@ TRACING_LANGFUSE_ENDPOINT = "https://cloud.langfuse.com/api/public/otel/v1/trace
 # order server process: a visitor who closes the tab leaves one behind.
 SESSION_IDLE_MINUTES = 15
 # At most this many chat sessions are open at once. Each customer session
-# runs an order server process of about 74 MB; the platform allows 3 GB.
-MAX_OPEN_SESSIONS = 20
+# runs an order server process of about 74 MB; the platform allows 3 GB and
+# the page itself took about 1.4 GB in the deploy trial, so 10 sessions
+# (about 0.75 GB) leave room to spare.
+MAX_OPEN_SESSIONS = 10
