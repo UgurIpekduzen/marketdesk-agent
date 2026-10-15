@@ -8,7 +8,7 @@ from src.agents.run_log import RunLog
 from src.agents.support import Reply as SupportReply
 from src.orchestrator import Answer, Intent
 from src.ui.session_pool import SessionLimitReached
-from src.ui.view import approval_card, friendly_error, view_of
+from src.ui.view import approval_card, friendly_error, view_of, without_images
 
 PENDING = {
     "pending": True,
@@ -159,3 +159,31 @@ def test_failure_details_go_to_the_log_not_to_the_message(caplog):
 
     assert "secret detail" not in message
     assert "secret detail" in caplog.text
+
+
+@pytest.mark.parametrize(
+    "image",
+    [
+        "![](https://example.com/r.png?veri=SIP-1_122.43)",
+        '![logo](https://example.com/logo.png "title")',
+        "![x][ref]",
+    ],
+)
+def test_a_markdown_image_in_an_answer_is_not_drawn(image, caplog):
+    log = log_with(["get_order_status"])
+    answer = Answer(
+        Intent.SUPPORT, "x", SupportReply(f"Teslim edildi. {image}", log), router_log()
+    )
+
+    with caplog.at_level("WARNING"):
+        view = view_of(answer)
+
+    assert view.text == f"Teslim edildi. {messages.UI_IMAGE_REMOVED}"
+    assert "example.com" not in view.text
+    assert "removed 1 markdown images" in caplog.text
+
+
+def test_links_and_plain_text_are_left_as_they_are():
+    text = "Ayrıntı için [iade politikası](https://example.com/iade) bölüm 2. Not! [a]"
+
+    assert without_images(text) == text

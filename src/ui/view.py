@@ -4,6 +4,7 @@ Plain functions and data, no page framework: the page only draws these.
 """
 
 import logging
+import re
 from dataclasses import dataclass, field
 
 from src import messages
@@ -25,6 +26,18 @@ ERROR_MARKS = (
     ),
     (("api_key", "api key"), messages.UI_ERROR_NOT_CONFIGURED),
 )
+# A markdown image, inline or by reference: the browser would fetch its
+# address as soon as the answer is drawn, so a model talked into writing
+# one could send data to any site without a click.
+IMAGE_PATTERN = re.compile(r"!\[[^\]]*\](?:\([^)]*\)|\[[^\]]*\])")
+
+
+def without_images(text: str) -> str:
+    """The text with every markdown image replaced by a plain note."""
+    cleaned, count = IMAGE_PATTERN.subn(messages.UI_IMAGE_REMOVED, text)
+    if count:
+        logger.warning("removed %d markdown images from an answer", count)
+    return cleaned
 
 
 @dataclass(frozen=True)
@@ -70,7 +83,7 @@ def view_of(answer: Answer) -> AnswerView:
     router = answer.router_log
     if answer.refused:
         return AnswerView(
-            text=answer.display,
+            text=without_images(answer.display),
             agent=messages.UI_AGENT_ROUTER,
             steps=router.steps,
             tokens=router.input_tokens + router.output_tokens,
@@ -79,7 +92,7 @@ def view_of(answer: Answer) -> AnswerView:
     log = reply.log
     gave_up = getattr(reply, "gave_up", False)
     return AnswerView(
-        text=reply.text,
+        text=without_images(reply.text),
         agent=AGENT_LABELS[answer.intent],
         tools=list(log.tool_calls),
         steps=router.steps + log.steps,

