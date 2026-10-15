@@ -2,7 +2,9 @@
 the synthetic database, with a stand-in model."""
 
 import shutil
+from dataclasses import asdict
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 import streamlit as st
@@ -245,6 +247,43 @@ def test_decline_writes_nothing_and_says_so(open_page, synthetic_db_path):
 
     assert request_count(synthetic_db_path) == at_start
     assert messages.APPROVAL_DECLINED in shown(page)
+
+
+def test_the_card_is_gone_before_the_choice_is_sent(open_page):
+    page = open_page(RETURN_SCRIPT)
+    page = ask(page, "o_day14 hasarlı geldi, iade istiyorum")
+    session = page.session_state["session"]
+    approve = session.approve
+    waiting_when_sent = []
+
+    def approve_and_look():
+        # Runs inside the page run, as the real click does.
+        waiting_when_sent.append(st.session_state.pending)
+        return approve()
+
+    session.approve = approve_and_look
+
+    page = click(page, messages.UI_APPROVE)
+
+    assert waiting_when_sent == [None]
+    assert messages.UI_APPROVAL_HEADING not in shown(page)
+
+
+def test_an_answer_of_a_reloaded_class_is_still_drawn(open_page):
+    page = open_page(["support", "Teslim edildi."])
+    page = ask(page, "Siparişim nerede?")
+    role, view = page.session_state["turns"][-1]
+    # The same answer as an object of another class, as after the framework
+    # loaded the modules again.
+    page.session_state["turns"][-1] = (role, SimpleNamespace(**asdict(view)))
+
+    page.run()
+
+    assert role == "answer"
+    text = shown(page)
+    assert "Teslim edildi." in text
+    assert "AnswerView(" not in text
+    assert "namespace(" not in text
 
 
 def test_message_saying_approved_writes_nothing(open_page, synthetic_db_path):

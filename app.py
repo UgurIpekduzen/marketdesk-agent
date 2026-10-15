@@ -113,11 +113,15 @@ def draw_turns() -> None:
         if role == "notice":
             st.info(content)
             continue
-        with st.chat_message(role):
-            if isinstance(content, AnswerView):
+        # An answer is known by its role, not its class: the framework may
+        # load the modules again, and an older answer is then of a class
+        # that no longer matches.
+        if role == "answer":
+            with st.chat_message("assistant"):
                 draw_answer(content)
-            else:
-                st.markdown(content)
+            continue
+        with st.chat_message(role):
+            st.markdown(content)
 
 
 def draw_approval(session: ChatSession) -> None:
@@ -138,11 +142,13 @@ def draw_approval(session: ChatSession) -> None:
         if decline.button(messages.UI_DECLINE, use_container_width=True):
             choice = session.decline
     if choice is not None:
+        # The card goes first: a run cut short by a second click must not
+        # find the request still waiting and send the choice again.
+        st.session_state.pending = None
         try:
             st.session_state.turns.append(("assistant", choice()))
         except Exception as failure:  # noqa: BLE001
             st.session_state.turns.append(("error", friendly_error(failure)))
-        st.session_state.pending = None
         st.rerun()
 
 
@@ -156,7 +162,7 @@ def answer(session: ChatSession, question: str) -> None:
     except Exception as failure:  # noqa: BLE001
         st.session_state.turns.append(("error", friendly_error(failure)))
     else:
-        st.session_state.turns.append(("assistant", view))
+        st.session_state.turns.append(("answer", view))
         st.session_state.pending = view.pending
     st.rerun()
 
