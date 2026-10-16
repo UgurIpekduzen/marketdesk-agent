@@ -18,7 +18,13 @@ from src.ui import resources
 from src.ui.chat_session import ChatSession
 from src.ui.question_limit import QuestionLimit
 from src.ui.session_pool import SessionPool
-from src.ui.view import AnswerView, approval_card, friendly_error, view_of
+from src.ui.view import (
+    AnswerView,
+    approval_card,
+    friendly_error,
+    tools_text,
+    view_of,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
@@ -115,8 +121,7 @@ def draw_answer(view: AnswerView) -> None:
 def draw_steps(view: AnswerView) -> None:
     """Who answered, which tools were called, steps and tokens."""
     st.write(f"**{messages.UI_STEPS_AGENT}:** {view.agent}")
-    tools = " → ".join(view.tools) or messages.UI_STEPS_NO_TOOLS
-    st.write(f"**{messages.UI_STEPS_TOOLS}:** {tools}")
+    st.write(f"**{messages.UI_STEPS_TOOLS}:** {tools_text(view.tools)}")
     st.caption(messages.UI_STEPS_COUNTS.format(steps=view.steps, tokens=view.tokens))
 
 

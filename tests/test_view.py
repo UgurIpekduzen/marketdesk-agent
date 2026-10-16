@@ -11,7 +11,13 @@ from src.orchestrator import Answer, Intent
 from src.ui.chat_session import MessageTooLong
 from src.ui.question_limit import QuestionLimitReached
 from src.ui.session_pool import SessionLimitReached
-from src.ui.view import approval_card, friendly_error, view_of, without_images
+from src.ui.view import (
+    approval_card,
+    friendly_error,
+    tools_text,
+    view_of,
+    without_images,
+)
 
 PENDING = {
     "pending": True,
@@ -212,3 +218,13 @@ def test_links_and_plain_text_are_left_as_they_are():
     text = "Ayrıntı için [iade politikası](https://example.com/iade) bölüm 2. Not! [a]"
 
     assert without_images(text) == text
+
+
+def test_tool_names_are_drawn_as_code_that_cannot_become_markdown():
+    text = tools_text(["list_customer_orders", "![x](https://example.com/a.png)`"])
+
+    assert text == "`list_customer_orders` → `![x](https://example.com/a.png)`"
+
+
+def test_an_answer_without_tools_says_so():
+    assert tools_text([]) == messages.UI_STEPS_NO_TOOLS

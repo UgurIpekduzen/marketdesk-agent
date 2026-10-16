@@ -129,6 +129,17 @@ def view_of(answer: Answer) -> AnswerView:
     )
 
 
+def tools_text(tools: list[str]) -> str:
+    """The tools of an answer for the steps panel, each as inline code.
+
+    Inline code is not read as markdown, so a tool name can never become an
+    image or a link; a backtick, which would end the code, is dropped.
+    """
+    if not tools:
+        return messages.UI_STEPS_NO_TOOLS
+    return " → ".join(f"`{name.replace('`', '')}`" for name in tools)
+
+
 def approval_card(pending: dict) -> dict[str, str]:
     """What the person is asked to approve: label -> value."""
     return {
