@@ -173,6 +173,7 @@ def test_a_missing_database_is_built_once(open_page, monkeypatch, tmp_path):
     assert page.chat_input
     assert builds == [target]
     assert messages.UI_DATA_NOTE in [caption.value for caption in page.caption]
+    assert messages.UI_SHARED_DATA_NOTE in [caption.value for caption in page.caption]
 
 
 def test_a_database_that_cannot_be_built_is_said_plainly(open_page, monkeypatch):

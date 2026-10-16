@@ -232,6 +232,7 @@ def main() -> None:
         restart = st.button(messages.UI_NEW_CONVERSATION)
         st.caption(messages.UI_TODAY.format(today=config.SIMULATED_TODAY.isoformat()))
         st.caption(messages.UI_DATA_NOTE)
+        st.caption(messages.UI_SHARED_DATA_NOTE)
 
     is_customer = customer is not None
     st.caption(messages.UI_CAPTION_CUSTOMER if is_customer else messages.UI_CAPTION_OPS)

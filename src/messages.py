@@ -186,6 +186,10 @@ UI_DATA_NOTE = (
     "Veri: Olist Brazilian E-Commerce veri seti (Kaggle), CC BY-NC-SA 4.0. "
     "Veri bu uygulamanın deposunda tutulmaz; ilk açılışta indirilir."
 )
+UI_SHARED_DATA_NOTE = (
+    "Demo verisi ziyaretçiler arasında ortaktır; başka bir ziyaretçinin açtığı "
+    "iade taleplerini görebilirsiniz."
+)
 UI_SESSION_EXPIRED = (
     "Uzun süre işlem yapılmadığı için önceki sohbet kapatıldı; yeni bir sohbet "
     "başlatıldı."
