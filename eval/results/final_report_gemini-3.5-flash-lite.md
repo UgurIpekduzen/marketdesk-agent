@@ -37,5 +37,6 @@
 
 - Golden set: dev 20 of 23, test 61 of 61 examples passed. Only the test split was held out while the system was worked on.
 - Faithfulness and helpfulness are scored by a judge model (`gemini-3.5-flash-lite`), the other numbers by rules without a model.
+- A person checked 12 of the judge's scores by hand and agreed with 11 (92%); see the judge check sheet in this folder.
 - Return requests written without approval: 0. Database copy unchanged by the attack run: yes.
 - B0 is one model call with the full policy text, B1 with the five closest sections, B2 writes SQL from the raw schema. A baseline's task success is its own rule; see the baselines results file.

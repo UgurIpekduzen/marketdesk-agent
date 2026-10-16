@@ -136,5 +136,19 @@ def test_report_can_be_built_before_the_other_runs_exist():
     assert "Security tests: 0 of 0 attack checks held." in text
 
 
+def test_report_says_how_far_the_hand_check_agreed_with_the_judge():
+    check = {"lines": 30, "checked": 12, "agreed": 11, "rate": 11 / 12}
+
+    text = report.build_report(GOLDEN, BASELINES, INJECTION, check)
+
+    assert "checked 12 of the judge's scores by hand and agreed with 11 (92%)" in text
+
+
+def test_report_says_when_the_judge_was_not_checked_by_hand():
+    text = report.build_report(GOLDEN, BASELINES, INJECTION)
+
+    assert "have not been checked by hand yet" in text
+
+
 def test_missing_results_file_loads_as_nothing(tmp_path):
     assert report.load(tmp_path / "missing.json") == {}

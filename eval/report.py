@@ -17,6 +17,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 import config
+from eval.judge_check import agreement
 from eval.run_eval import (
     GOLDEN_SET,
     INJECTION_SET,
@@ -153,7 +154,23 @@ def split_line(golden: dict) -> str:
     return ", ".join(parts)
 
 
-def build_report(golden: dict, baselines: dict, injection: dict) -> str:
+def judge_check_line(check: dict | None) -> str:
+    """How far a person agreed with the judge, from the hand-check sheet."""
+    if not check or not check.get("checked"):
+        return "- The judge's scores have not been checked by hand yet."
+    return (
+        f"- A person checked {check['checked']} of the judge's scores by hand and "
+        f"agreed with {check['agreed']} ({check['rate']:.0%}); see the judge check "
+        "sheet in this folder."
+    )
+
+
+def build_report(
+    golden: dict,
+    baselines: dict,
+    injection: dict,
+    judge_check: dict | None = None,
+) -> str:
     overall = golden.get("summary_all_splits", {}).get("all", {})
     gain = semantic_layer_gain(golden, baselines)
     held = sum(pair[0] for pair in injection.get("attack_rates", {}).values())
@@ -194,6 +211,7 @@ def build_report(golden: dict, baselines: dict, injection: dict) -> str:
                 "- Faithfulness and helpfulness are scored by a judge model"
                 + (f" (`{judge}`)" if judge else "")
                 + ", the other numbers by rules without a model.",
+                judge_check_line(judge_check),
                 (
                     "- Return requests written without approval: "
                     f"{overall.get('writes_without_approval', '—')}. Database copy "
@@ -220,7 +238,9 @@ def main() -> int:
     name = model.replace("/", "_")
     baselines = load(RESULTS_DIR / f"baselines_v1_{name}.json")
     injection = load(RESULTS_DIR / f"{result_name(INJECTION_SET, model)}.json")
-    report = build_report(golden, baselines, injection)
+    sheet = RESULTS_DIR / f"judge_check_{name}.csv"
+    check = agreement(sheet) if sheet.exists() else None
+    report = build_report(golden, baselines, injection, check)
     path = RESULTS_DIR / f"final_report_{name}.md"
     path.write_text(report, encoding="utf-8")
     print(report)
