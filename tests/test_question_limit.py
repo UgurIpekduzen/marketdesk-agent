@@ -1,0 +1,73 @@
+"""Tests for the hourly question limit shared by all visitors."""
+
+import threading
+
+import pytest
+
+from src.ui.question_limit import WINDOW_SECONDS, QuestionLimit, QuestionLimitReached
+
+
+class Clock:
+    def __init__(self) -> None:
+        self.seconds = 1000.0
+
+    def __call__(self) -> float:
+        return self.seconds
+
+
+def test_questions_up_to_the_limit_pass_and_the_next_is_refused():
+    limit = QuestionLimit(per_hour=3, clock=Clock())
+
+    for _ in range(3):
+        limit.take()
+
+    with pytest.raises(QuestionLimitReached):
+        limit.take()
+
+
+def test_a_question_older_than_an_hour_no_longer_counts():
+    clock = Clock()
+    limit = QuestionLimit(per_hour=2, clock=clock)
+    limit.take()
+    clock.seconds += 1800
+    limit.take()
+
+    clock.seconds += WINDOW_SECONDS - 1800 - 1
+    with pytest.raises(QuestionLimitReached):
+        limit.take()
+
+    clock.seconds += 1
+    limit.take()
+
+
+def test_a_refused_question_takes_no_place():
+    clock = Clock()
+    limit = QuestionLimit(per_hour=1, clock=clock)
+    limit.take()
+    for _ in range(5):
+        with pytest.raises(QuestionLimitReached):
+            limit.take()
+
+    clock.seconds += WINDOW_SECONDS
+    limit.take()
+
+
+def test_visitors_asking_at_once_do_not_pass_the_limit_together():
+    limit = QuestionLimit(per_hour=50)
+    passed = []
+
+    def ask() -> None:
+        for _ in range(20):
+            try:
+                limit.take()
+            except QuestionLimitReached:
+                continue
+            passed.append(1)
+
+    threads = [threading.Thread(target=ask) for _ in range(8)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    assert len(passed) == 50

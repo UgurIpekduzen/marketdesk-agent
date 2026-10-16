@@ -490,6 +490,36 @@ def test_a_message_through_the_closed_chat_box_leaves_the_approval_as_shown(
     assert written_orders(synthetic_db_path) == [*before, "o_day14"]
 
 
+def test_a_long_message_sent_past_the_box_is_refused_on_the_server(
+    open_page, monkeypatch
+):
+    # An empty script: a model call would show a different error.
+    page = open_page()
+
+    page = send_crafted(
+        page,
+        monkeypatch,
+        page.chat_input[0].id,
+        chat_input_value="a" * (config.MAX_MESSAGE_CHARS + 1),
+    )
+
+    assert not page.exception
+    assert page.error[0].value == messages.UI_ERROR_TOO_LONG.format(
+        limit=config.MAX_MESSAGE_CHARS
+    )
+
+
+def test_the_hourly_question_limit_is_said_plainly(open_page, monkeypatch):
+    monkeypatch.setattr(config, "MAX_QUESTIONS_PER_HOUR", 1)
+    page = open_page(["support", "Merhaba."])
+    page = ask(page, "Merhaba")
+
+    page = ask(page, "Bir soru daha")
+
+    assert not page.exception
+    assert page.error[0].value == messages.UI_ERROR_QUESTION_LIMIT
+
+
 def test_a_click_on_an_approve_button_that_is_gone_writes_nothing(
     open_page, monkeypatch, synthetic_db_path
 ):

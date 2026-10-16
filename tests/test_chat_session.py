@@ -7,8 +7,10 @@ from pathlib import Path
 
 import pytest
 
+import config
 from src.orchestrator import Intent, SessionType
-from src.ui.chat_session import ChatSession, SessionClosed
+from src.ui.chat_session import ChatSession, MessageTooLong, SessionClosed
+from src.ui.question_limit import QuestionLimit, QuestionLimitReached
 from tests.agent_harness import request_count
 from tests.fakes import FakeLLM
 from tests.synthetic_data import ALICE
@@ -21,9 +23,13 @@ def open_session(synthetic_db_path, fake_policy_index):
     """Open sessions with a scripted model; all are closed after the test."""
     sessions = []
 
-    def start(script, customer=ALICE):
+    def start(script, customer=ALICE, question_limit=None):
         session = ChatSession(
-            synthetic_db_path, fake_policy_index, customer, FakeLLM(script=list(script))
+            synthetic_db_path,
+            fake_policy_index,
+            customer,
+            FakeLLM(script=list(script)),
+            question_limit=question_limit,
         )
         sessions.append(session)
         return session
@@ -163,6 +169,36 @@ def test_each_question_marks_the_session_as_used(open_session):
     session.ask("Merhaba")
 
     assert session.last_used > 0.0
+
+
+def test_a_message_over_the_limit_never_reaches_the_model(open_session):
+    # An empty script: a model call would fail the test.
+    session = open_session([])
+
+    with pytest.raises(MessageTooLong):
+        session.ask("a" * (config.MAX_MESSAGE_CHARS + 1))
+
+
+def test_a_message_at_the_limit_is_answered(open_session):
+    session = open_session(["support", "Merhaba."])
+
+    answer = session.ask("a" * config.MAX_MESSAGE_CHARS)
+
+    assert answer.display == "Merhaba."
+
+
+def test_sessions_share_the_question_limit_and_approvals_do_not_count(
+    open_session,
+):
+    limit = QuestionLimit(per_hour=1)
+    first = open_session(["support", "Birinci."], question_limit=limit)
+    second = open_session([], question_limit=limit)
+
+    first.ask("Merhaba")
+    first.decline()
+
+    with pytest.raises(QuestionLimitReached):
+        second.ask("Merhaba")
 
 
 def test_closing_ends_the_thread_and_refuses_more_work(open_session):

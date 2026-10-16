@@ -110,3 +110,10 @@ SESSION_IDLE_MINUTES = 15
 # the page itself took about 1.4 GB in the deploy trial, so 10 sessions
 # (about 0.75 GB) leave room to spare.
 MAX_OPEN_SESSIONS = 10
+# A message longer than this is refused before it reaches the model. The
+# longest question of the evaluation sets has 169 characters.
+MAX_MESSAGE_CHARS = 1000
+# Questions all visitors together may ask in one hour. The free tier allows
+# about 500 model requests a day and a question takes 3 to 5; the rest is
+# left for the evaluation.
+MAX_QUESTIONS_PER_HOUR = 60

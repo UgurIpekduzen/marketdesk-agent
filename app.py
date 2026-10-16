@@ -16,6 +16,7 @@ import config
 from src import messages, tracing
 from src.ui import resources
 from src.ui.chat_session import ChatSession
+from src.ui.question_limit import QuestionLimit
 from src.ui.session_pool import SessionPool
 from src.ui.view import AnswerView, approval_card, friendly_error, view_of
 
@@ -35,6 +36,12 @@ def session_pool() -> SessionPool:
     pool = SessionPool(config.SESSION_IDLE_MINUTES * 60, config.MAX_OPEN_SESSIONS)
     pool.start_checking()
     return pool
+
+
+@st.cache_resource
+def question_limit() -> QuestionLimit:
+    """One per server process, shared by every visitor."""
+    return QuestionLimit(config.MAX_QUESTIONS_PER_HOUR)
 
 
 @st.cache_resource
@@ -71,7 +78,12 @@ def open_session(identity: tuple, customer_unique_id: str | None) -> None:
     index = policy_index() if customer_unique_id else None
     try:
         st.session_state.session = session_pool().open(
-            lambda: ChatSession(resources.db_path(), index, customer_unique_id)
+            lambda: ChatSession(
+                resources.db_path(),
+                index,
+                customer_unique_id,
+                question_limit=question_limit(),
+            )
         )
     except Exception as failure:  # noqa: BLE001
         st.session_state.turns.append(("error", friendly_error(failure)))
@@ -245,8 +257,11 @@ def main() -> None:
     if waiting:
         draw_approval(session)
     prompt = messages.UI_INPUT_CUSTOMER if is_customer else messages.UI_INPUT_OPS
+    # The limit here only helps the visitor; the server checks it again.
     question = st.chat_input(
-        messages.UI_INPUT_WAITING_APPROVAL if waiting else prompt, disabled=waiting
+        messages.UI_INPUT_WAITING_APPROVAL if waiting else prompt,
+        disabled=waiting,
+        max_chars=config.MAX_MESSAGE_CHARS,
     )
     if question:
         answer(session, question)

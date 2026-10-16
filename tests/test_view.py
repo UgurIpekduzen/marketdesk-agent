@@ -2,11 +2,14 @@
 
 import pytest
 
+import config
 from src import messages
 from src.agents.ops import Reply as OpsReply
 from src.agents.run_log import RunLog
 from src.agents.support import Reply as SupportReply
 from src.orchestrator import Answer, Intent
+from src.ui.chat_session import MessageTooLong
+from src.ui.question_limit import QuestionLimitReached
 from src.ui.session_pool import SessionLimitReached
 from src.ui.view import approval_card, friendly_error, view_of, without_images
 
@@ -144,6 +147,11 @@ def wrapped(inner: Exception) -> Exception:
         (wrapped(ValueError("status 429")), messages.UI_ERROR_QUOTA),
         (TimeoutError(), messages.UI_ERROR_TIMEOUT),
         (SessionLimitReached("20 chat sessions are open"), messages.UI_ERROR_FULL),
+        (
+            MessageTooLong("1500 characters"),
+            messages.UI_ERROR_TOO_LONG.format(limit=config.MAX_MESSAGE_CHARS),
+        ),
+        (QuestionLimitReached("60 questions"), messages.UI_ERROR_QUESTION_LIMIT),
         (KeyError("GEMINI_API_KEY"), messages.UI_ERROR_NOT_CONFIGURED),
         (ZeroDivisionError("division by zero"), messages.UI_ERROR_GENERIC),
         (RuntimeError("refund of 500.00 BRL failed"), messages.UI_ERROR_GENERIC),

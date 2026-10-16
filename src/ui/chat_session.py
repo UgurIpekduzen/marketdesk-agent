@@ -22,10 +22,12 @@ from pathlib import Path
 
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 
+import config
 from src.knowledge.policy_index import PolicyIndex
 from src.mcp_server.client import OrdersClient
 from src.orchestrator import Answer, Orchestrator, SessionType
 from src.tools.escalation import EscalationQueue
+from src.ui.question_limit import QuestionLimit
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +40,10 @@ Job = Callable[[Orchestrator], Awaitable[object]]
 
 class SessionClosed(RuntimeError):
     """The session was closed and can take no more work."""
+
+
+class MessageTooLong(ValueError):
+    """The message is longer than the limit; it never reaches the model."""
 
 
 def stop(loop: asyncio.AbstractEventLoop, jobs: asyncio.Queue) -> None:
@@ -53,10 +59,13 @@ class ChatSession:
         policy_index: PolicyIndex | None = None,
         customer_unique_id: str | None = None,
         provider_llm: FunctionCallingLLM | None = None,
+        question_limit: QuestionLimit | None = None,
     ) -> None:
         """Open a customer session, or an operations session without a customer.
 
         The session type is fixed here and cannot be changed afterwards.
+        question_limit, when given, is shared with the other sessions and
+        counts every question that reaches the model.
         """
         self.session_type = (
             SessionType.CUSTOMER if customer_unique_id else SessionType.OPS
@@ -65,6 +74,7 @@ class ChatSession:
         self._policy_index = policy_index
         self._customer = customer_unique_id
         self._provider_llm = provider_llm
+        self._question_limit = question_limit
         self._closed = False
         # When the session was last given work, on the monotonic clock.
         self.last_used = time.monotonic()
@@ -140,6 +150,12 @@ class ChatSession:
     # --- What the page calls -----------------------------------------------
 
     def ask(self, message: str) -> Answer:
+        """Answer one message. The limits are checked here, on the server:
+        whatever the page shows, every message passes this way."""
+        if len(message) > config.MAX_MESSAGE_CHARS:
+            raise MessageTooLong(f"{len(message)} characters")
+        if self._question_limit is not None and not self._closed:
+            self._question_limit.take()
         return self._do(lambda router: router.ask(message))
 
     def approve(self) -> str:

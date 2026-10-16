@@ -194,6 +194,11 @@ UI_ERROR_FULL = (
     "Demo şu an çok sayıda ziyaretçiye hizmet veriyor. Lütfen birkaç dakika "
     'sonra "Yeni sohbet" düğmesiyle tekrar deneyin.'
 )
+UI_ERROR_TOO_LONG = "Mesajınız çok uzun; lütfen en fazla {limit} karakterle yazın."
+UI_ERROR_QUESTION_LIMIT = (
+    "Demo şu an çok yoğun: bu saat için soru sınırına ulaşıldı. Lütfen biraz "
+    "sonra tekrar deneyin."
+)
 UI_NO_CUSTOMERS = "Veritabanında örnek müşteri bulunamadı."
 UI_ERROR_QUOTA = (
     "Yapay zekâ servisinin ücretsiz kullanım kotası şu an dolmuş görünüyor. "
