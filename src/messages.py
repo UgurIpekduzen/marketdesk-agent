@@ -150,7 +150,6 @@ UI_SESSION_CUSTOMER = "Müşteri"
 UI_SESSION_OPS = "Operasyon"
 UI_CUSTOMER_PICKER = "Örnek müşteri"
 UI_NEW_CONVERSATION = "Yeni konuşma"
-UI_TODAY = "Sistemde bugün: {today}"
 UI_INPUT_CUSTOMER = "Sorunuzu yazın"
 UI_INPUT_OPS = "Bir metrik sorusu yazın"
 UI_INPUT_WAITING_APPROVAL = "Önce aşağıdaki talebi onaylayın ya da vazgeçin"
@@ -182,14 +181,9 @@ UI_NO_DATABASE = (
     "Demo verisi hazırlanamadı. Lütfen sayfayı birkaç dakika sonra yenileyin; "
     "yerelde veritabanı `task data` komutuyla hazırlanır."
 )
-UI_DATA_NOTE = (
-    "Veri: Olist Brazilian E-Commerce veri seti (Kaggle), CC BY-NC-SA 4.0. "
-    "Veri bu uygulamanın deposunda tutulmaz; ilk açılışta indirilir."
-)
-UI_SHARED_DATA_NOTE = (
-    "Demo verisi ziyaretçiler arasında ortaktır; başka bir ziyaretçinin açtığı "
-    "iade taleplerini görebilirsiniz."
-)
+# A credit line in the usual English form, like the dataset's name and
+# licence: an exception to the Turkish interface chosen by the author.
+UI_DATA_NOTE = "Data: Olist Brazilian E-Commerce, CC BY-NC-SA 4.0"
 UI_SESSION_EXPIRED = (
     "Uzun süre işlem yapılmadığı için önceki sohbet kapatıldı; yeni bir sohbet "
     "başlatıldı."
