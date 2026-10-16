@@ -32,7 +32,8 @@ services:
       - path: .env
         required: false
     ports:
-      - "8501:8501"
+      # Bound to this machine only: the page spends the key in .env.
+      - "127.0.0.1:8501:8501"
     command: uv run streamlit run app.py --server.address 0.0.0.0 --server.headless true
     # Healthy once Streamlit answers. `task up` waits for this, so a service
     # that exits or never comes up is reported instead of passing silently.
