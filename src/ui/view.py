@@ -33,13 +33,28 @@ ERROR_MARKS = (
 # address as soon as the answer is drawn, so a model talked into writing
 # one could send data to any site without a click.
 IMAGE_PATTERN = re.compile(r"!\[[^\]]*\](?:\([^)]*\)|\[[^\]]*\])")
+# Every markdown image starts with these two characters, whatever follows
+# (nested brackets, a shortcut reference defined elsewhere). Escaped, they
+# are drawn as plain text and nothing is fetched.
+IMAGE_START = "!["
+ESCAPED_IMAGE_START = "!\\["
 
 
 def without_images(text: str) -> str:
-    """The text with every markdown image replaced by a plain note."""
-    cleaned, count = IMAGE_PATTERN.subn(messages.UI_IMAGE_REMOVED, text)
-    if count:
-        logger.warning("removed %d markdown images from an answer", count)
+    """The text with no markdown image left to draw.
+
+    The usual forms become a plain note; any other start of an image is
+    escaped, so that a form the pattern misses cannot load either.
+    """
+    cleaned, replaced = IMAGE_PATTERN.subn(messages.UI_IMAGE_REMOVED, text)
+    escaped = cleaned.count(IMAGE_START)
+    cleaned = cleaned.replace(IMAGE_START, ESCAPED_IMAGE_START)
+    if replaced or escaped:
+        logger.warning(
+            "removed %d markdown images and escaped %d more in an answer",
+            replaced,
+            escaped,
+        )
     return cleaned
 
 

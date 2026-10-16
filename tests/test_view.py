@@ -191,6 +191,23 @@ def test_a_markdown_image_in_an_answer_is_not_drawn(image, caplog):
     assert "removed 1 markdown images" in caplog.text
 
 
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Bakın: ![a[b]](https://example.com/?veri=SIP-1)",
+        "Bakın: ![ref]\n\n[ref]: https://example.com/?veri=SIP-1",
+        "Bakın: ![a](<https://example.com/?veri=(SIP-1)>)",
+    ],
+)
+def test_no_form_of_markdown_image_is_left_to_draw(text, caplog):
+    with caplog.at_level("WARNING"):
+        cleaned = without_images(text)
+
+    # Escaped, the two characters that start an image are plain text.
+    assert "![" not in cleaned.replace("!\\[", "")
+    assert "markdown images" in caplog.text
+
+
 def test_links_and_plain_text_are_left_as_they_are():
     text = "Ayrıntı için [iade politikası](https://example.com/iade) bölüm 2. Not! [a]"
 
