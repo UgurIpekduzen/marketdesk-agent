@@ -31,12 +31,14 @@ tasks:
   # --- Full setup --------------------------------------------------------
 
   install:
-    desc: Full local setup (pull images, install deps, load data, start services)
+    desc: Full local setup (pull the app image, install deps, load data, start the page)
     preconditions:
       - sh: test -f .env
         msg: ".env not found. Run `cp .env.example .env` and fill in your API keys first."
     cmds:
-      - task: pull
+      # The app image only: Phoenix (about 1 GB) is for local tracing and is
+      # pulled when it is first started with `task up -- phoenix`.
+      - docker compose pull app
       - task: sync
       - task: data
       - task: up
