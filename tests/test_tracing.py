@@ -13,6 +13,7 @@ import config
 from src import tracing
 from src.agents.ops import OpsAgent
 from src.guardrails.pii import HASH_KEY_VARIABLE, RAW_ID_PATTERN, hash_id
+from src.knowledge.llamaindex_policy_index import LlamaIndexPolicyIndex, build_index
 from tests.agent_harness import asking, with_agent
 from tests.fakes import FakeLLM
 from tests.synthetic_data import ALICE
@@ -429,3 +430,90 @@ def test_no_cost_is_written_while_no_price_is_set(traced, monkeypatch):
 
     (exported,) = exporter.get_finished_spans()
     assert tracing.COST_ATTRIBUTE not in exported.attributes
+
+
+# --- Policy search through LlamaIndex -----------------------------------
+
+POLICY_QUESTION = "iade süresi kaç gün"
+
+
+@pytest.fixture(scope="module")
+def llamaindex_index(fake_embedder, tmp_path_factory):
+    index_dir = tmp_path_factory.mktemp("traced-policy-index") / "index"
+    build_index(fake_embedder, index_dir)
+    return LlamaIndexPolicyIndex(fake_embedder, index_dir)
+
+
+def attribute_values(exporter) -> list:
+    """Every attribute value of every span, as exported.
+
+    Not to_json(): it escapes Turkish letters, and a search in it would not
+    find Turkish text that is there.
+    """
+    return [
+        value
+        for span in exporter.get_finished_spans()
+        for value in span.attributes.values()
+    ]
+
+
+def span_kinds(exporter) -> set:
+    return {
+        span.attributes.get(tracing.SPAN_KIND)
+        for span in exporter.get_finished_spans()
+    }
+
+
+def is_vector(value) -> bool:
+    return (
+        isinstance(value, (list, tuple))
+        and len(value) > 0
+        and all(isinstance(item, float) for item in value)
+    )
+
+
+def test_policy_search_is_recorded_as_embedding_and_retrieval_steps(
+    traced, llamaindex_index
+):
+    exporter = traced("phoenix")
+
+    results = llamaindex_index.search(POLICY_QUESTION, 3)
+
+    assert {"EMBEDDING", "RETRIEVER"} <= span_kinds(exporter)
+    text = "\n".join(str(value) for value in attribute_values(exporter))
+    assert POLICY_QUESTION in text
+    assert results[0]["text"] in text
+
+
+def test_hosted_target_gets_no_text_or_vector_of_a_policy_search(
+    traced, llamaindex_index
+):
+    exporter = traced("langfuse")
+
+    results = llamaindex_index.search(POLICY_QUESTION, 3)
+
+    # The steps still arrive, as kinds only.
+    assert {"EMBEDDING", "RETRIEVER"} <= span_kinds(exporter)
+    for span in exporter.get_finished_spans():
+        for key in span.attributes:
+            assert key in tracing.HOSTED_ATTRIBUTES or key.startswith(
+                tracing.OWN_PREFIX
+            ), key
+    values = attribute_values(exporter)
+    assert not any(is_vector(value) for value in values)
+    text = "\n".join(str(value) for value in values)
+    assert POLICY_QUESTION not in text
+    for result in results:
+        assert result["text"] not in text
+
+
+def test_local_target_masks_an_id_in_a_policy_search(
+    traced, llamaindex_index, secrets
+):
+    exporter = traced("phoenix")
+
+    llamaindex_index.search(f"{RAW_ID} siparişinin iade süresi", 3)
+
+    text = "\n".join(str(value) for value in attribute_values(exporter))
+    assert RAW_ID not in text
+    assert hash_id(RAW_ID) in text
