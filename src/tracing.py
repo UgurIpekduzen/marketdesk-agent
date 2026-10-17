@@ -13,10 +13,11 @@ the SQL check, read from the tool's answer, and a span of its own for the
 person's answer to an approval request. The instrumentation does not make
 its spans the current context, so that span starts a trace of its own.
 
-Whatever the target, every span passes MaskingExporter on its way out.
-Raw ids become short keyed hashes, e-mail addresses, phone numbers and the
-known personal values of the sessions are masked, and the values of the
-secret environment variables are removed. A hosted target then gets only
+Embedding vectors are not recorded at all. Whatever the target, every
+span passes MaskingExporter on its way out. Raw ids become short keyed
+hashes, e-mail addresses, phone numbers and the known personal values of
+the sessions are masked, and the values of the secret environment
+variables are removed. A hosted target then gets only
 the attributes on HOSTED_ATTRIBUTES and the project's own: no message,
 tool argument or tool result, no event detail and no error text. An
 attribute nobody has thought about stays in this process.
@@ -29,6 +30,7 @@ import os
 from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
 
+from openinference.instrumentation import TraceConfig
 from openinference.instrumentation.llama_index import LlamaIndexInstrumentor
 from opentelemetry import trace
 from opentelemetry.sdk.resources import Resource
@@ -290,9 +292,13 @@ def setup_tracing(
     provider = TracerProvider(resource=Resource({"service.name": SERVICE_NAME}))
     processor = BatchSpanProcessor if batch else SimpleSpanProcessor
     provider.add_span_processor(processor(exporter))
-    # The instrumentation records everything; what may leave is decided in
-    # MaskingExporter, after the project's own attributes are read.
-    LlamaIndexInstrumentor().instrument(tracer_provider=provider)
+    # The instrumentation records everything but embedding vectors; what may
+    # leave is decided in MaskingExporter, after the project's own attributes
+    # are read. A vector is made from the unmasked text, which masking cannot
+    # reach, and nobody reads one when debugging.
+    LlamaIndexInstrumentor().instrument(
+        tracer_provider=provider, config=TraceConfig(hide_embedding_vectors=True)
+    )
     global _provider
     _provider = provider
     logger.info("tracing is on, target=%s", target)

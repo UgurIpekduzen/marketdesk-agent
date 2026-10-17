@@ -517,3 +517,20 @@ def test_local_target_masks_an_id_in_a_policy_search(
     text = "\n".join(str(value) for value in attribute_values(exporter))
     assert RAW_ID not in text
     assert hash_id(RAW_ID) in text
+
+
+def test_no_target_gets_an_embedding_vector(traced, llamaindex_index):
+    exporter = traced("phoenix")
+
+    llamaindex_index.search(POLICY_QUESTION, 3)
+
+    vectors = [
+        value
+        for span in exporter.get_finished_spans()
+        for key, value in span.attributes.items()
+        if key.endswith("embedding.vector")
+    ]
+    # The attribute is there, so the check would see a vector if one came.
+    assert vectors
+    assert not any(is_vector(value) for value in vectors)
+
