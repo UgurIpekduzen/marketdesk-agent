@@ -13,7 +13,6 @@ import config
 from src import tracing
 from src.agents.ops import OpsAgent
 from src.guardrails.pii import HASH_KEY_VARIABLE, RAW_ID_PATTERN, hash_id
-from src.knowledge.llamaindex_policy_index import LlamaIndexPolicyIndex, build_index
 from tests.agent_harness import asking, with_agent
 from tests.fakes import FakeLLM
 from tests.synthetic_data import ALICE
@@ -432,16 +431,9 @@ def test_no_cost_is_written_while_no_price_is_set(traced, monkeypatch):
     assert tracing.COST_ATTRIBUTE not in exported.attributes
 
 
-# --- Policy search through LlamaIndex -----------------------------------
+# --- Policy search ------------------------------------------------------
 
 POLICY_QUESTION = "iade süresi kaç gün"
-
-
-@pytest.fixture(scope="module")
-def llamaindex_index(fake_embedder, tmp_path_factory):
-    index_dir = tmp_path_factory.mktemp("traced-policy-index") / "index"
-    build_index(fake_embedder, index_dir)
-    return LlamaIndexPolicyIndex(fake_embedder, index_dir)
 
 
 def attribute_values(exporter) -> list:
@@ -473,11 +465,11 @@ def is_vector(value) -> bool:
 
 
 def test_policy_search_is_recorded_as_embedding_and_retrieval_steps(
-    traced, llamaindex_index
+    traced, fake_policy_index
 ):
     exporter = traced("phoenix")
 
-    results = llamaindex_index.search(POLICY_QUESTION, 3)
+    results = fake_policy_index.search(POLICY_QUESTION, 3)
 
     assert {"EMBEDDING", "RETRIEVER"} <= span_kinds(exporter)
     text = "\n".join(str(value) for value in attribute_values(exporter))
@@ -486,11 +478,11 @@ def test_policy_search_is_recorded_as_embedding_and_retrieval_steps(
 
 
 def test_hosted_target_gets_no_text_or_vector_of_a_policy_search(
-    traced, llamaindex_index
+    traced, fake_policy_index
 ):
     exporter = traced("langfuse")
 
-    results = llamaindex_index.search(POLICY_QUESTION, 3)
+    results = fake_policy_index.search(POLICY_QUESTION, 3)
 
     # The steps still arrive, as kinds only.
     assert {"EMBEDDING", "RETRIEVER"} <= span_kinds(exporter)
@@ -508,21 +500,21 @@ def test_hosted_target_gets_no_text_or_vector_of_a_policy_search(
 
 
 def test_local_target_masks_an_id_in_a_policy_search(
-    traced, llamaindex_index, secrets
+    traced, fake_policy_index, secrets
 ):
     exporter = traced("phoenix")
 
-    llamaindex_index.search(f"{RAW_ID} siparişinin iade süresi", 3)
+    fake_policy_index.search(f"{RAW_ID} siparişinin iade süresi", 3)
 
     text = "\n".join(str(value) for value in attribute_values(exporter))
     assert RAW_ID not in text
     assert hash_id(RAW_ID) in text
 
 
-def test_no_target_gets_an_embedding_vector(traced, llamaindex_index):
+def test_no_target_gets_an_embedding_vector(traced, fake_policy_index):
     exporter = traced("phoenix")
 
-    llamaindex_index.search(POLICY_QUESTION, 3)
+    fake_policy_index.search(POLICY_QUESTION, 3)
 
     vectors = [
         value

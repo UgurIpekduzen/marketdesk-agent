@@ -162,7 +162,7 @@ tasks:
   # --- Knowledge layer ---------------------------------------------------
 
   index:build:
-    desc: Build both policy indexes in policies/ (run after changing a policy or the embedding model)
+    desc: Build the policy index in policies/index (run after changing a policy or the embedding model)
     cmds:
       - "{{.RUN}} uv run python scripts/build_policy_index.py"
 

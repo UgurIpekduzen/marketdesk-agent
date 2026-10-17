@@ -1,4 +1,5 @@
-"""The policy documents as a searchable index.
+"""The policy documents as a searchable index, built and searched through
+LlamaIndex.
 
 Each numbered section of a policy document is one chunk: a section covers
 one topic, is short, and is exactly what an answer cites ("document,
@@ -8,22 +9,35 @@ The text that is embedded is "document title: section heading" followed by
 the section text. The "Kural: ..." line is taken out of the text and kept
 as metadata: it names rule ids, which do not help a search.
 
-The index is a Chroma collection built locally with `task index:build` and
-stored in policies/index/, so the deployed application does not embed the
-documents again. A hash of the sections and of the model settings is stored
-with it; when it no longer matches, the index is stale and must be rebuilt.
+- The ONNX embedder is wrapped as a LlamaIndex embedding model; queries and
+  passages keep their "query: " and "passage: " prefixes.
+- Each section is a TextNode whose text for embedding is built by the
+  node's own templates.
+- The vectors go to a Chroma collection through ChromaVectorStore, and a
+  search is a VectorStoreIndex retriever over it.
+
+The index is built locally with `task index:build` and stored in
+policies/index/, so the deployed application does not embed the documents
+again. A hash of the sections and of the model settings is stored with it;
+when it no longer matches, the index is stale and must be rebuilt.
 """
 
 import hashlib
 import json
+import math
 import re
 import shutil
 import tempfile
 from dataclasses import asdict, dataclass
 from pathlib import Path
+from typing import Any
 
 import chromadb
-import numpy as np
+from llama_index.core import StorageContext, VectorStoreIndex
+from llama_index.core.base.embeddings.base import BaseEmbedding
+from llama_index.core.schema import TextNode
+from llama_index.vector_stores.chroma import ChromaVectorStore
+from pydantic import PrivateAttr
 
 import config
 from src import messages
@@ -36,6 +50,9 @@ COLLECTION = "policies"
 
 SECTION_START = re.compile(r"^## ", re.MULTILINE)
 RULE_LINE = re.compile(r"^Kural: (.+)$", re.MULTILINE)
+# Only the document title and the heading go in front of the text, as
+# "document: heading", the same as Section.embedding_text.
+NOT_EMBEDDED = ["file", "number", "rules"]
 
 
 @dataclass(frozen=True)
@@ -132,6 +149,40 @@ def chroma_client(path: Path) -> chromadb.ClientAPI:
     )
 
 
+class E5Embedding(BaseEmbedding):
+    """The project's ONNX embedder as a LlamaIndex embedding model."""
+
+    _embedder: Any = PrivateAttr()
+
+    def __init__(self, embedder: Embedder, batch_size: int = 10) -> None:
+        super().__init__(model_name="multilingual-e5-small", embed_batch_size=batch_size)
+        self._embedder = embedder
+
+    def _get_query_embedding(self, query: str) -> list[float]:
+        return self._embedder.embed_queries([query])[0].tolist()
+
+    async def _aget_query_embedding(self, query: str) -> list[float]:
+        return self._get_query_embedding(query)
+
+    def _get_text_embedding(self, text: str) -> list[float]:
+        return self._embedder.embed_passages([text])[0].tolist()
+
+    def _get_text_embeddings(self, texts: list[str]) -> list[list[float]]:
+        return self._embedder.embed_passages(texts).tolist()
+
+
+def section_node(section: Section) -> TextNode:
+    return TextNode(
+        id_=section.id,
+        text=section.text,
+        metadata=section_metadata(section),
+        excluded_embed_metadata_keys=NOT_EMBEDDED,
+        metadata_template="{value}",
+        metadata_separator=": ",
+        text_template="{metadata_str}\n{content}",
+    )
+
+
 def build_index(
     embedder: Embedder,
     index_dir: Path = INDEX_DIR,
@@ -139,8 +190,6 @@ def build_index(
 ) -> int:
     """Embed every section and write the index from scratch."""
     sections = read_sections(policies_dir)
-    vectors = embedder.embed_passages([section.embedding_text for section in sections])
-
     # Built in a new folder and then moved into place: Chroma remembers the
     # folders it has opened in this process, so writing over an old index
     # where it stands would find the old collection still there.
@@ -151,11 +200,16 @@ def build_index(
         metadata={"hnsw:space": "cosine", "source_hash": source_hash(sections)},
         embedding_function=None,
     )
-    collection.add(
-        ids=[section.id for section in sections],
-        embeddings=vectors.tolist(),
-        documents=[section.text for section in sections],
-        metadatas=[section_metadata(section) for section in sections],
+    VectorStoreIndex(
+        [section_node(section) for section in sections],
+        storage_context=StorageContext.from_defaults(
+            vector_store=ChromaVectorStore(chroma_collection=collection)
+        ),
+        # All sections in one batch. The quantized model gives a text a
+        # slightly different vector depending on what else is in its batch
+        # (up to 0.015 apart, measured); one batch keeps the vectors the
+        # agent was evaluated with.
+        embed_model=E5Embedding(embedder, batch_size=len(sections)),
     )
     shutil.rmtree(index_dir, ignore_errors=True)
     shutil.copytree(fresh, index_dir)
@@ -173,7 +227,10 @@ class PolicyIndex:
         self._collection = chroma_client(self._copy).get_collection(
             COLLECTION, embedding_function=None
         )
-        self._embedder = embedder
+        self._index = VectorStoreIndex.from_vector_store(
+            ChromaVectorStore(chroma_collection=self._collection),
+            embed_model=E5Embedding(embedder),
+        )
 
     @property
     def source_hash(self) -> str:
@@ -184,17 +241,12 @@ class PolicyIndex:
 
     def search(self, query: str, k: int) -> list[dict]:
         """The k sections closest to the query, best first."""
-        found = self._collection.query(
-            query_embeddings=np.asarray(self._embedder.embed_queries([query])).tolist(),
-            n_results=min(k, len(self)),
-            include=["documents", "metadatas", "distances"],
-        )
+        retriever = self._index.as_retriever(similarity_top_k=min(k, len(self)))
         return [
-            search_result(text, metadata, distance)
-            for text, metadata, distance in zip(
-                found["documents"][0],
-                found["metadatas"][0],
-                found["distances"][0],
-                strict=True,
+            # ChromaVectorStore gives exp(-distance) as the score; the distance
+            # is taken back, so the score is the cosine similarity.
+            search_result(
+                found.node.get_content(), found.node.metadata, -math.log(found.score)
             )
+            for found in retriever.retrieve(query)
         ]

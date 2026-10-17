@@ -6,15 +6,19 @@ quality with the real model is checked in test_retrieval.py.
 
 import hashlib
 
+import numpy as np
 import pytest
+from llama_index.core.schema import MetadataMode
 
 import config
 from src.knowledge.policy_index import (
     INDEX_DIR,
     POLICIES_DIR,
+    E5Embedding,
     PolicyIndex,
     build_index,
     read_sections,
+    section_node,
     source_hash,
 )
 
@@ -111,6 +115,50 @@ def test_fingerprint_changes_with_the_text_and_with_the_model(monkeypatch, tmp_p
     assert source_hash(sections) != original
 
 
+# --- LlamaIndex nodes and embedding model --------------------------------
+
+
+def test_a_node_embeds_the_section_embedding_text():
+    for section in read_sections():
+        node = section_node(section)
+
+        assert node.get_content(MetadataMode.EMBED) == section.embedding_text
+        assert node.get_content() == section.text
+
+
+def test_the_wrapped_embedder_keeps_queries_and_passages_apart():
+    class Recorder:
+        def embed_queries(self, texts):
+            return np.array([[1.0, 0.0] for _ in texts])
+
+        def embed_passages(self, texts):
+            return np.array([[0.0, 1.0] for _ in texts])
+
+    model = E5Embedding(Recorder())
+
+    assert model.get_query_embedding("soru") == [1.0, 0.0]
+    assert model.get_text_embedding("metin") == [0.0, 1.0]
+    assert model.get_text_embedding_batch(["a", "b"]) == [[0.0, 1.0], [0.0, 1.0]]
+
+
+def test_all_sections_are_embedded_in_one_batch(fake_embedder, tmp_path):
+    # The quantized model gives a text a slightly different vector in a
+    # different batch; the stored vectors are the ones of a single batch.
+    batches = []
+
+    class Recorder:
+        def embed_queries(self, texts):
+            return fake_embedder.embed_queries(texts)
+
+        def embed_passages(self, texts):
+            batches.append(len(texts))
+            return fake_embedder.embed_passages(texts)
+
+    build_index(Recorder(), tmp_path / "index")
+
+    assert batches == [28]
+
+
 # --- Building and searching ---------------------------------------------
 
 
@@ -144,6 +192,16 @@ def test_results_are_ordered_best_first(fake_policy_index):
 
     assert scores == sorted(scores, reverse=True)
     assert all(-1 <= score <= 1 for score in scores)
+
+
+def test_score_is_the_cosine_similarity(fake_embedder, fake_policy_index):
+    query = "iade süresi kaç gün"
+    texts = {section.citation: section.embedding_text for section in read_sections()}
+
+    for result in fake_policy_index.search(query, 5):
+        passage = fake_embedder.embed_passages([texts[result["citation"]]])[0]
+        cosine = float(fake_embedder.embed_queries([query])[0] @ passage)
+        assert result["score"] == pytest.approx(cosine, abs=1e-4)
 
 
 def test_asking_for_more_than_there_is_returns_everything(fake_policy_index):
