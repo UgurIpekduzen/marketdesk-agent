@@ -1108,6 +1108,19 @@ wheels = [
 ]
 
 [[package]]
+name = "llama-index-vector-stores-chroma"
+version = "0.6.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "chromadb" },
+    { name = "llama-index-core" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/7b/d5/7d969f1ac582c39b2f01cad8e27dd774d4a86a0c0c23432f9376345f9049/llama_index_vector_stores_chroma-0.6.0.tar.gz", hash = "sha256:98a4d049f0db7c0c151558945600719698e38132066786ca22127a743e055554", size = 8254, upload-time = "2026-08-31T16:11:57.578Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/10/c9/ad37b55ac3fb5e355836c3905546b342fd3aca025b0d25026ecf652d2f47/llama_index_vector_stores_chroma-0.6.0-py3-none-any.whl", hash = "sha256:5f5afd52930eafc8129da35d41abbf199a4de5644ffccffeb40d9864ab22101d", size = 8077, upload-time = "2026-08-31T16:11:56.837Z" },
+]
+
+[[package]]
 name = "llama-index-workflows"
 version = "2.25.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1143,6 +1156,7 @@ dependencies = [
     { name = "llama-index-core" },
     { name = "llama-index-llms-google-genai" },
     { name = "llama-index-llms-groq" },
+    { name = "llama-index-vector-stores-chroma" },
     { name = "mcp" },
     { name = "numpy" },
     { name = "onnxruntime" },
@@ -1170,6 +1184,7 @@ requires-dist = [
     { name = "llama-index-core", specifier = "==0.14.25" },
     { name = "llama-index-llms-google-genai", specifier = "==0.11.2" },
     { name = "llama-index-llms-groq", specifier = "==0.6.1" },
+    { name = "llama-index-vector-stores-chroma", specifier = "==0.6.0" },
     { name = "mcp", specifier = "==2.3.0" },
     { name = "numpy", specifier = "==2.5.3" },
     { name = "onnxruntime", specifier = "==1.30.0" },
