@@ -3,9 +3,11 @@
 These tests download the model on first use, so they are marked "model"
 and left out of the default run. Run them with `task test:model`.
 
-The numbers are floors set from the first measurement (15 of 20 first,
-17 in the top three, 18 in the top five): a change to the policies, to the
-chunking or to the model that makes search worse shows up here.
+Measured: 14 of 20 questions find the expected section first, 18 in the
+top three, 18 in the top five (the same on the code of 2026-10-08 and after
+the move to LlamaIndex). The floors are 14, 16 and 17: a change to the
+policies, to the chunking or to the model that makes search worse shows up
+here.
 """
 
 import pytest
