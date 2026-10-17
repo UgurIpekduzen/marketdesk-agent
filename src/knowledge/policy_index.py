@@ -99,6 +99,33 @@ def source_hash(sections: list[Section]) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
+def section_metadata(section: Section) -> dict:
+    """What is stored next to a section's vector (Chroma takes flat values)."""
+    return {
+        "file": section.file,
+        "document": section.document,
+        "number": section.number,
+        "heading": section.heading,
+        "rules": ", ".join(section.rules),
+    }
+
+
+def search_result(text: str, metadata: dict, distance: float) -> dict:
+    """One search result, as the policy tool returns it."""
+    return {
+        "citation": messages.POLICY_CITATION.format(
+            document=metadata["document"], number=metadata["number"]
+        ),
+        "document": metadata["document"],
+        "section": metadata["number"],
+        "heading": metadata["heading"],
+        "text": text,
+        "rules": metadata["rules"].split(", ") if metadata["rules"] else [],
+        # Cosine similarity: 1 is the same direction.
+        "score": round(1 - distance, 4),
+    }
+
+
 def chroma_client(path: Path) -> chromadb.ClientAPI:
     return chromadb.PersistentClient(
         path=str(path), settings=chromadb.Settings(anonymized_telemetry=False)
@@ -128,16 +155,7 @@ def build_index(
         ids=[section.id for section in sections],
         embeddings=vectors.tolist(),
         documents=[section.text for section in sections],
-        metadatas=[
-            {
-                "file": section.file,
-                "document": section.document,
-                "number": section.number,
-                "heading": section.heading,
-                "rules": ", ".join(section.rules),
-            }
-            for section in sections
-        ],
+        metadatas=[section_metadata(section) for section in sections],
     )
     shutil.rmtree(index_dir, ignore_errors=True)
     shutil.copytree(fresh, index_dir)
@@ -171,25 +189,12 @@ class PolicyIndex:
             n_results=min(k, len(self)),
             include=["documents", "metadatas", "distances"],
         )
-        results = []
-        for text, metadata, distance in zip(
-            found["documents"][0],
-            found["metadatas"][0],
-            found["distances"][0],
-            strict=True,
-        ):
-            results.append(
-                {
-                    "citation": messages.POLICY_CITATION.format(
-                        document=metadata["document"], number=metadata["number"]
-                    ),
-                    "document": metadata["document"],
-                    "section": metadata["number"],
-                    "heading": metadata["heading"],
-                    "text": text,
-                    "rules": metadata["rules"].split(", ") if metadata["rules"] else [],
-                    # Cosine similarity: 1 is the same direction.
-                    "score": round(1 - distance, 4),
-                }
+        return [
+            search_result(text, metadata, distance)
+            for text, metadata, distance in zip(
+                found["documents"][0],
+                found["metadatas"][0],
+                found["distances"][0],
+                strict=True,
             )
-        return results
+        ]
