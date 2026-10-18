@@ -91,6 +91,12 @@ class SemanticLayer:
     metrics: dict[str, Metric]
 
 
+# The columns every metric result has, besides its dimensions.
+NUMERATOR = "numerator"
+DENOMINATOR = "denominator"
+VALUE = "value"
+
+
 def parse_semantic_layer(text: str) -> SemanticLayer:
     """Read and check the definitions; raise ValueError on the first fault."""
     data = yaml.safe_load(text)
@@ -228,13 +234,13 @@ def build_sql(
     used_levels = {layer.dimensions[name].level for name in (*group_by, *filtered)}
 
     # A metric without a denominator is a plain total; otherwise a ratio.
-    aggregates = [f"{metric.numerator} AS numerator"]
-    result_columns = [*group_by, "numerator"]
-    value = "numerator"
+    aggregates = [f"{metric.numerator} AS {NUMERATOR}"]
+    result_columns = [*group_by, NUMERATOR]
+    value = NUMERATOR
     if metric.denominator is not None:
-        aggregates.append(f"{metric.denominator} AS denominator")
-        result_columns.append("denominator")
-        value = "1.0 * numerator / NULLIF(denominator, 0)"
+        aggregates.append(f"{metric.denominator} AS {DENOMINATOR}")
+        result_columns.append(DENOMINATOR)
+        value = f"1.0 * {NUMERATOR} / NULLIF({DENOMINATOR}, 0)"
     grouping = f" GROUP BY {', '.join(group_by)}" if group_by else ""
     ordering = f" ORDER BY {', '.join(group_by)}" if group_by else ""
 
@@ -272,13 +278,13 @@ def build_sql(
         )
 
     # Ranking: keep groups of a minimum size, order by the value, cut.
-    size = "denominator" if metric.denominator is not None else "numerator"
+    size = DENOMINATOR if metric.denominator is not None else NUMERATOR
     having = f" WHERE {size} >= :min_count" if with_min_count else ""
     if order is not None:
         tie_break = "".join(f", {name}" for name in group_by)
-        ordering = f" ORDER BY value {ORDERS[order]}{tie_break}"
+        ordering = f" ORDER BY {VALUE} {ORDERS[order]}{tie_break}"
     return (
-        f"SELECT {', '.join(result_columns)}, {value} AS value "
+        f"SELECT {', '.join(result_columns)}, {value} AS {VALUE} "
         f"FROM ({inner}) AS result{having}{ordering} LIMIT {limit}"
     )
 

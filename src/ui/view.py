@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 import config
 from src import messages
 from src.formatting import format_money
+from src.knowledge.semantic_layer import DENOMINATOR, NUMERATOR, VALUE
 from src.orchestrator import Answer, Intent
 from src.ui.chat_session import MessageTooLong
 from src.ui.question_limit import QuestionLimitReached
@@ -20,6 +21,14 @@ logger = logging.getLogger(__name__)
 AGENT_LABELS = {
     Intent.SUPPORT: messages.UI_AGENT_SUPPORT,
     Intent.OPS_METRIC: messages.UI_AGENT_OPS,
+}
+# Headers of a result table: the dimensions by name, and the columns every
+# metric result has.
+COLUMN_HEADERS = {
+    **messages.UI_TABLE_DIMENSIONS,
+    NUMERATOR: messages.UI_COLUMN_NUMERATOR,
+    DENOMINATOR: messages.UI_COLUMN_DENOMINATOR,
+    VALUE: messages.UI_COLUMN_VALUE,
 }
 # Marks in an error text, lower case, and the message shown for them.
 ERROR_MARKS = (
@@ -96,13 +105,13 @@ def readable_table(table: dict) -> dict:
     """
     columns = list(table["columns"])
     rows = [list(row) for row in table["rows"]]
-    if "numerator" in columns and "value" in columns:
-        numerator, value = columns.index("numerator"), columns.index("value")
+    if NUMERATOR in columns and VALUE in columns:
+        numerator, value = columns.index(NUMERATOR), columns.index(VALUE)
         if all(row[numerator] == row[value] for row in rows):
             del columns[numerator]
             for row in rows:
                 del row[numerator]
-    headers = [messages.UI_TABLE_COLUMNS.get(column, column) for column in columns]
+    headers = [COLUMN_HEADERS.get(column, column) for column in columns]
     numbers = {}
     for position, header in enumerate(headers):
         values = [row[position] for row in rows if row[position] is not None]
