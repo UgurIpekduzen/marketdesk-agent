@@ -139,6 +139,19 @@ def cited_sources(text: str, tool_results: list) -> list[str]:
     return cited
 
 
+def unsaid_caveats(text: str, caveats: list[str]) -> list[str]:
+    """The caveats the answer text does not already hold in full.
+
+    The model is asked to repeat a metric's caveat, and usually does word
+    for word; showing it again in a box under the answer only repeats it. A
+    caveat the model left out, cut short or reworded is still shown: the
+    caveat comes from the code and must reach the reader. Spaces and line
+    breaks do not count.
+    """
+    said = " ".join(text.split())
+    return [caveat for caveat in caveats if " ".join(caveat.split()) not in said]
+
+
 def view_of(answer: Answer) -> AnswerView:
     router = answer.router_log
     if answer.refused:
@@ -165,7 +178,7 @@ def view_of(answer: Answer) -> AnswerView:
         queries_heading=(
             messages.OPS_TRIED_SQL_HEADING if gave_up else messages.OPS_USED_SQL_HEADING
         ),
-        caveats=list(getattr(reply, "caveats", [])),
+        caveats=unsaid_caveats(reply.text, list(getattr(reply, "caveats", []))),
         sources=cited_sources(reply.text, log.tool_results),
         pending=answer.awaiting_approval,
     )

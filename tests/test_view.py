@@ -17,6 +17,7 @@ from src.ui.view import (
     readable_table,
     tools_text,
     turkish_number,
+    unsaid_caveats,
     view_of,
     without_images,
 )
@@ -180,6 +181,45 @@ def test_the_page_table_shows_turkish_numbers_from_the_library_types():
         turkish_number(value, shown["numbers"]["orders"])
         for value in frame["orders"].dropna()
     ] == ["41.736"]
+
+
+CAVEAT = (
+    "Her durumdaki sipariş sayılır, iptal edilenler dahil. Kategori ya da satıcı "
+    "eyaletine göre kırılımda birden fazla gruba giren sipariş her grupta bir kez "
+    "sayılır."
+)
+
+
+def test_a_caveat_the_answer_already_says_is_not_shown_again():
+    text = f"2018-01: 7.269 sipariş.\n\n*{CAVEAT}*"
+
+    assert unsaid_caveats(text, [CAVEAT]) == []
+
+
+def test_a_caveat_split_over_lines_in_the_answer_counts_as_said():
+    text = "2018-01: 7.269 sipariş. " + CAVEAT.replace(" Kategori", "\nKategori")
+
+    assert unsaid_caveats(text, [CAVEAT]) == []
+
+
+def test_a_caveat_left_out_or_cut_short_is_still_shown():
+    # As in a live answer: only the first sentence of the caveat was repeated.
+    cut_short = "2018-01: 7.269 sipariş.\n\n*Not: Her durumdaki sipariş sayılır, iptal edilenler dahil.*"
+
+    assert unsaid_caveats("2018-01: 7.269 sipariş.", [CAVEAT]) == [CAVEAT]
+    assert unsaid_caveats(cut_short, [CAVEAT]) == [CAVEAT]
+
+
+def test_ops_answer_does_not_repeat_the_caveat_it_already_says():
+    result = {"columns": ["value"], "rows": [[7269]], "sql": "SELECT 1"}
+    log = log_with(["run_metric"], [("run_metric", result)])
+    reply = OpsReply(
+        f"7.269 sipariş. {CAVEAT}", log, queries=["SELECT 1"], caveats=[CAVEAT]
+    )
+
+    view = view_of(Answer(Intent.OPS_METRIC, reply.display, reply, router_log()))
+
+    assert view.caveats == []
 
 
 def test_ops_answer_that_gave_up_shows_the_tried_sql_and_no_table():
