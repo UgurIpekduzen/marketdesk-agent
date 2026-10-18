@@ -16,6 +16,7 @@ import streamlit as st
 
 import config
 from src import messages, tracing
+from src.formatting import format_number
 from src.ui import resources
 from src.ui.chat_session import ChatSession
 from src.ui.question_limit import QuestionLimit
@@ -26,7 +27,6 @@ from src.ui.view import (
     friendly_error,
     readable_table,
     tools_text,
-    tr_number,
     view_of,
 )
 
@@ -112,7 +112,7 @@ def draw_answer(view: AnswerView) -> None:
         st.dataframe(
             frame.style.format(
                 {
-                    header: partial(tr_number, whole=whole)
+                    header: partial(format_number, whole=whole)
                     for header, whole in table["numbers"].items()
                 },
                 na_rep="",

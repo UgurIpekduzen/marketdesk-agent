@@ -84,11 +84,13 @@ REQUEST_STATUS_LABELS = {
     "PENDING_REVIEW": "inceleme bekliyor",
     "PENDING_SENIOR": "kıdemli onay bekliyor",
 }
+# A money amount, already written the reader's way, with its currency.
+MONEY = "{amount} BRL"
 APPROVAL_SUMMARY = (
     "Oluşturulacak iade talebi:\n"
     "  Sipariş: {order}\n"
     "  İade nedeni: {reason}\n"
-    "  İade tutarı: {amount} BRL\n"
+    "  İade tutarı: {amount}\n"
     "  Talep şu durumda açılacak: {status}"
 )
 APPROVAL_QUESTION = "Onaylıyor musunuz? [e/h] "

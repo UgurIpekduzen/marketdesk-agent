@@ -32,6 +32,7 @@ from src import messages, tracing
 from src.agents.loop_guard import REPEATED_CALL, LoopGuard
 from src.agents.run_log import RunLog
 from src.agents.runner import run_agent
+from src.formatting import format_money
 from src.guardrails.guarded_llm import GuardedLLM, build_provider_llm
 from src.guardrails.outbound import Redactor
 from src.guardrails.pii import RAW_ID_PATTERN, hash_id
@@ -302,7 +303,7 @@ class SupportAgent:
         return messages.APPROVAL_SUMMARY.format(
             order=pending["order"],
             reason=messages.RETURN_REASON_LABELS[pending["reason"]],
-            amount=pending["refund_amount"],
+            amount=format_money(pending["refund_amount"]),
             status=messages.REQUEST_STATUS_LABELS[pending["request_status"]],
         )
 

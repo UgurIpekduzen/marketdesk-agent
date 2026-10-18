@@ -334,7 +334,7 @@ def test_return_request_waits_for_approval_and_writes_nothing(
         "Oluşturulacak iade talebi:\n"
         "  Sipariş: SIP-1\n"
         "  İade nedeni: hasarlı ürün\n"
-        "  İade tutarı: 115.00 BRL\n"
+        "  İade tutarı: 115,00 BRL\n"
         "  Talep şu durumda açılacak: inceleme bekliyor"
     )
 

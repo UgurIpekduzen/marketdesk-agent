@@ -88,7 +88,7 @@ def test_yes_writes_the_return_request(run_chat, fake, synthetic_db_path):
     assert prompts[1] == messages.APPROVAL_QUESTION
     assert shown[1] == "Onayınız istenecek."
     assert shown[2].startswith("Oluşturulacak iade talebi:")
-    assert "İade tutarı: 115.00 BRL" in shown[2]
+    assert "İade tutarı: 115,00 BRL" in shown[2]
     assert shown[3] == (
         "İade talebiniz oluşturuldu. Talep numarası: 3, durum: inceleme bekliyor. "
         "Talebiniz bir müşteri temsilcisi tarafından incelenecektir."

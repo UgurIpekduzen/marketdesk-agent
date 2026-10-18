@@ -182,7 +182,7 @@ def test_return_request_and_approval_work_through_the_router(
     answer, summary, shown = as_customer(scenario)
 
     assert answer.awaiting_approval["order"] == "SIP-1"
-    assert "İade tutarı: 115.00 BRL" in summary
+    assert "İade tutarı: 115,00 BRL" in summary
     assert "Talep numarası: 3" in shown
     assert request_count(synthetic_db_path) == 3
 
