@@ -6,6 +6,7 @@ Plain functions and data, no page framework: the page only draws these.
 import logging
 import re
 from dataclasses import dataclass, field
+from decimal import Decimal
 
 import config
 from src import messages
@@ -84,7 +85,7 @@ def last_table(tool_results: list) -> dict | None:
     return None
 
 
-def turkish_number(value: float, whole: bool) -> str:
+def tr_number(value: float, whole: bool) -> str:
     """A number written the Turkish way: 7.269; 1.255.695,13; 0,0076.
 
     A whole number keeps no decimals. Otherwise two decimals, or four below
@@ -94,6 +95,16 @@ def turkish_number(value: float, whole: bool) -> str:
         text = f"{round(value):,}"
     else:
         text = f"{value:,.{2 if abs(value) >= 1 else 4}f}"
+    return text.replace(",", "\0").replace(".", ",").replace("\0", ".")
+
+
+def tr_amount(amount: str) -> str:
+    """A money amount written the Turkish way, always with two decimals.
+
+    The amount is read as a Decimal, not a float, so no cent is lost on the
+    way; it is only written differently, the value itself is untouched.
+    """
+    text = f"{Decimal(amount):,.2f}"
     return text.replace(",", "\0").replace(".", ",").replace("\0", ".")
 
 
@@ -200,7 +211,7 @@ def approval_card(pending: dict) -> dict[str, str]:
     return {
         messages.UI_APPROVAL_ORDER: pending["order"],
         messages.UI_APPROVAL_REASON: messages.RETURN_REASON_LABELS[pending["reason"]],
-        messages.UI_APPROVAL_AMOUNT: f"{pending['refund_amount']} BRL",
+        messages.UI_APPROVAL_AMOUNT: f"{tr_amount(pending['refund_amount'])} BRL",
         messages.UI_APPROVAL_LEVEL: messages.REQUEST_STATUS_LABELS[
             pending["request_status"]
         ],

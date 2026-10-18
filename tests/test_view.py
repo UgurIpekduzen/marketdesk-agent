@@ -16,7 +16,8 @@ from src.ui.view import (
     friendly_error,
     readable_table,
     tools_text,
-    turkish_number,
+    tr_amount,
+    tr_number,
     unsaid_caveats,
     view_of,
     without_images,
@@ -163,7 +164,7 @@ def test_free_sql_columns_keep_their_names_and_only_numbers_are_numeric():
     ],
 )
 def test_numbers_are_written_the_turkish_way(value, whole, text):
-    assert turkish_number(value, whole) == text
+    assert tr_number(value, whole) == text
 
 
 def test_the_page_table_shows_turkish_numbers_from_the_library_types():
@@ -178,7 +179,7 @@ def test_the_page_table_shows_turkish_numbers_from_the_library_types():
 
     assert str(frame["orders"].dtype) == "float64"
     assert [
-        turkish_number(value, shown["numbers"]["orders"])
+        tr_number(value, shown["numbers"]["orders"])
         for value in frame["orders"].dropna()
     ] == ["41.736"]
 
@@ -252,9 +253,31 @@ def test_approval_card_names_order_reason_amount_and_level():
     assert card == {
         messages.UI_APPROVAL_ORDER: "SIP-1",
         messages.UI_APPROVAL_REASON: "hasarlı ürün",
-        messages.UI_APPROVAL_AMOUNT: "115.00 BRL",
+        messages.UI_APPROVAL_AMOUNT: "115,00 BRL",
         messages.UI_APPROVAL_LEVEL: "kıdemli onay bekliyor",
     }
+
+
+@pytest.mark.parametrize(
+    ("amount", "text"),
+    [
+        ("133.14", "133,14"),
+        ("1250.00", "1.250,00"),
+        ("1250", "1.250,00"),
+        ("0.5", "0,50"),
+        ("1234567.89", "1.234.567,89"),
+    ],
+)
+def test_money_is_written_the_turkish_way_with_two_decimals(amount, text):
+    assert tr_amount(amount) == text
+
+
+def test_the_card_only_writes_the_amount_differently():
+    pending = dict(PENDING)
+
+    approval_card(pending)
+
+    assert pending == PENDING
 
 
 def wrapped(inner: Exception) -> Exception:

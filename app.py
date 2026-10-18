@@ -26,7 +26,7 @@ from src.ui.view import (
     friendly_error,
     readable_table,
     tools_text,
-    turkish_number,
+    tr_number,
     view_of,
 )
 
@@ -112,7 +112,7 @@ def draw_answer(view: AnswerView) -> None:
         st.dataframe(
             frame.style.format(
                 {
-                    header: partial(turkish_number, whole=whole)
+                    header: partial(tr_number, whole=whole)
                     for header, whole in table["numbers"].items()
                 },
                 na_rep="",

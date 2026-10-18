@@ -300,6 +300,16 @@ def test_policy_answer_shows_its_source(open_page):
     assert f"{messages.UI_SOURCES}: İade Politikası, Bölüm 2" in shown(page)
 
 
+def last_refund_amount(db_path) -> float:
+    conn = sqlite3.connect(db_path)
+    try:
+        return conn.execute(
+            "SELECT refund_amount FROM return_requests ORDER BY id DESC LIMIT 1"
+        ).fetchone()[0]
+    finally:
+        conn.close()
+
+
 def test_return_request_waits_for_a_click_and_is_written_after_approve(
     open_page, synthetic_db_path
 ):
@@ -310,7 +320,7 @@ def test_return_request_waits_for_a_click_and_is_written_after_approve(
 
     text = shown(page)
     assert messages.UI_APPROVAL_HEADING in text
-    assert "115.00 BRL" in text
+    assert "115,00 BRL" in text
     assert "inceleme bekliyor" in text
     assert {button.label for button in page.button} == {
         messages.UI_NEW_CONVERSATION,
@@ -324,6 +334,8 @@ def test_return_request_waits_for_a_click_and_is_written_after_approve(
     page = click(page, messages.UI_APPROVE)
 
     assert request_count(synthetic_db_path) == at_start + 1
+    # The card writes the amount the Turkish way; the request keeps its value.
+    assert last_refund_amount(synthetic_db_path) == 115
     assert "İade talebiniz oluşturuldu" in shown(page)
     assert not page.chat_input[0].disabled
     assert messages.UI_APPROVE not in [button.label for button in page.button]
