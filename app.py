@@ -8,8 +8,10 @@ text live in src/; nothing is decided here.
 """
 
 import logging
+from functools import partial
 from pathlib import Path
 
+import pandas as pd
 import streamlit as st
 
 import config
@@ -22,7 +24,9 @@ from src.ui.view import (
     AnswerView,
     approval_card,
     friendly_error,
+    readable_table,
     tools_text,
+    turkish_number,
     view_of,
 )
 
@@ -100,12 +104,19 @@ def draw_answer(view: AnswerView) -> None:
     if view.sources:
         st.caption(f"{messages.UI_SOURCES}: {'; '.join(view.sources)}")
     if view.table and view.table["rows"]:
+        table = readable_table(view.table)
+        frame = pd.DataFrame(table["rows"], columns=table["columns"])
         st.caption(messages.UI_RESULT_TABLE)
+        # Written the Turkish way whatever the visitor's browser language;
+        # only the display changes, so a column still sorts as numbers.
         st.dataframe(
-            [
-                dict(zip(view.table["columns"], row, strict=True))
-                for row in view.table["rows"]
-            ],
+            frame.style.format(
+                {
+                    header: partial(turkish_number, whole=whole)
+                    for header, whole in table["numbers"].items()
+                },
+                na_rep="",
+            ),
             hide_index=True,
         )
     for caveat in view.caveats:

@@ -165,6 +165,17 @@ UI_AGENT_SUPPORT = "Destek ajanı"
 UI_AGENT_OPS = "Operasyon veri ajanı"
 UI_AGENT_ROUTER = "Yönlendirici (istek bu oturumda yanıtlanmadı)"
 UI_RESULT_TABLE = "Sonuç"
+# Column headers of a result table, for the columns the semantic layer
+# names; any other column (from free SQL) keeps its own name.
+UI_TABLE_COLUMNS = {
+    "purchase_month": "Ay",
+    "customer_state": "Müşteri eyaleti",
+    "seller_state": "Satıcı eyaleti",
+    "product_category_en": "Kategori",
+    "numerator": "Pay",
+    "denominator": "Payda",
+    "value": "Değer",
+}
 UI_SOURCES = "Kaynak"
 UI_APPROVAL_HEADING = "Onayınız gerekiyor"
 UI_APPROVAL_ORDER = "Sipariş"

@@ -14,7 +14,9 @@ from src.ui.session_pool import SessionLimitReached
 from src.ui.view import (
     approval_card,
     friendly_error,
+    readable_table,
     tools_text,
+    turkish_number,
     view_of,
     without_images,
 )
@@ -98,6 +100,86 @@ def test_ops_answer_shows_table_sql_and_caveat_apart_from_the_text():
     assert view.queries == ["SELECT 1"]
     assert view.queries_heading == messages.OPS_USED_SQL_HEADING
     assert view.caveats == ["Gözlemsel."]
+
+
+def test_a_plain_total_shows_turkish_headers_and_no_repeated_numerator():
+    table = {
+        "columns": ["purchase_month", "numerator", "value"],
+        "rows": [["2018-01", 7269, 7269], ["2018-02", 6728, 6728]],
+    }
+
+    shown = readable_table(table)
+
+    assert shown["columns"] == ["Ay", "Değer"]
+    assert shown["rows"] == [["2018-01", 7269], ["2018-02", 6728]]
+    assert shown["numbers"] == {"Değer": True}
+    # The answer's own table is left as it was.
+    assert table["columns"] == ["purchase_month", "numerator", "value"]
+
+
+def test_a_ratio_keeps_its_numerator_and_denominator():
+    table = {
+        "columns": ["customer_state", "numerator", "denominator", "value"],
+        "rows": [["SP", 318, 41736, 0.0076]],
+    }
+
+    shown = readable_table(table)
+
+    assert shown["columns"] == ["Müşteri eyaleti", "Pay", "Payda", "Değer"]
+    assert shown["rows"] == [["SP", 318, 41736, 0.0076]]
+    assert shown["numbers"] == {"Pay": True, "Payda": True, "Değer": False}
+
+
+def test_free_sql_columns_keep_their_names_and_only_numbers_are_numeric():
+    table = {
+        "columns": ["payment_type", "orders", "share", "active"],
+        "rows": [
+            ["boleto", 19784, None, True],
+            ["voucher", None, 0.04, False],
+            ["debit_card", 1527, 0.01, True],
+        ],
+    }
+
+    shown = readable_table(table)
+
+    assert shown["columns"] == ["payment_type", "orders", "share", "active"]
+    # A missing value does not make a column text or its numbers decimals;
+    # true/false is not a number.
+    assert shown["numbers"] == {"orders": True, "share": False}
+
+
+@pytest.mark.parametrize(
+    ("value", "whole", "text"),
+    [
+        (7269, True, "7.269"),
+        (494, True, "494"),
+        (1255695.13, False, "1.255.695,13"),
+        (4.04, False, "4,04"),
+        (0.007619, False, "0,0076"),
+        (-1234.5, False, "-1.234,50"),
+        # A whole column the table library turned into decimals.
+        (7269.0, True, "7.269"),
+    ],
+)
+def test_numbers_are_written_the_turkish_way(value, whole, text):
+    assert turkish_number(value, whole) == text
+
+
+def test_the_page_table_shows_turkish_numbers_from_the_library_types():
+    # The page hands the numbers over through pandas, which gives numpy
+    # types, and turns a whole column with a gap into decimals.
+    import pandas as pd
+
+    shown = readable_table(
+        {"columns": ["customer_state", "orders"], "rows": [["SP", 41736], ["RJ", None]]}
+    )
+    frame = pd.DataFrame(shown["rows"], columns=shown["columns"])
+
+    assert str(frame["orders"].dtype) == "float64"
+    assert [
+        turkish_number(value, shown["numbers"]["orders"])
+        for value in frame["orders"].dropna()
+    ] == ["41.736"]
 
 
 def test_ops_answer_that_gave_up_shows_the_tried_sql_and_no_table():

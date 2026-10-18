@@ -84,6 +84,48 @@ def last_table(tool_results: list) -> dict | None:
     return None
 
 
+def turkish_number(value: float, whole: bool) -> str:
+    """A number written the Turkish way: 7.269; 1.255.695,13; 0,0076.
+
+    A whole number keeps no decimals. Otherwise two decimals, or four below
+    1, where rates live and two would round them away.
+    """
+    if whole:
+        text = f"{round(value):,}"
+    else:
+        text = f"{value:,.{2 if abs(value) >= 1 else 4}f}"
+    return text.replace(",", "\0").replace(".", ",").replace("\0", ".")
+
+
+def readable_table(table: dict) -> dict:
+    """A result table as the page shows it.
+
+    The columns the semantic layer names get Turkish headers; a plain total
+    has a numerator that only repeats the value, and that column is left
+    out. For each numeric column it says whether it holds whole numbers,
+    decided here on the raw values: the page's table library turns a whole
+    column with a gap into decimals.
+    """
+    columns = list(table["columns"])
+    rows = [list(row) for row in table["rows"]]
+    if "numerator" in columns and "value" in columns:
+        numerator, value = columns.index("numerator"), columns.index("value")
+        if all(row[numerator] == row[value] for row in rows):
+            del columns[numerator]
+            for row in rows:
+                del row[numerator]
+    headers = [messages.UI_TABLE_COLUMNS.get(column, column) for column in columns]
+    numbers = {}
+    for position, header in enumerate(headers):
+        values = [row[position] for row in rows if row[position] is not None]
+        if values and all(
+            isinstance(item, int | float) and not isinstance(item, bool)
+            for item in values
+        ):
+            numbers[header] = all(isinstance(item, int) for item in values)
+    return {"columns": headers, "rows": rows, "numbers": numbers}
+
+
 def cited_sources(text: str, tool_results: list) -> list[str]:
     """Citations of the policy sections found that the answer names."""
     cited = []

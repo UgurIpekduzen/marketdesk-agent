@@ -414,6 +414,8 @@ def test_ops_answer_shows_table_sql_and_caveat(open_page):
     assert not page.exception
     assert page.chat_input[0].placeholder == messages.UI_INPUT_OPS
     assert len(page.dataframe) == 1
+    # A plain total: the repeated numerator is gone, the header is Turkish.
+    assert list(page.dataframe[0].value.columns) == ["Değer"]
     assert "SELECT" in page.code[0].value
     assert page.info
     assert messages.UI_AGENT_OPS in shown(page)
