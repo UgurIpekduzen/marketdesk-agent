@@ -108,4 +108,3 @@ def test_the_page_hides_the_developer_options_and_has_its_own_colours():
     assert settings["client"]["toolbarMode"] == "minimal"
     assert settings["theme"]["base"] == "dark"
     assert settings["theme"]["primaryColor"] == "#5B5FE8"
-

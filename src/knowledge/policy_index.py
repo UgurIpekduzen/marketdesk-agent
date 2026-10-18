@@ -155,7 +155,9 @@ class E5Embedding(BaseEmbedding):
     _embedder: Any = PrivateAttr()
 
     def __init__(self, embedder: Embedder, batch_size: int = 10) -> None:
-        super().__init__(model_name="multilingual-e5-small", embed_batch_size=batch_size)
+        super().__init__(
+            model_name="multilingual-e5-small", embed_batch_size=batch_size
+        )
         self._embedder = embedder
 
     def _get_query_embedding(self, query: str) -> list[float]:

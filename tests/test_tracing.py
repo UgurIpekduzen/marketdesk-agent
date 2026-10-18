@@ -451,8 +451,7 @@ def attribute_values(exporter) -> list:
 
 def span_kinds(exporter) -> set:
     return {
-        span.attributes.get(tracing.SPAN_KIND)
-        for span in exporter.get_finished_spans()
+        span.attributes.get(tracing.SPAN_KIND) for span in exporter.get_finished_spans()
     }
 
 
@@ -525,4 +524,3 @@ def test_no_target_gets_an_embedding_vector(traced, fake_policy_index):
     # The attribute is there, so the check would see a vector if one came.
     assert vectors
     assert not any(is_vector(value) for value in vectors)
-
