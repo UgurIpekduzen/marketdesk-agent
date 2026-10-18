@@ -1,11 +1,29 @@
-# Settings of the page framework that matter for security. A test reads
-# this file, so a change here is a change someone has to mean.
+# Settings of the page framework: its protections and how it looks to a
+# visitor. A test reads this file, so a change here is a change someone has
+# to mean.
 
 [client]
 # A failure shows the visitor a plain message, never the code behind it.
 showErrorDetails = "none"
+# No developer options and no menu for visitors. "minimal" keeps only the
+# options the hosting platform adds itself.
+toolbarMode = "minimal"
 
 [server]
 # The framework's defaults, written down so that turning them off shows.
 enableXsrfProtection = true
 enableCORS = true
+
+[theme]
+# Dark, but not black on white: a dark slate background and an off-white
+# text (13.8:1, against 17.5:1 for pure white) are easier on the eyes.
+# Indigo is the accent. Contrast is WCAG's: #5B5FE8 carries the white text
+# of the approve button (4.9:1, text needs 4.5) and marks the chosen option
+# on the background (3.5:1, a control needs 3); links take a lighter indigo
+# because they are text (8.8:1).
+base = "dark"
+primaryColor = "#5B5FE8"
+backgroundColor = "#171923"
+secondaryBackgroundColor = "#1F2230"
+textColor = "#E2E4EA"
+linkColor = "#A5B4FC"

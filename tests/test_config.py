@@ -98,3 +98,14 @@ def test_the_page_shows_no_error_details_and_keeps_its_protections():
     assert settings["client"]["showErrorDetails"] == "none"
     assert settings["server"]["enableXsrfProtection"] is True
     assert settings["server"]["enableCORS"] is True
+
+
+def test_the_page_hides_the_developer_options_and_has_its_own_colours():
+    settings = tomllib.loads(
+        (PROJECT_ROOT / ".streamlit" / "config.toml").read_text(encoding="utf-8")
+    )
+
+    assert settings["client"]["toolbarMode"] == "minimal"
+    assert settings["theme"]["base"] == "dark"
+    assert settings["theme"]["primaryColor"] == "#5B5FE8"
+
