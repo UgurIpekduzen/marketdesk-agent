@@ -236,3 +236,50 @@ DEMO_CUSTOMER_LABELS = {
     "window_passed": "İade süresi geçmiş müşteri",
     "many_orders": "Çok siparişi olan müşteri",
 }
+
+# Example questions offered above an empty conversation. Each was tried with
+# the real model and answered well; none is from the held-out test split.
+# Customer questions that need the situation of the demo customer:
+EXAMPLE_QUESTIONS_BY_SITUATION = {
+    "recent_delivery": [
+        "Son siparişimden vazgeçtim, iade etmek istiyorum.",
+        "Son siparişim hasarlı geldi, iade talebi açar mısınız?",
+    ],
+    "late_delivery": ["Son siparişim kaç gün gecikti?"],
+    "in_transit": ["Son siparişim nerede, ne zaman gelir?"],
+    "window_passed": [
+        "Son siparişimi iade etmek istiyorum, vazgeçtim.",
+        "Son siparişim hasarlı çıktı, hâlâ iade edebilir miyim?",
+    ],
+    "many_orders": [
+        "Siparişlerimi listeler misin?",
+        "En son verdiğim siparişin durumu ne?",
+    ],
+}
+# Customer questions that fit every situation.
+EXAMPLE_QUESTIONS_GENERAL = [
+    "Son siparişim nerede?",
+    "Siparişimle ilgili yardım istiyorum.",
+]
+# Customer questions answered from the policies.
+EXAMPLE_QUESTIONS_POLICY = [
+    "Siparişim temin edilemezse param nasıl iade edilir?",
+    "Kargoya verilmiş bir siparişi iptal edebilir miyim?",
+    "İade süremi kaçırdım, geç teslimat için yine de kargo ücretimi isteyebilir miyim?",
+    "Hasarlı ürün için iade talebi nasıl açılır, kim onaylar?",
+    "Siparişimin bir kısmını hediye çekiyle ödedim, iade olursa param nasıl geri ödenir?",
+    "Henüz kargoya verilmemiş bir sipariş nasıl iptal edilir?",
+    "İade edilen para hesabıma kaç günde geçer?",
+]
+EXAMPLE_QUESTIONS_OPS = [
+    "GMV'si en yüksek 5 ürün kategorisi hangileri?",
+    "2018 yılında aylara göre ortalama yorum puanı nedir?",
+    "En az 300 siparişi olan müşteri eyaletleri arasında iptal oranı en yüksek 5'i hangileri?",
+    "2018 yılında aylara göre sipariş sayısı nedir?",
+    "2018 Temmuz'da SP eyaletinde geç teslim oranı neydi?",
+    "En az 100 siparişi olan kategoriler arasında geç teslim oranı en yüksek 5'i hangileri?",
+    "2018 Ağustos ayının GMV'si ne kadar?",
+    "En az 500 siparişi olan eyaletler arasında iptal oranı en yüksek 3 eyalet hangisi?",
+    "Her ödeme türü kaç farklı siparişte kullanılmış?",
+    "2018 yılında SP ve RJ eyaletlerinde aylara göre sipariş sayıları nedir?",
+]
