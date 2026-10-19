@@ -11,8 +11,14 @@ from decimal import Decimal
 import sqlglot
 from sqlglot import errors
 
+import config
 from src import messages
-from src.knowledge.semantic_layer import DENOMINATOR, NUMERATOR, VALUE
+from src.knowledge.semantic_layer import (
+    DENOMINATOR,
+    NUMERATOR,
+    VALUE,
+    load_semantic_layer,
+)
 
 # Headers of a result table: the dimensions by name, and the columns every
 # metric result has.
@@ -141,3 +147,55 @@ def readable_sql(query: str) -> str:
         return sqlglot.transpile(query, read="sqlite", write="sqlite", pretty=True)[0]
     except errors.SqlglotError:
         return query
+
+
+def how_computed(computation: dict) -> str:
+    """One metric call in words: metric, grouping, filters, period, ranking.
+
+    computation holds what the ops agent passed to run_metric: metric,
+    filters, group_by and ranking. Written from the call itself, so it says
+    what was computed whatever the answer says.
+    """
+    metric = load_semantic_layer().metrics[computation["metric"]]
+    labels = messages.UI_TABLE_DIMENSIONS
+    filters = dict(computation.get("filters") or {})
+    start, end = filters.pop("purchase_from", None), filters.pop("purchase_to", None)
+    ranking = computation.get("ranking") or {}
+    parts = [metric.description]
+    if computation.get("group_by"):
+        parts.append(
+            messages.COMPUTED_GROUP_BY.format(
+                dimensions=", ".join(
+                    labels.get(name, name) for name in computation["group_by"]
+                )
+            )
+        )
+    if filters:
+        parts.append(
+            messages.COMPUTED_FILTER.format(
+                filters="; ".join(
+                    f"{labels.get(name, name)} = {', '.join(map(str, values))}"
+                    for name, values in filters.items()
+                )
+            )
+        )
+    if start and end:
+        parts.append(messages.COMPUTED_PERIOD_BOTH.format(start=start, end=end))
+    elif start:
+        parts.append(messages.COMPUTED_PERIOD_FROM.format(start=start))
+    elif end:
+        parts.append(messages.COMPUTED_PERIOD_TO.format(end=end))
+    if ranking.get("min_count"):
+        parts.append(
+            messages.COMPUTED_MIN_COUNT.format(
+                count=ranking["min_count"], unit=messages.COMPUTED_UNITS[metric.grain]
+            )
+        )
+    if ranking.get("order") in messages.COMPUTED_ORDER:
+        parts.append(messages.COMPUTED_ORDER[ranking["order"]])
+    if ranking.get("top"):
+        parts.append(messages.COMPUTED_TOP.format(top=ranking["top"]))
+    parts.append(
+        messages.COMPUTED_SCOPE.format(today=config.SIMULATED_TODAY.isoformat())
+    )
+    return " · ".join(parts)

@@ -8,6 +8,7 @@ from src.formatting import (
     format_amount,
     format_money,
     format_number,
+    how_computed,
     readable_sql,
     readable_table,
     table_text,
@@ -124,3 +125,55 @@ def test_a_query_the_parser_cannot_read_is_shown_as_it_is():
     broken = "SELEC purchase_month FRM orders WHERE ("
 
     assert readable_sql(broken) == broken
+
+
+def test_how_computed_says_metric_grouping_filters_ranking_and_scope():
+    line = how_computed(
+        {
+            "metric": "late_delivery_rate",
+            "filters": {"purchase_month": ["2018-07"], "customer_state": ["SP", "RJ"]},
+            "group_by": ["product_category_en"],
+            "ranking": {"min_count": 100, "order": "value_desc", "top": 5},
+        }
+    )
+
+    assert line == (
+        "Teslim edilen siparişlerde tahmini tarihten sonra teslim oranı"
+        " · kırılım: Kategori · filtre: Ay = 2018-07; Müşteri eyaleti = SP, RJ"
+        " · en az 100 sipariş · değere göre azalan · ilk 5"
+        " · 2018-09-01 ve öncesinde verilen siparişler"
+    )
+
+
+@pytest.mark.parametrize(
+    ("period", "said"),
+    [
+        (
+            {"purchase_from": "2018-08-01", "purchase_to": "2018-08-31"},
+            "sipariş tarihi 2018-08-01 – 2018-08-31",
+        ),
+        ({"purchase_from": "2018-08-01"}, "sipariş tarihi 2018-08-01 ve sonrası"),
+        ({"purchase_to": "2018-08-31"}, "sipariş tarihi 2018-08-31 ve öncesi"),
+    ],
+)
+def test_how_computed_says_the_period(period, said):
+    line = how_computed(
+        {"metric": "gmv", "filters": period, "group_by": [], "ranking": {}}
+    )
+
+    assert said in line
+    assert "filtre" not in line
+
+
+def test_how_computed_counts_items_for_an_item_metric():
+    line = how_computed(
+        {
+            "metric": "gmv",
+            "filters": {},
+            "group_by": ["seller_state"],
+            "ranking": {"min_count": 50, "order": None, "top": None},
+        }
+    )
+
+    assert "en az 50 kalem" in line
+    assert "azalan" not in line

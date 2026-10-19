@@ -527,6 +527,51 @@ def test_ops_answer_shows_table_sql_and_caveat(open_page):
     assert "SELECT" in page.sidebar.code[0].value
 
 
+def captions(page) -> list[str]:
+    return [caption.value for caption in page.main.caption]
+
+
+def test_a_metric_answer_says_how_it_was_computed(open_page):
+    page = open_page(
+        [
+            "ops_metric",
+            [
+                (
+                    "run_metric",
+                    {"metric_name": "order_count", "group_by": ["customer_state"]},
+                )
+            ],
+            "En çok sipariş SP'de.",
+        ],
+        role=messages.UI_START_OPS,
+    )
+
+    page = ask(page, "Eyaletlere göre kaç sipariş var?")
+
+    (line,) = [c for c in captions(page) if c.startswith(messages.COMPUTED_HEADING)]
+    assert "kırılım: Müşteri eyaleti" in line
+    assert "Sipariş sayısı" in line
+
+
+def test_a_filter_value_from_the_model_is_drawn_as_written(open_page):
+    value = "![x](https://evil.example/leak)"
+    page = open_page(
+        [
+            "ops_metric",
+            [("run_metric", {"metric_name": "order_count", "purchase_month": [value]})],
+            "Sonuç yok.",
+        ],
+        role=messages.UI_START_OPS,
+    )
+
+    page = ask(page, "Bu ayda kaç sipariş var?")
+
+    (line,) = [c for c in captions(page) if c.startswith(messages.COMPUTED_HEADING)]
+    # Every markdown character escaped: no image, no link is drawn.
+    assert "![" not in line
+    assert "\\!\\[x\\]\\(https://evil\\.example/leak\\)" in line
+
+
 def test_a_single_value_is_said_without_a_table(open_page):
     page = open_page(
         [

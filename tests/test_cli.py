@@ -175,6 +175,43 @@ def test_ops_chat_shows_the_answer_with_its_sources(synthetic_db_path):
     assert messages.APPROVAL_QUESTION not in prompts
 
 
+def test_ops_chat_says_how_a_metric_was_computed(synthetic_db_path):
+    fake = FakeLLM(
+        script=[
+            [
+                (
+                    "run_metric",
+                    {
+                        "metric_name": "order_count",
+                        "top": 2,
+                        "group_by": ["customer_state"],
+                        "order": "value_desc",
+                    },
+                )
+            ],
+            "SP önde.",
+        ]
+    )
+    agent = OpsAgent(synthetic_db_path, fake)
+    lines = iter(["En çok sipariş hangi eyaletlerde?"])
+    shown = []
+
+    def read(prompt):
+        try:
+            return next(lines)
+        except StopIteration:
+            raise EOFError from None
+
+    try:
+        asyncio.run(chat(agent, read, shown.append))
+    finally:
+        agent.close()
+
+    (line,) = [text for text in shown if text.startswith(messages.COMPUTED_HEADING)]
+    assert "kırılım: Müşteri eyaleti" in line
+    assert "ilk 2" in line
+
+
 def test_chat_through_the_router_refuses_an_ops_question_from_a_customer(
     synthetic_db_path, fake_policy_index, fake
 ):

@@ -350,3 +350,17 @@ UI_REVIEW_TICKET_TITLE = "{number} · {priority} öncelik · {date} · Müşteri
 UI_REVIEW_DECIDED_DONE = "Talep {id}: {status}."
 UI_REVIEW_TICKET_CLOSED = "{number} kapatıldı."
 PRIORITY_LABELS = {"low": "düşük", "normal": "normal", "high": "yüksek"}
+
+# "How it was computed": a line under a metric answer, written by code from
+# the metric call, not by the model.
+COMPUTED_HEADING = "Nasıl hesaplandı"
+COMPUTED_GROUP_BY = "kırılım: {dimensions}"
+COMPUTED_FILTER = "filtre: {filters}"
+COMPUTED_PERIOD_BOTH = "sipariş tarihi {start} – {end}"
+COMPUTED_PERIOD_FROM = "sipariş tarihi {start} ve sonrası"
+COMPUTED_PERIOD_TO = "sipariş tarihi {end} ve öncesi"
+COMPUTED_MIN_COUNT = "en az {count} {unit}"
+COMPUTED_UNITS = {"order": "sipariş", "item": "kalem"}
+COMPUTED_ORDER = {"value_desc": "değere göre azalan", "value_asc": "değere göre artan"}
+COMPUTED_TOP = "ilk {top}"
+COMPUTED_SCOPE = "{today} ve öncesinde verilen siparişler"

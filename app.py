@@ -290,6 +290,8 @@ def draw_answer(view: AnswerView) -> None:
             ),
             hide_index=True,
         )
+    for line in view.computed:
+        st.caption(f"{messages.COMPUTED_HEADING}: {line}")
     for caveat in view.caveats:
         st.info(caveat)
 

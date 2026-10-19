@@ -21,6 +21,7 @@ from src.agents.ops import (
     cut_rows,
     view_schema,
 )
+from src.formatting import how_computed
 from src.knowledge.semantic_layer import load_semantic_layer
 from tests.fakes import FakeLLM
 
@@ -232,6 +233,51 @@ def test_metric_error_is_passed_to_the_model_and_adds_no_source(agent, fake):
     assert reply.queries == []
     assert reply.caveats == []
     assert reply.display == "Kâr verisi yok."
+
+
+def test_a_metric_call_is_recorded_as_made_and_kept_out_of_the_display(agent, fake):
+    fake.script = [
+        [
+            (
+                "run_metric",
+                {
+                    "metric_name": "order_count",
+                    "group_by": ["customer_state"],
+                    "purchase_month": ["2018-06"],
+                    "min_count": 1,
+                    "order": "value_desc",
+                    "top": 3,
+                },
+            )
+        ],
+        "SP önde.",
+    ]
+
+    reply = ask(agent, "Haziran'da en çok sipariş veren 3 eyalet?")
+
+    assert reply.computations == [
+        {
+            "metric": "order_count",
+            "filters": {"purchase_month": ["2018-06"]},
+            "group_by": ["customer_state"],
+            "ranking": {"min_count": 1, "order": "value_desc", "top": 3},
+        }
+    ]
+    # The judged text is what it was before the line existed.
+    assert how_computed(reply.computations[0]) not in reply.display
+    assert messages.COMPUTED_HEADING not in reply.display
+
+
+def test_a_failed_metric_call_and_free_sql_record_no_computation(agent, fake):
+    fake.script = [
+        [("run_metric", {"metric_name": "profit"})],
+        [("run_sql", {"query": GOOD_SQL})],
+        "Kâr verisi yok; durumlar tabloda.",
+    ]
+
+    reply = ask(agent, "Kârımız ve durumlara göre siparişler?")
+
+    assert reply.computations == []
 
 
 def test_same_caveat_is_shown_once(agent, fake):

@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 
 import config
 from src import messages
-from src.formatting import format_money
+from src.formatting import format_money, how_computed
 from src.guardrails.guarded_llm import API_KEY_VARIABLES
 from src.orchestrator import Answer, Intent
 from src.tools.review_queue import RequestRow, TicketRow
@@ -66,6 +66,14 @@ IMAGE_PATTERN = re.compile(r"!\[[^\]]*\](?:\([^)]*\)|\[[^\]]*\])")
 # are drawn as plain text and nothing is fetched.
 IMAGE_START = "!["
 ESCAPED_IMAGE_START = "!\\["
+# Characters markdown reads as formatting, escaped where a text partly comes
+# from the model's arguments (a filter value) and must be drawn as written.
+MARKDOWN_CHARACTERS = re.compile(r"([\\`*_{}\[\]()#+\-.!|<>~$])")
+
+
+def escape_markdown(text: str) -> str:
+    """The text with every markdown character escaped: drawn as written."""
+    return MARKDOWN_CHARACTERS.sub(r"\\\1", text)
 
 
 def without_images(text: str) -> str:
@@ -99,6 +107,8 @@ class AnswerView:
     queries: list[str] = field(default_factory=list)
     queries_heading: str = messages.OPS_USED_SQL_HEADING
     caveats: list[str] = field(default_factory=list)
+    # Ops answers: each metric call in words, escaped to be drawn as markdown.
+    computed: list[str] = field(default_factory=list)
     # Policy answers: the sections the answer cites.
     sources: list[str] = field(default_factory=list)
     # A return request waiting for the person's approval.
@@ -167,6 +177,12 @@ def view_of(answer: Answer) -> AnswerView:
         queries_heading=(
             messages.OPS_TRIED_SQL_HEADING if gave_up else messages.OPS_USED_SQL_HEADING
         ),
+        computed=[]
+        if gave_up
+        else [
+            escape_markdown(how_computed(computation))
+            for computation in getattr(reply, "computations", [])
+        ],
         caveats=unsaid_caveats(reply.text, list(getattr(reply, "caveats", []))),
         sources=cited_sources(reply.text, log.tool_results),
         pending=answer.awaiting_approval,

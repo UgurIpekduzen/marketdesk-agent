@@ -130,6 +130,10 @@ class Reply:
     # The columns and rows of the last result, shown under the answer: the
     # model is asked not to list them.
     table: dict | None = None
+    # Each metric call as it was made (metric, filters, group_by, ranking),
+    # for the "how it was computed" line. Not part of display: the judged
+    # text stays what it was.
+    computations: list[dict] = field(default_factory=list)
 
     @property
     def display(self) -> str:
@@ -193,6 +197,7 @@ class OpsAgent:
         self._queries: list[str] = []
         self._caveats: list[str] = []
         self._table: dict | None = None
+        self._computations: list[dict] = []
         # True once a tool returned data after the correction limit was hit.
         self._answered_after_limit = False
         self._agent = FunctionAgent(
@@ -229,6 +234,14 @@ class OpsAgent:
             if result["caveat"] not in self._caveats:
                 self._caveats.append(result["caveat"])
             self._table = {"columns": result["columns"], "rows": result["rows"]}
+            self._computations.append(
+                {
+                    "metric": metric_name,
+                    "filters": dict(filters),
+                    "group_by": list(group_by),
+                    "ranking": dict(ranking),
+                }
+            )
             self._answered_after_limit = self._sql_limit.exhausted
         return result
 
@@ -320,6 +333,7 @@ class OpsAgent:
         self._sql_limit.reset()
         self._queries, self._caveats = [], []
         self._table = None
+        self._computations = []
         self._answered_after_limit = False
 
         text, log = await run_agent(self._agent, self._context, message)
@@ -333,5 +347,10 @@ class OpsAgent:
                 gave_up=True,
             )
         return Reply(
-            text, log, list(self._queries), list(self._caveats), table=self._table
+            text,
+            log,
+            list(self._queries),
+            list(self._caveats),
+            table=self._table,
+            computations=list(self._computations),
         )

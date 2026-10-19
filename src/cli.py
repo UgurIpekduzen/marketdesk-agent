@@ -23,6 +23,7 @@ from pathlib import Path
 from src import messages, tracing
 from src.agents.ops import OpsAgent
 from src.agents.support import SupportAgent
+from src.formatting import how_computed
 from src.knowledge.embedding import load_embedder
 from src.knowledge.policy_index import PolicyIndex
 from src.mcp_server.client import OrdersClient
@@ -54,6 +55,9 @@ async def chat(
 
         reply = await agent.ask(line)
         write(reply.display)
+        # The router's answer wraps the agent's reply; an agent answers itself.
+        for computation in getattr(getattr(reply, "reply", reply), "computations", []):
+            write(f"{messages.COMPUTED_HEADING}: {how_computed(computation)}")
 
         # Only a customer session can have a return request waiting.
         if getattr(reply, "awaiting_approval", None) is not None:
