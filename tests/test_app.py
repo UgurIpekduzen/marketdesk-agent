@@ -3,9 +3,11 @@ the synthetic database, with a stand-in model."""
 
 import shutil
 import sqlite3
+import tomllib
 from dataclasses import asdict
 from pathlib import Path
 from types import SimpleNamespace
+from xml.etree import ElementTree
 
 import pytest
 import streamlit as st
@@ -15,6 +17,7 @@ from streamlit.testing.v1 import AppTest
 import config
 from src import messages
 from src.ui import resources
+from src.ui.view import OPS_AVATAR, ROUTER_AVATAR, SUPPORT_AVATAR, USER_AVATAR
 from tests.agent_harness import request_count
 from tests.fakes import FakeLLM
 from tests.synthetic_data import ALICE
@@ -413,6 +416,7 @@ def test_customer_cannot_get_an_ops_answer(open_page):
     text = shown(page)
     assert messages.ROUTER_OPS_NOT_ALLOWED in text
     assert messages.UI_AGENT_ROUTER in text
+    assert page.chat_message[-1].avatar == ROUTER_AVATAR
 
 
 # --- An operations conversation -------------------------------------------
@@ -582,3 +586,47 @@ def test_exhausted_quota_is_a_plain_message_without_a_traceback(open_page, monke
     assert "RESOURCE_EXHAUSTED" not in shown(page)
     # The conversation can go on.
     assert not page.chat_input[0].disabled
+
+
+# --- Look ------------------------------------------------------------------
+
+
+def avatars(page) -> list[str]:
+    return [message.avatar for message in page.chat_message]
+
+
+def test_the_person_and_each_agent_have_their_own_avatar(open_page):
+    page = open_page(["support", "Merhaba.", "ops_metric", "Hazır."])
+
+    page = ask(page, "Selam")
+    assert avatars(page) == [USER_AVATAR, SUPPORT_AVATAR]
+
+    page = as_ops(page)
+    page = ask(page, "Selam")
+    assert avatars(page) == [USER_AVATAR, OPS_AVATAR]
+
+
+def test_the_page_shows_the_logo_and_the_mark(monkeypatch, open_page):
+    shown_logos = []
+    monkeypatch.setattr(
+        st, "logo", lambda image, **options: shown_logos.append((image, options))
+    )
+
+    open_page()
+
+    ((logo, options),) = shown_logos
+    assert Path(logo).name == "logo.svg"
+    assert Path(options["icon_image"]).name == "icon.svg"
+
+
+@pytest.mark.parametrize("name", ["logo.svg", "icon.svg"])
+def test_the_logo_files_are_svg_in_the_theme_colour(name):
+    path = Path(__file__).resolve().parent.parent / "assets" / name
+    root = ElementTree.parse(path).getroot()
+    settings = tomllib.loads(
+        (path.parent.parent / ".streamlit" / "config.toml").read_text(encoding="utf-8")
+    )
+
+    assert root.tag == "{http://www.w3.org/2000/svg}svg"
+    assert root.get("aria-label") == "MarketDesk"
+    assert settings["theme"]["primaryColor"] in path.read_text(encoding="utf-8")

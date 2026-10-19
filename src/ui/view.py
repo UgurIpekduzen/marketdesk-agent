@@ -22,6 +22,13 @@ AGENT_LABELS = {
     Intent.SUPPORT: messages.UI_AGENT_SUPPORT,
     Intent.OPS_METRIC: messages.UI_AGENT_OPS,
 }
+# Chat avatars: icons of the page framework, so no image files.
+USER_AVATAR = ":material/person:"
+SUPPORT_AVATAR = ":material/support_agent:"
+OPS_AVATAR = ":material/analytics:"
+# The router answers a message no agent of the session may take.
+ROUTER_AVATAR = ":material/smart_toy:"
+AGENT_AVATARS = {Intent.SUPPORT: SUPPORT_AVATAR, Intent.OPS_METRIC: OPS_AVATAR}
 # Headers of a result table: the dimensions by name, and the columns every
 # metric result has.
 COLUMN_HEADERS = {
@@ -72,6 +79,7 @@ def without_images(text: str) -> str:
 class AnswerView:
     text: str
     agent: str  # who answered, for the steps panel
+    avatar: str = SUPPORT_AVATAR
     tools: list[str] = field(default_factory=list)
     steps: int = 0
     tokens: int = 0
@@ -155,6 +163,7 @@ def view_of(answer: Answer) -> AnswerView:
         return AnswerView(
             text=without_images(answer.display),
             agent=messages.UI_AGENT_ROUTER,
+            avatar=ROUTER_AVATAR,
             steps=router.steps,
             tokens=router.input_tokens + router.output_tokens,
         )
@@ -164,6 +173,7 @@ def view_of(answer: Answer) -> AnswerView:
     return AnswerView(
         text=without_images(reply.text),
         agent=AGENT_LABELS[answer.intent],
+        avatar=AGENT_AVATARS[answer.intent],
         tools=list(log.tool_calls),
         steps=router.steps + log.steps,
         tokens=router.input_tokens

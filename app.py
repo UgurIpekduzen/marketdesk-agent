@@ -22,6 +22,8 @@ from src.ui.chat_session import ChatSession
 from src.ui.question_limit import QuestionLimit
 from src.ui.session_pool import SessionPool
 from src.ui.view import (
+    SUPPORT_AVATAR,
+    USER_AVATAR,
     AnswerView,
     approval_card,
     friendly_error,
@@ -31,6 +33,10 @@ from src.ui.view import (
 )
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
+
+ASSETS = Path(__file__).resolve().parent / "assets"
+LOGO = ASSETS / "logo.svg"  # the mark and the name, at the top of the sidebar
+ICON = ASSETS / "icon.svg"  # the mark alone: the browser tab, a closed sidebar
 
 
 @st.cache_resource
@@ -150,10 +156,12 @@ def draw_turns() -> None:
         # load the modules again, and an older answer is then of a class
         # that no longer matches.
         if role == "answer":
-            with st.chat_message("assistant"):
+            with st.chat_message("assistant", avatar=content.avatar):
                 draw_answer(content)
             continue
-        with st.chat_message(role):
+        # The person's messages, and the support agent's word on an approval.
+        avatar = USER_AVATAR if role == "user" else SUPPORT_AVATAR
+        with st.chat_message(role, avatar=avatar):
             st.markdown(content)
 
 
@@ -187,7 +195,7 @@ def draw_approval(session: ChatSession) -> None:
 
 def answer(session: ChatSession, question: str) -> None:
     st.session_state.turns.append(("user", question))
-    with st.chat_message("user"):
+    with st.chat_message("user", avatar=USER_AVATAR):
         st.markdown(question)
     try:
         with st.spinner(messages.UI_THINKING):
@@ -201,7 +209,8 @@ def answer(session: ChatSession, question: str) -> None:
 
 
 def main() -> None:
-    st.set_page_config(page_title=messages.UI_TITLE, page_icon="🛍️")
+    st.set_page_config(page_title=messages.UI_TITLE, page_icon=str(ICON))
+    st.logo(str(LOGO), size="large", icon_image=str(ICON))
     start_tracing()
     st.title(messages.UI_TITLE)
 
