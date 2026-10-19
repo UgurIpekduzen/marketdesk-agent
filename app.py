@@ -121,12 +121,6 @@ def draw_answer(view: AnswerView) -> None:
         )
     for caveat in view.caveats:
         st.info(caveat)
-    if view.queries:
-        with st.expander(view.queries_heading.rstrip(":")):
-            for query in view.queries:
-                st.code(query, language="sql")
-    with st.expander(messages.UI_STEPS):
-        draw_steps(view)
 
 
 def draw_steps(view: AnswerView) -> None:
@@ -255,14 +249,21 @@ def main() -> None:
         st.session_state.turns.insert(0, ("notice", messages.UI_SESSION_EXPIRED))
 
     # Drawn after the conversation was settled above, so a new one never
-    # shows the steps of the old. Each answer keeps its own steps in the
-    # conversation as well.
+    # shows the SQL or the steps of the old.
     latest = latest_answer()
     if latest is not None:
         with st.sidebar:
-            st.divider()
-            st.subheader(messages.UI_STEPS_LATEST)
-            draw_steps(latest)
+            # The SQL behind the newest numbers, or the SQL tried when no
+            # answer was found: the evidence, kept out of the conversation.
+            if latest.queries:
+                with st.expander(latest.queries_heading.rstrip(":")):
+                    for query in latest.queries:
+                        st.code(query, language="sql")
+            # Closed by default: what an evaluator wants to see, not a
+            # customer.
+            with st.expander(messages.UI_DEVELOPER_DETAILS):
+                st.caption(messages.UI_STEPS_LATEST)
+                draw_steps(latest)
 
     draw_turns()
     session = st.session_state.get("session")

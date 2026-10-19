@@ -248,7 +248,7 @@ def sidebar_text(page) -> str:
     return "\n".join(str(part) for part in parts)
 
 
-def test_sidebar_shows_the_steps_of_the_newest_answer(open_page):
+def test_sidebar_keeps_the_steps_of_the_newest_answer_in_closed_details(open_page):
     page = open_page(
         [
             "support",
@@ -259,12 +259,19 @@ def test_sidebar_shows_the_steps_of_the_newest_answer(open_page):
         ]
     )
     assert messages.UI_STEPS_LATEST not in sidebar_text(page)
+    assert not page.sidebar.expander
 
     page = ask(page, "o_day14 nerede?")
 
     text = sidebar_text(page)
     assert messages.UI_STEPS_LATEST in text
     assert "get_order_status" in text
+    # Not in the conversation any more.
+    assert not page.main.expander
+    # Inside a closed "developer details" section, not open in the sidebar.
+    (details,) = page.sidebar.expander
+    assert details.label == messages.UI_DEVELOPER_DETAILS
+    assert not details.proto.expanded
 
     page = ask(page, "Teşekkürler")
 
@@ -428,9 +435,16 @@ def test_ops_answer_shows_table_sql_and_caveat(open_page):
     assert len(page.dataframe) == 1
     # A plain total: the repeated numerator is gone, the header is Turkish.
     assert list(page.dataframe[0].value.columns) == ["Değer"]
-    assert "SELECT" in page.code[0].value
     assert page.info
-    assert messages.UI_AGENT_OPS in shown(page)
+    assert messages.UI_AGENT_OPS in sidebar_text(page)
+    # The SQL and the steps are in the sidebar, closed; the conversation
+    # holds the answer and its table only.
+    assert not page.main.expander
+    sql, details = page.sidebar.expander
+    assert sql.label == messages.OPS_USED_SQL_HEADING.rstrip(":")
+    assert details.label == messages.UI_DEVELOPER_DETAILS
+    assert not sql.proto.expanded
+    assert "SELECT" in page.sidebar.code[0].value
 
 
 def test_changing_the_session_type_starts_a_new_conversation(open_page):
