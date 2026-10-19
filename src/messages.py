@@ -254,6 +254,10 @@ UI_ERROR_TIMEOUT = "Yanıt zamanında gelmedi. Lütfen tekrar deneyin."
 UI_ERROR_NOT_CONFIGURED = (
     "Uygulama henüz yapılandırılmamış: yapay zekâ servisinin anahtarı tanımlı değil."
 )
+UI_ERROR_KEY_REFUSED = (
+    "Yapay zekâ servisi uygulamanın anahtarını kabul etmedi; anahtarın "
+    "yenilenmesi gerekiyor. Lütfen daha sonra tekrar deneyin."
+)
 UI_ERROR_GENERIC = (
     "Beklenmeyen bir sorun oluştu ve isteğiniz yanıtlanamadı. Lütfen tekrar deneyin."
 )

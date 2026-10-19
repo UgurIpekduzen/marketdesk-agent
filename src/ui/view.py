@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 import config
 from src import messages
 from src.formatting import format_money
+from src.guardrails.guarded_llm import API_KEY_VARIABLES
 from src.orchestrator import Answer, Intent
 from src.tools.review_queue import RequestRow, TicketRow
 from src.ui.chat_session import MessageTooLong
@@ -38,7 +39,23 @@ ERROR_MARKS = (
         ("503", "unavailable", "overloaded", "high demand", "connecterror"),
         messages.UI_ERROR_BUSY,
     ),
-    (("api_key", "api key"), messages.UI_ERROR_NOT_CONFIGURED),
+    # The provider refused the key: Gemini and Groq say it in these words.
+    (
+        (
+            "api_key_invalid",
+            "api key not valid",
+            "invalid_api_key",
+            "invalid api key",
+            "permission_denied",
+            "unauthenticated",
+        ),
+        messages.UI_ERROR_KEY_REFUSED,
+    ),
+    # No key at all: reading its environment variable failed.
+    (
+        tuple(f"keyerror '{name.lower()}'" for name in API_KEY_VARIABLES.values()),
+        messages.UI_ERROR_NOT_CONFIGURED,
+    ),
 )
 # A markdown image, inline or by reference: the browser would fetch its
 # address as soon as the answer is drawn, so a model talked into writing

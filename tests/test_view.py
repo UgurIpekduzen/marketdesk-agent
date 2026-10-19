@@ -271,6 +271,27 @@ def wrapped(inner: Exception) -> Exception:
         ),
         (QuestionLimitReached("60 questions"), messages.UI_ERROR_QUESTION_LIMIT),
         (KeyError("GEMINI_API_KEY"), messages.UI_ERROR_NOT_CONFIGURED),
+        (wrapped(KeyError("GROQ_API_KEY")), messages.UI_ERROR_NOT_CONFIGURED),
+        # What Gemini answers to a key it does not accept (2026-10-19).
+        (
+            RuntimeError(
+                "400 INVALID_ARGUMENT. {'error': {'code': 400, 'message': 'API key "
+                "not valid. Please pass a valid API key.', 'status': "
+                "'INVALID_ARGUMENT', 'details': [{'reason': 'API_KEY_INVALID'}]}}"
+            ),
+            messages.UI_ERROR_KEY_REFUSED,
+        ),
+        # Groq's answer to a wrong key.
+        (
+            RuntimeError(
+                "Error code: 401 - {'error': {'message': 'Invalid API Key', "
+                "'type': 'invalid_request_error', 'code': 'invalid_api_key'}}"
+            ),
+            messages.UI_ERROR_KEY_REFUSED,
+        ),
+        (RuntimeError("403 PERMISSION_DENIED"), messages.UI_ERROR_KEY_REFUSED),
+        # A KeyError about something else is not a missing key.
+        (KeyError("order_ref"), messages.UI_ERROR_GENERIC),
         (ZeroDivisionError("division by zero"), messages.UI_ERROR_GENERIC),
         (RuntimeError("refund of 500.00 BRL failed"), messages.UI_ERROR_GENERIC),
     ],
