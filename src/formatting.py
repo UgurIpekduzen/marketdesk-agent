@@ -8,6 +8,9 @@ itself is never touched.
 
 from decimal import Decimal
 
+import sqlglot
+from sqlglot import errors
+
 from src import messages
 from src.knowledge.semantic_layer import DENOMINATOR, NUMERATOR, VALUE
 
@@ -125,3 +128,16 @@ def table_text(table: dict) -> str:
     if left_out:
         lines.append(messages.TABLE_ROWS_LEFT_OUT.format(count=left_out))
     return "\n".join(lines)
+
+
+def readable_sql(query: str) -> str:
+    """A query laid out on lines, one clause per line, for a narrow panel.
+
+    Only for reading: the query that ran is the one given. The parser that
+    checks queries lays it out; a query it cannot read (a failed attempt)
+    is shown as it is.
+    """
+    try:
+        return sqlglot.transpile(query, read="sqlite", write="sqlite", pretty=True)[0]
+    except errors.SqlglotError:
+        return query

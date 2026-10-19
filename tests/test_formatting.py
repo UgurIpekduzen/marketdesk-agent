@@ -8,6 +8,7 @@ from src.formatting import (
     format_amount,
     format_money,
     format_number,
+    readable_sql,
     readable_table,
     table_text,
     with_separators,
@@ -91,3 +92,35 @@ def test_a_single_value_is_not_worth_a_table():
         readable(["numerator", "denominator", "value"], [[5, 20, 0.25]])
     )
     assert worth_a_table(readable(["state", "value"], [["SP", 1], ["RJ", 2]]))
+
+
+QUERY = (
+    "SELECT purchase_month, COUNT(*) AS numerator FROM orders AS o "
+    "WHERE DATE(o.order_purchase_timestamp) <= DATE(:simulated_today) "
+    "GROUP BY purchase_month ORDER BY purchase_month LIMIT 5"
+)
+
+
+def test_a_query_is_laid_out_one_clause_per_line():
+    lines = readable_sql(QUERY).splitlines()
+
+    assert lines[0] == "SELECT"
+    for clause in ("FROM orders AS o", "WHERE", "GROUP BY", "ORDER BY", "LIMIT 5"):
+        assert clause in lines
+    # The placeholder the query is run with is kept.
+    assert ":simulated_today" in readable_sql(QUERY)
+
+
+def test_a_query_laid_out_reads_the_same_to_the_parser():
+    import sqlglot
+
+    def tree(sql):
+        return sqlglot.parse_one(sql, read="sqlite")
+
+    assert tree(readable_sql(QUERY)) == tree(QUERY)
+
+
+def test_a_query_the_parser_cannot_read_is_shown_as_it_is():
+    broken = "SELEC purchase_month FRM orders WHERE ("
+
+    assert readable_sql(broken) == broken

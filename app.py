@@ -16,7 +16,12 @@ import streamlit as st
 
 import config
 from src import messages, tracing
-from src.formatting import format_number, readable_table, worth_a_table
+from src.formatting import (
+    format_number,
+    readable_sql,
+    readable_table,
+    worth_a_table,
+)
 from src.ui import resources
 from src.ui.chat_session import ChatSession
 from src.ui.question_limit import QuestionLimit
@@ -266,7 +271,7 @@ def main() -> None:
             if latest.queries:
                 with st.expander(latest.queries_heading.rstrip(":")):
                     for query in latest.queries:
-                        st.code(query, language="sql")
+                        st.code(readable_sql(query), language="sql", wrap_lines=True)
             # Closed by default: what an evaluator wants to see, not a
             # customer.
             with st.expander(messages.UI_DEVELOPER_DETAILS):
