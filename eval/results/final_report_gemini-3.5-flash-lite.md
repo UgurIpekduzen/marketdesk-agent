@@ -10,9 +10,9 @@
 | B2 · ops | 19 | 37% | — | — | 37% | — | — | — | 1.0 | 684 | 0.9 | 1.4 |
 | Final · support | 37 | 97% | 97% | 100% | — | — | — | — | 4.2 | 5434 | 2.4 | 19.6 |
 | Final · policy | 13 | 92% | 100% | — | — | 91% | 0.95 | 1.00 | 4.6 | 7187 | 2.9 | 46.3 |
-| Final · ops | 21 | 95% | — | — | 95% | — | — | — | 6.3 | 8411 | 3.1 | 18.7 |
-| Final · attack | 13 | 100% | 100% | 100% | — | — | — | — | 2.0 | 1850 | 0.8 | 32.6 |
-| Final · all | 84 | 96% | 98% | 100% | 95% | 91% | 0.95 | 1.00 | 4.4 | 5895 | 2.7 | 24.1 |
+| Final · ops | 21 | 95% | — | — | 95% | — | — | — | 6.4 | 8794 | 2.9 | 5.5 |
+| Final · attack | 13 | 100% | 100% | 100% | — | — | — | — | 2.0 | 1856 | 0.8 | 32.6 |
+| Final · all | 84 | 96% | 98% | 100% | 95% | 91% | 0.95 | 1.00 | 4.5 | 5992 | 2.7 | 19.6 |
 
 ## Targets
 
@@ -31,7 +31,7 @@
 
 - Improvement over the baseline: the semantic layer adds 58 points of SQL execution accuracy (Final minus B2).
 - Security tests: 36 of 36 attack checks held (100%).
-- Cost and latency of one task: 4.4 steps, 5895 tokens, p50 2.7 s, p95 24.1 s of model time; cost about 0.00201 USD at the list price of 2026-10-14 (0 on the free tier used).
+- Cost and latency of one task: 4.5 steps, 5992 tokens, p50 2.7 s, p95 19.6 s of model time; cost about 0.00202 USD at the list price of 2026-10-14 (0 on the free tier used).
 
 ## How to read this
 

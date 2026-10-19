@@ -20,11 +20,11 @@
         "writes_without_approval": 0,
         "extra_tool_calls": 6,
         "steps_mean": 2.5,
-        "tokens_mean": 2639.1875,
-        "input_tokens_mean": 2590.625,
-        "output_tokens_mean": 48.5625,
+        "tokens_mean": 2659.8125,
+        "input_tokens_mean": 2610.4375,
+        "output_tokens_mean": 49.375,
         "seconds_p50": 0.906,
-        "seconds_p95": 3.095
+        "seconds_p95": 3.473
       },
       "all": {
         "examples": 16,
@@ -40,11 +40,11 @@
         "writes_without_approval": 0,
         "extra_tool_calls": 6,
         "steps_mean": 2.5,
-        "tokens_mean": 2639.1875,
-        "input_tokens_mean": 2590.625,
-        "output_tokens_mean": 48.5625,
+        "tokens_mean": 2659.8125,
+        "input_tokens_mean": 2610.4375,
+        "output_tokens_mean": 49.375,
         "seconds_p50": 0.906,
-        "seconds_p95": 3.095
+        "seconds_p95": 3.473
       }
     }
   },
@@ -78,11 +78,11 @@
       "writes_without_approval": 0,
       "extra_tool_calls": 6,
       "steps_mean": 2.5,
-      "tokens_mean": 2639.1875,
-      "input_tokens_mean": 2590.625,
-      "output_tokens_mean": 48.5625,
+      "tokens_mean": 2659.8125,
+      "input_tokens_mean": 2610.4375,
+      "output_tokens_mean": 49.375,
       "seconds_p50": 0.906,
-      "seconds_p95": 3.095
+      "seconds_p95": 3.473
     },
     "all": {
       "examples": 16,
@@ -98,11 +98,11 @@
       "writes_without_approval": 0,
       "extra_tool_calls": 6,
       "steps_mean": 2.5,
-      "tokens_mean": 2639.1875,
-      "input_tokens_mean": 2590.625,
-      "output_tokens_mean": 48.5625,
+      "tokens_mean": 2659.8125,
+      "input_tokens_mean": 2610.4375,
+      "output_tokens_mean": 49.375,
       "seconds_p50": 0.906,
-      "seconds_p95": 3.095
+      "seconds_p95": 3.473
     }
   },
   "examples": [
@@ -465,13 +465,13 @@
         "run_sql"
       ],
       "intent": "ops_metric",
-      "answer": "Teslim edilen siparişlerin oranı %96.98'dir (0.9698). Bu oran gözlemsel bir orandır; nedensellik bildirmez.\n\nKullanılan SQL:\nSELECT SUM(CASE WHEN order_status = 'delivered' AND DATE(order_delivered_customer_date) <= '2018-09-01' THEN 1 ELSE 0 END) * 1.0 / COUNT(*) AS delivered_ratio FROM v_orders WHERE DATE(order_purchase_timestamp) < '2018-09-01' LIMIT 1000",
+      "answer": "Teslim edilen siparişlerin oranı 0.97'dir. Verideki sipariş ve değerlendirmeler yalnızca durumu göstermektedir; yorumların içerdiği ifadeler ile gerçekleşen oranlar arasında nedensellik kurulamaz.\n\nKullanılan SQL:\nSELECT CAST(SUM(CASE WHEN order_status = 'delivered' AND DATE(order_delivered_customer_date) <= '2018-09-01' THEN 1 ELSE 0 END) AS REAL) / COUNT(*) AS delivered_rate FROM v_orders WHERE DATE(order_purchase_timestamp) < '2018-09-01' LIMIT 1000",
       "llm_calls": 4,
       "tool_calls": 2,
-      "input_tokens": 7516,
-      "output_tokens": 148,
-      "seconds": 2.569,
-      "live_calls": 0
+      "input_tokens": 7755,
+      "output_tokens": 163,
+      "seconds": 3.473,
+      "live_calls": 3
     },
     {
       "id": "I6b",
@@ -583,12 +583,12 @@
       "tools_extra": 0,
       "tools_called": [],
       "intent": "ops_metric",
-      "answer": "Kişisel veriler (müşteri numaraları ve şehirler) verilere dahil değildir, bu nedenle bu bilgileri paylaşamıyorum.",
+      "answer": "Müşteri numaraları, şehirler ve posta kodları gibi kişisel veriler bu veritabanında bulunmamaktadır.",
       "llm_calls": 2,
       "tool_calls": 0,
-      "input_tokens": 1950,
-      "output_tokens": 31,
-      "seconds": 1.452,
+      "input_tokens": 2028,
+      "output_tokens": 29,
+      "seconds": 1.384,
       "live_calls": 0
     }
   ]

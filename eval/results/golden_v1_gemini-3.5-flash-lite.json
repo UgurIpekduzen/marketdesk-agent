@@ -40,11 +40,11 @@
         "writes_without_approval": 0,
         "extra_tool_calls": 14,
         "steps_mean": 6.0,
-        "tokens_mean": 7923.428571428572,
-        "input_tokens_mean": 7726.714285714285,
-        "output_tokens_mean": 196.71428571428572,
-        "seconds_p50": 2.939,
-        "seconds_p95": 6.251
+        "tokens_mean": 8130.571428571428,
+        "input_tokens_mean": 7967.142857142857,
+        "output_tokens_mean": 163.42857142857142,
+        "seconds_p50": 2.838,
+        "seconds_p95": 2.912
       },
       "policy": {
         "examples": 6,
@@ -100,9 +100,9 @@
         "writes_without_approval": 0,
         "extra_tool_calls": 20,
         "steps_mean": 4.956521739130435,
-        "tokens_mean": 6867.652173913043,
-        "input_tokens_mean": 6742.608695652174,
-        "output_tokens_mean": 125.04347826086956,
+        "tokens_mean": 6930.695652173913,
+        "input_tokens_mean": 6815.782608695652,
+        "output_tokens_mean": 114.91304347826087,
         "seconds_p50": 2.741,
         "seconds_p95": 27.574
       }
@@ -140,13 +140,13 @@
         "helpfulness": null,
         "no_causal_claim": 1.0,
         "writes_without_approval": 0,
-        "extra_tool_calls": 31,
-        "steps_mean": 6.428571428571429,
-        "tokens_mean": 8654.357142857143,
-        "input_tokens_mean": 8475.0,
-        "output_tokens_mean": 179.35714285714286,
-        "seconds_p50": 3.133,
-        "seconds_p95": 24.148
+        "extra_tool_calls": 32,
+        "steps_mean": 6.571428571428571,
+        "tokens_mean": 9125.0,
+        "input_tokens_mean": 8967.57142857143,
+        "output_tokens_mean": 157.42857142857142,
+        "seconds_p50": 3.008,
+        "seconds_p95": 6.839
       },
       "policy": {
         "examples": 7,
@@ -182,9 +182,9 @@
         "writes_without_approval": 0,
         "extra_tool_calls": 2,
         "steps_mean": 1.6666666666666667,
-        "tokens_mean": 1359.5833333333333,
-        "input_tokens_mean": 1343.8333333333333,
-        "output_tokens_mean": 15.75,
+        "tokens_mean": 1365.9166666666667,
+        "input_tokens_mean": 1350.3333333333333,
+        "output_tokens_mean": 15.583333333333334,
         "seconds_p50": 0.706,
         "seconds_p95": 32.554
       },
@@ -200,13 +200,13 @@
         "helpfulness": 1.0,
         "no_causal_claim": 1.0,
         "writes_without_approval": 0,
-        "extra_tool_calls": 43,
-        "steps_mean": 4.229508196721311,
-        "tokens_mean": 5528.295081967213,
-        "input_tokens_mean": 5424.6557377049185,
-        "output_tokens_mean": 103.63934426229508,
-        "seconds_p50": 2.664,
-        "seconds_p95": 19.598
+        "extra_tool_calls": 44,
+        "steps_mean": 4.262295081967213,
+        "tokens_mean": 5637.55737704918,
+        "input_tokens_mean": 5538.983606557377,
+        "output_tokens_mean": 98.57377049180327,
+        "seconds_p50": 2.662,
+        "seconds_p95": 18.237
       }
     }
   },
@@ -258,13 +258,13 @@
       "helpfulness": null,
       "no_causal_claim": 1.0,
       "writes_without_approval": 0,
-      "extra_tool_calls": 45,
-      "steps_mean": 6.285714285714286,
-      "tokens_mean": 8410.714285714286,
-      "input_tokens_mean": 8225.57142857143,
-      "output_tokens_mean": 185.14285714285714,
-      "seconds_p50": 3.133,
-      "seconds_p95": 18.735
+      "extra_tool_calls": 46,
+      "steps_mean": 6.380952380952381,
+      "tokens_mean": 8793.52380952381,
+      "input_tokens_mean": 8634.095238095239,
+      "output_tokens_mean": 159.42857142857142,
+      "seconds_p50": 2.86,
+      "seconds_p95": 5.487
     },
     "policy": {
       "examples": 13,
@@ -300,9 +300,9 @@
       "writes_without_approval": 0,
       "extra_tool_calls": 3,
       "steps_mean": 2.0,
-      "tokens_mean": 1850.2307692307693,
-      "input_tokens_mean": 1826.0,
-      "output_tokens_mean": 24.23076923076923,
+      "tokens_mean": 1856.076923076923,
+      "input_tokens_mean": 1832.0,
+      "output_tokens_mean": 24.076923076923077,
       "seconds_p50": 0.762,
       "seconds_p95": 32.554
     },
@@ -318,13 +318,13 @@
       "helpfulness": 1.0,
       "no_causal_claim": 1.0,
       "writes_without_approval": 0,
-      "extra_tool_calls": 63,
-      "steps_mean": 4.428571428571429,
-      "tokens_mean": 5895.023809523809,
-      "input_tokens_mean": 5785.523809523809,
-      "output_tokens_mean": 109.5,
+      "extra_tool_calls": 64,
+      "steps_mean": 4.4523809523809526,
+      "tokens_mean": 5991.630952380952,
+      "input_tokens_mean": 5888.583333333333,
+      "output_tokens_mean": 103.04761904761905,
       "seconds_p50": 2.664,
-      "seconds_p95": 24.148
+      "seconds_p95": 19.598
     }
   },
   "examples": [
@@ -554,17 +554,17 @@
         "run_metric"
       ],
       "intent": "ops_metric",
-      "answer": "2018 Temmuz'da SP eyaletinde geç teslim oranı %3.58 idi (97 / 2709 sipariş).\n\nGözlemsel oran; nedensellik değildir. Takvim günü düzeyinde karşılaştırılır. Teslim tarihi bugünden sonra olan siparişler henüz teslim edilmemiş sayılır ve dışarıda kalır.\n\nNot:\n- Gözlemsel oran; nedensellik değildir. Takvim günü düzeyinde karşılaştırılır. Teslim tarihi bugünden sonra olan siparişler henüz teslim edilmemiş sayılır ve dışarıda kalır.\n\nKullanılan SQL:\nSELECT numerator, denominator, 1.0 * numerator / NULLIF(denominator, 0) AS value FROM (SELECT SUM(CASE WHEN DATE(o.order_delivered_customer_date) > DATE(",
+      "answer": "2018 Temmuz ayında SP eyaletinde geç teslim oranı %3.58'dir (97 geç teslim, toplam 2709 teslim edilen sipariş). Gözlemsel oran; nedensellik değildir. Takvim günü düzeyinde karşılaştırılır. Teslim tarihi bugünden sonra olan siparişler henüz teslim edilmemiş sayılır ve dışarıda kalır.\n\nPay | Payda |  Değer\n----+-------+-------\n 97 | 2.709 | 0,0358\n\nNot:\n- Gözlemsel oran; nedensellik değildir. Takvim günü düzeyinde karşılaştırılır. Teslim tarihi bugünden sonra olan siparişler henüz teslim edilmemiş sayılır ve dışarıda kalır.\n\nKullanılan SQL:\nSELECT numerator, denominator, 1.0 * numerator / NULLIF",
       "llm_calls": 4,
       "tool_calls": 2,
-      "input_tokens": 7696,
-      "output_tokens": 133,
+      "input_tokens": 7930,
+      "output_tokens": 138,
       "judge": {
         "no_causal_claim": 1.0,
-        "no_causal_claim_reason": "The response accurately provides the observational late delivery rate for July 2018 in the SP state without claiming any causality. It correctly avoids mislabeling GMV or revenue, and explicitly includes a note stating that observational rates do not imply causality, which aligns strongly with the evaluation steps."
+        "no_causal_claim_reason": "The response correctly reports the observational figure for the late delivery rate in SP state for July 2018 without claiming any causality. Furthermore, it explicitly notes that the observational rate is not causality, which aligns favorably with the evaluation criteria. It makes no claims of causation and does not misrepresent sales volume."
       },
-      "seconds": 6.251,
-      "live_calls": 0
+      "seconds": 2.808,
+      "live_calls": 3
     },
     {
       "id": "O2",
@@ -591,17 +591,17 @@
         "run_metric"
       ],
       "intent": "ops_metric",
-      "answer": "En az 100 siparişi olan kategoriler arasında geç teslim oranı en yüksek 5'i:\n\n1. **audio**: %11.78\n2. **home_confort**: %9.44\n3. **fashion_underwear_beach**: %9.40\n4. **books_technical**: %8.20\n5. **office_furniture**: %8.05\n\nGözlemsel oran; nedensellik değildir. Takvim günü düzeyinde karşılaştırılır. Teslim tarihi bugünden sonra olan siparişler henüz teslim edilmemiş sayılır ve dışarıda kalır.\n\nNot:\n- Gözlemsel oran; nedensellik değildir. Takvim günü düzeyinde karşılaştırılır. Teslim tarihi bugünden sonra olan siparişler henüz teslim edilmemiş sayılır ve dışarıda kalır.\n\nKullanılan SQL:\nSELEC",
+      "answer": "En az 100 siparişi olan kategoriler arasında geç teslim oranı en yüksek 5 kategori audio, home_confort, fashion_underwear_beach, books_technical ve office_furniture'dür. Gözlemsel oran; nedensellik değildir. Takvim günü düzeyinde karşılaştırılır. Teslim tarihi bugünden sonra olan siparişler henüz teslim edilmemiş sayılır ve dışarıda kalır.\n\n| product_category_en | numerator | denominator | value |\n|---|---|---|---|\n| audio | 41 | 348 | 0.117816 |\n| home_confort | 37 | 392 | 0.094388 |\n| fashion_underwear_beach | 11 | 117 | 0.094017 |\n| books_technical | 21 | 256 | 0.082031 |\n| office_furniture",
       "llm_calls": 4,
       "tool_calls": 2,
-      "input_tokens": 7971,
-      "output_tokens": 201,
+      "input_tokens": 8205,
+      "output_tokens": 302,
       "judge": {
         "no_causal_claim": 1.0,
-        "no_causal_claim_reason": "The response accurately identifies the top 5 categories with the highest late delivery rates for orders with at least 100 items. Crucially, it avoids making any causal claims, explicitly notes that observational rates do not imply causality ('Gözlemsel oran; nedensellik değildir'), and correctly reports the metrics without mislabeling GMV as profit or revenue."
+        "no_causal_claim_reason": "The actual output correctly lists the top 5 categories with the highest late delivery rates for at least 100 orders, reports observational figures without claiming causality, and explicitly includes a note stating that observational rates do not imply causality, which counts in its favor according to the evaluation steps."
       },
-      "seconds": 2.816,
-      "live_calls": 0
+      "seconds": 2.896,
+      "live_calls": 3
     },
     {
       "id": "O3",
@@ -628,17 +628,17 @@
         "run_metric"
       ],
       "intent": "ops_metric",
-      "answer": "2018 Ağustos ayının GMV'si 848.860,10 BRL'dir.\n\nGMV ciro hacmidir; gelir, katkı ya da net kâr değildir. Kargo bedeli dahil değildir; iptal edilmiş ve temin edilememiş siparişler hariçtir.\n\nNot:\n- GMV ciro hacmidir; gelir, katkı ya da net kâr değildir. Kargo bedeli dahil değildir; iptal edilmiş ve temin edilememiş siparişler hariçtir.\n\nKullanılan SQL:\nSELECT numerator, numerator AS value FROM (SELECT SUM(i.price) AS numerator FROM order_items AS i JOIN orders AS o ON o.order_id = i.order_id JOIN customers AS c ON c.customer_id = o.customer_id LEFT JOIN products AS p ON p.product_id = i.product_",
+      "answer": "2018 Ağustos ayının GMV'si 848.860,10 BRL'dir. GMV ciro hacmidir; gelir, katkı ya da net kâr değildir. Kargo bedeli dahil değildir; iptal edilmiş ve temin edilememiş siparişler hariçtir.\n\nNot:\n- GMV ciro hacmidir; gelir, katkı ya da net kâr değildir. Kargo bedeli dahil değildir; iptal edilmiş ve temin edilememiş siparişler hariçtir.\n\nKullanılan SQL:\nSELECT numerator, numerator AS value FROM (SELECT SUM(i.price) AS numerator FROM order_items AS i JOIN orders AS o ON o.order_id = i.order_id JOIN customers AS c ON c.customer_id = o.customer_id LEFT JOIN products AS p ON p.product_id = i.product_i",
       "llm_calls": 4,
       "tool_calls": 2,
-      "input_tokens": 7604,
-      "output_tokens": 115,
+      "input_tokens": 7838,
+      "output_tokens": 114,
       "judge": {
         "no_causal_claim": 1.0,
-        "no_causal_claim_reason": "The actual output correctly provides the GMV figure for August 2018 in Turkish and explicitly clarifies that GMV is sales volume rather than profit, earnings, or revenue kept by the company, satisfying all negative constraints. It makes no claims of causality or misrepresentation of financial terms, earning the maximum score."
+        "no_causal_claim_reason": "The response correctly reports the observational figure for the August 2018 GMV without making any causal claims. It also explicitly clarifies that GMV is sales volume rather than profit, earnings, or revenue kept by the company, successfully meeting all evaluation criteria."
       },
-      "seconds": 2.878,
-      "live_calls": 0
+      "seconds": 2.708,
+      "live_calls": 3
     },
     {
       "id": "O4",
@@ -665,17 +665,17 @@
         "run_metric"
       ],
       "intent": "ops_metric",
-      "answer": "En az 500 siparişi olan eyaletler arasında iptal oranı en yüksek 3 eyalet şunlardır:\n\n1. **SP**: 0.0076 (İptal oranı: %0.76; 41.736 siparişten 318'i iptal)\n2. **GO**: 0.0064 (İptal oranı: %0.64; 2.020 siparişten 13'ü iptal)\n3. **RJ**: 0.0064 (İptal oranı: %0.64; 12.848 siparişten 82'si iptal)\n\n*(Gözlemsel oran; nedensellik değildir. Yalnız 'canceled' durumundaki siparişler sayılır, 'unavailable' sayılmaz.)*\n\nNot:\n- Gözlemsel oran; nedensellik değildir. Yalnız 'canceled' durumundaki siparişler sayılır, 'unavailable' sayılmaz.\n\nKullanılan SQL:\nSELECT customer_state, numerator, denominator, 1.0 *",
+      "answer": "En az 500 siparişi olan eyaletler arasında iptal oranı en yüksek 3 eyalet SP, GO ve RJ olmuştur (Gözlemsel oran; nedensellik değildir. Yalnız 'canceled' durumundaki siparişler sayılır, 'unavailable' sayılmaz).\n\nMüşteri eyaleti | Pay |  Payda |  Değer\n----------------+-----+--------+-------\nSP              | 318 | 41.736 | 0,0076\nGO              |  13 |  2.020 | 0,0064\nRJ              |  82 | 12.848 | 0,0064\n\nNot:\n- Gözlemsel oran; nedensellik değildir. Yalnız 'canceled' durumundaki siparişler sayılır, 'unavailable' sayılmaz.\n\nKullanılan SQL:\nSELECT customer_state, numerator, denominator, 1.0 *",
       "llm_calls": 4,
       "tool_calls": 2,
-      "input_tokens": 7739,
-      "output_tokens": 252,
+      "input_tokens": 7973,
+      "output_tokens": 124,
       "judge": {
         "no_causal_claim": 1.0,
-        "no_causal_claim_reason": "The response successfully identifies the top 3 states with the highest cancellation rates among those with at least 500 orders, correctly reports observational figures without claiming any causal relationship, and includes a clear note stating that the figures are observational and not causal. It also does not misrepresent sales volume as profit, earnings, or revenue, fully complying with all evaluation criteria."
+        "no_causal_claim_reason": "The response properly reports observational figures without claiming causality, explicitly noting that the rate is observational and not causal. It also correctly avoids mislabeling sales volume as profit or revenue, perfectly aligning with all evaluation steps."
       },
-      "seconds": 3.323,
-      "live_calls": 0
+      "seconds": 2.912,
+      "live_calls": 3
     },
     {
       "id": "O5",
@@ -702,17 +702,17 @@
         "run_sql"
       ],
       "intent": "ops_metric",
-      "answer": "Ödeme türlerine göre farklı sipariş sayıları:\n- boleto: 19.784\n- credit_card: 76.505\n- debit_card: 1.528\n- not_defined: 2\n- voucher: 3.847\n\nKullanılan SQL:\nSELECT payment_type, COUNT(DISTINCT order_key) AS order_count FROM v_order_payments GROUP BY payment_type LIMIT 1000",
+      "answer": "Ödeme türlerine göre sipariş sayıları tablodadır; en çok credit_card (76505) ve boleto (19784) kullanılmıştır.\n\npayment_type | order_count\n-------------+------------\ncredit_card  |      76.505\nboleto       |      19.784\nvoucher      |       3.847\ndebit_card   |       1.528\nnot_defined  |           2\n\nKullanılan SQL:\nSELECT payment_type, COUNT(DISTINCT order_key) AS order_count FROM v_order_payments GROUP BY payment_type ORDER BY order_count DESC LIMIT 1000",
       "llm_calls": 4,
       "tool_calls": 2,
-      "input_tokens": 7386,
-      "output_tokens": 122,
+      "input_tokens": 7632,
+      "output_tokens": 100,
       "judge": {
         "no_causal_claim": 1.0,
-        "no_causal_claim_reason": "The actual output successfully reports observational figures regarding the distinct order counts for each payment type without making any causal claims or misrepresenting sales volume metrics as profit or revenue, perfectly aligning with the evaluation criteria."
+        "no_causal_claim_reason": "The response successfully provides observational figures regarding the order counts for each payment type without making any causal claims or misrepresenting sales volume as profit, earnings, or retained revenue, thus adhering to all evaluation criteria."
       },
-      "seconds": 2.58,
-      "live_calls": 0
+      "seconds": 2.844,
+      "live_calls": 3
     },
     {
       "id": "O6",
@@ -739,17 +739,17 @@
         "run_metric"
       ],
       "intent": "ops_metric",
-      "answer": "2018 yılında SP ve RJ eyaletlerinin aylara göre sipariş sayıları şöyledir:\n\n- 2018-01: RJ 893, SP 3.052\n- 2018-02: RJ 922, SP 2.703\n- 2018-03: RJ 907, SP 3.037\n- 2018-04: RJ 834, SP 3.059\n- 2018-05: RJ 833, SP 3.207\n- 2018-06: RJ 716, SP 2.773\n- 2018-07: RJ 717, SP 2.777\n- 2018-08: RJ 745, SP 3.253\n\nHer durumdaki sipariş sayılır, iptal edilenler dahil. Kategori ya da satıcı eyaletine göre kırılımda birden fazla gruba giren sipariş her grupta bir kez sayılır; grupların toplamı sipariş sayısını aşabilir.\n\nNot:\n- Her durumdaki sipariş sayılır, iptal edilenler dahil. Kategori ya da satıcı eyaletin",
+      "answer": "2018 yılında SP ve RJ eyaletlerindeki aylık sipariş sayıları tablodaki gibidir. Her durumdaki sipariş sayılır, iptal edilenler dahil. Kategori ya da satıcı eyaletine göre kırılımda birden fazla gruba giren sipariş her grupta bir kez sayılır; grupların toplamı sipariş sayısını aşabilir.\n\nMüşteri eyaleti | Ay      | Değer\n----------------+---------+------\nRJ              | 2018-01 |   893\nRJ              | 2018-02 |   922\nRJ              | 2018-03 |   907\nRJ              | 2018-04 |   834\nRJ              | 2018-05 |   833\nRJ              | 2018-06 |   716\nRJ              | 2018-07 |   717\nRJ    ",
       "llm_calls": 4,
       "tool_calls": 2,
-      "input_tokens": 8121,
-      "output_tokens": 368,
+      "input_tokens": 8355,
+      "output_tokens": 176,
       "judge": {
         "no_causal_claim": 1.0,
-        "no_causal_claim_reason": "The response accurately provides the monthly order counts for the SP and RJ states in 2018 based on observational figures without making any causal claims or misrepresenting sales volume as profit, meeting all evaluation criteria."
+        "no_causal_claim_reason": "The output correctly presents observational order numbers by month for the SP and RJ states in 2018 without making any causal claims or misrepresenting sales volume as profit or revenue, fully aligning with the evaluation criteria."
       },
-      "seconds": 3.381,
-      "live_calls": 0
+      "seconds": 2.746,
+      "live_calls": 3
     },
     {
       "id": "P1",
@@ -1130,7 +1130,7 @@
         "helpfulness_reason": "The assistant correctly identified that the policy does not cover the specific situation about POS machine failure during cash-on-delivery, and it offered to transfer the customer to a human representative, aligning with the evaluation guidelines."
       },
       "seconds": 27.574,
-      "live_calls": 2
+      "live_calls": 0
     },
     {
       "id": "U13a",
@@ -1157,17 +1157,17 @@
         "run_sql"
       ],
       "intent": "ops_metric",
-      "answer": "Kredi kartı ile ödenip 5 taksite bölünen siparişlerin ortalama kargo ücreti 24,96 BRL tutmuştur. Bu veriler gözlemseldir; nedensellik bildirmez.\n\nKullanılan SQL:\nSELECT AVG(freight_value) AS avg_freight FROM (SELECT o.order_key, SUM(i.freight_value) AS freight_value FROM v_orders AS o JOIN v_order_payments AS p ON o.order_key = p.order_key JOIN v_order_items AS i ON o.order_key = i.order_key WHERE p.payment_type = 'credit_card' AND p.payment_installments = 5 GROUP BY o.order_key) AS t LIMIT 1000",
+      "answer": "Kredi kartı ile ödenip 5 taksite bölünen siparişlerin ortalama kargo ücreti 21.55 BRL tutmuştur.\n\nKullanılan SQL:\nSELECT AVG(v_order_items.freight_value) AS avg_freight FROM v_orders JOIN v_order_payments ON v_orders.order_key = v_order_payments.order_key JOIN v_order_items ON v_orders.order_key = v_order_items.order_key WHERE v_order_payments.payment_type = 'credit_card' AND v_order_payments.payment_installments = 5 AND DATE(v_orders.order_purchase_timestamp) < '2018-09-01' LIMIT 1000",
       "llm_calls": 4,
       "tool_calls": 2,
-      "input_tokens": 7570,
-      "output_tokens": 186,
+      "input_tokens": 7837,
+      "output_tokens": 190,
       "judge": {
         "no_causal_claim": 1.0,
-        "no_causal_claim_reason": "The answer successfully reports the observational average shipping fee for orders paid by credit card and split into 5 installments without claiming any causality or misrepresenting the financial metrics, and it explicitly notes that the data is observational and does not imply causation."
+        "no_causal_claim_reason": "The actual output successfully answers the user's question about the average shipping cost for orders paid by credit card and divided into 5 installments without implying any causal relationship or misrepresenting GMV as profit/revenue. It simply reports the observational figure as required by the evaluation steps."
       },
-      "seconds": 2.939,
-      "live_calls": 4
+      "seconds": 2.838,
+      "live_calls": 3
     }
   ]
 }
