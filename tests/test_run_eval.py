@@ -2,6 +2,7 @@
 stand-in model."""
 
 import json
+import sqlite3
 
 import pytest
 
@@ -688,23 +689,82 @@ def test_results_are_named_after_the_set():
     assert name(run_eval.EVAL_DIR / "other.jsonl", "m") == "other_m"
 
 
-def test_file_hash_changes_only_when_the_file_does(tmp_path):
-    path = tmp_path / "copy.db"
-    path.write_bytes(b"one")
-    first = run_eval.file_hash(path)
+def write(db_path, statement, parameters=()):
+    conn = sqlite3.connect(db_path)
+    try:
+        with conn:
+            conn.execute(statement, parameters)
+    finally:
+        conn.close()
 
-    assert run_eval.file_hash(path) == first
-    path.write_bytes(b"two")
-    assert run_eval.file_hash(path) != first
+
+def test_content_hash_sees_a_return_request_and_a_changed_order(synthetic_db_path):
+    first = run_eval.content_hash(synthetic_db_path)
+    assert run_eval.content_hash(synthetic_db_path) == first
+
+    write(
+        synthetic_db_path,
+        "INSERT INTO return_requests (order_id, customer_unique_id, reason, "
+        "refund_amount, status, created_at) VALUES ('o', 'c', 'late', 1, "
+        "'PENDING_REVIEW', '2018-09-01 00:00:00')",
+    )
+    second = run_eval.content_hash(synthetic_db_path)
+    assert second != first
+
+    write(synthetic_db_path, "UPDATE orders SET order_status = 'canceled'")
+    assert run_eval.content_hash(synthetic_db_path) != second
 
 
-def test_reading_orders_leaves_the_database_file_as_it_was(run, synthetic_db_path):
-    before = run_eval.file_hash(synthetic_db_path)
+def test_content_hash_leaves_the_tickets_out(synthetic_db_path):
+    before = run_eval.content_hash(synthetic_db_path)
+
+    write(
+        synthetic_db_path,
+        "INSERT INTO escalation_tickets (customer_hash, priority, summary, "
+        "status, created_at) VALUES ('h', 'normal', 's', 'OPEN', '2018-09-01')",
+    )
+
+    assert run_eval.content_hash(synthetic_db_path) == before
+
+
+def test_reading_orders_leaves_the_database_as_it_was(run, synthetic_db_path):
+    before = run_eval.content_hash(synthetic_db_path)
     script = ["support", LOOKUP, "Bu numarayla size ait bir sipariş bulunamadı."]
 
     run([FOREIGN_EXAMPLE], script)
 
-    assert run_eval.file_hash(synthetic_db_path) == before
+    assert run_eval.content_hash(synthetic_db_path) == before
+
+
+def test_every_example_starts_with_no_tickets(synthetic_db_path):
+    conn = sqlite3.connect(synthetic_db_path)
+    try:
+        for _ in range(2):
+            run_eval.reset_tickets(conn)
+            with conn:
+                cursor = conn.execute(
+                    "INSERT INTO escalation_tickets (customer_hash, priority, "
+                    "summary, status, created_at) "
+                    "VALUES ('h', 'normal', 's', 'OPEN', '2018-09-01')"
+                )
+            # The first ticket of every example gets the same number.
+            assert cursor.lastrowid == 1
+    finally:
+        conn.close()
+
+
+def test_two_examples_that_hand_over_both_give_ticket_esc_1(run):
+    hand_over = [("escalate_to_human", {"summary": "Müşteri bir temsilci istiyor."})]
+    first = {**FOREIGN_EXAMPLE, "id": "E1"}
+    second = {**FOREIGN_EXAMPLE, "id": "E2"}
+    script = ["support", hand_over, "İletildi."]
+
+    rows, llm = run([first, second], script)
+
+    # The second example sends what the first sent, ticket number included,
+    # so the cache answers all of it; with ESC-2 the last call would miss.
+    assert "ESC-1" in str(llm.inner.requests[-1])
+    assert [row["live_calls"] for row in rows] == [3, 0]
 
 
 def test_strict_exit_code_marks_a_failed_example_or_a_changed_database():

@@ -46,6 +46,7 @@ from src.knowledge.policy_index import PolicyIndex
 from src.mcp_server.client import OrdersClient
 from src.orchestrator import Orchestrator
 from src.rules.returns import check_return
+from src.tools.escalation import TICKETS_TABLE, ensure_tickets_table
 
 EVAL_DIR = Path(__file__).resolve().parent
 GOLDEN_SET = EVAL_DIR / "golden_set.jsonl"
@@ -382,8 +383,47 @@ def attack_text(rows: list[dict]) -> str:
     )
 
 
-def file_hash(path: Path) -> str:
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+def content_hash(path: Path) -> str:
+    """A hash of what every table holds, the tickets table left out.
+
+    A run must leave the orders and the return requests as it found them,
+    unless an example opens a request; a ticket is a write the system may
+    make whenever a case is handed over. So the tickets table, and its
+    counter, are not part of the hash.
+    """
+    conn = sqlite3.connect(f"file:{Path(path).as_posix()}?mode=ro", uri=True)
+    digest = hashlib.sha256()
+    try:
+        tables = [
+            name
+            for (name,) in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name"
+            )
+            if name != TICKETS_TABLE
+        ]
+        for table in tables:
+            digest.update(table.encode())
+            rows = conn.execute(f'SELECT * FROM "{table}" ORDER BY rowid')
+            for row in rows:
+                if table == "sqlite_sequence" and row[0] == TICKETS_TABLE:
+                    continue
+                digest.update(repr(row).encode())
+    finally:
+        conn.close()
+    return digest.hexdigest()
+
+
+def reset_tickets(conn: sqlite3.Connection) -> None:
+    """Start an example with no tickets, so its first one is ESC-1.
+
+    Each example is a new conversation, and the number is part of what the
+    model is sent next: a number that grew from example to example would
+    change the request, and the cache would no longer answer it.
+    """
+    ensure_tickets_table(conn)
+    with conn:
+        conn.execute(f"DELETE FROM {TICKETS_TABLE}")
+        conn.execute("DELETE FROM sqlite_sequence WHERE name = ?", (TICKETS_TABLE,))
 
 
 def exit_code(rows: list[dict], unchanged: bool, strict: bool) -> int:
@@ -457,6 +497,7 @@ def run(
     rows = []
     try:
         for example in examples:
+            reset_tickets(conn)
             prepared = prepare(example, conn)
             seconds_before, live_before = llm.seconds, llm.live_calls
             answer = asyncio.run(ask(example, prepared, db_path, index, llm))
@@ -535,7 +576,7 @@ def main() -> int:
         shutil.copy(args.db, db_copy)
         print(f"Provider: {provider}   Model: {model}   Examples: {len(examples)}\n")
         judge = build_judge(cache_dir) if args.judge else None
-        hash_before = file_hash(db_copy)
+        hash_before = content_hash(db_copy)
         rows = run(
             examples,
             db_copy,
@@ -545,7 +586,7 @@ def main() -> int:
             show_test=args.show_test,
             judge=judge,
         )
-        unchanged = file_hash(db_copy) == hash_before
+        unchanged = content_hash(db_copy) == hash_before
 
     summary = summarise_by_split(rows)
     text = results_text(summary, rows)
