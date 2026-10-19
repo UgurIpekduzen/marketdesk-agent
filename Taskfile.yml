@@ -105,9 +105,10 @@ tasks:
   # --- Quality -----------------------------------------------------------
 
   lint:
-    desc: Run ruff lint checks
+    desc: Run ruff lint checks and check the formatting (`task format` fixes it)
     cmds:
       - "{{.RUN}} uv run ruff check ."
+      - "{{.RUN}} uv run ruff format --check ."
 
   format:
     desc: Format code with ruff
