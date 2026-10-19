@@ -7,7 +7,7 @@ from src import messages
 from src.agents.ops import Reply as OpsReply
 from src.agents.run_log import RunLog
 from src.agents.support import Reply as SupportReply
-from src.formatting import format_number
+from src.formatting import format_number, readable_table
 from src.orchestrator import Answer, Intent
 from src.ui.chat_session import MessageTooLong
 from src.ui.question_limit import QuestionLimitReached
@@ -15,7 +15,6 @@ from src.ui.session_pool import SessionLimitReached
 from src.ui.view import (
     approval_card,
     friendly_error,
-    readable_table,
     tools_text,
     unsaid_caveats,
     view_of,

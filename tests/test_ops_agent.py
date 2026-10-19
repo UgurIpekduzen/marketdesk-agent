@@ -182,8 +182,16 @@ def test_metric_answer_carries_its_sql_and_caveat(agent, fake):
     assert len(reply.queries) == 1
     assert ":simulated_today" in reply.queries[0]
     assert reply.gave_up is False
+    # The rows come with the answer, written by the code, not the model.
+    assert reply.table == {
+        "columns": ["numerator", "denominator", "value"],
+        "rows": [[5, 20, 0.25]],
+    }
     assert reply.display == (
         "Geç teslim oranı %25.\n\n"
+        "Pay | Payda |  Değer\n"
+        "----+-------+-------\n"
+        "  5 |    20 | 0,2500\n\n"
         f"{messages.OPS_CAVEAT_HEADING}\n- {caveat}\n\n"
         f"{messages.OPS_USED_SQL_HEADING}\n{reply.queries[0]}"
     )
@@ -309,8 +317,9 @@ def test_wrong_column_three_times_ends_in_could_not_answer(agent, fake):
     reply = ask(agent, "Şehirlere göre müşteri dağılımı?")
 
     assert reply.gave_up is True
-    # The model's made-up answer is not what the person sees.
+    # The model's made-up answer is not what the person sees, and no rows.
     assert reply.text == messages.SQL_GAVE_UP
+    assert reply.table is None
     assert reply.queries == [query + " LIMIT 1000" for query in attempts]
     assert reply.display == (
         f"{messages.SQL_GAVE_UP}\n\n{messages.OPS_TRIED_SQL_HEADING}\n"

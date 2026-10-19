@@ -426,19 +426,24 @@ def test_ops_answer_shows_table_sql_and_caveat(open_page):
     page = open_page(
         [
             "ops_metric",
-            [("run_metric", {"metric_name": "order_count"})],
-            "Toplam sipariş sayısı aşağıda.",
+            [
+                (
+                    "run_metric",
+                    {"metric_name": "order_count", "group_by": ["customer_state"]},
+                )
+            ],
+            "En çok sipariş SP'de.",
         ]
     )
     page = as_ops(page)
 
-    page = ask(page, "Kaç sipariş var?")
+    page = ask(page, "Eyaletlere göre kaç sipariş var?")
 
     assert not page.exception
     assert page.chat_input[0].placeholder == messages.UI_INPUT_OPS
     assert len(page.dataframe) == 1
-    # A plain total: the repeated numerator is gone, the header is Turkish.
-    assert list(page.dataframe[0].value.columns) == ["Değer"]
+    # A plain total: the repeated numerator is gone, the headers are Turkish.
+    assert list(page.dataframe[0].value.columns) == ["Müşteri eyaleti", "Değer"]
     assert page.info
     assert messages.UI_AGENT_OPS in sidebar_text(page)
     # The SQL and the steps are in the sidebar, closed; the conversation
@@ -449,6 +454,23 @@ def test_ops_answer_shows_table_sql_and_caveat(open_page):
     assert details.label == messages.UI_DEVELOPER_DETAILS
     assert not sql.proto.expanded
     assert "SELECT" in page.sidebar.code[0].value
+
+
+def test_a_single_value_is_said_without_a_table(open_page):
+    page = open_page(
+        [
+            "ops_metric",
+            [("run_metric", {"metric_name": "order_count"})],
+            "29 sipariş var.",
+        ]
+    )
+    page = as_ops(page)
+
+    page = ask(page, "Kaç sipariş var?")
+
+    assert not page.exception
+    assert "29 sipariş var." in shown(page)
+    assert not page.dataframe
 
 
 def test_changing_the_session_type_starts_a_new_conversation(open_page):

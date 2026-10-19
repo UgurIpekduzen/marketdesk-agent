@@ -10,7 +10,6 @@ from dataclasses import dataclass, field
 import config
 from src import messages
 from src.formatting import format_money
-from src.knowledge.semantic_layer import DENOMINATOR, NUMERATOR, VALUE
 from src.orchestrator import Answer, Intent
 from src.ui.chat_session import MessageTooLong
 from src.ui.question_limit import QuestionLimitReached
@@ -29,14 +28,6 @@ OPS_AVATAR = ":material/analytics:"
 # The router answers a message no agent of the session may take.
 ROUTER_AVATAR = ":material/smart_toy:"
 AGENT_AVATARS = {Intent.SUPPORT: SUPPORT_AVATAR, Intent.OPS_METRIC: OPS_AVATAR}
-# Headers of a result table: the dimensions by name, and the columns every
-# metric result has.
-COLUMN_HEADERS = {
-    **messages.UI_TABLE_DIMENSIONS,
-    NUMERATOR: messages.UI_COLUMN_NUMERATOR,
-    DENOMINATOR: messages.UI_COLUMN_DENOMINATOR,
-    VALUE: messages.UI_COLUMN_VALUE,
-}
 # Marks in an error text, lower case, and the message shown for them.
 ERROR_MARKS = (
     (("429", "resource_exhausted", "quota", "rate limit"), messages.UI_ERROR_QUOTA),
@@ -100,35 +91,6 @@ def last_table(tool_results: list) -> dict | None:
         if isinstance(result, dict) and "columns" in result and "rows" in result:
             return {"columns": result["columns"], "rows": result["rows"]}
     return None
-
-
-def readable_table(table: dict) -> dict:
-    """A result table as the page shows it.
-
-    The columns the semantic layer names get Turkish headers; a plain total
-    has a numerator that only repeats the value, and that column is left
-    out. For each numeric column it says whether it holds whole numbers,
-    decided here on the raw values: the page's table library turns a whole
-    column with a gap into decimals.
-    """
-    columns = list(table["columns"])
-    rows = [list(row) for row in table["rows"]]
-    if NUMERATOR in columns and VALUE in columns:
-        numerator, value = columns.index(NUMERATOR), columns.index(VALUE)
-        if all(row[numerator] == row[value] for row in rows):
-            del columns[numerator]
-            for row in rows:
-                del row[numerator]
-    headers = [COLUMN_HEADERS.get(column, column) for column in columns]
-    numbers = {}
-    for position, header in enumerate(headers):
-        values = [row[position] for row in rows if row[position] is not None]
-        if values and all(
-            isinstance(item, int | float) and not isinstance(item, bool)
-            for item in values
-        ):
-            numbers[header] = all(isinstance(item, int) for item in values)
-    return {"columns": headers, "rows": rows, "numbers": numbers}
 
 
 def cited_sources(text: str, tool_results: list) -> list[str]:

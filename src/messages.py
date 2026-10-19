@@ -179,6 +179,8 @@ UI_TABLE_DIMENSIONS = {
 UI_COLUMN_NUMERATOR = "Pay"
 UI_COLUMN_DENOMINATOR = "Payda"
 UI_COLUMN_VALUE = "Değer"
+# Under a result written as text, when rows were left out.
+TABLE_ROWS_LEFT_OUT = "... ve {count} satır daha"
 UI_SOURCES = "Kaynak"
 UI_APPROVAL_HEADING = "Onayınız gerekiyor"
 UI_APPROVAL_ORDER = "Sipariş"

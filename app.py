@@ -16,7 +16,7 @@ import streamlit as st
 
 import config
 from src import messages, tracing
-from src.formatting import format_number
+from src.formatting import format_number, readable_table, worth_a_table
 from src.ui import resources
 from src.ui.chat_session import ChatSession
 from src.ui.question_limit import QuestionLimit
@@ -27,7 +27,6 @@ from src.ui.view import (
     AnswerView,
     approval_card,
     friendly_error,
-    readable_table,
     tools_text,
     view_of,
 )
@@ -109,8 +108,8 @@ def draw_answer(view: AnswerView) -> None:
     st.markdown(view.text)
     if view.sources:
         st.caption(f"{messages.UI_SOURCES}: {'; '.join(view.sources)}")
-    if view.table and view.table["rows"]:
-        table = readable_table(view.table)
+    table = readable_table(view.table) if view.table else None
+    if table and table["rows"] and worth_a_table(table):
         frame = pd.DataFrame(table["rows"], columns=table["columns"])
         st.caption(messages.UI_RESULT_TABLE)
         # Written the Turkish way whatever the visitor's browser language;
