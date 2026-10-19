@@ -1,6 +1,9 @@
 """Tests for the chat session behind the user interface: a real order
 server process, a stand-in model, no page framework."""
 
+import asyncio
+import gc
+import logging
 import os
 import threading
 from pathlib import Path
@@ -240,3 +243,38 @@ def test_two_sessions_do_not_share_a_conversation(open_session):
 
     assert first.ask("Merhaba").display == "Birinci."
     assert second.ask("Merhaba").display == "İkinci."
+
+
+# Set by the closing task of CleansUpLater once it has run to its end.
+CLEANED: list = []
+
+
+class CleansUpLater(FakeLLM):
+    """A model whose client leaves its own closing behind as a task, as the
+    Gemini client does when it is garbage collected while a loop runs."""
+
+    async def achat(self, messages, **kwargs):
+        async def close_client():
+            await asyncio.sleep(0.5)
+            CLEANED.append(True)
+
+        asyncio.get_running_loop().create_task(close_client())
+        return await super().achat(messages, **kwargs)
+
+
+def test_tasks_left_on_the_loop_finish_when_the_session_closes(
+    synthetic_db_path, caplog
+):
+    CLEANED.clear()
+    session = ChatSession(
+        synthetic_db_path,
+        provider_llm=CleansUpLater(script=["ops_metric", "Hazır."]),
+    )
+    session.ask("Kaç sipariş var?")
+
+    with caplog.at_level(logging.ERROR, logger="asyncio"):
+        session.close()
+        gc.collect()
+
+    assert CLEANED
+    assert "Task was destroyed" not in caplog.text

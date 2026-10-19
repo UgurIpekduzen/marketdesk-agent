@@ -33,6 +33,8 @@ logger = logging.getLogger(__name__)
 # How long the page waits for the session to start and for one answer.
 START_TIMEOUT_SECONDS = 60
 ANSWER_TIMEOUT_SECONDS = 120
+# How long the tasks left on the loop get to finish when the session ends.
+CLOSE_WAIT_SECONDS = 5
 
 Job = Callable[[Orchestrator], Awaitable[object]]
 
@@ -43,6 +45,25 @@ class SessionClosed(RuntimeError):
 
 class MessageTooLong(ValueError):
     """The message is longer than the limit; it never reaches the model."""
+
+
+def finish_pending(loop: asyncio.AbstractEventLoop) -> None:
+    """Let the tasks left on a loop end before the loop is closed.
+
+    What asyncio.run does before it closes its own loop. A model client that
+    is garbage collected while the loop runs schedules its own closing as a
+    task; closed with the loop still pending, that task is destroyed and
+    logged as an error. Tasks that do not end in time are cancelled.
+    """
+    pending = asyncio.all_tasks(loop)
+    if pending:
+        loop.run_until_complete(asyncio.wait(pending, timeout=CLOSE_WAIT_SECONDS))
+    left = asyncio.all_tasks(loop)
+    for task in left:
+        task.cancel()
+    if left:
+        loop.run_until_complete(asyncio.gather(*left, return_exceptions=True))
+    loop.run_until_complete(loop.shutdown_asyncgens())
 
 
 def stop(loop: asyncio.AbstractEventLoop, jobs: asyncio.Queue) -> None:
@@ -103,6 +124,7 @@ class ChatSession:
             else:
                 logger.exception("chat session stopped with an error")
         finally:
+            finish_pending(self._loop)
             self._loop.close()
 
     async def _serve(self) -> None:
