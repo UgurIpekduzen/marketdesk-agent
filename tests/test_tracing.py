@@ -307,6 +307,28 @@ def test_hosted_target_gets_no_message_text(
     assert "get_order_status" in text
 
 
+@pytest.mark.parametrize("target", ["phoenix", "langfuse"])
+def test_every_model_span_names_the_model_also_behind_the_guard(
+    traced, synthetic_db_path, fake_policy_index, target
+):
+    # Without a model name a tracing tool cannot price a call.
+    exporter = traced(target)
+    script = [[("get_order_status", {"order_ref": "o_day14"})], "Teslim edildi."]
+
+    support_run(synthetic_db_path, fake_policy_index, script, "o_day14 nerede?")
+
+    model_spans = [
+        span
+        for span in exporter.get_finished_spans()
+        if span.attributes.get(tracing.SPAN_KIND) == "LLM"
+    ]
+    assert {span.name.split(".")[0] for span in model_spans} >= {
+        "GuardedLLM",
+        "FakeLLM",
+    }
+    assert {span.attributes.get("llm.model_name") for span in model_spans} == {"fake"}
+
+
 def test_hosted_target_gets_only_allowed_attributes(
     traced, synthetic_db_path, fake_policy_index
 ):
