@@ -150,7 +150,24 @@ UI_CAPTION_OPS = "Operasyon verileri: metrikler ve sorgular"
 UI_SESSION_HEADING = "Oturum"
 UI_SESSION_CUSTOMER = "Müşteri"
 UI_SESSION_OPS = "Operasyon"
-UI_CUSTOMER_PICKER = "Örnek müşteri"
+UI_CUSTOMER_PICKER = "Bir durum seçin"
+# The choice screen shown before a conversation starts. No sign-in: the
+# visitor picks a role and, as a customer, a demo customer's situation.
+UI_CHOICE_HEADING = "Nasıl denemek istersiniz?"
+UI_CHOICE_NOTE = (
+    "Giriş yok ve kişisel veri alınmaz. Örnek müşteriler ve demo verisi bütün "
+    "ziyaretçiler için ortaktır."
+)
+UI_CHOICE_CUSTOMER = "Müşteri olarak"
+UI_CHOICE_CUSTOMER_TEXT = "Siparişlerinizi, iade haklarınızı ve politikaları sorun."
+UI_CHOICE_OPS = "Operasyon ekibi olarak"
+UI_CHOICE_OPS_TEXT = (
+    "Metrik sorularını sayılarla yanıtlar; kullanılan SQL'i gösterir. Veriler "
+    "yalnızca okunur."
+)
+UI_START_CUSTOMER = "Müşteri olarak başla"
+UI_START_OPS = "Operasyon olarak başla"
+UI_CHANGE = "Değiştir"
 UI_NEW_CONVERSATION = "Yeni konuşma"
 UI_INPUT_CUSTOMER = "Sorunuzu yazın"
 UI_INPUT_OPS = "Bir metrik sorusu yazın"

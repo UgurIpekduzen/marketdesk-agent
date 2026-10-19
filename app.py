@@ -27,6 +27,7 @@ from src.ui.chat_session import ChatSession
 from src.ui.question_limit import QuestionLimit
 from src.ui.session_pool import SessionPool
 from src.ui.view import (
+    OPS_AVATAR,
     SUPPORT_AVATAR,
     USER_AVATAR,
     AnswerView,
@@ -107,6 +108,51 @@ def open_session(identity: tuple, customer_unique_id: str | None) -> None:
         )
     except Exception as failure:  # noqa: BLE001
         st.session_state.turns.append(("error", friendly_error(failure)))
+
+
+def sign_out() -> None:
+    """Back to the choice screen: the conversation and its identity go."""
+    close_session()
+    for name in ("identity", "turns", "pending"):
+        st.session_state.pop(name, None)
+
+
+def draw_choice(customers: list) -> tuple | None:
+    """The choice screen: as a customer in a situation, or as the ops team.
+
+    Returns the chosen identity, or None until a start button is clicked.
+    The customer comes from the server-side list; only its situation is
+    kept, and the id is looked up again on every page run.
+    """
+    st.subheader(messages.UI_CHOICE_HEADING)
+    st.caption(messages.UI_CHOICE_NOTE)
+    customer_card, ops_card = st.columns(2)
+    chosen = None
+    with customer_card.container(border=True):
+        st.markdown(f"{USER_AVATAR} **{messages.UI_CHOICE_CUSTOMER}**")
+        st.write(messages.UI_CHOICE_CUSTOMER_TEXT)
+        if customers:
+            # A radio, not a drop-down: the labels are read whole.
+            customer = st.radio(
+                messages.UI_CUSTOMER_PICKER,
+                customers,
+                format_func=lambda choice: choice.label,
+            )
+            clicked = st.button(
+                messages.UI_START_CUSTOMER, type="primary", use_container_width=True
+            )
+            # A value written by hand comes back as the text sent, not as one
+            # of the customers: it is no choice.
+            if clicked and customer in customers:
+                chosen = ("customer", customer.situation)
+        else:
+            st.error(messages.UI_NO_CUSTOMERS)
+    with ops_card.container(border=True):
+        st.markdown(f"{OPS_AVATAR} **{messages.UI_CHOICE_OPS}**")
+        st.write(messages.UI_CHOICE_OPS_TEXT)
+        if st.button(messages.UI_START_OPS, use_container_width=True):
+            chosen = ("ops",)
+    return chosen
 
 
 def draw_answer(view: AnswerView) -> None:
@@ -226,35 +272,46 @@ def main() -> None:
         st.error(messages.UI_NO_DATABASE)
         st.stop()
 
-    # The session type is chosen here, at sign-in, and nowhere else: a
-    # message cannot change it.
+    customers = demo_customers(str(path))
+    identity = st.session_state.get("identity")
+    if identity is None:
+        with st.sidebar:
+            st.caption(messages.UI_DATA_NOTE)
+        # The session type is chosen here, on the choice screen, and nowhere
+        # else: a message cannot change it.
+        chosen = draw_choice(customers)
+        if chosen is not None:
+            st.session_state.identity = chosen
+            st.rerun()
+        return
+
+    is_customer = identity[0] == "customer"
+    customer = None
+    if is_customer:
+        # The situation was chosen from the list; the id comes from it here.
+        customer = next((c for c in customers if c.situation == identity[1]), None)
+        if customer is None:
+            sign_out()
+            st.rerun()
+
     with st.sidebar:
         st.header(messages.UI_SESSION_HEADING)
-        kind = st.radio(
-            messages.UI_SESSION_HEADING,
-            [messages.UI_SESSION_CUSTOMER, messages.UI_SESSION_OPS],
-            label_visibility="collapsed",
-        )
-        customer = None
-        if kind == messages.UI_SESSION_CUSTOMER:
-            customers = demo_customers(str(path))
-            if not customers:
-                st.error(messages.UI_NO_CUSTOMERS)
-                st.stop()
-            # Shown by situation; the id stays on the server side.
-            customer = st.selectbox(
-                messages.UI_CUSTOMER_PICKER,
-                customers,
-                format_func=lambda choice: choice.label,
-            )
-        restart = st.button(messages.UI_NEW_CONVERSATION)
+        if is_customer:
+            st.markdown(f"{USER_AVATAR} **{messages.UI_SESSION_CUSTOMER}**")
+            st.caption(customer.label)
+        else:
+            st.markdown(f"{OPS_AVATAR} **{messages.UI_SESSION_OPS}**")
+        change, new = st.columns(2)
+        if change.button(messages.UI_CHANGE, use_container_width=True):
+            sign_out()
+            st.rerun()
+        restart = new.button(messages.UI_NEW_CONVERSATION, use_container_width=True)
         st.caption(messages.UI_DATA_NOTE)
 
-    is_customer = customer is not None
     st.caption(messages.UI_CAPTION_CUSTOMER if is_customer else messages.UI_CAPTION_OPS)
-    identity = ("customer", customer.situation) if is_customer else ("ops",)
     customer_id = customer.customer_unique_id if is_customer else None
-    if restart or st.session_state.get("identity") != identity:
+    # A new identity has no conversation yet.
+    if restart or "turns" not in st.session_state:
         open_session(identity, customer_id)
     elif getattr(st.session_state.get("session"), "closed", False):
         # Closed by the pool after a long pause: start again and say why.

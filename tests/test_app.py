@@ -32,7 +32,8 @@ def open_page(monkeypatch, synthetic_db_path, fake_policy_index):
     """Open the page on the synthetic database with a scripted model."""
     pages = []
 
-    def start(script=(), customer=ALICE):
+    def start(script=(), customer=ALICE, role=messages.UI_START_CUSTOMER):
+        """role is the start button clicked on the choice screen; None stays there."""
         fake = FakeLLM(script=list(script))
         monkeypatch.setattr(resources, "db_path", lambda: Path(synthetic_db_path))
         monkeypatch.setattr(resources, "load_policy_index", lambda: fake_policy_index)
@@ -54,6 +55,8 @@ def open_page(monkeypatch, synthetic_db_path, fake_policy_index):
         st.cache_data.clear()
         page = AppTest.from_file(APP, default_timeout=60).run()
         pages.append(page)
+        if role:
+            page = click(page, role)
         return page
 
     yield start
@@ -79,21 +82,29 @@ def send_crafted(page, monkeypatch, widget_id, **value):
     on a button that is not on the page. The test framework refuses to
     send those, so the state is added to what it sends.
     """
-    state = WidgetState(id=widget_id)
-    for field_name, field_value in value.items():
-        target = getattr(state, field_name)
-        if hasattr(target, "data"):
-            target.data = field_value
-        else:
-            setattr(state, field_name, field_value)
+    return send_crafted_states(page, monkeypatch, {widget_id: value})
+
+
+def send_crafted_states(page, monkeypatch, values: dict):
+    """send_crafted for several widgets in one run: {widget id: value}."""
+    crafted = []
+    for widget_id, value in values.items():
+        state = WidgetState(id=widget_id)
+        for field_name, field_value in value.items():
+            target = getattr(state, field_name)
+            if hasattr(target, "data"):
+                target.data = field_value
+            else:
+                setattr(state, field_name, field_value)
+        crafted.append(state)
     tree_type = type(page._tree)
     original = tree_type.get_widget_states
 
     def with_crafted(tree):
         states = original(tree)
-        kept = [widget for widget in states.widgets if widget.id != widget_id]
+        kept = [widget for widget in states.widgets if widget.id not in values]
         del states.widgets[:]
-        states.widgets.extend([*kept, state])
+        states.widgets.extend([*kept, *crafted])
         return states
 
     monkeypatch.setattr(tree_type, "get_widget_states", with_crafted)
@@ -117,7 +128,8 @@ def written_orders(db_path) -> list[str]:
 
 
 def as_ops(page):
-    return page.sidebar.radio[0].set_value(messages.UI_SESSION_OPS).run()
+    """Back to the choice screen, then in as the operations team."""
+    return click(click(page, messages.UI_CHANGE), messages.UI_START_OPS)
 
 
 def shown(page) -> str:
@@ -133,25 +145,77 @@ def shown(page) -> str:
 # --- Opening ------------------------------------------------------------------
 
 
-def test_page_opens_as_a_customer_without_an_error(open_page):
-    page = open_page()
+def labels(page) -> list[str]:
+    return [button.label for button in page.button]
+
+
+def test_page_opens_on_the_choice_screen_without_a_session(open_page):
+    page = open_page(role=None)
 
     assert not page.exception
     assert page.title[0].value == messages.UI_TITLE
-    assert page.sidebar.radio[0].options == [
-        messages.UI_SESSION_CUSTOMER,
-        messages.UI_SESSION_OPS,
-    ]
-    assert page.chat_input[0].placeholder == messages.UI_INPUT_CUSTOMER
+    assert page.subheader[0].value == messages.UI_CHOICE_HEADING
+    assert labels(page) == [messages.UI_START_CUSTOMER, messages.UI_START_OPS]
+    # Nothing can be asked before a choice: no chat box, no session.
+    assert not page.chat_input
+    assert "session" not in page.session_state
 
 
 def test_customers_are_offered_by_situation_and_no_id_is_shown(open_page):
+    page = open_page(role=None)
+
+    assert page.radio[0].options == [messages.DEMO_CUSTOMER_LABELS["recent_delivery"]]
+    assert ALICE not in shown(page)
+
+
+def test_starting_as_a_customer_shows_who_you_are_in_the_sidebar(open_page):
     page = open_page()
 
-    assert page.sidebar.selectbox[0].options == [
-        messages.DEMO_CUSTOMER_LABELS["recent_delivery"]
+    assert not page.exception
+    assert page.session_state["identity"] == ("customer", "recent_delivery")
+    assert messages.UI_SESSION_CUSTOMER in sidebar_text(page)
+    assert messages.DEMO_CUSTOMER_LABELS["recent_delivery"] in sidebar_text(page)
+    assert [b.label for b in page.sidebar.button] == [
+        messages.UI_CHANGE,
+        messages.UI_NEW_CONVERSATION,
     ]
-    assert ALICE not in shown(page)
+    assert page.chat_input[0].placeholder == messages.UI_INPUT_CUSTOMER
+    assert messages.UI_CHOICE_HEADING not in shown(page)
+
+
+def test_starting_as_the_ops_team_opens_an_ops_session(open_page):
+    page = open_page(role=messages.UI_START_OPS)
+
+    assert not page.exception
+    assert page.session_state["identity"] == ("ops",)
+    assert messages.UI_SESSION_OPS in sidebar_text(page)
+    assert page.chat_input[0].placeholder == messages.UI_INPUT_OPS
+
+
+def test_change_closes_the_session_and_goes_back_to_the_choice_screen(open_page):
+    page = open_page(["support", "Merhaba."])
+    page = ask(page, "Merhaba")
+    first = page.session_state["session"]
+
+    page = click(page, messages.UI_CHANGE)
+
+    assert not page.exception
+    assert first.closed
+    assert "session" not in page.session_state
+    assert "identity" not in page.session_state
+    assert page.subheader[0].value == messages.UI_CHOICE_HEADING
+    assert len(page.chat_message) == 0
+    assert not page.chat_input
+
+
+def test_no_customers_still_lets_the_ops_team_in(open_page, monkeypatch):
+    monkeypatch.setattr(resources, "load_demo_customers", lambda path: [])
+    st.cache_data.clear()
+    page = AppTest.from_file(APP, default_timeout=60).run()
+
+    assert not page.exception
+    assert page.error[0].value == messages.UI_NO_CUSTOMERS
+    assert labels(page) == [messages.UI_START_OPS]
 
 
 def test_a_missing_database_is_built_once(open_page, monkeypatch, tmp_path):
@@ -173,7 +237,7 @@ def test_a_missing_database_is_built_once(open_page, monkeypatch, tmp_path):
 
     assert not page.exception
     assert not page.error
-    assert page.chat_input
+    assert page.subheader[0].value == messages.UI_CHOICE_HEADING
     assert builds == [target]
     assert messages.UI_DATA_NOTE in [caption.value for caption in page.caption]
 
@@ -193,7 +257,7 @@ def test_a_database_that_cannot_be_built_is_said_plainly(open_page, monkeypatch)
 
     assert not page.exception
     assert page.error[0].value == messages.UI_NO_DATABASE
-    assert not page.chat_input
+    assert not page.button
 
     page.run()
 
@@ -333,6 +397,7 @@ def test_return_request_waits_for_a_click_and_is_written_after_approve(
     assert "115,00 BRL" in text
     assert "inceleme bekliyor" in text
     assert {button.label for button in page.button} == {
+        messages.UI_CHANGE,
         messages.UI_NEW_CONVERSATION,
         messages.UI_APPROVE,
         messages.UI_DECLINE,
@@ -483,7 +548,7 @@ def test_changing_the_session_type_starts_a_new_conversation(open_page):
     assert first.closed
     assert page.session_state["session"] is not first
     assert len(page.chat_message) == 0
-    assert not page.sidebar.selectbox
+    assert messages.UI_SESSION_OPS in sidebar_text(page)
 
 
 def test_new_conversation_button_forgets_the_old_one(open_page):
@@ -500,27 +565,53 @@ def test_new_conversation_button_forgets_the_old_one(open_page):
 
 
 def test_a_customer_missing_from_the_list_is_not_taken(open_page, monkeypatch):
-    page = open_page()
+    page = open_page(role=None)
+    (start,) = [b for b in page.button if b.label == messages.UI_START_CUSTOMER]
 
-    page = send_crafted(
-        page, monkeypatch, page.selectbox[0].id, string_value="someone else"
+    # The text and the start click in one run, as a visitor could send them.
+    page = send_crafted_states(
+        page,
+        monkeypatch,
+        {
+            page.radio[0].id: {"string_value": "someone"},
+            start.id: {"trigger_value": True},
+        },
     )
 
+    # The framework drops a value missing from the list and keeps the first
+    # customer offered: the session is one from the server-side list.
     assert not page.exception
     assert page.session_state["identity"] == ("customer", "recent_delivery")
-    assert page.chat_input
+    assert page.session_state["session"]
 
 
-@pytest.mark.parametrize("value", ["admin", "7", "-1"])
-def test_an_unknown_session_type_falls_back_to_the_customer_session(
-    open_page, monkeypatch, value
+def test_a_choice_that_is_not_a_listed_customer_starts_nothing(open_page, monkeypatch):
+    # Should the framework ever pass the text on, the page still refuses it.
+    page = open_page(role=None)
+    monkeypatch.setattr(st, "radio", lambda *args, **kwargs: "someone")
+
+    page = click(page, messages.UI_START_CUSTOMER)
+
+    assert not page.exception
+    assert "identity" not in page.session_state
+    assert "session" not in page.session_state
+    assert page.subheader[0].value == messages.UI_CHOICE_HEADING
+
+
+def test_a_click_on_a_start_button_that_is_gone_keeps_the_session(
+    open_page, monkeypatch
 ):
-    page = open_page()
+    page = open_page(role=None)
+    (ops_start,) = [b for b in page.button if b.label == messages.UI_START_OPS]
+    page = click(page, messages.UI_START_CUSTOMER)
+    session = page.session_state["session"]
 
-    page = send_crafted(page, monkeypatch, page.sidebar.radio[0].id, string_value=value)
+    page = send_crafted(page, monkeypatch, ops_start.id, trigger_value=True)
 
     assert not page.exception
     assert page.session_state["identity"] == ("customer", "recent_delivery")
+    assert page.session_state["session"] is session
+    assert page.chat_input[0].placeholder == messages.UI_INPUT_CUSTOMER
 
 
 def test_a_message_through_the_closed_chat_box_leaves_the_approval_as_shown(
@@ -634,7 +725,7 @@ def test_the_page_shows_the_logo_and_the_mark(monkeypatch, open_page):
         st, "logo", lambda image, **options: shown_logos.append((image, options))
     )
 
-    open_page()
+    open_page(role=None)
 
     ((logo, options),) = shown_logos
     assert Path(logo).name == "logo.svg"
