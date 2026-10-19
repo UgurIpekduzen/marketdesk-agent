@@ -2,13 +2,13 @@
 
 The page runs on Streamlit: the browser only sends "this was clicked" and "this was typed", and everything is decided on the server. A visitor can still write those messages by hand, so any check the page makes is a convenience; the rule has to hold on the server. This review lists what the page decides, checks each decision against messages no click could send, and records the result.
 
-Review date: 2026-10-16. Tests named below are in `tests/`.
+Review date: 2026-10-16; F1, F8 and F12 updated on 2026-10-19 for the choice screen and the example questions. Tests named below are in `tests/`.
 
 ## Findings
 
 | # | What the page decides or shows | Result | How it is held, and the test |
 |---|---|---|---|
-| F1 | The customer is chosen from a list of five demo customers | Holds | A value missing from the list is turned back into the default choice by the framework; the identity reaches the order server only from the server-side list. `test_a_customer_missing_from_the_list_is_not_taken` |
+| F1 | The customer is chosen on the choice screen from a list of five demo customers | Holds | A value missing from the list is turned back into the first customer offered by the framework; should the framework ever pass the text on, the page starts no session. Only the situation is kept, and the identity reaches the order server only from the server-side list. `test_a_customer_missing_from_the_list_is_not_taken`, `test_a_choice_that_is_not_a_listed_customer_starts_nothing` |
 | F1 | Error details after an unexpected failure | Fixed | The framework's default showed the traceback in the browser. `.streamlit/config.toml` sets `showErrorDetails = "none"`. `test_the_page_shows_no_error_details_and_keeps_its_protections` |
 | F2 | Markdown in the model's answer | Fixed | An image in markdown makes the browser fetch its address at once, so a model talked into writing one could send data to any site. Images are replaced with a note and every other start of an image is escaped (`src/ui/view.py`). `test_a_markdown_image_in_an_answer_is_not_drawn`, `test_no_form_of_markdown_image_is_left_to_draw`, `test_an_image_in_the_model_answer_reaches_no_other_site` |
 | F2 | Tool names in the steps panel | Fixed | Drawn as inline code, which is not read as markdown. `test_tool_names_are_drawn_as_code_that_cannot_become_markdown` |
@@ -17,10 +17,11 @@ Review date: 2026-10-16. Tests named below are in `tests/`.
 | F5 | The chat box is closed while a return request waits for approval | Holds | A message sent through it is answered, and what is approved stays the request the card shows: the server holds the pending request and the card is drawn from it. `test_a_message_through_the_closed_chat_box_leaves_the_approval_as_shown` |
 | F6 | Demo customers are shared between visitors | Accepted | A request one visitor opens is seen by the next one who picks the same customer. The data is a public dataset with no personal data; the README says the demo data is shared. |
 | F7 | Every visitor may open an operations session | Accepted | The demo has no sign-in. Operations sessions read only the safe views, on a read-only connection; a real deployment would take the session type from a login. |
-| F8 | The session type is chosen with a radio button | Holds | An unknown value falls back to the customer session. `test_an_unknown_session_type_falls_back_to_the_customer_session` |
+| F8 | The session type is chosen with a start button on the choice screen | Holds | Before a choice there is no session and no chat box. The type is set by the button clicked, never by text; a click sent for a start button that is no longer on the page leaves the session as it is. "Change" closes the session before the choice screen comes back. `test_page_opens_on_the_choice_screen_without_a_session`, `test_a_click_on_a_start_button_that_is_gone_keeps_the_session`, `test_change_closes_the_session_and_goes_back_to_the_choice_screen` |
 | F9 | XSRF and CORS protection | Holds | The framework's defaults, written down in `.streamlit/config.toml` and checked by a test. |
 | F10 | Approve and decline appear only with the card | Holds | A click sent for a button that is no longer on the page is ignored, and the order server answers `NOTHING_PENDING` to an approval with nothing pending. `test_a_click_on_an_approve_button_that_is_gone_writes_nothing` |
 | F11 | The steps panel and the SQL panel show tool names, token counts and SQL | Accepted | Shown on purpose; nothing secret is in them. |
+| F12 | Example questions above an empty conversation | Holds | Fixed texts from `src/messages.py`, never written by the model. A clicked example is sent like a typed message, through the same limits and checks; the buttons are gone after the first question and while a request waits for approval, and a click sent for one that is gone sends nothing. `test_a_clicked_example_is_sent_as_if_typed_and_the_examples_go`, `test_no_examples_while_a_request_waits_for_approval`, `test_a_click_on_an_example_that_is_gone_sends_nothing` |
 
 ## Automated review
 
