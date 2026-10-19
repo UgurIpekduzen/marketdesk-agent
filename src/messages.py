@@ -168,6 +168,7 @@ UI_CHOICE_OPS_TEXT = (
 UI_START_CUSTOMER = "Müşteri olarak başla"
 UI_START_OPS = "Operasyon olarak başla"
 UI_CHANGE = "Değiştir"
+UI_EXAMPLES_HEADING = "Örnek sorular"
 UI_NEW_CONVERSATION = "Yeni konuşma"
 UI_INPUT_CUSTOMER = "Sorunuzu yazın"
 UI_INPUT_OPS = "Bir metrik sorusu yazın"

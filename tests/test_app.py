@@ -16,7 +16,7 @@ from streamlit.testing.v1 import AppTest
 
 import config
 from src import messages
-from src.ui import resources
+from src.ui import examples, resources
 from src.ui.view import OPS_AVATAR, ROUTER_AVATAR, SUPPORT_AVATAR, USER_AVATAR
 from tests.agent_harness import request_count
 from tests.fakes import FakeLLM
@@ -561,6 +561,70 @@ def test_new_conversation_button_forgets_the_old_one(open_page):
     assert messages.UI_STEPS_LATEST not in sidebar_text(page)
 
 
+# --- Example questions -------------------------------------------------------
+
+
+def example_labels(page) -> list[str]:
+    """The example buttons in the order they were picked (the page lays
+    them out in two columns)."""
+    keys = {b.key for b in page.button if b.key and b.key.startswith("example_")}
+    return [page.button(key=f"example_{n}").label for n in range(len(keys))]
+
+
+def test_a_customer_is_offered_four_examples_from_the_pool(open_page):
+    page = open_page()
+
+    shown_examples = example_labels(page)
+    assert shown_examples == page.session_state["examples"]
+    assert len(shown_examples) == 4
+    assert (
+        shown_examples[0] in messages.EXAMPLE_QUESTIONS_BY_SITUATION["recent_delivery"]
+    )
+    assert messages.UI_EXAMPLES_HEADING in shown(page)
+
+
+def test_an_analyst_is_offered_four_metric_examples(open_page):
+    page = open_page(role=messages.UI_START_OPS)
+
+    shown_examples = example_labels(page)
+    assert len(shown_examples) == 4
+    assert set(shown_examples) <= set(messages.EXAMPLE_QUESTIONS_OPS)
+
+
+def test_a_clicked_example_is_sent_as_if_typed_and_the_examples_go(open_page):
+    page = open_page(["support", "Merhaba."])
+    question = example_labels(page)[1]
+
+    page = page.button(key="example_1").click().run()
+
+    assert not page.exception
+    assert page.session_state["turns"][0] == ("user", question)
+    assert [message.name for message in page.chat_message] == ["user", "assistant"]
+    assert not example_labels(page)
+    assert messages.UI_EXAMPLES_HEADING not in shown(page)
+
+
+def test_examples_stay_the_same_until_a_new_conversation(open_page, monkeypatch):
+    picks = iter([["birinci"], ["ikinci"], ["üçüncü"]])
+    monkeypatch.setattr(examples, "pick_examples", lambda identity, rng: next(picks))
+    page = open_page()
+    assert example_labels(page) == ["birinci"]
+
+    page.run()
+    assert example_labels(page) == ["birinci"]
+
+    page = click(page, messages.UI_NEW_CONVERSATION)
+    assert example_labels(page) == ["ikinci"]
+
+
+def test_no_examples_while_a_request_waits_for_approval(open_page):
+    page = open_page(RETURN_SCRIPT)
+    page = page.button(key="example_0").click().run()
+
+    assert page.session_state["pending"] is not None
+    assert not example_labels(page)
+
+
 # --- Crafted messages ------------------------------------------------------
 
 
@@ -612,6 +676,20 @@ def test_a_click_on_a_start_button_that_is_gone_keeps_the_session(
     assert page.session_state["identity"] == ("customer", "recent_delivery")
     assert page.session_state["session"] is session
     assert page.chat_input[0].placeholder == messages.UI_INPUT_CUSTOMER
+
+
+def test_a_click_on_an_example_that_is_gone_sends_nothing(open_page, monkeypatch):
+    page = open_page(["support", "Merhaba."])
+    example = page.button(key="example_0")
+    page = ask(page, "Merhaba")
+    turns = len(page.session_state["turns"])
+
+    # The script is used up: a question sent to the model would fail.
+    page = send_crafted(page, monkeypatch, example.id, trigger_value=True)
+
+    assert not page.exception
+    assert not page.error
+    assert len(page.session_state["turns"]) == turns
 
 
 def test_a_message_through_the_closed_chat_box_leaves_the_approval_as_shown(

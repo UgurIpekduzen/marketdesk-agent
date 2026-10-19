@@ -8,6 +8,7 @@ text live in src/; nothing is decided here.
 """
 
 import logging
+import random
 from functools import partial
 from pathlib import Path
 
@@ -22,7 +23,7 @@ from src.formatting import (
     readable_table,
     worth_a_table,
 )
-from src.ui import resources
+from src.ui import examples, resources
 from src.ui.chat_session import ChatSession
 from src.ui.question_limit import QuestionLimit
 from src.ui.session_pool import SessionPool
@@ -42,6 +43,16 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 ASSETS = Path(__file__).resolve().parent / "assets"
 LOGO = ASSETS / "logo.svg"  # the mark and the name, at the top of the sidebar
 ICON = ASSETS / "icon.svg"  # the mark alone: the browser tab, a closed sidebar
+# A button label stays on one line and is cut with "..."; an example
+# question is read whole, so its buttons wrap. Reached through the class
+# the framework gives an element with a key, so no other button changes.
+EXAMPLE_BUTTON_STYLE = """<style>
+[class*="st-key-example_"] button * {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+}
+</style>"""
 
 
 @st.cache_resource
@@ -96,6 +107,8 @@ def open_session(identity: tuple, customer_unique_id: str | None) -> None:
     st.session_state.identity = identity
     st.session_state.turns = []
     st.session_state.pending = None
+    # Picked once, so they stay the same until the next conversation.
+    st.session_state.examples = examples.pick_examples(identity, random.Random())
     index = policy_index() if customer_unique_id else None
     try:
         st.session_state.session = session_pool().open(
@@ -113,7 +126,7 @@ def open_session(identity: tuple, customer_unique_id: str | None) -> None:
 def sign_out() -> None:
     """Back to the choice screen: the conversation and its identity go."""
     close_session()
-    for name in ("identity", "turns", "pending"):
+    for name in ("identity", "turns", "pending", "examples"):
         st.session_state.pop(name, None)
 
 
@@ -153,6 +166,19 @@ def draw_choice(customers: list) -> tuple | None:
         if st.button(messages.UI_START_OPS, use_container_width=True):
             chosen = ("ops",)
     return chosen
+
+
+def draw_examples() -> str | None:
+    """The example questions of an empty conversation; the one clicked."""
+    st.html(EXAMPLE_BUTTON_STYLE)
+    st.caption(messages.UI_EXAMPLES_HEADING)
+    left, right = st.columns(2)
+    clicked = None
+    for number, question in enumerate(st.session_state.examples):
+        column = left if number % 2 == 0 else right
+        if column.button(question, key=f"example_{number}", use_container_width=True):
+            clicked = question
+    return clicked
 
 
 def draw_answer(view: AnswerView) -> None:
@@ -342,6 +368,9 @@ def main() -> None:
     waiting = st.session_state.pending is not None
     if waiting:
         draw_approval(session)
+    clicked = None
+    if not st.session_state.turns and not waiting:
+        clicked = draw_examples()
     prompt = messages.UI_INPUT_CUSTOMER if is_customer else messages.UI_INPUT_OPS
     # The limit here only helps the visitor; the server checks it again.
     question = st.chat_input(
@@ -349,8 +378,9 @@ def main() -> None:
         disabled=waiting,
         max_chars=config.MAX_MESSAGE_CHARS,
     )
-    if question:
-        answer(session, question)
+    # An example is sent as if it was typed.
+    if question or clicked:
+        answer(session, question or clicked)
 
 
 main()
