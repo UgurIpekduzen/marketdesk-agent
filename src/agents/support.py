@@ -39,11 +39,10 @@ from src.guardrails.pii import RAW_ID_PATTERN, hash_id
 from src.knowledge.policy_index import PolicyIndex
 from src.mcp_server.client import OrdersClient
 from src.tools.eligibility import check_return_eligibility
-from src.tools.escalation import EscalationQueue, escalate_to_human
+from src.tools.escalation import escalate_to_human
 from src.tools.orders import DEFAULT_LIST_LIMIT, get_order_status, list_customer_orders
 from src.tools.policies import DEFAULT_K, search_policies
 from src.tools.return_requests import create_return_request
-from src.tools.session import Session
 
 AGENT_NAME = "support"
 
@@ -131,17 +130,15 @@ class Reply:
 
 def build_tools(
     orders: OrdersClient,
-    identity: Session,
     policy_index: PolicyIndex,
-    queue: EscalationQueue,
     guard: LoopGuard,
 ) -> list[FunctionTool]:
     """The six tools the model may call.
 
     Each wrapper shows the model only the arguments the model may choose.
-    The four order tools are forwarded to the MCP order server, which holds
-    the customer's session; the customer and the approval token are not part
-    of any tool's arguments. The description the model reads is the
+    The four order tools and the hand-over are forwarded to the MCP order
+    server, which holds the customer's session and writes the ticket; the
+    customer and the approval token are not part of any tool's arguments. The description the model reads is the
     docstring of the function that does the work.
     """
 
@@ -194,10 +191,8 @@ def build_tools(
         )
 
     async def escalate_to_human_tool(summary: str, priority: str = "normal") -> str:
-        return await locally(
-            "escalate_to_human",
-            {"summary": summary, "priority": priority},
-            lambda: escalate_to_human(identity, queue, summary, priority),
+        return await over_mcp(
+            "escalate_to_human", {"summary": summary, "priority": priority}
         )
 
     wrapped = (
@@ -224,7 +219,6 @@ class SupportAgent:
         orders: OrdersClient,
         customer_unique_id: str,
         policy_index: PolicyIndex,
-        queue: EscalationQueue,
         redactor: Redactor,
         provider_llm: FunctionCallingLLM | None = None,
     ) -> None:
@@ -234,12 +228,9 @@ class SupportAgent:
         # Also used by the router, for its own call to the model.
         self.redactor = redactor
         self._guard = LoopGuard()
-        # Who the customer is, for the hand-over log only. Order aliases and
-        # approvals are not kept here: they live on the order server.
-        identity = Session(customer_unique_id)
         self._agent = FunctionAgent(
             name=AGENT_NAME,
-            tools=build_tools(orders, identity, policy_index, queue, self._guard),
+            tools=build_tools(orders, policy_index, self._guard),
             # Whatever model is used, it is only ever reached through the guard.
             llm=GuardedLLM(
                 inner=provider_llm or build_provider_llm(), redactor=redactor
@@ -259,7 +250,6 @@ class SupportAgent:
         orders: OrdersClient,
         customer_unique_id: str,
         policy_index: PolicyIndex,
-        queue: EscalationQueue,
         provider_llm: FunctionCallingLLM | None = None,
     ) -> Self:
         """Build the agent for the customer the order server was started for."""
@@ -269,9 +259,7 @@ class SupportAgent:
         redactor = Redactor(known_values=info["personal_values"])
         # The same values are masked in the spans of a traced run.
         tracing.register_personal_values(info["personal_values"])
-        return cls(
-            orders, customer_unique_id, policy_index, queue, redactor, provider_llm
-        )
+        return cls(orders, customer_unique_id, policy_index, redactor, provider_llm)
 
     async def _alias_order_numbers(self, message: str) -> str:
         """Replace order numbers the customer typed with the server's aliases."""

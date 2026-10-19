@@ -46,7 +46,6 @@ from src.knowledge.policy_index import PolicyIndex
 from src.mcp_server.client import OrdersClient
 from src.orchestrator import Orchestrator
 from src.rules.returns import check_return
-from src.tools.escalation import EscalationQueue
 
 EVAL_DIR = Path(__file__).resolve().parent
 GOLDEN_SET = EVAL_DIR / "golden_set.jsonl"
@@ -147,7 +146,7 @@ async def ask(
             router.close()
     async with OrdersClient(db_path, prepared["customer"]) as orders:
         router = await Orchestrator.for_customer(
-            orders, prepared["customer"], index, EscalationQueue(), llm
+            orders, prepared["customer"], index, llm
         )
         return await router.ask(question)
 

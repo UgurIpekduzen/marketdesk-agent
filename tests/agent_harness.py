@@ -7,11 +7,10 @@ import sqlite3
 from src.agents.support import SupportAgent
 from src.mcp_server.client import OrdersClient
 from src.orchestrator import Orchestrator
-from src.tools.escalation import EscalationQueue
 from tests.synthetic_data import ALICE
 
 
-def with_agent(db_path, policy_index, fake, scenario, customer=ALICE, queue=None):
+def with_agent(db_path, policy_index, fake, scenario, customer=ALICE):
     """Start the order server and the agent, run the scenario, stop both.
 
     scenario is an async function that gets the agent. Everything runs in
@@ -20,9 +19,7 @@ def with_agent(db_path, policy_index, fake, scenario, customer=ALICE, queue=None
 
     async def run():
         async with OrdersClient(db_path, customer) as orders:
-            agent = await SupportAgent.create(
-                orders, customer, policy_index, queue or EscalationQueue(), fake
-            )
+            agent = await SupportAgent.create(orders, customer, policy_index, fake)
             return await scenario(agent)
 
     return asyncio.run(run())
@@ -34,7 +31,7 @@ def with_customer_router(db_path, policy_index, fake, scenario, customer=ALICE):
     async def run():
         async with OrdersClient(db_path, customer) as orders:
             router = await Orchestrator.for_customer(
-                orders, customer, policy_index, EscalationQueue(), fake
+                orders, customer, policy_index, fake
             )
             return await scenario(router)
 

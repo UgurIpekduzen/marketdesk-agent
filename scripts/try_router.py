@@ -25,7 +25,6 @@ from src.knowledge.embedding import load_embedder
 from src.knowledge.policy_index import PolicyIndex
 from src.mcp_server.client import OrdersClient
 from src.orchestrator import Intent, Orchestrator, SessionType
-from src.tools.escalation import EscalationQueue
 from tests import synthetic_data
 from tests.realistic import real_shaped
 
@@ -73,9 +72,7 @@ SCENARIOS = (
 async def ask_as_customer(message: str, db_path: Path, index: PolicyIndex):
     customer = real_shaped(synthetic_data.ALICE)
     async with OrdersClient(db_path, customer) as orders:
-        router = await Orchestrator.for_customer(
-            orders, customer, index, EscalationQueue()
-        )
+        router = await Orchestrator.for_customer(orders, customer, index)
         return await router.ask(message)
 
 

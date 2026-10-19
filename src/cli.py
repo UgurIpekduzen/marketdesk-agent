@@ -27,7 +27,6 @@ from src.knowledge.embedding import load_embedder
 from src.knowledge.policy_index import PolicyIndex
 from src.mcp_server.client import OrdersClient
 from src.orchestrator import Orchestrator
-from src.tools.escalation import EscalationQueue
 
 DEFAULT_DB_PATH = Path("data/marketdesk.db")
 # "çik" is what Python's lower() makes of "ÇIK" typed in capitals.
@@ -80,9 +79,7 @@ async def run(db_path: Path, customer: str) -> None:
     """Start the order server for the customer and chat until they leave."""
     policy_index = PolicyIndex(load_embedder())
     async with OrdersClient(db_path, customer) as orders:
-        router = await Orchestrator.for_customer(
-            orders, customer, policy_index, EscalationQueue()
-        )
+        router = await Orchestrator.for_customer(orders, customer, policy_index)
         await chat(router)
 
 

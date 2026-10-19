@@ -36,7 +36,6 @@ from src.guardrails.guarded_llm import GuardedLLM, build_provider_llm
 from src.guardrails.outbound import Redactor
 from src.knowledge.policy_index import PolicyIndex
 from src.mcp_server.client import OrdersClient
-from src.tools.escalation import EscalationQueue
 
 ROUTER_NAME = "router"
 
@@ -135,13 +134,12 @@ class Orchestrator:
         orders: OrdersClient,
         customer_unique_id: str,
         policy_index: PolicyIndex,
-        queue: EscalationQueue,
         provider_llm: FunctionCallingLLM | None = None,
     ) -> Self:
         """A router for a signed-in customer: the Support Agent and no other."""
         provider_llm = provider_llm or build_provider_llm()
         agent = await SupportAgent.create(
-            orders, customer_unique_id, policy_index, queue, provider_llm
+            orders, customer_unique_id, policy_index, provider_llm
         )
         llm = GuardedLLM(inner=provider_llm, redactor=agent.redactor)
         return cls(SessionType.CUSTOMER, agent, llm, customer_unique_id)

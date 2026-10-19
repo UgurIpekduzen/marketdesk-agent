@@ -29,7 +29,6 @@ from src.agents.support import SupportAgent
 from src.knowledge.embedding import load_embedder
 from src.knowledge.policy_index import PolicyIndex
 from src.mcp_server.client import OrdersClient
-from src.tools.escalation import EscalationQueue
 from tests import synthetic_data
 from tests.realistic import make_realistic, real_shaped
 from tests.test_load_sqlite import write_raw
@@ -178,7 +177,7 @@ async def run_scenario(scenario: Scenario, db_path: Path, index: PolicyIndex) ->
     before = return_request_count(db_path)
     # A new order server, and so a new session, for every scenario.
     async with OrdersClient(db_path, customer) as orders:
-        agent = await SupportAgent.create(orders, customer, index, EscalationQueue())
+        agent = await SupportAgent.create(orders, customer, index)
         started = time.perf_counter()
         reply = await agent.ask(scenario.message.format_map(OrderNumbers()))
         seconds = time.perf_counter() - started

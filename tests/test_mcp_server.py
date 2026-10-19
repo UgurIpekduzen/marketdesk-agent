@@ -17,6 +17,7 @@ from src.mcp_server import server as server_module
 from src.mcp_server.client import OrdersClient, call_tool
 from src.mcp_server.server import MODEL_TOOLS
 from src.tools.eligibility import check_return_eligibility
+from src.tools.escalation import escalate_to_human
 from src.tools.orders import get_order_status, list_customer_orders
 from src.tools.return_requests import create_return_request
 from tests.synthetic_data import ALICE, BOB
@@ -55,7 +56,7 @@ def request_count(db_path):
 # --- What the server offers ----------------------------------------------
 
 
-def test_server_offers_the_four_order_tools_and_the_control_tools(synthetic_db_path):
+def test_server_offers_the_model_tools_and_the_control_tools(synthetic_db_path):
     tools = with_server(synthetic_db_path, lambda orders: orders.tools())
 
     assert set(tools) == set(MODEL_TOOLS) | CONTROL_TOOLS
@@ -64,6 +65,7 @@ def test_server_offers_the_four_order_tools_and_the_control_tools(synthetic_db_p
         "list_customer_orders",
         "check_return_eligibility",
         "create_return_request",
+        "escalate_to_human",
     )
 
 
@@ -75,6 +77,7 @@ def test_descriptions_are_the_docstrings_of_the_wrapped_functions(synthetic_db_p
         list_customer_orders,
         check_return_eligibility,
         create_return_request,
+        escalate_to_human,
     ):
         assert tools[function.__name__] == inspect.cleandoc(function.__doc__)
         assert len(tools[function.__name__]) <= 1024

@@ -164,6 +164,7 @@ def test_build_reports_row_counts_and_excluded_orders(raw_dir, tmp_path):
     assert counts["customers"] == 2
     assert counts["products"] == 2
     assert counts["return_requests"] == 0
+    assert counts["escalation_tickets"] == 0
     assert counts["excluded_by_r0"] == 1
 
 
@@ -218,6 +219,20 @@ def test_return_requests_table_exists_and_is_empty(db):
         "created_at",
     ]
     assert db.execute("SELECT COUNT(*) FROM return_requests").fetchone()[0] == 0
+
+
+def test_escalation_tickets_table_exists_and_is_empty(db):
+    columns = [row[1] for row in db.execute("PRAGMA table_info(escalation_tickets)")]
+
+    assert columns == [
+        "id",
+        "customer_hash",
+        "priority",
+        "summary",
+        "status",
+        "created_at",
+    ]
+    assert db.execute("SELECT COUNT(*) FROM escalation_tickets").fetchone()[0] == 0
 
 
 def test_indexes_are_created(db):

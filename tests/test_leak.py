@@ -24,7 +24,7 @@ from src.guardrails.outbound import Redactor
 from src.knowledge.semantic_layer import list_metrics, run_metric
 from src.knowledge.sql_runner import run_sql
 from src.tools.eligibility import check_return_eligibility
-from src.tools.escalation import EscalationQueue, escalate_to_human
+from src.tools.escalation import escalate_to_human
 from src.tools.orders import get_order_status, list_customer_orders
 from src.tools.policies import search_policies
 from src.tools.return_requests import create_return_request
@@ -80,7 +80,6 @@ def customer(realistic_db, fake_policy_index):
     """A customer session, its tools, and the stand-in model behind the guard."""
     conn, _ = realistic_db
     session = open_session(conn, real_shaped(ALICE))
-    queue = EscalationQueue()
     fake = FakeLLM()
 
     def get_order_status_tool(order_ref: str) -> dict:
@@ -105,7 +104,7 @@ def customer(realistic_db, fake_policy_index):
 
     def escalate_to_human_tool(summary: str, priority: str = "normal") -> dict:
         """Hand the case over to a person."""
-        return escalate_to_human(session, queue, summary, priority)
+        return escalate_to_human(session, conn, summary, priority)
 
     tools = [
         FunctionTool.from_defaults(

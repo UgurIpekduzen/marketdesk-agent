@@ -1,6 +1,8 @@
 """Tests for handing a case over to a person."""
 
 import logging
+import sqlite3
+from datetime import date
 
 import pytest
 
@@ -9,7 +11,9 @@ from src.guardrails.pii import hash_id
 from src.tools.escalation import (
     MAX_SUMMARY_LENGTH,
     PRIORITIES,
-    EscalationQueue,
+    TICKET_OPEN,
+    TICKETS_TABLE,
+    ensure_tickets_table,
     escalate_to_human,
 )
 from src.tools.session import Session
@@ -24,12 +28,21 @@ def alice():
 
 
 @pytest.fixture
-def queue():
-    return EscalationQueue()
+def conn(synthetic_db_path):
+    connection = sqlite3.connect(synthetic_db_path)
+    yield connection
+    connection.close()
 
 
-def test_escalation_returns_a_ticket_number(alice, queue):
-    answer = escalate_to_human(alice, queue, "SIP-1 has no delivery date.", "high")
+def tickets(conn) -> list[tuple]:
+    return conn.execute(
+        "SELECT id, customer_hash, priority, summary, status, created_at "
+        f"FROM {TICKETS_TABLE} ORDER BY id"
+    ).fetchall()
+
+
+def test_escalation_returns_a_ticket_number(alice, conn):
+    answer = escalate_to_human(alice, conn, "SIP-1 has no delivery date.", "high")
 
     assert answer == {
         "ticket": "ESC-1",
@@ -38,31 +51,56 @@ def test_escalation_returns_a_ticket_number(alice, queue):
     }
 
 
-def test_tickets_are_numbered_in_order_and_kept_in_the_queue(alice, queue):
-    first = escalate_to_human(alice, queue, "First case.")
-    second = escalate_to_human(alice, queue, "Second case.", "low")
+def test_tickets_are_numbered_in_order_and_kept_in_the_table(alice, conn):
+    first = escalate_to_human(alice, conn, "First case.")
+    second = escalate_to_human(alice, conn, "Second case.", "low")
 
     assert (first["ticket"], second["ticket"]) == ("ESC-1", "ESC-2")
-    assert [ticket.summary for ticket in queue.tickets] == [
-        "First case.",
-        "Second case.",
+    assert tickets(conn) == [
+        (
+            1,
+            hash_id(ALICE),
+            "normal",
+            "First case.",
+            TICKET_OPEN,
+            "2018-09-01 00:00:00",
+        ),
+        (2, hash_id(ALICE), "low", "Second case.", TICKET_OPEN, "2018-09-01 00:00:00"),
     ]
-    assert [ticket.priority for ticket in queue.tickets] == ["normal", "low"]
 
 
-def test_escalation_changes_no_record(synthetic_db, alice, queue):
+def test_a_ticket_is_dated_on_the_simulated_day(alice, conn):
+    escalate_to_human(alice, conn, "A case.", today=date(2018, 8, 30))
+
+    assert tickets(conn)[0][5] == "2018-08-30 00:00:00"
+
+
+def test_tickets_outlive_the_connection(alice, synthetic_db_path):
+    first = sqlite3.connect(synthetic_db_path)
+    escalate_to_human(alice, first, "A case.")
+    first.close()
+
+    second = sqlite3.connect(synthetic_db_path)
+    try:
+        assert len(tickets(second)) == 1
+    finally:
+        second.close()
+
+
+def test_escalation_writes_nothing_but_the_ticket(synthetic_db, alice):
     before = synthetic_db.execute("SELECT COUNT(*) FROM return_requests").fetchone()[0]
 
-    escalate_to_human(alice, queue, "The customer asks for a person.")
+    escalate_to_human(alice, synthetic_db, "The customer asks for a person.")
 
     after = synthetic_db.execute("SELECT COUNT(*) FROM return_requests").fetchone()[0]
     assert after == before
-    assert synthetic_db.total_changes == 0
+    # One row changed in all: the ticket.
+    assert synthetic_db.total_changes == 1
 
 
-def test_escalation_is_logged_without_the_customer_id(alice, queue, caplog):
+def test_escalation_is_logged_without_the_customer_id(alice, conn, caplog):
     with caplog.at_level(logging.INFO, logger="src.tools.escalation"):
-        escalate_to_human(alice, queue, "SIP-1 has no delivery date.", "high")
+        escalate_to_human(alice, conn, "SIP-1 has no delivery date.", "high")
 
     assert len(caplog.records) == 1
     line = caplog.records[0].getMessage()
@@ -72,43 +110,49 @@ def test_escalation_is_logged_without_the_customer_id(alice, queue, caplog):
     assert ALICE not in line
 
 
-def test_raw_ids_in_the_summary_are_masked_everywhere(alice, queue, caplog):
+def test_raw_ids_in_the_summary_are_masked_everywhere(alice, conn, caplog):
     with caplog.at_level(logging.INFO, logger="src.tools.escalation"):
-        escalate_to_human(alice, queue, f"Order {RAW_ID} arrived broken.")
+        escalate_to_human(alice, conn, f"Order {RAW_ID} arrived broken.")
 
-    assert queue.tickets[0].summary == "Order [id] arrived broken."
+    assert tickets(conn)[0][3] == "Order [id] arrived broken."
     assert RAW_ID not in caplog.text
 
 
-def test_ticket_holds_the_customer_as_a_hash_only(alice, queue):
-    escalate_to_human(alice, queue, "The customer asks for a person.")
+def test_ticket_holds_the_customer_as_a_hash_only(alice, conn):
+    escalate_to_human(alice, conn, "The customer asks for a person.")
 
-    assert queue.tickets[0].customer_hash == hash_id(ALICE)
-    assert ALICE not in repr(queue.tickets[0])
+    assert tickets(conn)[0][1] == hash_id(ALICE)
+    assert ALICE not in repr(tickets(conn))
 
 
-def test_long_summary_is_cut(alice, queue):
-    escalate_to_human(alice, queue, "x" * (MAX_SUMMARY_LENGTH + 100))
+def test_long_summary_is_cut(alice, conn):
+    escalate_to_human(alice, conn, "x" * (MAX_SUMMARY_LENGTH + 100))
 
-    assert len(queue.tickets[0].summary) == MAX_SUMMARY_LENGTH
+    assert len(tickets(conn)[0][3]) == MAX_SUMMARY_LENGTH
 
 
 @pytest.mark.parametrize("summary", ["", "   ", "\n"])
-def test_empty_summary_is_refused(alice, queue, summary):
-    answer = escalate_to_human(alice, queue, summary)
+def test_empty_summary_is_refused(alice, conn, summary):
+    answer = escalate_to_human(alice, conn, summary)
 
     assert answer == {"error": "EMPTY_SUMMARY", "message": messages.EMPTY_SUMMARY}
-    assert queue.tickets == []
+    assert tickets(conn) == []
 
 
-def test_unknown_priority_is_refused_with_the_allowed_values(alice, queue):
-    answer = escalate_to_human(alice, queue, "A case.", "urgent")
+def test_unknown_priority_is_refused_with_the_allowed_values(alice, conn):
+    answer = escalate_to_human(alice, conn, "A case.", "urgent")
 
     assert answer["error"] == "INVALID_PRIORITY"
     for priority in PRIORITIES:
         assert priority in answer["message"]
-    assert queue.tickets == []
+    assert tickets(conn) == []
 
 
-def test_every_queue_starts_empty():
-    assert EscalationQueue().tickets == []
+def test_a_database_without_the_table_gets_it_and_keeps_its_tickets(alice, conn):
+    conn.execute(f"DROP TABLE {TICKETS_TABLE}")
+
+    ensure_tickets_table(conn)
+    escalate_to_human(alice, conn, "A case.")
+    ensure_tickets_table(conn)
+
+    assert len(tickets(conn)) == 1

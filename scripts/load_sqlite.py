@@ -8,8 +8,8 @@ What it does:
 - applies rule R0: orders purchased on or after SIMULATED_TODAY are left
   out, together with their items, payments, reviews and customer rows;
 - adds indexes on the columns used for joins and filters;
-- creates the empty return_requests table, the only table the application
-  writes to;
+- creates the empty return_requests and escalation_tickets tables, the only
+  tables the application writes to;
 - creates the safe views, the only things free SQL may read.
 
 The database is rebuilt from scratch on every run.
@@ -30,6 +30,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from config import SIMULATED_TODAY
 from src.knowledge.safe_views import create_view_statements
+from src.tools.escalation import TICKETS_TABLE, TICKETS_TABLE_SQL
 
 DEFAULT_RAW_DIR = Path("data/raw")
 DEFAULT_DB_PATH = Path("data/marketdesk.db")
@@ -299,6 +300,8 @@ def build_database(
 
             conn.execute(RETURN_REQUESTS_SQL)
             counts["return_requests"] = 0
+            conn.execute(TICKETS_TABLE_SQL)
+            counts[TICKETS_TABLE] = 0
 
             for table_name, column in INDEXES:
                 if table_name in skip_tables:

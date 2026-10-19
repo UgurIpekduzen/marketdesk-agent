@@ -1,16 +1,20 @@
 """Handing a case over to a person.
 
-Escalation changes no record: the case goes into an internal queue kept in
-memory and one line is logged. The queue is lost when the process ends.
+Escalation changes no order and no return request: the case becomes one row
+of the escalation_tickets table, the queue a support rep works through, and
+one line is logged. The order server is the only caller, so the tickets are
+written where the return requests are.
 
 The summary is written by the model, so it is cleaned before it is kept:
 raw ids are masked and the text is cut to a fixed length. The customer is
-logged as a short hash, never as the id itself.
+kept and logged as a short hash, never as the id itself.
 """
 
 import logging
-from dataclasses import dataclass, field
+import sqlite3
+from datetime import date
 
+import config
 from src import messages
 from src.guardrails.pii import hash_id, mask_raw_ids
 from src.tools.session import Session
@@ -21,33 +25,40 @@ PRIORITIES = ("low", "normal", "high")
 MAX_SUMMARY_LENGTH = 500
 TICKET_PREFIX = "ESC-"
 
+TICKETS_TABLE = "escalation_tickets"
+TICKET_OPEN = "OPEN"
+TICKET_CLOSED = "CLOSED"
+# IF NOT EXISTS: a database built before tickets were kept gets the table
+# when it is next opened.
+TICKETS_TABLE_SQL = f"""
+CREATE TABLE IF NOT EXISTS {TICKETS_TABLE} (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_hash TEXT NOT NULL,
+    priority TEXT NOT NULL,
+    summary TEXT NOT NULL,
+    status TEXT NOT NULL,
+    created_at TEXT NOT NULL
+)
+"""
 
-@dataclass(frozen=True)
-class Ticket:
-    number: str
-    priority: str
-    summary: str
-    customer_hash: str
+
+def ensure_tickets_table(conn: sqlite3.Connection) -> None:
+    """Create the tickets table unless the database has it."""
+    with conn:
+        conn.execute(TICKETS_TABLE_SQL)
 
 
-@dataclass
-class EscalationQueue:
-    """Cases waiting for a person, oldest first."""
-
-    tickets: list[Ticket] = field(default_factory=list)
-
-    def add(self, priority: str, summary: str, customer_hash: str) -> Ticket:
-        number = f"{TICKET_PREFIX}{len(self.tickets) + 1}"
-        ticket = Ticket(number, priority, summary, customer_hash)
-        self.tickets.append(ticket)
-        return ticket
+def ticket_number(ticket_id: int) -> str:
+    """The number a person reads: ESC-12."""
+    return f"{TICKET_PREFIX}{ticket_id}"
 
 
 def escalate_to_human(
     session: Session,
-    queue: EscalationQueue,
+    conn: sqlite3.Connection,
     summary: str,
     priority: str = "normal",
+    today: date = config.SIMULATED_TODAY,
 ) -> dict:
     """Hand the current customer's case over to a human agent.
 
@@ -69,16 +80,30 @@ def escalate_to_human(
     if not summary:
         return {"error": "EMPTY_SUMMARY", "message": messages.EMPTY_SUMMARY}
 
-    ticket = queue.add(priority, summary, hash_id(session.customer_unique_id))
+    customer_hash = hash_id(session.customer_unique_id)
+    with conn:
+        cursor = conn.execute(
+            f"INSERT INTO {TICKETS_TABLE} "
+            "(customer_hash, priority, summary, status, created_at) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (
+                customer_hash,
+                priority,
+                summary,
+                TICKET_OPEN,
+                f"{today.isoformat()} 00:00:00",
+            ),
+        )
+    number = ticket_number(cursor.lastrowid)
     logger.info(
         "escalation ticket=%s priority=%s customer=%s summary=%s",
-        ticket.number,
-        ticket.priority,
-        ticket.customer_hash,
-        ticket.summary,
+        number,
+        priority,
+        customer_hash,
+        summary,
     )
     return {
-        "ticket": ticket.number,
-        "priority": ticket.priority,
+        "ticket": number,
+        "priority": priority,
         "message": messages.ESCALATED,
     }

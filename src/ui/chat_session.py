@@ -26,7 +26,6 @@ import config
 from src.knowledge.policy_index import PolicyIndex
 from src.mcp_server.client import OrdersClient
 from src.orchestrator import Answer, Orchestrator, SessionType
-from src.tools.escalation import EscalationQueue
 from src.ui.question_limit import QuestionLimit
 
 logger = logging.getLogger(__name__)
@@ -114,7 +113,6 @@ class ChatSession:
                     orders,
                     self._customer,
                     self._policy_index,
-                    EscalationQueue(),
                     self._provider_llm,
                 )
                 await self._work(router)

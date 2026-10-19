@@ -10,8 +10,9 @@ an argument of a tool, so the model cannot supply or change it.
 
 Two groups of tools:
 
-- the four order tools the model may call. They are the same functions the
-  rest of the project uses; this file only wraps them;
+- the five tools the model may call: four order tools and the hand-over to
+  a person, which writes a ticket for the support rep's queue. They are the
+  same functions the rest of the project uses; this file only wraps them;
 - control tools for the application's own code: turning an order number the
   customer typed into an alias, and showing, approving or declining a
   pending return request. They are never handed to the model. The approval
@@ -30,6 +31,7 @@ import config
 from src import messages
 from src.guardrails.pii import hash_id
 from src.tools.eligibility import check_return_eligibility
+from src.tools.escalation import ensure_tickets_table, escalate_to_human
 from src.tools.orders import DEFAULT_LIST_LIMIT, get_order_status, list_customer_orders
 from src.tools.return_requests import create_return_request
 from src.tools.session import Session, open_session
@@ -44,6 +46,7 @@ MODEL_TOOLS = (
     "list_customer_orders",
     "check_return_eligibility",
     "create_return_request",
+    "escalate_to_human",
 )
 
 server = MCPServer(SERVER_NAME)
@@ -64,6 +67,7 @@ def state() -> State:
     global _state
     if _state is None:
         conn = sqlite3.connect(os.environ[DB_VARIABLE])
+        ensure_tickets_table(conn)
         _state = State(
             session=open_session(conn, os.environ[CUSTOMER_VARIABLE]),
             conn=conn,
@@ -133,6 +137,14 @@ async def create_return_request_tool(order_ref: str, reason: str, amount: str) -
         reason,
         amount,
         today=current.simulated_today,
+    )
+
+
+@server.tool(name="escalate_to_human", description=describe(escalate_to_human))
+async def escalate_to_human_tool(summary: str, priority: str = "normal") -> dict:
+    current = state()
+    return escalate_to_human(
+        current.session, current.conn, summary, priority, current.simulated_today
     )
 
 

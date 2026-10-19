@@ -16,8 +16,6 @@ from src import messages
 from src.agents.loop_guard import LoopGuard
 from src.agents.support import SYSTEM_PROMPT, SupportAgent, build_tools
 from src.mcp_server.server import MODEL_TOOLS
-from src.tools.escalation import EscalationQueue
-from src.tools.session import Session
 from tests.agent_harness import asking, request_count, tool_results, with_agent
 from tests.fakes import FakeLLM
 from tests.synthetic_data import ALICE
@@ -56,9 +54,7 @@ def run(synthetic_db_path, fake_policy_index, fake):
 @pytest.fixture
 def tools(fake_policy_index):
     # No connection is needed to look at the tools' names and schemas.
-    return build_tools(
-        None, Session(ALICE), fake_policy_index, EscalationQueue(), LoopGuard()
-    )
+    return build_tools(None, fake_policy_index, LoopGuard())
 
 
 # --- Tools ----------------------------------------------------------------
@@ -66,7 +62,10 @@ def tools(fake_policy_index):
 
 def test_the_agent_has_the_six_tools(tools):
     assert [tool.metadata.name for tool in tools] == TOOL_NAMES
-    assert TOOL_NAMES[:4] == list(MODEL_TOOLS)
+    # Every tool but the policy search runs on the order server.
+    assert [name for name in TOOL_NAMES if name != "search_policies"] == list(
+        MODEL_TOOLS
+    )
 
 
 def test_no_tool_lets_the_model_pass_identity_or_approval(tools):
@@ -221,8 +220,9 @@ def test_policy_answer_gets_sections_with_citations(run, fake):
     assert results[0]["citation"] == "Ödeme ve Geri Ödeme Politikası, Bölüm 3"
 
 
-def test_escalation_gives_a_ticket(run, fake):
-    queue = EscalationQueue()
+def test_escalation_gives_a_ticket_written_by_the_order_server(
+    run, fake, synthetic_db_path
+):
     fake.script = [
         [
             (
@@ -233,10 +233,15 @@ def test_escalation_gives_a_ticket(run, fake):
         "Talebiniz iletildi: ESC-1.",
     ]
 
-    run(asking("Siparişimi iptal etmek istiyorum."), queue=queue)
+    run(asking("Siparişimi iptal etmek istiyorum."))
 
     assert tool_results(fake)[0]["ticket"] == "ESC-1"
-    assert len(queue.tickets) == 1
+    conn = sqlite3.connect(synthetic_db_path)
+    try:
+        summaries = conn.execute("SELECT summary FROM escalation_tickets").fetchall()
+    finally:
+        conn.close()
+    assert summaries == [("Müşteri SIP-1 siparişini iptal etmek istiyor.",)]
 
 
 def test_question_without_a_tool_call(run, fake):
