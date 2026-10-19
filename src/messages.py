@@ -83,6 +83,8 @@ RETURN_REASON_LABELS = {
 REQUEST_STATUS_LABELS = {
     "PENDING_REVIEW": "inceleme bekliyor",
     "PENDING_SENIOR": "kıdemli onay bekliyor",
+    "APPROVED": "onaylandı",
+    "REJECTED": "reddedildi",
 }
 # A money amount, already written the reader's way, with its currency.
 MONEY = "{amount} BRL"
@@ -301,3 +303,14 @@ EXAMPLE_QUESTIONS_OPS = [
     "Her ödeme türü kaç farklı siparişte kullanılmış?",
     "2018 yılında SP ve RJ eyaletlerinde aylara göre sipariş sayıları nedir?",
 ]
+
+# The support rep's review queue. Decisions on return requests and closing
+# tickets are made in code; these are the answers to a refused one.
+REVIEW_NOT_FOUND = "Bu numarada bir kayıt bulunamadı."
+REVIEW_SENIOR_ONLY = (
+    "Bu talep 500 BRL'nin üstünde: kıdemli onayı gerekir, bu ekrandan "
+    "onaylanamaz ya da reddedilemez."
+)
+REVIEW_ALREADY_DECIDED = "Bu talep için zaten karar verilmiş."
+REVIEW_TICKET_ALREADY_CLOSED = "Bu bilet zaten kapatılmış."
+REVIEW_INVALID_DECISION = "Geçersiz karar."
