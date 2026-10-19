@@ -11,6 +11,7 @@ import config
 from src import messages
 from src.formatting import format_money
 from src.orchestrator import Answer, Intent
+from src.tools.review_queue import RequestRow, TicketRow
 from src.ui.chat_session import MessageTooLong
 from src.ui.question_limit import QuestionLimitReached
 from src.ui.session_pool import SessionLimitReached
@@ -25,6 +26,8 @@ AGENT_LABELS = {
 USER_AVATAR = ":material/person:"
 SUPPORT_AVATAR = ":material/support_agent:"
 OPS_AVATAR = ":material/analytics:"
+# A person, the support rep: not the support agent's avatar.
+REP_AVATAR = ":material/headset_mic:"
 # The router answers a message no agent of the session may take.
 ROUTER_AVATAR = ":material/smart_toy:"
 AGENT_AVATARS = {Intent.SUPPORT: SUPPORT_AVATAR, Intent.OPS_METRIC: OPS_AVATAR}
@@ -198,3 +201,31 @@ def friendly_error(failure: BaseException) -> str:
         if any(mark in text for mark in marks):
             return message
     return messages.UI_ERROR_GENERIC
+
+
+def request_card(row: RequestRow) -> tuple[str, str]:
+    """A return request in the rep's queue: its title line and its details.
+
+    Every value comes from the database and the rules, none from the model;
+    ids are shown as hashes.
+    """
+    title = messages.UI_REVIEW_REQUEST_TITLE.format(
+        id=row.request_id, order=row.order_key, customer=row.customer_key
+    )
+    details = messages.UI_REVIEW_REQUEST_DETAILS.format(
+        reason=messages.RETURN_REASON_LABELS.get(row.reason, row.reason),
+        amount=format_money(row.amount),
+        date=row.created_at[:10],
+        status=messages.REQUEST_STATUS_LABELS.get(row.status, row.status),
+    )
+    return title, details
+
+
+def ticket_title(row: TicketRow) -> str:
+    """A ticket's title line; its summary is drawn apart, as plain text."""
+    return messages.UI_REVIEW_TICKET_TITLE.format(
+        number=row.number,
+        priority=messages.PRIORITY_LABELS.get(row.priority, row.priority),
+        date=row.created_at[:10],
+        customer=row.customer_key,
+    )

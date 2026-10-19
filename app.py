@@ -23,17 +23,22 @@ from src.formatting import (
     readable_table,
     worth_a_table,
 )
+from src.rules.returns import RequestStatus
+from src.tools.review_queue import REP_IDENTITY, ReviewQueue
 from src.ui import examples, resources
 from src.ui.chat_session import ChatSession
 from src.ui.question_limit import QuestionLimit
 from src.ui.session_pool import SessionPool
 from src.ui.view import (
     OPS_AVATAR,
+    REP_AVATAR,
     SUPPORT_AVATAR,
     USER_AVATAR,
     AnswerView,
     approval_card,
     friendly_error,
+    request_card,
+    ticket_title,
     tools_text,
     view_of,
 )
@@ -126,7 +131,7 @@ def open_session(identity: tuple, customer_unique_id: str | None) -> None:
 def sign_out() -> None:
     """Back to the choice screen: the conversation and its identity go."""
     close_session()
-    for name in ("identity", "turns", "pending", "examples"):
+    for name in ("identity", "turns", "pending", "examples", "review_notice"):
         st.session_state.pop(name, None)
 
 
@@ -139,7 +144,7 @@ def draw_choice(customers: list) -> tuple | None:
     """
     st.subheader(messages.UI_CHOICE_HEADING)
     st.caption(messages.UI_CHOICE_NOTE)
-    customer_card, ops_card = st.columns(2)
+    customer_card, ops_card, rep_card = st.columns(3)
     chosen = None
     with customer_card.container(border=True):
         st.markdown(f"{USER_AVATAR} **{messages.UI_CHOICE_CUSTOMER}**")
@@ -165,6 +170,11 @@ def draw_choice(customers: list) -> tuple | None:
         st.write(messages.UI_CHOICE_OPS_TEXT)
         if st.button(messages.UI_START_OPS, use_container_width=True):
             chosen = ("ops",)
+    with rep_card.container(border=True):
+        st.markdown(f"{REP_AVATAR} **{messages.UI_CHOICE_REP}**")
+        st.write(messages.UI_CHOICE_REP_TEXT)
+        if st.button(messages.UI_START_REP, use_container_width=True):
+            chosen = REP_IDENTITY
     return chosen
 
 
@@ -179,6 +189,85 @@ def draw_examples() -> str | None:
         if column.button(question, key=f"example_{number}", use_container_width=True):
             clicked = question
     return clicked
+
+
+def draw_review(queue: ReviewQueue) -> None:
+    """The support rep's console: the person decides, the code writes.
+
+    No model is called here. Each button sends one decision on one row; the
+    queue makes it only if the row is still in the state it was shown in.
+    """
+    notice = st.session_state.pop("review_notice", None)
+    if notice is not None:
+        kind, text = notice
+        (st.success if kind == "done" else st.warning)(text)
+    st.subheader(messages.UI_REVIEW_HEADING)
+    st.caption(messages.UI_REVIEW_NOTE)
+    waiting, tickets = queue.waiting_requests(), queue.open_tickets()
+    requests_tab, tickets_tab = st.tabs(
+        [
+            messages.UI_REVIEW_REQUESTS_TAB.format(count=len(waiting)),
+            messages.UI_REVIEW_TICKETS_TAB.format(count=len(tickets)),
+        ]
+    )
+    clicked = None
+    with requests_tab:
+        if not waiting:
+            st.info(messages.UI_REVIEW_NO_REQUESTS)
+        for row in waiting:
+            title, details = request_card(row)
+            with st.container(border=True):
+                st.markdown(f"**{title}**")
+                st.write(details)
+                if row.status != RequestStatus.PENDING_REVIEW:
+                    st.caption(messages.UI_REVIEW_SENIOR_NOTE)
+                    continue
+                approve, reject = st.columns(2)
+                if approve.button(
+                    messages.UI_REVIEW_APPROVE,
+                    key=f"approve_{row.request_id}",
+                    type="primary",
+                    use_container_width=True,
+                ):
+                    clicked = ("decide", row.request_id, RequestStatus.APPROVED)
+                if reject.button(
+                    messages.UI_REVIEW_REJECT,
+                    key=f"reject_{row.request_id}",
+                    use_container_width=True,
+                ):
+                    clicked = ("decide", row.request_id, RequestStatus.REJECTED)
+        decided = queue.decided_requests()
+        if decided:
+            with st.expander(messages.UI_REVIEW_DECIDED.format(count=len(decided))):
+                for row in decided:
+                    title, details = request_card(row)
+                    st.markdown(f"**{title}**  \n{details}")
+    with tickets_tab:
+        if not tickets:
+            st.info(messages.UI_REVIEW_NO_TICKETS)
+        for ticket in tickets:
+            with st.container(border=True):
+                st.markdown(f"**{ticket_title(ticket)}**")
+                # Written by the model: plain text, never read as markdown.
+                st.text(ticket.summary)
+                if st.button(messages.UI_REVIEW_CLOSE, key=f"close_{ticket.ticket_id}"):
+                    clicked = ("close", ticket.ticket_id, None)
+    if clicked is None:
+        return
+    action, number, decision = clicked
+    if action == "decide":
+        result = queue.decide(number, decision)
+        done = messages.UI_REVIEW_DECIDED_DONE.format(
+            id=number, status=messages.REQUEST_STATUS_LABELS[decision]
+        )
+    else:
+        result = queue.close_ticket(number)
+        done = messages.UI_REVIEW_TICKET_CLOSED.format(number=result.get("ticket"))
+    if "error" in result:
+        st.session_state.review_notice = ("refused", result["message"])
+    else:
+        st.session_state.review_notice = ("done", done)
+    st.rerun()
 
 
 def draw_answer(view: AnswerView) -> None:
@@ -284,6 +373,21 @@ def answer(session: ChatSession, question: str) -> None:
     st.rerun()
 
 
+def draw_rep_session(path: Path, identity: tuple) -> None:
+    """The support rep's page: who is signed in, and the review queue."""
+    with st.sidebar:
+        st.header(messages.UI_SESSION_HEADING)
+        st.markdown(f"{REP_AVATAR} **{messages.UI_SESSION_REP}**")
+        change, refresh = st.columns(2)
+        if change.button(messages.UI_CHANGE, use_container_width=True):
+            sign_out()
+            st.rerun()
+        # A click is a new page run, which reads the queue again.
+        refresh.button(messages.UI_REFRESH, use_container_width=True)
+        st.caption(messages.UI_DATA_NOTE)
+    draw_review(ReviewQueue(path, identity))
+
+
 def main() -> None:
     st.set_page_config(page_title=messages.UI_TITLE, page_icon=str(ICON))
     st.logo(str(LOGO), size="large", icon_image=str(ICON))
@@ -309,6 +413,10 @@ def main() -> None:
         if chosen is not None:
             st.session_state.identity = chosen
             st.rerun()
+        return
+
+    if tuple(identity) == REP_IDENTITY:
+        draw_rep_session(path, identity)
         return
 
     is_customer = identity[0] == "customer"

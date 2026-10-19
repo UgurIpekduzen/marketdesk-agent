@@ -169,6 +169,14 @@ UI_CHOICE_OPS_TEXT = (
 )
 UI_START_CUSTOMER = "Müşteri olarak başla"
 UI_START_OPS = "Operasyon olarak başla"
+UI_CHOICE_REP = "Destek temsilcisi olarak"
+UI_CHOICE_REP_TEXT = (
+    "Müşteri asistanının açtığı iade taleplerini ve destek biletlerini "
+    "inceleyin; kararı siz verirsiniz."
+)
+UI_START_REP = "Temsilci olarak başla"
+UI_SESSION_REP = "Destek temsilcisi"
+UI_REFRESH = "Yenile"
 UI_CHANGE = "Değiştir"
 UI_EXAMPLES_HEADING = "Örnek sorular"
 UI_NEW_CONVERSATION = "Yeni konuşma"
@@ -314,3 +322,27 @@ REVIEW_SENIOR_ONLY = (
 REVIEW_ALREADY_DECIDED = "Bu talep için zaten karar verilmiş."
 REVIEW_TICKET_ALREADY_CLOSED = "Bu bilet zaten kapatılmış."
 REVIEW_INVALID_DECISION = "Geçersiz karar."
+
+# The support rep's console.
+UI_REVIEW_HEADING = "İnceleme kuyruğu"
+UI_REVIEW_NOTE = (
+    "Kararları siz verirsiniz; yapay zekâ bu ekranda karar vermez. Bilet "
+    "özetlerini yapay zekâ yazdı: kararı talebin kendi bilgileriyle doğrulayın."
+)
+UI_REVIEW_REQUESTS_TAB = "İade talepleri ({count})"
+UI_REVIEW_TICKETS_TAB = "Destek biletleri ({count})"
+UI_REVIEW_NO_REQUESTS = "Bekleyen iade talebi yok."
+UI_REVIEW_NO_TICKETS = "Açık destek bileti yok."
+UI_REVIEW_DECIDED = "Karara bağlananlar (son {count})"
+UI_REVIEW_APPROVE = "Onayla"
+UI_REVIEW_REJECT = "Reddet"
+UI_REVIEW_CLOSE = "Kapat"
+UI_REVIEW_SENIOR_NOTE = (
+    "500 BRL'nin üstünde: kıdemli onayı gerekir, bu ekrandan karar verilemez."
+)
+UI_REVIEW_REQUEST_TITLE = "Talep {id} · Sipariş `{order}` · Müşteri `{customer}`"
+UI_REVIEW_REQUEST_DETAILS = "{reason} · {amount} · {date} · {status}"
+UI_REVIEW_TICKET_TITLE = "{number} · {priority} öncelik · {date} · Müşteri `{customer}`"
+UI_REVIEW_DECIDED_DONE = "Talep {id}: {status}."
+UI_REVIEW_TICKET_CLOSED = "{number} kapatıldı."
+PRIORITY_LABELS = {"low": "düşük", "normal": "normal", "high": "yüksek"}

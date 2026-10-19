@@ -16,6 +16,8 @@ from streamlit.testing.v1 import AppTest
 
 import config
 from src import messages
+from src.tools.escalation import escalate_to_human
+from src.tools.session import Session
 from src.ui import examples, resources
 from src.ui.view import OPS_AVATAR, ROUTER_AVATAR, SUPPORT_AVATAR, USER_AVATAR
 from tests.agent_harness import request_count
@@ -155,7 +157,11 @@ def test_page_opens_on_the_choice_screen_without_a_session(open_page):
     assert not page.exception
     assert page.title[0].value == messages.UI_TITLE
     assert page.subheader[0].value == messages.UI_CHOICE_HEADING
-    assert labels(page) == [messages.UI_START_CUSTOMER, messages.UI_START_OPS]
+    assert labels(page) == [
+        messages.UI_START_CUSTOMER,
+        messages.UI_START_OPS,
+        messages.UI_START_REP,
+    ]
     # Nothing can be asked before a choice: no chat box, no session.
     assert not page.chat_input
     assert "session" not in page.session_state
@@ -215,7 +221,7 @@ def test_no_customers_still_lets_the_ops_team_in(open_page, monkeypatch):
 
     assert not page.exception
     assert page.error[0].value == messages.UI_NO_CUSTOMERS
-    assert labels(page) == [messages.UI_START_OPS]
+    assert labels(page) == [messages.UI_START_OPS, messages.UI_START_REP]
 
 
 def test_a_missing_database_is_built_once(open_page, monkeypatch, tmp_path):
@@ -625,6 +631,112 @@ def test_no_examples_while_a_request_waits_for_approval(open_page):
     assert not example_labels(page)
 
 
+# --- The support rep's console ----------------------------------------------
+
+
+def request_status(db_path, request_id) -> str:
+    conn = sqlite3.connect(db_path)
+    try:
+        return conn.execute(
+            "SELECT status FROM return_requests WHERE id = ?", (request_id,)
+        ).fetchone()[0]
+    finally:
+        conn.close()
+
+
+def add_senior_request(db_path) -> int:
+    conn = sqlite3.connect(db_path)
+    try:
+        with conn:
+            return conn.execute(
+                "INSERT INTO return_requests (order_id, customer_unique_id, reason, "
+                "refund_amount, status, created_at) VALUES ('o_day14', ?, 'damaged', "
+                "620.0, 'PENDING_SENIOR', '2018-09-01 00:00:00')",
+                (ALICE,),
+            ).lastrowid
+    finally:
+        conn.close()
+
+
+def add_ticket(db_path, summary) -> None:
+    conn = sqlite3.connect(db_path)
+    try:
+        escalate_to_human(Session(ALICE), conn, summary, "high")
+    finally:
+        conn.close()
+
+
+def test_the_rep_session_shows_the_queue_and_no_chat(open_page):
+    page = open_page(role=messages.UI_START_REP)
+
+    assert not page.exception
+    assert page.session_state["identity"] == ("rep",)
+    assert messages.UI_SESSION_REP in sidebar_text(page)
+    assert page.subheader[0].value == messages.UI_REVIEW_HEADING
+    # No chat and no model: a rep session opens no chat session at all.
+    assert not page.chat_input
+    assert "session" not in page.session_state
+    # The synthetic database holds one request waiting and one rejected.
+    assert labels(page).count(messages.UI_REVIEW_APPROVE) == 1
+    assert ALICE not in shown(page)
+    assert "o_duplicate" not in shown(page)
+
+
+def test_the_rep_approves_a_request_and_it_leaves_the_queue(
+    open_page, synthetic_db_path
+):
+    page = open_page(role=messages.UI_START_REP)
+
+    page = page.button(key="approve_1").click().run()
+
+    assert not page.exception
+    assert request_status(synthetic_db_path, 1) == "APPROVED"
+    assert page.success[0].value == messages.UI_REVIEW_DECIDED_DONE.format(
+        id=1, status=messages.REQUEST_STATUS_LABELS["APPROVED"]
+    )
+    assert messages.UI_REVIEW_NO_REQUESTS in shown(page)
+
+
+def test_the_rep_rejects_a_request(open_page, synthetic_db_path):
+    page = open_page(role=messages.UI_START_REP)
+
+    page = page.button(key="reject_1").click().run()
+
+    assert request_status(synthetic_db_path, 1) == "REJECTED"
+
+
+def test_a_senior_request_is_shown_without_buttons(open_page, synthetic_db_path):
+    senior = add_senior_request(synthetic_db_path)
+
+    page = open_page(role=messages.UI_START_REP)
+
+    assert messages.UI_REVIEW_SENIOR_NOTE in shown(page)
+    assert "620,00 BRL" in shown(page)
+    keys = {button.key for button in page.button}
+    assert f"approve_{senior}" not in keys
+    assert f"reject_{senior}" not in keys
+
+
+def test_a_ticket_summary_is_plain_text_and_the_ticket_can_be_closed(
+    open_page, synthetic_db_path
+):
+    summary = "Müşteri temsilci istiyor ![x](https://evil.example/leak)"
+    add_ticket(synthetic_db_path, summary)
+    page = open_page(role=messages.UI_START_REP)
+
+    # Drawn as text, not markdown: the image is never fetched.
+    assert [element.value for element in page.text] == [summary]
+    assert summary not in [element.value for element in page.markdown]
+
+    page = page.button(key="close_1").click().run()
+
+    assert not page.exception
+    assert page.success[0].value == messages.UI_REVIEW_TICKET_CLOSED.format(
+        number="ESC-1"
+    )
+    assert messages.UI_REVIEW_NO_TICKETS in shown(page)
+
+
 # --- Crafted messages ------------------------------------------------------
 
 
@@ -690,6 +802,34 @@ def test_a_click_on_an_example_that_is_gone_sends_nothing(open_page, monkeypatch
     assert not page.exception
     assert not page.error
     assert len(page.session_state["turns"]) == turns
+
+
+@pytest.mark.parametrize("role", [messages.UI_START_CUSTOMER, messages.UI_START_OPS])
+def test_a_rep_button_sent_from_another_session_changes_nothing(
+    open_page, monkeypatch, synthetic_db_path, role
+):
+    page = open_page(role=messages.UI_START_REP)
+    approve = page.button(key="approve_1")
+    page = click(click(page, messages.UI_CHANGE), role)
+
+    page = send_crafted(page, monkeypatch, approve.id, trigger_value=True)
+
+    assert not page.exception
+    assert request_status(synthetic_db_path, 1) == "PENDING_REVIEW"
+    assert messages.UI_REVIEW_HEADING not in shown(page)
+
+
+def test_a_second_click_on_a_decided_request_changes_nothing(
+    open_page, monkeypatch, synthetic_db_path
+):
+    page = open_page(role=messages.UI_START_REP)
+    reject = page.button(key="reject_1")
+    page = page.button(key="approve_1").click().run()
+
+    page = send_crafted(page, monkeypatch, reject.id, trigger_value=True)
+
+    assert not page.exception
+    assert request_status(synthetic_db_path, 1) == "APPROVED"
 
 
 def test_a_message_through_the_closed_chat_box_leaves_the_approval_as_shown(
