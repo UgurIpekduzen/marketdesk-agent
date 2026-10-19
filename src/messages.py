@@ -364,3 +364,7 @@ COMPUTED_UNITS = {"order": "sipariş", "item": "kalem"}
 COMPUTED_ORDER = {"value_desc": "değere göre azalan", "value_asc": "değere göre artan"}
 COMPUTED_TOP = "ilk {top}"
 COMPUTED_SCOPE = "{today} ve öncesinde verilen siparişler"
+
+# The SQL of the newest answer, opened from the sidebar in a wide window.
+UI_SHOW_SQL = "SQL'i göster"
+UI_SQL_DIALOG_TITLE = "SQL sorgusu"

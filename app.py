@@ -296,6 +296,14 @@ def draw_answer(view: AnswerView) -> None:
         st.info(caveat)
 
 
+@st.dialog(messages.UI_SQL_DIALOG_TITLE, width="large")
+def show_sql(heading: str, queries: list[str]) -> None:
+    """The SQL in a wide window, where a long query has room to be read."""
+    st.caption(heading)
+    for query in queries:
+        st.code(readable_sql(query), language="sql", wrap_lines=True)
+
+
 def draw_steps(view: AnswerView) -> None:
     """Who answered, which tools were called, steps and tokens."""
     st.write(f"**{messages.UI_STEPS_AGENT}:** {view.agent}")
@@ -461,10 +469,10 @@ def main() -> None:
         with st.sidebar:
             # The SQL behind the newest numbers, or the SQL tried when no
             # answer was found: the evidence, kept out of the conversation.
-            if latest.queries:
-                with st.expander(latest.queries_heading.rstrip(":")):
-                    for query in latest.queries:
-                        st.code(readable_sql(query), language="sql", wrap_lines=True)
+            if latest.queries and st.button(
+                messages.UI_SHOW_SQL, key="show_sql", use_container_width=True
+            ):
+                show_sql(latest.queries_heading.rstrip(":"), latest.queries)
             # Closed by default: what an evaluator wants to see, not a
             # customer.
             with st.expander(messages.UI_DEVELOPER_DETAILS):

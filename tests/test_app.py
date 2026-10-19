@@ -517,14 +517,39 @@ def test_ops_answer_shows_table_sql_and_caveat(open_page):
     assert list(page.dataframe[0].value.columns) == ["Müşteri eyaleti", "Değer"]
     assert page.info
     assert messages.UI_AGENT_OPS in sidebar_text(page)
-    # The SQL and the steps are in the sidebar, closed; the conversation
-    # holds the answer and its table only.
+    # The SQL opens from the sidebar in its own window; the steps are in a
+    # closed sidebar section; the conversation holds the answer and its table.
     assert not page.main.expander
-    sql, details = page.sidebar.expander
-    assert sql.label == messages.OPS_USED_SQL_HEADING.rstrip(":")
+    (details,) = page.sidebar.expander
     assert details.label == messages.UI_DEVELOPER_DETAILS
-    assert not sql.proto.expanded
-    assert "SELECT" in page.sidebar.code[0].value
+    assert not page.code
+    assert page.sidebar.button(key="show_sql").label == messages.UI_SHOW_SQL
+
+    page = page.sidebar.button(key="show_sql").click().run()
+
+    assert not page.exception
+    assert messages.OPS_USED_SQL_HEADING.rstrip(":") in shown(page)
+    # Laid out one clause per line for reading.
+    assert page.code[0].value.startswith("SELECT")
+    assert "\nFROM" in page.code[0].value
+
+
+def test_the_sql_window_shows_the_tried_sql_when_no_answer_was_found(open_page):
+    # Three different queries: the same call three times is stopped earlier.
+    tries = [
+        [("run_sql", {"query": f"SELECT nope{n} FROM v_orders"})] for n in range(3)
+    ]
+    page = open_page(
+        ["ops_metric", *tries, "Cevaplayamadım."],
+        role=messages.UI_START_OPS,
+    )
+    page = ask(page, "Olmayan bir sütunu say.")
+
+    page = page.sidebar.button(key="show_sql").click().run()
+
+    assert not page.exception
+    assert messages.OPS_TRIED_SQL_HEADING.rstrip(":") in shown(page)
+    assert "nope" in page.code[0].value
 
 
 def captions(page) -> list[str]:
