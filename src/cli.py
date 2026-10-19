@@ -58,7 +58,12 @@ async def chat(
         # Only a customer session can have a return request waiting.
         if getattr(reply, "awaiting_approval", None) is not None:
             write(agent.approval_summary(reply.awaiting_approval))
-            answer = read(messages.APPROVAL_QUESTION).strip().lower()
+            try:
+                answer = read(messages.APPROVAL_QUESTION).strip().lower()
+            except EOFError:
+                # The input closed before an answer: that is no answer, so no.
+                write(await agent.decline())
+                break
             # Anything but a clear yes is a no.
             if answer in YES_WORDS:
                 write(await agent.approve())

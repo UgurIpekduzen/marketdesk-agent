@@ -117,6 +117,18 @@ def test_anything_but_a_clear_yes_writes_nothing(
     assert request_count(synthetic_db_path) == 2
 
 
+def test_input_closed_during_the_approval_question_is_a_no(
+    run_chat, fake, synthetic_db_path
+):
+    fake.script = [[RETURN_CALL], "Onayınız istenecek."]
+
+    prompts, shown = run_chat(["o_day14 hasarlı geldi"])
+
+    assert prompts[-1] == messages.APPROVAL_QUESTION
+    assert shown[-2:] == [messages.APPROVAL_DECLINED, messages.CHAT_GOODBYE]
+    assert request_count(synthetic_db_path) == 2
+
+
 def test_typing_yes_in_the_chat_itself_is_not_an_approval(
     run_chat, fake, synthetic_db_path
 ):
