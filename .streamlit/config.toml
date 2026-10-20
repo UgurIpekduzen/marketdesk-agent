@@ -14,6 +14,11 @@ toolbarMode = "minimal"
 enableXsrfProtection = true
 enableCORS = true
 
+[browser]
+# The framework sends usage statistics to its makers by default. The page
+# talks to no one but the model provider and the tracing target.
+gatherUsageStats = false
+
 [theme]
 # Dark, but not black on white: a dark slate background and an off-white
 # text (13.8:1, against 17.5:1 for pure white) are easier on the eyes.
