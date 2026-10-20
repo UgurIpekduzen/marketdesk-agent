@@ -2,7 +2,7 @@
 
 The page runs on Streamlit: the browser only sends "this was clicked" and "this was typed", and everything is decided on the server. A visitor can still write those messages by hand, so any check the page makes is a convenience; the rule has to hold on the server. This review lists what the page decides, checks each decision against messages no click could send, and records the result.
 
-Review date: 2026-10-16; F1, F8 and F12 updated on 2026-10-19 for the choice screen and the example questions; F7 and F13 to F15 on 2026-10-19 for the support rep console; F16 on 2026-10-20 for the dependency audit; F17 on 2026-10-20 for the page language; F18 on 2026-10-20 for the configuration and the files in the repo; F13 and the MCP section on 2026-10-20 for least privilege. Tests named below are in `tests/`.
+Review date: 2026-10-16; F1, F8 and F12 updated on 2026-10-19 for the choice screen and the example questions; F7 and F13 to F15 on 2026-10-19 for the support rep console; F16 on 2026-10-20 for the dependency audit; F17 on 2026-10-20 for the page language; F18 on 2026-10-20 for the configuration and the files in the repo; F13 and the MCP section on 2026-10-20 for least privilege; the privacy fuzzing section on 2026-10-20. Tests named below are in `tests/`.
 
 ## Findings
 
@@ -46,6 +46,27 @@ The order server (`src/mcp_server/server.py`) is the project's own MCP server: o
 | MCP08 Lack of Audit and Telemetry | Partial | Tool calls are spans with the rule decision; writes and tickets are logged with hashes; a failing tool's traceback stays in the server's error output. Whether every attack can be found afterwards is checked in the red teaming (audit). `test_rule_decision_is_on_the_tool_span` |
 | MCP09 Shadow MCP Servers | Not applicable | One server, started by the application; no discovery and no remote servers. |
 | MCP10 Context Injection and Over-Sharing | Holds | Tools return aliases, not ids, and no city or zip code; the session's personal values go to the application's guard through a control tool, never to the model. A failing tool tells the caller only that it failed: the SDK keeps the error text and the traceback (code lines, no values; checked with a made-up customer id) in the server process. `test_outputs_hold_no_raw_id_city_or_zip_code`, `test_a_failing_tool_tells_the_caller_no_detail` |
+
+
+## Privacy fuzzing
+
+The guards that clean text before it leaves match by shape and against the session's known values (`src/guardrails/outbound.py` says so). On 2026-10-20 they were tried with 35 made-up personal values written so a pattern might miss them (`tests/privacy_fuzz_cases.py`), through every guard text passes before it leaves the process: the outbound guard (to the model provider), the trace scrubber (to Phoenix or Langfuse), and the cleaning of a ticket summary (kept in the database, written to the log and shown to the rep as it is). A value counts as caught when it cannot be read in what the guard leaves, even with the text normalised to letters and digits. `tests/test_privacy_fuzz.py` records each case; a miss is a strict expected failure, so this table changes when a guard does.
+
+| Kind | Caught by the outbound guard and the trace scrubber | Missed by both |
+|---|---|---|
+| Raw id (32 hex) | plain, upper case | split by spaces, split by hyphens, zero-width characters inside, full-width digits, Base64 |
+| E-mail | plain, Cyrillic look-alike letters | "at" and "dot" as words, "[at]", full-width "＠", spaces around "@", zero-width characters inside |
+| Phone | plain, grouped, international, one digit at a time | dotted, full-width digits, zero-width characters inside, spelled out in words |
+| Turkish id number (TCKN) | grouped (taken for a phone number) | plain |
+| IBAN | none | plain, grouped |
+| Card number | none | plain, grouped |
+| City (known value) | plain, upper case | with accents, zero-width characters inside, Cyrillic look-alike letters |
+| Zip code (known value) | plain | with a hyphen |
+| **All** | **12 of 35** | **23 of 35** |
+
+The ticket summary is cleaned of raw ids only: it catches 2 of the 35, and keeps e-mail addresses, phone numbers, the city and the zip code. In the running system the model writes the summary from text the outbound guard has already cleaned, so what reaches a ticket is what that guard missed, or what the model writes on its own; the summary is then logged and shown to the rep as it is.
+
+The Olist data holds no names, e-mail addresses or phone numbers; the values above can only come from what a visitor types. Fixes are chosen separately.
 
 ## Automated review
 
