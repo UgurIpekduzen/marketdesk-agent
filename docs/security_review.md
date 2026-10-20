@@ -2,7 +2,7 @@
 
 The page runs on Streamlit: the browser only sends "this was clicked" and "this was typed", and everything is decided on the server. A visitor can still write those messages by hand, so any check the page makes is a convenience; the rule has to hold on the server. This review lists what the page decides, checks each decision against messages no click could send, and records the result.
 
-Review date: 2026-10-16; F1, F8 and F12 updated on 2026-10-19 for the choice screen and the example questions; F7 and F13 to F15 on 2026-10-19 for the support rep console; F16 on 2026-10-20 for the dependency audit; F17 on 2026-10-20 for the page language; F18 on 2026-10-20 for the configuration and the files in the repo; F13 and the MCP section on 2026-10-20 for least privilege; the privacy fuzzing section on 2026-10-20. Tests named below are in `tests/`.
+Review date: 2026-10-16; F1, F8 and F12 updated on 2026-10-19 for the choice screen and the example questions; F7 and F13 to F15 on 2026-10-19 for the support rep console; F16 on 2026-10-20 for the dependency audit; F17 on 2026-10-20 for the page language; F18 on 2026-10-20 for the configuration and the files in the repo; F13 and the MCP section on 2026-10-20 for least privilege; the privacy fuzzing section on 2026-10-20, its fixes on 2026-10-21. Tests named below are in `tests/`.
 
 ## Findings
 
@@ -52,21 +52,26 @@ The order server (`src/mcp_server/server.py`) is the project's own MCP server: o
 
 The guards that clean text before it leaves match by shape and against the session's known values (`src/guardrails/outbound.py` says so). On 2026-10-20 they were tried with 35 made-up personal values written so a pattern might miss them (`tests/privacy_fuzz_cases.py`), through every guard text passes before it leaves the process: the outbound guard (to the model provider), the trace scrubber (to Phoenix or Langfuse), and the cleaning of a ticket summary (kept in the database, written to the log and shown to the rep as it is). A value counts as caught when it cannot be read in what the guard leaves, even with the text normalised to letters and digits. `tests/test_privacy_fuzz.py` records each case; a miss is a strict expected failure, so this table changes when a guard does.
 
-| Kind | Caught by the outbound guard and the trace scrubber | Missed by both |
+First measurement: the outbound guard and the trace scrubber caught 12 of the 35, the ticket summary 2 (it was cleaned of raw ids only). Fixed on 2026-10-21:
+
+- the text is normalised (NFKC) and zero-width characters are taken out before matching; known values are matched without accents, while the text sent on keeps its letters;
+- Turkish id numbers, IBANs and card numbers are masked, each only when its check digits hold (TCKN check, ISO 13616, Luhn), so counts, amounts and dates of the same length are left alone;
+- an e-mail address with "[at]", "(at)" or spaces around the "@" is masked; the last part of the domain must be letters;
+- a ticket summary passes the same guard.
+
+| Kind | Caught by every guard | Still missed |
 |---|---|---|
-| Raw id (32 hex) | plain, upper case | split by spaces, split by hyphens, zero-width characters inside, full-width digits, Base64 |
-| E-mail | plain, Cyrillic look-alike letters | "at" and "dot" as words, "[at]", full-width "＠", spaces around "@", zero-width characters inside |
-| Phone | plain, grouped, international, one digit at a time | dotted, full-width digits, zero-width characters inside, spelled out in words |
-| Turkish id number (TCKN) | grouped (taken for a phone number) | plain |
-| IBAN | none | plain, grouped |
-| Card number | none | plain, grouped |
-| City (known value) | plain, upper case | with accents, zero-width characters inside, Cyrillic look-alike letters |
+| Raw id (32 hex) | plain, upper case, zero-width characters inside, full-width digits | split by spaces, split by hyphens, Base64 |
+| E-mail | plain, Cyrillic look-alike letters, full-width "＠", zero-width characters inside, "[at]", spaces around "@" | "at" and "dot" as words |
+| Phone | plain, grouped, international, one digit at a time, full-width digits, zero-width characters inside | dotted, spelled out in words |
+| Turkish id number (TCKN) | plain, grouped | none |
+| IBAN | plain, grouped | none |
+| Card number | plain, grouped | none |
+| City (known value) | plain, upper case, with accents, zero-width characters inside | Cyrillic look-alike letters |
 | Zip code (known value) | plain | with a hyphen |
-| **All** | **12 of 35** | **23 of 35** |
+| **All** | **27 of 35** | **8 of 35** |
 
-The ticket summary is cleaned of raw ids only: it catches 2 of the 35, and keeps e-mail addresses, phone numbers, the city and the zip code. In the running system the model writes the summary from text the outbound guard has already cleaned, so what reaches a ticket is what that guard missed, or what the model writes on its own; the summary is then logged and shown to the rep as it is.
-
-The Olist data holds no names, e-mail addresses or phone numbers; the values above can only come from what a visitor types. Fixes are chosen separately.
+Accepted limits: the eight still missed would need guesses that also catch ordinary text (any run of hex in pieces, any Base64, "at" and "dot" in a sentence, dotted number groups, number words, every look-alike letter, any hyphenated five digits). The Olist data holds no names, e-mail addresses or phone numbers; these values can only come from what a visitor types.
 
 ## Automated review
 
