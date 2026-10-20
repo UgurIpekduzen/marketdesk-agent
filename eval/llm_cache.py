@@ -36,10 +36,35 @@ DEFAULT_CACHE_DIR = Path(__file__).resolve().parent / "cache"
 TRANSIENT_MARKS = ("503", "unavailable", "overloaded", "429", "resource_exhausted")
 
 
+# Marks of the error that says the free quota of the day is used up: it
+# comes as a 429 like the one of the minute, but waiting does not help.
+DAILY_QUOTA_MARKS = ("perday", "per_day", "per day")
+
+
+class DailyQuotaUsedUp(RuntimeError):
+    """The free daily quota is gone: the run stops, to go on with --paid."""
+
+
+class LiveCallLimitReached(RuntimeError):
+    """A run made as many live calls as it may (config.PAID_RUN_MAX_LIVE_CALLS)."""
+
+
+def error_text(failure: BaseException) -> str:
+    return f"{type(failure).__name__} {failure}".lower()
+
+
 def is_transient(failure: BaseException) -> bool:
     """Whether an error of the provider is worth waiting out."""
-    text = f"{type(failure).__name__} {failure}".lower()
-    return any(mark in text for mark in TRANSIENT_MARKS)
+    text = error_text(failure)
+    return any(mark in text for mark in TRANSIENT_MARKS) and not is_daily_quota(failure)
+
+
+def is_daily_quota(failure: BaseException) -> bool:
+    """Whether the error says the quota of the day, not of the minute, is gone."""
+    text = error_text(failure)
+    return ("429" in text or "resource_exhausted" in text) and any(
+        mark in text for mark in DAILY_QUOTA_MARKS
+    )
 
 
 class CachedLLM(FunctionCallingLLM):
@@ -54,6 +79,9 @@ class CachedLLM(FunctionCallingLLM):
     # A busy provider is asked again this many times, this far apart.
     retries: int = 4
     retry_seconds: float = 30.0
+    # Live calls this cache may make; None for no limit. Set for a run on
+    # the paid key, so that nothing can run up the bill.
+    max_live_calls: int | None = None
 
     @classmethod
     def class_name(cls) -> str:
@@ -125,11 +153,21 @@ class CachedLLM(FunctionCallingLLM):
         Returns the response and when the attempt that got it started, so
         the waiting is not counted as the model's time.
         """
+        if self.max_live_calls is not None and self.live_calls >= self.max_live_calls:
+            raise LiveCallLimitReached(
+                f"{self.live_calls} live calls made, the limit of this run"
+            )
         for attempt in range(self.retries + 1):
             started = time.perf_counter()
             try:
                 return await self.inner.achat(messages, **kwargs), started
             except Exception as failure:
+                if is_daily_quota(failure):
+                    raise DailyQuotaUsedUp(
+                        "The free daily quota is used up. Run the same command "
+                        "again with --paid to finish on the paid key; the answers "
+                        "so far are in the cache."
+                    ) from failure
                 if attempt == self.retries or not is_transient(failure):
                     raise
                 logger.warning(

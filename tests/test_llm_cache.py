@@ -10,11 +10,24 @@ from llama_index.core.workflow import Context
 from pydantic import Field
 
 import config
-from eval.llm_cache import CachedLLM
+from eval import run_eval
+from eval.llm_cache import (
+    CachedLLM,
+    DailyQuotaUsedUp,
+    LiveCallLimitReached,
+    is_daily_quota,
+    is_transient,
+)
 from src.agents.runner import run_agent
 from src.guardrails.guarded_llm import GuardedLLM
 from src.guardrails.outbound import Redactor
 from tests.fakes import FakeLLM
+from tests.test_run_eval import (
+    GOOD_SCRIPT,
+    OPS_EXAMPLE,
+    POLICY_EXAMPLE,
+    SUPPORT_EXAMPLE,
+)
 
 RAW_ID = "0a1b2c3d4e5f60718293a4b5c6d7e8f9"
 
@@ -213,3 +226,124 @@ def test_waiting_is_not_counted_as_model_time(tmp_path):
     chat(cached, "merhaba")
 
     assert cached.seconds < 0.2
+
+
+# --- The quota of the day ----------------------------------------------------
+
+# What Gemini answers when the free quota of the day or of the minute is gone
+# (shape of the 429 of the Gemini API; the quota ids name the period).
+DAILY_ERROR = (
+    "429 RESOURCE_EXHAUSTED. You exceeded your current quota. Quota exceeded "
+    "for metric: generativelanguage.googleapis.com/generate_content_free_tier_"
+    "requests, limit: 500, model: gemini-3.5-flash-lite. quotaId: "
+    "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+)
+MINUTE_ERROR = (
+    "429 RESOURCE_EXHAUSTED. You exceeded your current quota. quotaId: "
+    "GenerateRequestsPerMinutePerProjectPerModel-FreeTier"
+)
+EXAMPLES = [SUPPORT_EXAMPLE, OPS_EXAMPLE, POLICY_EXAMPLE]
+
+
+# --- Which error is which ---------------------------------------------------
+
+
+def test_the_daily_quota_is_told_from_the_minute_limit():
+    assert is_daily_quota(RuntimeError(DAILY_ERROR))
+    assert not is_daily_quota(RuntimeError(MINUTE_ERROR))
+    # The minute limit is waited out; the day's is not.
+    assert is_transient(RuntimeError(MINUTE_ERROR))
+    assert not is_transient(RuntimeError(DAILY_ERROR))
+
+
+class Failing(FakeLLM):
+    """A model that answers like the script until it has given `answers`
+    answers, then fails with `error`."""
+
+    answers: int = 0
+    error: str = DAILY_ERROR
+    calls: int = 0
+
+    async def achat(self, messages, **kwargs):
+        self.calls += 1
+        if self.calls > self.answers:
+            raise RuntimeError(self.error)
+        return await super().achat(messages, **kwargs)
+
+
+def ask_once(llm):
+    return asyncio.run(llm.achat([ChatMessage(role="user", content="Merhaba")]))
+
+
+def test_the_daily_quota_stops_at_once_without_waiting(tmp_path):
+    inner = Failing(script=["x"], answers=0)
+    llm = CachedLLM(inner=inner, cache_dir=tmp_path, retry_seconds=3600)
+
+    with pytest.raises(DailyQuotaUsedUp, match="--paid"):
+        ask_once(llm)
+
+    assert inner.calls == 1
+
+
+def test_the_minute_limit_is_waited_out(tmp_path):
+    inner = Failing(script=["x"], answers=0, error=MINUTE_ERROR)
+    llm = CachedLLM(inner=inner, cache_dir=tmp_path, retries=2, retry_seconds=0)
+
+    with pytest.raises(RuntimeError, match="PerMinute"):
+        ask_once(llm)
+
+    assert inner.calls == 3
+
+
+def test_a_run_on_the_paid_key_stops_at_its_limit(tmp_path):
+    llm = CachedLLM(
+        inner=FakeLLM(script=["a", "b", "c"]), cache_dir=tmp_path, max_live_calls=2
+    )
+    asyncio.run(llm.achat([ChatMessage(role="user", content="1")]))
+    asyncio.run(llm.achat([ChatMessage(role="user", content="2")]))
+
+    with pytest.raises(LiveCallLimitReached):
+        asyncio.run(llm.achat([ChatMessage(role="user", content="3")]))
+    # A cached answer is still given: it costs nothing.
+    asyncio.run(llm.achat([ChatMessage(role="user", content="1")]))
+
+
+# --- Going on after the quota ran out -----------------------------------------
+
+
+def comparable(rows):
+    return [
+        {
+            key: value
+            for key, value in row.items()
+            if key not in ("seconds", "live_calls")
+        }
+        for row in rows
+    ]
+
+
+def test_a_run_cut_by_the_quota_and_finished_later_gives_the_same_results(
+    synthetic_db_path, fake_policy_index, tmp_path
+):
+    def run(inner, cache_dir):
+        llm = CachedLLM(inner=inner, cache_dir=cache_dir)
+        return run_eval.run(
+            EXAMPLES,
+            synthetic_db_path,
+            fake_policy_index,
+            llm,
+            report=lambda line: None,
+        )
+
+    straight = run(FakeLLM(script=list(GOOD_SCRIPT)), tmp_path / "straight")
+
+    # The free quota runs out in the middle of the second example.
+    with pytest.raises(DailyQuotaUsedUp):
+        run(Failing(script=list(GOOD_SCRIPT), answers=5), tmp_path / "cut")
+    # The same command again, now on the paid key: the answers so far come
+    # from the cache, the rest live. The fresh model starts its script where
+    # the first one stopped. It is of the same class, as the free and the
+    # paid key are: the provider's class is part of the cache key.
+    finished = run(Failing(script=list(GOOD_SCRIPT[5:]), answers=100), tmp_path / "cut")
+
+    assert comparable(finished) == comparable(straight)
