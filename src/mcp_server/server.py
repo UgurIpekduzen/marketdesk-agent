@@ -30,9 +30,14 @@ from mcp.server.mcpserver import MCPServer
 import config
 from src import messages
 from src.guardrails.pii import hash_id
+from src.guardrails.write_access import restrict_writes
 from src.i18n import DEFAULT_LANGUAGE, Language
 from src.tools.eligibility import check_return_eligibility
-from src.tools.escalation import ensure_tickets_table, escalate_to_human
+from src.tools.escalation import (
+    TICKETS_TABLE,
+    ensure_tickets_table,
+    escalate_to_human,
+)
 from src.tools.orders import DEFAULT_LIST_LIMIT, get_order_status, list_customer_orders
 from src.tools.return_requests import create_return_request
 from src.tools.session import Session, open_session
@@ -53,6 +58,9 @@ MODEL_TOOLS = (
     "escalate_to_human",
 )
 
+# The only tables this process may write to, and only new rows.
+WRITABLE_TABLES = ("return_requests", TICKETS_TABLE)
+
 server = MCPServer(SERVER_NAME)
 
 
@@ -70,8 +78,7 @@ def state() -> State:
     """The session of this process, opened on first use."""
     global _state
     if _state is None:
-        conn = sqlite3.connect(os.environ[DB_VARIABLE])
-        ensure_tickets_table(conn)
+        conn = connect_for_order_server(os.environ[DB_VARIABLE])
         _state = State(
             session=open_session(
                 conn,
@@ -82,6 +89,14 @@ def state() -> State:
             simulated_today=config.SIMULATED_TODAY,
         )
     return _state
+
+
+def connect_for_order_server(db_path: str) -> sqlite3.Connection:
+    """The server's connection: it reads anything and writes only new return
+    requests and tickets, so a fault in a tool cannot touch other data."""
+    conn = sqlite3.connect(db_path)
+    ensure_tickets_table(conn)
+    return restrict_writes(conn, inserts=WRITABLE_TABLES)
 
 
 def describe(function) -> str:

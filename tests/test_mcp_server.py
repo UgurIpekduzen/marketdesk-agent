@@ -5,6 +5,7 @@ MCP client, over stdio, to a server started for the test.
 """
 
 import asyncio
+import hashlib
 import inspect
 import os
 import sqlite3
@@ -355,3 +356,48 @@ def test_foreign_order_cannot_be_returned(synthetic_db_path):
 
     assert asked == NOT_FOUND
     assert pending is None
+
+
+# --- Least privilege of the server's connection ------------------------------
+
+
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "INSERT INTO orders (order_id) VALUES ('x')",
+        "UPDATE return_requests SET refund_amount = 1000",
+        "UPDATE return_requests SET status = 'APPROVED'",
+        "DELETE FROM return_requests",
+        "DELETE FROM orders",
+        "DROP TABLE orders",
+        "PRAGMA table_info(orders)",
+    ],
+)
+def test_the_server_connection_writes_nothing_but_new_requests_and_tickets(
+    synthetic_db_path, sql
+):
+    before = hashlib.sha256(synthetic_db_path.read_bytes()).hexdigest()
+    conn = server_module.connect_for_order_server(str(synthetic_db_path))
+
+    with pytest.raises(sqlite3.DatabaseError, match="not authorized"), conn:
+        conn.execute(sql)
+    conn.close()
+
+    assert hashlib.sha256(synthetic_db_path.read_bytes()).hexdigest() == before
+
+
+def test_the_server_connection_still_writes_a_request_and_a_ticket(synthetic_db_path):
+    async def scenario(orders):
+        await orders.call("create_return_request", RETURN)
+        written = await orders.approve_pending()
+        ticket = await orders.call(
+            "escalate_to_human", {"summary": "Müşteri bir temsilci istiyor."}
+        )
+        return written, ticket
+
+    before = request_count(synthetic_db_path)
+    written, ticket = with_server(synthetic_db_path, scenario)
+
+    assert "error" not in written and "error" not in ticket
+    assert request_count(synthetic_db_path) == before + 1
+
