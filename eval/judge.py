@@ -123,15 +123,19 @@ def parse_json(text: str, schema):
 class JudgeModel(DeepEvalBaseLLM):
     """Gives DeepEval a model that goes through the guard and the cache."""
 
-    def __init__(self, provider_llm: FunctionCallingLLM) -> None:
+    def __init__(
+        self, provider_llm: FunctionCallingLLM, name: str | None = None
+    ) -> None:
+        """name is the model's name in DeepEval's reports; the judge's by default."""
         self._llm = GuardedLLM(inner=provider_llm, redactor=Redactor())
+        self._name = name
         self.calls = 0
 
     def load_model(self) -> GuardedLLM:
         return self._llm
 
     def get_model_name(self) -> str:
-        return config.JUDGE_MODEL
+        return self._name or config.JUDGE_MODEL
 
     async def _ask(self, prompt: str) -> str:
         self.calls += 1

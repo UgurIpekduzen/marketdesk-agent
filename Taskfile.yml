@@ -221,6 +221,11 @@ tasks:
     cmds:
       - "{{.RUN}} uv run python eval/run_eval.py {{.CLI_ARGS}}"
 
+  eval:redteam:
+    desc: Run the automated red team scan with DeepTeam; attacker and judge on Groq (uses Groq and LLM quota); `-- --pilot` for one vulnerability, `-- --paid` for the paid Gemini key
+    cmds:
+      - "{{.RUN}} uv run python eval/red_team.py {{.CLI_ARGS}}"
+
   eval:report:
     desc: Write the final report from the results files (no model calls)
     cmds:

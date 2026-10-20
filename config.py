@@ -28,6 +28,15 @@ LLM_TEMPERATURE = 0
 JUDGE_PROVIDER = "gemini"
 JUDGE_MODEL = "gemini-3.5-flash-lite"
 
+# The automated red team scan (eval/red_team.py): the model that writes the
+# attacks and the one that judges the answers. Another provider than the
+# system's, so the scan does not use the Gemini quota the system needs; the
+# largest model Groq offers that its free plan allows.
+REDTEAM_PROVIDER = "groq"
+REDTEAM_MODEL = "openai/gpt-oss-120b"
+# A scan stops after this many live calls to the system's own model.
+REDTEAM_MAX_LIVE_CALLS = 150
+
 # A second Gemini key, of a project with billing, for evaluation and
 # development runs only, and only when a run is started with --paid: the
 # free daily quota is used up first. The page, the chat sessions and the
