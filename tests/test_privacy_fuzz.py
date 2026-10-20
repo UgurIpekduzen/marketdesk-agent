@@ -55,6 +55,12 @@ SHAPE_GUARD_CATCHES = {
     ("phone", "zero-width inside"),
     ("city", "with accents"),
     ("city", "zero-width inside"),
+    # Since numbers with check digits are matched.
+    ("tckn", "plain"),
+    ("iban", "plain"),
+    ("iban", "grouped"),
+    ("card", "plain"),
+    ("card", "grouped"),
 }
 CAUGHT_TODAY = {
     "outbound": SHAPE_GUARD_CATCHES,

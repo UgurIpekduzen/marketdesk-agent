@@ -29,6 +29,60 @@ PHONE_CANDIDATE = re.compile(
 PHONE_MASK = "[phone]"
 DATE_PATTERN = re.compile(r"\d{4}-\d{2}-\d{2}")
 
+# Numbers with a check digit: taken only when the check holds, so an order
+# count or an amount of the same length is left alone.
+# A Turkish id number (TCKN): 11 digits, maybe grouped.
+# Not part of a decimal number: "0.0358..." holds a run of digits too.
+NOT_IN_A_NUMBER_BEFORE = r"(?<![\w-])(?<![.,]\d)(?<!\d[.,])"
+NOT_IN_A_NUMBER_AFTER = r"(?![\w-])(?![.,]\d)"
+TCKN_CANDIDATE = re.compile(
+    rf"{NOT_IN_A_NUMBER_BEFORE}\d(?:[ -]?\d){{10}}{NOT_IN_A_NUMBER_AFTER}"
+)
+TCKN_MASK = "[tckn]"
+# An IBAN: country, check digits, then up to 30 letters and digits, maybe in
+# groups of four.
+IBAN_CANDIDATE = re.compile(
+    r"(?<!\w)[A-Z]{2}\d{2}(?: ?[A-Z0-9]){11,30}(?!\w)", re.IGNORECASE
+)
+IBAN_MASK = "[iban]"
+# A card number: 13 to 19 digits, maybe in groups.
+CARD_CANDIDATE = re.compile(
+    rf"{NOT_IN_A_NUMBER_BEFORE}\d(?:[ -]?\d){{12,18}}{NOT_IN_A_NUMBER_AFTER}"
+)
+CARD_MASK = "[card]"
+
+
+def digits_of(text: str) -> str:
+    """The digits of a candidate; none when it holds a date, which is never one."""
+    if DATE_PATTERN.search(text):
+        return ""
+    return "".join(character for character in text if character.isdigit())
+
+
+def is_tckn(candidate: str) -> bool:
+    """The official check of a Turkish id number."""
+    digits = [int(digit) for digit in digits_of(candidate)]
+    if len(digits) != 11 or digits[0] == 0:
+        return False
+    tenth = (sum(digits[0:9:2]) * 7 - sum(digits[1:8:2])) % 10
+    return digits[9] == tenth and digits[10] == sum(digits[:10]) % 10
+
+
+def is_iban(candidate: str) -> bool:
+    """The ISO 13616 check: the number read as base 36 is 1 modulo 97."""
+    text = candidate.replace(" ", "").upper()
+    rearranged = text[4:] + text[:4]
+    return int("".join(str(int(character, 36)) for character in rearranged)) % 97 == 1
+
+
+def is_card(candidate: str) -> bool:
+    """The Luhn check of a payment card number."""
+    digits = [int(digit) for digit in reversed(digits_of(candidate))]
+    if not 13 <= len(digits) <= 19:
+        return False
+    doubled = [sum(divmod(2 * digit, 10)) for digit in digits[1::2]]
+    return (sum(digits[0::2]) + sum(doubled)) % 10 == 0
+
 
 def hash_key() -> str:
     """The secret key of the id hashes.

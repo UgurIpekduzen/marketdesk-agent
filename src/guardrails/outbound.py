@@ -8,6 +8,8 @@ leave it out; this module is the net underneath them. It looks for:
   replaced by the session's alias for it, so the model can still refer to
   the order and the tools can still resolve it; elsewhere it becomes [id];
 - e-mail addresses and phone numbers, by their shape;
+- Turkish id numbers, IBANs and card numbers, by their shape and their
+  check digits;
 - values known to be personal in this session: the customer's city and
   zip code prefix.
 
@@ -30,12 +32,21 @@ from collections import Counter
 from collections.abc import Callable, Mapping
 
 from src.guardrails.pii import (
+    CARD_CANDIDATE,
+    CARD_MASK,
     EMAIL_MASK,
     EMAIL_PATTERN,
+    IBAN_CANDIDATE,
+    IBAN_MASK,
     MASK,
     PHONE_CANDIDATE,
     PHONE_MASK,
     RAW_ID_PATTERN,
+    TCKN_CANDIDATE,
+    TCKN_MASK,
+    is_card,
+    is_iban,
+    is_tckn,
     looks_like_phone,
 )
 
@@ -105,6 +116,17 @@ class Redactor:
             found["email"] += 1
             return EMAIL_MASK
 
+        def checked(kind: str, mask: str, check: Callable[[str], bool]):
+            """Replace a candidate only when its check digits hold."""
+
+            def replace(match: re.Match) -> str:
+                if not check(match.group()):
+                    return match.group()
+                found[kind] += 1
+                return mask
+
+            return replace
+
         def replace_phone(match: re.Match) -> str:
             if not looks_like_phone(match.group()):
                 return match.group()
@@ -114,6 +136,10 @@ class Redactor:
         text = normalised(text)
         text = RAW_ID_PATTERN.sub(replace_id, text)
         text = EMAIL_PATTERN.sub(replace_email, text)
+        # Before phone numbers, which would take a grouped number first.
+        text = IBAN_CANDIDATE.sub(checked("iban", IBAN_MASK, is_iban), text)
+        text = CARD_CANDIDATE.sub(checked("card", CARD_MASK, is_card), text)
+        text = TCKN_CANDIDATE.sub(checked("tckn", TCKN_MASK, is_tckn), text)
         text = PHONE_CANDIDATE.sub(replace_phone, text)
         for pattern, mask in self._known:
             text, count = self._replace_known(text, pattern, mask)

@@ -4,7 +4,14 @@ import hashlib
 import hmac
 
 from src.guardrails import pii
-from src.guardrails.pii import HASH_KEY_VARIABLE, hash_id, mask_raw_ids
+from src.guardrails.pii import (
+    HASH_KEY_VARIABLE,
+    hash_id,
+    is_card,
+    is_iban,
+    is_tckn,
+    mask_raw_ids,
+)
 
 RAW_ID = "0a1b2c3d4e5f60718293a4b5c6d7e8f9"
 
@@ -63,3 +70,32 @@ def test_text_without_ids_is_left_alone():
     text = "SIP-1 arrived damaged on 2018-08-25; refund 115.00 BRL."
 
     assert mask_raw_ids(text) == text
+
+
+# --- Numbers with check digits (all made up) -----------------------------------
+
+
+def test_a_turkish_id_number_is_known_by_its_check_digits():
+    assert is_tckn("10000000146")
+    assert is_tckn("100 000 001 46")
+    assert not is_tckn("10000000147")  # last digit off
+    assert not is_tckn("01000000146")  # starts with 0
+    assert not is_tckn("1000000014")  # 10 digits
+
+
+def test_an_iban_is_known_by_its_check_digits():
+    assert is_iban("TR330006100519786457841326")
+    assert is_iban("TR33 0006 1005 1978 6457 8413 26")
+    assert not is_iban("TR340006100519786457841326")
+
+
+def test_a_card_number_is_known_by_its_luhn_check():
+    assert is_card("4111111111111111")
+    assert is_card("4111 1111 1111 1111")
+    assert not is_card("4111111111111112")
+    assert not is_card("411111111111")  # 12 digits
+
+
+def test_a_date_is_never_a_number_with_check_digits():
+    assert not is_card("2018-07-01 2018-07-31")
+    assert not is_tckn("2018-07-01 1")

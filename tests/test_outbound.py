@@ -251,3 +251,30 @@ def test_accents_elsewhere_in_the_text_are_kept():
     redactor = Redactor(known_values={"sao paulo": "[city]"})
 
     assert redactor.redact("Müşteri São Paulo'da.")[0] == "Müşteri [city]'da."
+
+
+def test_turkish_id_iban_and_card_numbers_are_masked():
+    text = (
+        "TCKN 10000000146, IBAN TR33 0006 1005 1978 6457 8413 26, "
+        "kart 4111 1111 1111 1111."
+    )
+
+    cleaned, found = Redactor().redact(text)
+
+    assert cleaned == "TCKN [tckn], IBAN [iban], kart [card]."
+    assert found == Counter(tckn=1, iban=1, card=1)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Toplam 12345678901 kuruş değil, 99441 sipariş var.",
+        "GMV 13591643,70 BRL; 2018-07-01 2018-07-31 arası.",
+        "Sipariş anahtarı 4111111111111112 değil.",
+        # A rate as an ops result gives it: its decimals pass the Luhn check.
+        '"rows": [[97, 2709, 0.03580657069029162]]',
+        "Oran 0,03580657069029162 ya da 1.4111111111111111",
+    ],
+)
+def test_numbers_whose_check_fails_are_left_alone(text):
+    assert Redactor().redact(text)[0] == text
