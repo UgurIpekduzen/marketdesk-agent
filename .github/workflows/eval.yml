@@ -1,6 +1,6 @@
 # A few golden set examples with the real model, started by hand.
 # It uses the free-tier quota (about 30 model calls), so it never runs on a
-# push. Needs the repository secret GEMINI_API_KEY.
+# push. Needs the repository secret GEMINI_API_KEY_FREE.
 
 name: eval
 
@@ -42,7 +42,7 @@ jobs:
 
       - name: Run the examples
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_API_KEY_FREE: ${{ secrets.GEMINI_API_KEY_FREE }}
           # Passed through the environment, never pasted into the script.
           EXAMPLES: ${{ inputs.examples }}
         run: task eval -- --only "$EXAMPLES" --pause 5 --strict | tee eval-output.txt

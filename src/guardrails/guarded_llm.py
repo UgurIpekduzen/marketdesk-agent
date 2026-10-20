@@ -28,7 +28,7 @@ from pydantic import ConfigDict, Field
 import config
 from src.guardrails.outbound import Redactor, log_findings
 
-API_KEY_VARIABLES = {"gemini": "GEMINI_API_KEY", "groq": "GROQ_API_KEY"}
+API_KEY_VARIABLES = {"gemini": "GEMINI_API_KEY_FREE", "groq": "GROQ_API_KEY"}
 
 
 class GuardedLLM(FunctionCallingLLM):
@@ -135,14 +135,23 @@ def configured_model() -> tuple[str, str]:
 
 
 def build_provider_llm(
-    provider: str | None = None, model: str | None = None
+    provider: str | None = None, model: str | None = None, paid: bool = False
 ) -> FunctionCallingLLM:
-    """Create a provider's model: by default the one config.py names."""
+    """Create a provider's model: by default the one config.py names.
+
+    paid uses the key of the project with billing (config.PAID_KEY_VARIABLE)
+    instead of the free one; only evaluation runs started with --paid pass
+    it, never the page or the agents.
+    """
     if provider is None or model is None:
         provider, model = configured_model()
     if provider not in API_KEY_VARIABLES:
         raise ValueError(f"unknown LLM provider in config.py: {provider!r}")
-    api_key = os.environ[API_KEY_VARIABLES[provider]]
+    if paid and provider != "gemini":
+        raise ValueError("the paid key is a Gemini key")
+    api_key = os.environ[
+        config.PAID_KEY_VARIABLE if paid else API_KEY_VARIABLES[provider]
+    ]
 
     # Imported here: this is the only place that knows the providers.
     if provider == "gemini":
@@ -156,9 +165,9 @@ def build_provider_llm(
     return Groq(model=model, api_key=api_key, temperature=config.LLM_TEMPERATURE)
 
 
-def build_judge_provider_llm() -> FunctionCallingLLM:
+def build_judge_provider_llm(paid: bool = False) -> FunctionCallingLLM:
     """The provider's model that scores answers in the evaluation."""
-    return build_provider_llm(config.JUDGE_PROVIDER, config.JUDGE_MODEL)
+    return build_provider_llm(config.JUDGE_PROVIDER, config.JUDGE_MODEL, paid)
 
 
 def build_llm(redactor: Redactor | None = None) -> GuardedLLM:

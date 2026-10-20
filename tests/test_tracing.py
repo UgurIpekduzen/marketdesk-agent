@@ -19,13 +19,15 @@ from tests.synthetic_data import ALICE
 
 RAW_ID = "0a1b2c3d4e5f60718293a4b5c6d7e8f9"
 API_KEY = "AIzaSy-not-a-real-key-0123456789"
+PAID_KEY = "AIzaSy-not-a-real-paid-key-987654"
 HASH_KEY = "a-secret-hash-key"
 RETURN = {"order_ref": "o_day14", "reason": "damaged", "amount": "115.00"}
 
 
 @pytest.fixture
 def secrets(monkeypatch):
-    monkeypatch.setenv("GEMINI_API_KEY", API_KEY)
+    monkeypatch.setenv("GEMINI_API_KEY_FREE", API_KEY)
+    monkeypatch.setenv("GEMINI_API_KEY_PAID", PAID_KEY)
     monkeypatch.setenv(HASH_KEY_VARIABLE, HASH_KEY)
 
 
@@ -198,11 +200,13 @@ def test_no_secret_is_in_any_span(traced, secrets):
     with tracing.span("probe", note=f"key {API_KEY} and {HASH_KEY}") as current:
         current.add_event("called", {"header": f"Bearer {API_KEY}"})
         current.set_attribute("list", [API_KEY, "other"])
+        current.set_attribute("paid", f"key {PAID_KEY}")
 
     text = dump(exporter)
     assert API_KEY not in text
+    assert PAID_KEY not in text
     assert HASH_KEY not in text
-    assert text.count(tracing.SECRET_MASK) == 4
+    assert text.count(tracing.SECRET_MASK) == 5
 
 
 def test_key_made_for_the_process_is_not_in_any_span(traced, monkeypatch):

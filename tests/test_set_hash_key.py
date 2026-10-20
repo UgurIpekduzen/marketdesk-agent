@@ -15,11 +15,11 @@ def key_in(env_path) -> str:
 
 def test_key_is_added_and_the_other_lines_are_kept(tmp_path):
     env_path = tmp_path / ".env"
-    env_path.write_text("# keys\nGEMINI_API_KEY=abc\n")
+    env_path.write_text("# keys\nGEMINI_API_KEY_FREE=abc\n")
 
     assert set_hash_key(env_path)
 
-    assert env_path.read_text().startswith("# keys\nGEMINI_API_KEY=abc\n")
+    assert env_path.read_text().startswith("# keys\nGEMINI_API_KEY_FREE=abc\n")
     assert len(key_in(env_path)) == 64
 
 

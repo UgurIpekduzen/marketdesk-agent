@@ -35,7 +35,12 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 import config
 from eval import scoring
-from eval.llm_cache import DEFAULT_CACHE_DIR, CachedLLM
+from eval.llm_cache import (
+    DEFAULT_CACHE_DIR,
+    CachedLLM,
+    DailyQuotaUsedUp,
+    LiveCallLimitReached,
+)
 from src import messages_en
 from src.guardrails.guarded_llm import (
     build_judge_provider_llm,
@@ -561,14 +566,23 @@ def run(
     return rows
 
 
-def build_judge(cache_dir: Path, language: Language = DEFAULT_LANGUAGE):
+def cached_llm(inner, cache_dir: Path, paid: bool) -> CachedLLM:
+    """A model behind the response cache; on the paid key with its limit."""
+    return CachedLLM(
+        inner=inner,
+        cache_dir=cache_dir,
+        max_live_calls=config.PAID_RUN_MAX_LIVE_CALLS if paid else None,
+    )
+
+
+def build_judge(
+    cache_dir: Path, language: Language = DEFAULT_LANGUAGE, paid: bool = False
+):
     """The judge on the judge model, behind the same response cache."""
     # Imported here: only a judged run needs the judge's library.
     from eval.judge import Judge
 
-    return Judge(
-        CachedLLM(inner=build_judge_provider_llm(), cache_dir=cache_dir), language
-    )
+    return Judge(cached_llm(build_judge_provider_llm(paid), cache_dir, paid), language)
 
 
 def main() -> int:
@@ -597,6 +611,12 @@ def main() -> int:
         action="store_true",
         help="also score policy and ops answers with the judge model (more quota)",
     )
+    parser.add_argument(
+        "--paid",
+        action="store_true",
+        help="make the live calls on the paid key, once the free daily quota is "
+        "used up (cached answers cost nothing either way)",
+    )
     args = parser.parse_args()
 
     examples = load_golden(args.golden)
@@ -608,7 +628,7 @@ def main() -> int:
     index = PolicyIndex(load_embedder())
     with tempfile.TemporaryDirectory() as folder:
         cache_dir = Path(folder) / "cache" if args.no_cache else DEFAULT_CACHE_DIR
-        llm = CachedLLM(inner=build_provider_llm(), cache_dir=cache_dir)
+        llm = cached_llm(build_provider_llm(paid=args.paid), cache_dir, args.paid)
         # A copy: an example may open a return request.
         db_copy = Path(folder) / "eval.db"
         shutil.copy(args.db, db_copy)
@@ -617,17 +637,23 @@ def main() -> int:
         if len(languages) > 1:
             raise ValueError("a run holds the examples of one language")
         language = languages.pop() if languages else DEFAULT_LANGUAGE
-        judge = build_judge(cache_dir, language) if args.judge else None
+        judge = build_judge(cache_dir, language, args.paid) if args.judge else None
         hash_before = content_hash(db_copy)
-        rows = run(
-            examples,
-            db_copy,
-            index,
-            llm,
-            args.pause,
-            show_test=args.show_test,
-            judge=judge,
-        )
+        try:
+            rows = run(
+                examples,
+                db_copy,
+                index,
+                llm,
+                args.pause,
+                show_test=args.show_test,
+                judge=judge,
+            )
+        except (DailyQuotaUsedUp, LiveCallLimitReached) as stop:
+            # Nothing is written: the next run takes the answers so far from
+            # the cache and goes on from there.
+            print(f"\nStopped: {stop}")
+            return 3
         unchanged = content_hash(db_copy) == hash_before
 
     summary = summarise_by_split(rows)
@@ -645,6 +671,11 @@ def main() -> int:
     text += f"\n\nDatabase copy unchanged by the run: {'yes' if unchanged else 'no'}"
     print(f"\n{text}\n")
     print(f"Model calls: {llm.live_calls} live, {llm.hits} from the cache")
+    # The judge's own cache: the guard in front of it wraps it.
+    judge_live = judge.model.load_model().inner.live_calls if judge else 0
+    paid_live_calls = llm.live_calls + judge_live if args.paid else 0
+    if args.paid:
+        print(f"Live calls on the paid key (system and judge): {paid_live_calls}")
 
     if not args.only:
         RESULTS_DIR.mkdir(exist_ok=True)
@@ -652,6 +683,8 @@ def main() -> int:
         result = {
             "golden_set": args.golden.name,
             "language": language.value,
+            # Live calls of this run made on the paid key, for the cost record.
+            "paid_live_calls": paid_live_calls,
             "provider": provider,
             "model": model,
             "temperature": config.LLM_TEMPERATURE,

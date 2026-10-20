@@ -253,7 +253,7 @@ def recording_provider(created):
 @pytest.mark.parametrize(
     ("use_fallback", "module", "class_name", "key_variable"),
     [
-        (False, "llama_index.llms.google_genai", "GoogleGenAI", "GEMINI_API_KEY"),
+        (False, "llama_index.llms.google_genai", "GoogleGenAI", "GEMINI_API_KEY_FREE"),
         (True, "llama_index.llms.groq", "Groq", "GROQ_API_KEY"),
     ],
 )
@@ -276,9 +276,9 @@ def test_provider_model_gets_name_key_and_temperature(
 
 
 def test_missing_api_key_is_an_error(monkeypatch):
-    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY_FREE", raising=False)
 
-    with pytest.raises(KeyError, match="GEMINI_API_KEY"):
+    with pytest.raises(KeyError, match="GEMINI_API_KEY_FREE"):
         guarded_llm.build_provider_llm()
 
 

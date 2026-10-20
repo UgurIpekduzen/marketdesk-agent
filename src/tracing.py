@@ -54,7 +54,8 @@ TRACER_NAME = "marketdesk"
 SECRET_MASK = "[secret]"
 # Environment variables whose values must never appear in a span.
 SECRET_VARIABLES = (
-    "GEMINI_API_KEY",
+    "GEMINI_API_KEY_FREE",
+    "GEMINI_API_KEY_PAID",
     "GROQ_API_KEY",
     "LANGFUSE_PUBLIC_KEY",
     "LANGFUSE_SECRET_KEY",

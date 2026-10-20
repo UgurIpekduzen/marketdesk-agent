@@ -38,12 +38,18 @@ from llama_index.core.llms import ChatMessage
 
 import config
 from eval import scoring
-from eval.llm_cache import DEFAULT_CACHE_DIR, CachedLLM
+from eval.llm_cache import (
+    DEFAULT_CACHE_DIR,
+    CachedLLM,
+    DailyQuotaUsedUp,
+    LiveCallLimitReached,
+)
 from eval.run_eval import (
     DEFAULT_DB_PATH,
     GOLDEN_SET,
     RESULTS_DIR,
     build_judge,
+    cached_llm,
     judge_mean,
     load_golden,
     show,
@@ -417,6 +423,12 @@ def main() -> int:
         action="store_true",
         help="also score the policy answers with the judge model (more quota)",
     )
+    parser.add_argument(
+        "--paid",
+        action="store_true",
+        help="make the live calls on the paid key, once the free daily quota is "
+        "used up",
+    )
     args = parser.parse_args()
 
     examples = load_golden(args.golden)
@@ -428,18 +440,22 @@ def main() -> int:
     index = PolicyIndex(load_embedder())
     with tempfile.TemporaryDirectory() as folder:
         cache_dir = Path(folder) / "cache" if args.no_cache else DEFAULT_CACHE_DIR
-        llm = CachedLLM(inner=build_provider_llm(), cache_dir=cache_dir)
+        llm = cached_llm(build_provider_llm(paid=args.paid), cache_dir, args.paid)
         print(f"Provider: {provider}   Model: {model}\n")
-        judge = build_judge(cache_dir) if args.judge else None
-        rows = run(
-            examples,
-            args.db,
-            index,
-            llm,
-            args.pause,
-            show_test=args.show_test,
-            judge=judge,
-        )
+        judge = build_judge(cache_dir, paid=args.paid) if args.judge else None
+        try:
+            rows = run(
+                examples,
+                args.db,
+                index,
+                llm,
+                args.pause,
+                show_test=args.show_test,
+                judge=judge,
+            )
+        except (DailyQuotaUsedUp, LiveCallLimitReached) as stop:
+            print(f"\nStopped: {stop}")
+            return 3
 
     name = model.replace("/", "_")
     summary = summarise_baselines(rows)

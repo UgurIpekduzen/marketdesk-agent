@@ -271,7 +271,7 @@ def wrapped(inner: Exception) -> Exception:
             messages.UI_ERROR_TOO_LONG.format(limit=config.MAX_MESSAGE_CHARS),
         ),
         (QuestionLimitReached("60 questions"), messages.UI_ERROR_QUESTION_LIMIT),
-        (KeyError("GEMINI_API_KEY"), messages.UI_ERROR_NOT_CONFIGURED),
+        (KeyError("GEMINI_API_KEY_FREE"), messages.UI_ERROR_NOT_CONFIGURED),
         (wrapped(KeyError("GROQ_API_KEY")), messages.UI_ERROR_NOT_CONFIGURED),
         # What Gemini answers to a key it does not accept (2026-10-19).
         (
@@ -383,7 +383,7 @@ def test_approval_card_in_english():
     [
         (RuntimeError("429 RESOURCE_EXHAUSTED"), messages_en.UI_ERROR_QUOTA),
         (TimeoutError(), messages_en.UI_ERROR_TIMEOUT),
-        (KeyError("GEMINI_API_KEY"), messages_en.UI_ERROR_NOT_CONFIGURED),
+        (KeyError("GEMINI_API_KEY_FREE"), messages_en.UI_ERROR_NOT_CONFIGURED),
         (ZeroDivisionError("division by zero"), messages_en.UI_ERROR_GENERIC),
     ],
 )

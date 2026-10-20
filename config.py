@@ -28,6 +28,15 @@ LLM_TEMPERATURE = 0
 JUDGE_PROVIDER = "gemini"
 JUDGE_MODEL = "gemini-3.5-flash-lite"
 
+# A second Gemini key, of a project with billing, for evaluation and
+# development runs only, and only when a run is started with --paid: the
+# free daily quota is used up first. The page, the chat sessions and the
+# agents never read it; the system runs end to end on the free tier.
+PAID_KEY_VARIABLE = "GEMINI_API_KEY_PAID"
+# A run on the paid key stops after this many live model calls, whatever
+# goes wrong: about 1-2 USD at the list price below.
+PAID_RUN_MAX_LIVE_CALLS = 600
+
 # List price of the main model in USD per million tokens, used only to
 # estimate what a traced model call or an evaluated task would cost; the
 # free tier costs nothing. None leaves the estimate out. Prices change:
