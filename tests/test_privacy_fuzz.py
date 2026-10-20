@@ -12,7 +12,8 @@ import pytest
 
 from src import tracing
 from src.guardrails.outbound import Redactor
-from src.guardrails.pii import mask_raw_ids
+from src.tools.escalation import clean_summary
+from src.tools.session import Session
 from tests.privacy_fuzz_cases import KNOWN_VALUES, Case, cases, leaks
 
 ALIAS = "SIP-1"
@@ -26,7 +27,7 @@ def outbound(text: str) -> str:
 
 def ticket(text: str) -> str:
     """What a ticket keeps, logs and shows the rep, from a model's summary."""
-    return mask_raw_ids(text)
+    return clean_summary(text, Session("customer", personal_values=KNOWN_VALUES))
 
 
 GUARDS = {"outbound": outbound, "trace": tracing.scrub, "ticket": ticket}
@@ -68,7 +69,8 @@ SHAPE_GUARD_CATCHES = {
 CAUGHT_TODAY = {
     "outbound": SHAPE_GUARD_CATCHES,
     "trace": SHAPE_GUARD_CATCHES,
-    "ticket": {("id", "plain"), ("id", "upper case")},
+    # Since a summary passes the same guard.
+    "ticket": SHAPE_GUARD_CATCHES,
 }
 
 

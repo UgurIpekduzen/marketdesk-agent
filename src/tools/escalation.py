@@ -5,8 +5,10 @@ of the escalation_tickets table, the queue a support rep works through, and
 one line is logged. The order server is the only caller, so the tickets are
 written where the return requests are.
 
-The summary is written by the model, so it is cleaned before it is kept:
-raw ids are masked and the text is cut to a fixed length. The customer is
+The summary is written by the model, so it is cleaned before it is kept,
+logged and shown to the rep: it passes the same guard as text sent to the
+model provider (raw ids, e-mail addresses, phone and id numbers, the
+session's city and zip code) and is cut to a fixed length. The customer is
 kept and logged as a short hash, never as the id itself.
 """
 
@@ -16,7 +18,8 @@ from datetime import date
 
 import config
 from src import messages
-from src.guardrails.pii import hash_id, mask_raw_ids
+from src.guardrails.outbound import Redactor
+from src.guardrails.pii import hash_id
 from src.tools.session import Session
 
 logger = logging.getLogger(__name__)
@@ -40,6 +43,13 @@ CREATE TABLE IF NOT EXISTS {TICKETS_TABLE} (
     created_at TEXT NOT NULL
 )
 """
+
+
+def clean_summary(summary: str, session: Session) -> str:
+    """A summary as it may be kept, logged and shown: personal data masked
+    (raw ids as [id], not as the session's aliases) and cut."""
+    redactor = Redactor(known_values=session.personal_values)
+    return redactor.redact(summary.strip())[0][:MAX_SUMMARY_LENGTH]
 
 
 def ensure_tickets_table(conn: sqlite3.Connection) -> None:
@@ -76,7 +86,7 @@ def escalate_to_human(
             "error": "INVALID_PRIORITY",
             "message": messages.INVALID_PRIORITY.format(allowed=", ".join(PRIORITIES)),
         }
-    summary = mask_raw_ids(summary.strip())[:MAX_SUMMARY_LENGTH]
+    summary = clean_summary(summary, session)
     if not summary:
         return {"error": "EMPTY_SUMMARY", "message": messages.EMPTY_SUMMARY}
 
