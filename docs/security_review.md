@@ -2,7 +2,7 @@
 
 The page runs on Streamlit: the browser only sends "this was clicked" and "this was typed", and everything is decided on the server. A visitor can still write those messages by hand, so any check the page makes is a convenience; the rule has to hold on the server. This review lists what the page decides, checks each decision against messages no click could send, and records the result.
 
-Review date: 2026-10-16; F1, F8 and F12 updated on 2026-10-19 for the choice screen and the example questions; F7 and F13 to F15 on 2026-10-19 for the support rep console. Tests named below are in `tests/`.
+Review date: 2026-10-16; F1, F8 and F12 updated on 2026-10-19 for the choice screen and the example questions; F7 and F13 to F15 on 2026-10-19 for the support rep console; F16 on 2026-10-20 for the dependency audit. Tests named below are in `tests/`.
 
 ## Findings
 
@@ -25,6 +25,7 @@ Review date: 2026-10-16; F1, F8 and F12 updated on 2026-10-19 for the choice scr
 | F13 | The rep decides on a return request and closes a ticket | Holds | No model in the console. The queue is made only for the rep identity; each decision is one UPDATE that starts from PENDING_REVIEW (an open ticket for closing), so a senior request (above 500 BRL) cannot be decided, and a second click or a decided request changes nothing. A button sent from a customer or an operations session is ignored. `tests/test_review_queue.py`, `test_a_senior_request_is_shown_without_buttons`, `test_a_rep_button_sent_from_another_session_changes_nothing`, `test_a_second_click_on_a_decided_request_changes_nothing` |
 | F14 | A ticket's summary, written by the model, is shown to the rep | Holds | Drawn as plain text, never as markdown, so an image or a link in it does nothing; ids in it are masked when the ticket is written. The console says the summaries are written by the model. The values the rep decides on (amount, reason, status) come from the database, not from the model. `test_a_ticket_summary_is_plain_text_and_the_ticket_can_be_closed` |
 | F15 | Tickets are kept in the database | Holds | Written by the order server only, with the customer as a hash, the summary masked and cut. `tests/test_escalation.py` |
+| F16 | Known vulnerabilities in the dependencies | Holds | `task audit` (pip-audit on `uv.lock`) runs in CI when the lock file changes and once a week, and fails on any advisory not listed below. Ignored because they cannot be reached here (2026-10-20, no fixed version yet): chromadb PYSEC-2026-311, -3813, -3814, -3815 (CVE-2026-45829, -45830, -45833, -45831) are in Chroma's HTTP server API and its RBAC provider, and the project only opens the policy index with `PersistentClient` in file mode and runs no Chroma server; nltk GHSA-8mgp-746c-j5xp (CVE-2026-81726) is in model save and load APIs that the project never calls (nltk comes in through llama-index-core). If the policy index ever moves to a Chroma server, the chromadb advisories apply. |
 
 ## Automated review
 
