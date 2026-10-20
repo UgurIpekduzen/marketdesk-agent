@@ -1,0 +1,110 @@
+"""Tests for the session language and the two string catalogs."""
+
+import string
+
+import pytest
+
+from src import messages, messages_en
+from src.i18n import DEFAULT_LANGUAGE, Language, catalog, from_locale
+
+
+def strings_of(module) -> dict:
+    """The catalog's strings and maps, by name."""
+    return {
+        name: value
+        for name, value in vars(module).items()
+        if name.isupper() and isinstance(value, str | dict)
+    }
+
+
+def placeholders(text: str) -> set[str]:
+    return {field for _, field, _, _ in string.Formatter().parse(text) if field}
+
+
+@pytest.mark.parametrize(
+    ("locale", "language"),
+    [
+        ("en-US", Language.EN),
+        ("en-GB", Language.EN),
+        ("en", Language.EN),
+        ("EN_us", Language.EN),
+        ("tr-TR", Language.TR),
+        ("tr", Language.TR),
+        # A third language and a missing locale get the first language.
+        ("de-DE", Language.TR),
+        ("", Language.TR),
+        (None, Language.TR),
+        # Only the language part counts, not a look-alike.
+        ("eng", Language.TR),
+    ],
+)
+def test_language_from_the_browser_locale(locale, language):
+    assert from_locale(locale) == language
+
+
+def test_turkish_is_the_default():
+    assert DEFAULT_LANGUAGE == Language.TR
+
+
+def test_each_language_has_its_catalog():
+    assert catalog(Language.TR) is messages
+    assert catalog(Language.EN) is messages_en
+    assert catalog("en") is messages_en
+
+
+def test_english_has_every_string_the_user_sees_and_no_other():
+    turkish = set(strings_of(messages)) - messages.MODEL_ONLY
+    english = set(strings_of(messages_en))
+
+    assert english == turkish
+
+
+def test_strings_only_the_model_reads_are_turkish_only():
+    assert messages.MODEL_ONLY <= set(strings_of(messages))
+    assert not messages.MODEL_ONLY & set(strings_of(messages_en))
+
+
+def test_both_languages_fill_in_the_same_placeholders():
+    english = strings_of(messages_en)
+    for name, turkish in strings_of(messages).items():
+        # Turkish titles are cited as written: only English has the map.
+        if name not in english or name == "POLICY_DOCUMENT_TITLES":
+            continue
+        if isinstance(turkish, str):
+            assert placeholders(english[name]) == placeholders(turkish), name
+        else:
+            # A map has the same keys, and each value the same placeholders.
+            assert english[name].keys() == turkish.keys(), name
+            for key in turkish:
+                assert placeholders(str(english[name][key])) == placeholders(
+                    str(turkish[key])
+                ), f"{name}[{key}]"
+
+
+def test_english_strings_are_not_left_in_turkish():
+    turkish_letters = set("çğıöşüÇĞİÖŞÜ")
+    for name, value in strings_of(messages_en).items():
+        # The titles map has the Turkish document titles as its keys.
+        texts = value.values() if isinstance(value, dict) else [value]
+        for text in texts:
+            assert not turkish_letters & set(str(text)), name
+
+
+def test_every_policy_document_has_an_english_title():
+    from src.knowledge.policy_index import read_sections
+
+    titles = {section.document for section in read_sections()}
+
+    assert titles == set(messages_en.POLICY_DOCUMENT_TITLES)
+
+
+def test_example_lists_are_as_long_in_both_languages():
+    for name in (
+        "EXAMPLE_QUESTIONS_GENERAL",
+        "EXAMPLE_QUESTIONS_POLICY",
+        "EXAMPLE_QUESTIONS_OPS",
+    ):
+        assert len(getattr(messages_en, name)) == len(getattr(messages, name)), name
+    for situation, questions in messages.EXAMPLE_QUESTIONS_BY_SITUATION.items():
+        english = messages_en.EXAMPLE_QUESTIONS_BY_SITUATION[situation]
+        assert len(english) == len(questions), situation

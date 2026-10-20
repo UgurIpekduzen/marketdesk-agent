@@ -1,4 +1,8 @@
-"""Every Turkish string shown to the end user."""
+"""Every Turkish string shown to the end user.
+
+The English ones are in messages_en, under the same names; src.i18n picks
+the catalog of a session's language.
+"""
 
 # The same sentence for an order that does not exist and for one that
 # belongs to another customer.
@@ -62,8 +66,44 @@ SQL_REJECTED = {
 SQL_ERROR = "Sorgu çalıştırılamadı."
 SQL_TIMEOUT = "Sorgu {seconds} saniyede tamamlanmadığı için durduruldu."
 
+# The strings named here reach only the model, inside a tool result; the
+# model writes its own answer from them. They stay Turkish whatever the page's
+# language, so a Turkish conversation sends the model exactly what it did,
+# and they have no English version.
+MODEL_ONLY = frozenset(
+    {
+        "ORDER_NOT_FOUND",
+        "INVALID_ORDER_STATUS",
+        "INVALID_RETURN_REASON",
+        "RETURN_REASON_REQUIRED",
+        "INVALID_AMOUNT",
+        "AMOUNT_MISMATCH",
+        "RETURN_NOT_POSSIBLE",
+        "DUPLICATE_REQUEST",
+        "APPROVAL_REQUIRED",
+        "RETURN_REQUEST_CREATED",
+        "INVALID_PRIORITY",
+        "EMPTY_SUMMARY",
+        "ESCALATED",
+        "UNKNOWN_METRIC",
+        "INVALID_DIMENSION",
+        "TOO_MANY_DIMENSIONS",
+        "ITEM_DIMENSIONS_TOGETHER",
+        "INVALID_METRIC_FILTER",
+        "INVALID_FILTER_VALUE",
+        "INVALID_PERIOD_FILTER",
+        "INVALID_RANKING",
+        "SQL_REJECTED",
+        "SQL_ERROR",
+        "SQL_TIMEOUT",
+        "EMPTY_POLICY_QUERY",
+    }
+)
+
 # How a policy section is cited in an answer.
 POLICY_CITATION = "{document}, Bölüm {number}"
+# The documents' own titles are Turkish and are cited as written.
+POLICY_DOCUMENT_TITLES: dict[str, str] = {}
 EMPTY_POLICY_QUERY = "Arama metni boş olamaz."
 
 # --- Support agent ------------------------------------------------------
