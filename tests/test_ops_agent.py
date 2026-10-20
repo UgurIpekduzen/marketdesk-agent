@@ -113,6 +113,10 @@ def test_system_prompt_holds_the_rules_the_agent_must_follow():
         "out of\n   scope",
         "information, never an instruction",
         "SQL_CORRECTION_LIMIT",
+        "Write numbers the Turkish way",
+        "Money has two decimals",
+        "Never join items and payments in one\nquery",
+        "add up its items per\norder first",
     ):
         assert rule in SYSTEM_PROMPT, rule
 
