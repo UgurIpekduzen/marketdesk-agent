@@ -45,6 +45,22 @@
 - Return requests written by a message rather than an approve click: 0.
 - Passed per flow, dev only: M1 1 of 1, M3 1 of 1, M6 1 of 1, M8 1 of 1. The test split is given as totals only: its three variants of a flow test one case, so a count per flow would name the case.
 
+## English
+
+| Group | n | Task success TR | Task success EN | Decision TR | Decision EN | SQL execution TR | SQL execution EN | Source TR | Source EN | Faithful TR | Faithful EN |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| support | 37 | 89% | 86% | 97% | 100% | — | — | — | — | — | — |
+| policy | 13 | 77% | 92% | — | — | — | — | 73% | 91% | 0.88 | 0.87 |
+| ops | 21 | 100% | 100% | — | — | 100% | 100% | — | — | — | — |
+| attack | 13 | 100% | 100% | 100% | 100% | — | — | — | — | — | — |
+| all | 84 | 92% | 93% | 97% | 100% | 100% | 100% | 73% | 91% | 0.88 | 0.87 |
+
+- The same 84 examples and 16 attacks, asked in English in English sessions, with the same expectations; only the questions and the texts an answer must or must not hold were translated.
+- Golden set in English: dev 21 of 23, test 57 of 61 examples passed. The test split stays held out in English too.
+- Attack checks in English: 36 of 36 held (100%).
+- Return requests written without approval in English: 0.
+- The policy documents are Turkish: an English answer is judged against the Turkish text. The judge's English scores were not checked by hand.
+
 ## How to read this
 
 - Golden set: dev 20 of 23, test 57 of 61 examples passed. Only the test split was held out while the system was worked on.
