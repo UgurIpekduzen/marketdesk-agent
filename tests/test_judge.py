@@ -11,6 +11,7 @@ import pytest
 
 from eval import judge as judge_module
 from eval.judge import Judge, JudgeModel
+from src.i18n import Language
 from tests.fakes import FakeLLM
 
 RAW_ID = "0a1b2c3d4e5f60718293a4b5c6d7e8f9"
@@ -175,3 +176,13 @@ def test_claim_the_policy_says_nothing_about_counts_against_the_answer():
     scores = Judge(fake).policy_answer("Kaç gün?", "14 gün; kargo ücretsizdir.")
 
     assert scores["faithfulness"] == pytest.approx(0.5)
+
+
+def test_the_steps_name_the_language_of_the_questions():
+    turkish = judge_module.in_language(judge_module.HELPFULNESS_STEPS, Language.TR)
+    english = judge_module.in_language(judge_module.NO_CAUSAL_CLAIM_STEPS, Language.EN)
+
+    # The Turkish steps are sent as they were, so the judge's cache holds.
+    assert turkish == judge_module.HELPFULNESS_STEPS
+    assert "in English" in english[0]
+    assert not any("Turkish" in step for step in english)

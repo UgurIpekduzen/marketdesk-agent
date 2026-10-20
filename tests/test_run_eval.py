@@ -8,6 +8,7 @@ import pytest
 
 from eval import run_eval
 from eval.llm_cache import CachedLLM
+from src import messages_en
 from tests.fakes import FakeLLM
 from tests.synthetic_data import ALICE
 
@@ -565,6 +566,52 @@ def test_documents_of_an_example_come_from_its_sources():
     assert run_eval.source_documents({"question": "x"}) is None
 
 
+def test_english_sources_are_read_from_the_turkish_documents():
+    english = {
+        "source": ["Returns Policy, Section 7", "Cancellation Policy, Section 5"]
+    }
+
+    assert run_eval.source_documents(english) == ["İade Politikası", "İptal Politikası"]
+
+
+def test_an_english_example_is_asked_in_an_english_session(run):
+    example = {**OPS_EXAMPLE, "language": "en", "question": "Write me a poem"}
+
+    rows, _ = run([example], ["out_of_scope"])
+
+    assert rows[0]["intent"] == "out_of_scope"
+    assert rows[0]["answer"] == messages_en.ROUTER_OUT_OF_SCOPE_OPS
+
+
+def test_an_english_customer_example_gets_english_amounts(run):
+    example = {
+        **SUPPORT_EXAMPLE,
+        "language": "en",
+        "question": "{order} arrived damaged, I want to return it.",
+        "expected": {
+            **SUPPORT_EXAMPLE["expected"],
+            "must_contain": [["{refund_amount}"]],
+        },
+    }
+    script = [
+        "support",
+        [("check_return_eligibility", {"order_ref": "o_day14", "reason": "damaged"})],
+        "Refund: 115.00 BRL.",
+    ]
+
+    _, llm = run([example], script)
+
+    sent = llm.inner.sent_text()
+    assert "Always answer\\nin English" in sent
+    assert "115.00 BRL" in sent
+    assert "115,00 BRL" not in sent
+
+
+def test_an_example_without_a_language_is_turkish():
+    assert run_eval.language_of({"id": "S"}) == "tr"
+    assert run_eval.language_of({"id": "S", "language": "en"}) == "en"
+
+
 def test_judge_scores_are_averaged_in_the_summary_and_shown_in_the_table(
     synthetic_db_path, fake_policy_index, tmp_path
 ):
@@ -687,6 +734,8 @@ def test_results_are_named_after_the_set():
     assert name(run_eval.GOLDEN_SET, "some/model") == "golden_v1_some_model"
     assert name(run_eval.INJECTION_SET, "m") == "injection_v1_m"
     assert name(run_eval.EVAL_DIR / "other.jsonl", "m") == "other_m"
+    assert name(run_eval.GOLDEN_SET_EN, "m") == "golden_v1_en_m"
+    assert name(run_eval.INJECTION_SET_EN, "m") == "injection_v1_en_m"
 
 
 def write(db_path, statement, parameters=()):

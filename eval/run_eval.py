@@ -36,11 +36,13 @@ sys.path.insert(0, str(PROJECT_ROOT))
 import config
 from eval import scoring
 from eval.llm_cache import DEFAULT_CACHE_DIR, CachedLLM
+from src import messages_en
 from src.guardrails.guarded_llm import (
     build_judge_provider_llm,
     build_provider_llm,
     configured_model,
 )
+from src.i18n import DEFAULT_LANGUAGE, Language
 from src.knowledge.embedding import load_embedder
 from src.knowledge.policy_index import PolicyIndex
 from src.mcp_server.client import OrdersClient
@@ -57,15 +59,29 @@ NOT_FOUND = "NOT_FOUND"
 # The sets that are run, and what their results files are called.
 INJECTION_SET = EVAL_DIR / "injection_tests.jsonl"
 MULTI_TURN_SET = EVAL_DIR / "multi_turn_set.jsonl"
+# The same sets in English, built from the Turkish ones.
+GOLDEN_SET_EN = EVAL_DIR / "golden_set_en.jsonl"
+INJECTION_SET_EN = EVAL_DIR / "injection_tests_en.jsonl"
 RESULT_PREFIXES = {
     GOLDEN_SET.stem: "golden_v1",
     INJECTION_SET.stem: "injection_v1",
     MULTI_TURN_SET.stem: "multi_turn_v1",
+    GOLDEN_SET_EN.stem: "golden_v1_en",
+    INJECTION_SET_EN.stem: "injection_v1_en",
+}
+# English document title -> the Turkish title the documents carry.
+TURKISH_TITLES = {
+    english: turkish for turkish, english in messages_en.POLICY_DOCUMENT_TITLES.items()
 }
 # dev: examples that may be read one by one while the system is worked on.
 # test: held out. Only their totals are reported, so that nothing is tuned
 # on them; an example that gets inspected has to move to dev.
 SPLITS = ("dev", "test")
+
+
+def language_of(example: dict) -> Language:
+    """The language the example is asked in; Turkish unless it says."""
+    return Language(example.get("language", DEFAULT_LANGUAGE))
 
 
 def load_golden(path: Path = GOLDEN_SET) -> list[dict]:
@@ -144,15 +160,16 @@ async def ask(
     """Send the example's question through the router of its session type."""
     # An order number is typed as it is; the guard masks it on the way out.
     question = example["question"].replace("{order}", prepared["order_id"] or "")
+    language = language_of(example)
     if example["session"] == "ops":
-        router = Orchestrator.for_ops(db_path, llm)
+        router = Orchestrator.for_ops(db_path, llm, language)
         try:
             return await router.ask(question)
         finally:
             router.close()
-    async with OrdersClient(db_path, prepared["customer"]) as orders:
+    async with OrdersClient(db_path, prepared["customer"], language) as orders:
         router = await Orchestrator.for_customer(
-            orders, prepared["customer"], index, llm
+            orders, prepared["customer"], index, llm, language
         )
         return await router.ask(question)
 
@@ -248,13 +265,19 @@ def score(example: dict, prepared: dict, answer, requests_after: int) -> dict:
 
 
 def source_documents(example: dict) -> list[str] | None:
-    """Titles of the policy documents an example's sources belong to."""
+    """Titles of the policy documents an example's sources belong to.
+
+    The documents carry their Turkish titles; an English citation is turned
+    back into the Turkish title.
+    """
     if "source" not in example:
         return None
     sources = example["source"]
     sources = sources if isinstance(sources, list) else [sources]
-    # A citation reads "<document title>, Bölüm <number>".
-    return sorted({source.rsplit(",", 1)[0] for source in sources})
+    # A citation reads "<document title>, Bölüm <number>" or
+    # "<document title>, Section <number>".
+    titles = {source.rsplit(",", 1)[0] for source in sources}
+    return sorted(TURKISH_TITLES.get(title, title) for title in titles)
 
 
 def judged(judge, example: dict, answer: str) -> dict:
@@ -538,12 +561,14 @@ def run(
     return rows
 
 
-def build_judge(cache_dir: Path):
+def build_judge(cache_dir: Path, language: Language = DEFAULT_LANGUAGE):
     """The judge on the judge model, behind the same response cache."""
     # Imported here: only a judged run needs the judge's library.
     from eval.judge import Judge
 
-    return Judge(CachedLLM(inner=build_judge_provider_llm(), cache_dir=cache_dir))
+    return Judge(
+        CachedLLM(inner=build_judge_provider_llm(), cache_dir=cache_dir), language
+    )
 
 
 def main() -> int:
@@ -588,7 +613,11 @@ def main() -> int:
         db_copy = Path(folder) / "eval.db"
         shutil.copy(args.db, db_copy)
         print(f"Provider: {provider}   Model: {model}   Examples: {len(examples)}\n")
-        judge = build_judge(cache_dir) if args.judge else None
+        languages = {language_of(example) for example in examples}
+        if len(languages) > 1:
+            raise ValueError("a run holds the examples of one language")
+        language = languages.pop() if languages else DEFAULT_LANGUAGE
+        judge = build_judge(cache_dir, language) if args.judge else None
         hash_before = content_hash(db_copy)
         rows = run(
             examples,
@@ -622,6 +651,7 @@ def main() -> int:
         name = result_name(args.golden, model)
         result = {
             "golden_set": args.golden.name,
+            "language": language.value,
             "provider": provider,
             "model": model,
             "temperature": config.LLM_TEMPERATURE,

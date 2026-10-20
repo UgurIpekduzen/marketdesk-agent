@@ -83,9 +83,10 @@ async def converse(
     order_id = prepared["order_id"]
     start_id = last_request_id(conn)
     turns = []
-    async with OrdersClient(db_path, prepared["customer"]) as orders:
+    language = run_eval.language_of(example)
+    async with OrdersClient(db_path, prepared["customer"], language) as orders:
         router = await Orchestrator.for_customer(
-            orders, prepared["customer"], index, llm
+            orders, prepared["customer"], index, llm, language
         )
         pending = None
         for turn in example["turns"]:

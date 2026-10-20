@@ -36,6 +36,7 @@ from pydantic import ValidationError
 import config
 from src.guardrails.guarded_llm import GuardedLLM
 from src.guardrails.outbound import Redactor
+from src.i18n import DEFAULT_LANGUAGE, LANGUAGE_NAMES, Language
 from src.knowledge.policy_index import read_sections
 
 HELPFULNESS_STEPS = [
@@ -164,9 +165,21 @@ def policy_context(documents: list[str] | None = None) -> list[str]:
     ]
 
 
+def in_language(steps: list[str], language: Language) -> list[str]:
+    """The steps for questions in this language; the Turkish ones as written."""
+    return [
+        step.replace("in Turkish", f"in {LANGUAGE_NAMES[language]}") for step in steps
+    ]
+
+
 class Judge:
-    def __init__(self, provider_llm: FunctionCallingLLM) -> None:
+    def __init__(
+        self, provider_llm: FunctionCallingLLM, language: Language = DEFAULT_LANGUAGE
+    ) -> None:
+        """language is that of the questions and answers judged; the policy
+        text the answers are checked against is always Turkish."""
         self.model = JudgeModel(provider_llm)
+        self.language = Language(language)
 
     def _g_eval(self, name: str, steps: list[str]) -> GEval:
         return GEval(
@@ -207,7 +220,9 @@ class Judge:
             evaluation_template=PolicyFaithfulnessTemplate,
         )
         faithfulness.measure(case)
-        helpfulness = self._g_eval("Helpfulness", HELPFULNESS_STEPS)
+        helpfulness = self._g_eval(
+            "Helpfulness", in_language(HELPFULNESS_STEPS, self.language)
+        )
         helpfulness.measure(case)
         return {
             "faithfulness": faithfulness.score,
@@ -224,7 +239,10 @@ class Judge:
 
     def ops_answer(self, question: str, answer: str) -> dict:
         """Score an operations answer for causal or profit claims."""
-        metric = self._g_eval("No causal or profit claim", NO_CAUSAL_CLAIM_STEPS)
+        metric = self._g_eval(
+            "No causal or profit claim",
+            in_language(NO_CAUSAL_CLAIM_STEPS, self.language),
+        )
         metric.measure(LLMTestCase(input=question, actual_output=answer))
         return {
             "no_causal_claim": metric.score,
