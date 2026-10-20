@@ -2,7 +2,7 @@
 
 This document says what an attacker could want from MarketDesk, where they can get in, what stops them today, and what the red teaming (milestone M4) still has to test. It is the plan for M4: every gap below names the task that tests or closes it, by its code in the plan (M4.1 is this document).
 
-Written on 2026-10-20, from the code on the `test` branch at `8a8d426`; R15 and R16 updated the same day after the configuration review. Tests named below are in `tests/`. Lists used:
+Written on 2026-10-20, from the code on the `test` branch at `8a8d426`; R15 and R16 updated the same day after the configuration review, R22 after the English attack run. Tests named below are in `tests/`. Lists used:
 
 - **LLM:** OWASP Top 10 for LLM Applications 2025 (LLM01–LLM10).
 - **ASI:** OWASP Top 10 for Agentic Applications 2026, official numbering of 2025-12-09 (ASI01–ASI10).
@@ -83,7 +83,7 @@ Status: **Holds** (a control in code and a test that shows it), **Partial** (a c
 | R19 | Server | Audit and rogue behaviour: an attack that leaves no trace, a rep decision nobody can follow, an unexpected tool call nobody sees, no quick way to stop a session or the page | MCP08; ASI10 | One log line per run (steps, tokens, tools, customer hash); spans with the rule decision, the SQL check and the approval answer; decisions stay in the database with their status | `test_every_run_is_logged_with_steps_and_tokens`, `test_rule_decision_is_on_the_tool_span`, `test_approval_and_decline_are_spans_of_their_own`, `test_sql_check_is_on_the_tool_span` | Gap: no check that each attack is visible; no alert; no written way to stop a session or the page | M4.14 |
 | R20 | Protocol | Tool poisoning, shadow or look-alike MCP servers, command injection through the server launch | MCP03, MCP05, MCP09; AML.T0010.005, AML.T0110 | One own server, started with the same interpreter and a fixed module name; tool descriptions are the docstrings in the repo; no third-party MCP server, no shell, no tool that runs code | `test_descriptions_are_the_docstrings_of_the_wrapped_functions`, `test_server_offers_the_model_tools_and_the_control_tools`, `test_control_tools_of_the_server_are_not_given_to_the_model` | Holds; to be confirmed item by item | M4.11 |
 | R21 | Client, server | Shared demo state: without sign-in any visitor may open any session type and pick any demo customer, and sees what the last visitor opened | ASI03; MCP07 | Demo customers are a public dataset with no personal data; operations reads only the safe views; the rep sees hashes only; the README says the data is shared | Security review F6, F7 | Accepted for a demo | none |
-| R22 | Agent | The English sessions resist attacks less well than the Turkish ones | LLM01; ASI01; AML.T0051.000 | Same code controls in both languages (F17); prompts tell the model to answer in the session's language | English attack set (16 attacks): running | Partial until the English run is in | M3.13, then M4.2 (multilingual) |
+| R22 | Agent | The English sessions resist attacks less well than the Turkish ones | LLM01; ASI01; AML.T0051.000 | Same code controls in both languages (F17); prompts tell the model to answer in the session's language | English attack set: 16 of 16, 36 of 36 checks held, no write without approval, the same as in Turkish (final report, section English) | Holds for the hand-written set; other languages and encodings are left to M4.2 | M4.2 (multilingual) |
 
 ## 5. Coverage of the three lists
 
@@ -150,7 +150,7 @@ Status: **Holds** (a control in code and a test that shows it), **Partial** (a c
 
 1. **R3: the order server can write every table** (M4.11). The only gap where a model-reachable process holds more rights than it needs. Fix: an SQLite authorizer on the server's connection that allows writes to `return_requests` and `escalation_tickets` only, with a test that tries the others.
 2. **R5: no indirect injection from the data side** (M4.4). The attack set quotes the instruction in the message; the real path is a section, a field or a stored ticket.
-3. **R4, R22: few and hand-written direct attacks** (M4.2, M3.13). Encodings, roleplay, escalation and multilingual variants, in both languages.
+3. **R4, R22: few and hand-written direct attacks** (M4.2). Encodings, roleplay, escalation and multilingual variants, in both languages.
 4. **R12: HTML, scripts and links on the page** (M4.10). Images are handled; the rest is untested.
 5. **R17: model text next to the approval card** (M4.12). The card is right; the text beside it is not checked.
 6. **R7, R8: hidden personal data** (M4.5). The guard's stated limits, tried on purpose.
