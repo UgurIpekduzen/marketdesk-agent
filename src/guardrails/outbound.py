@@ -11,13 +11,21 @@ leave it out; this module is the net underneath them. It looks for:
 - values known to be personal in this session: the customer's city and
   zip code prefix.
 
+Before matching, the text is normalised (NFKC: full-width letters and
+digits become plain ones) and zero-width characters are taken out, so they
+cannot hide a value from the patterns. Known values are also matched
+without accents ("são paulo" is "sao paulo"); the text sent on keeps its
+letters, Turkish ones included.
+
 Limits, stated plainly: text is matched by shape and against known values
 only. A name, an address or another city typed into a message is not
-recognised, and neither is personal detail inside review texts.
+recognised, and neither is personal detail inside review texts. The
+privacy fuzzing in the security review lists the forms still missed.
 """
 
 import logging
 import re
+import unicodedata
 from collections import Counter
 from collections.abc import Callable, Mapping
 
@@ -32,6 +40,30 @@ from src.guardrails.pii import (
 )
 
 logger = logging.getLogger(__name__)
+
+# Characters that take no space and can be put inside a value to hide it.
+ZERO_WIDTH = dict.fromkeys(map(ord, "\u200b\u200c\u200d\u2060\ufeff"))
+
+
+def normalised(text: str) -> str:
+    """The text with compatibility forms made plain and zero-width marks out."""
+    return unicodedata.normalize("NFKC", text).translate(ZERO_WIDTH)
+
+
+def folded(text: str) -> tuple[str, list[int]]:
+    """The text without accents and in lower case, for matching only.
+
+    Returns the folded text and, for each of its characters, the position
+    of the character it came from, so a match can be replaced in the text
+    itself, which keeps its accents.
+    """
+    letters, origin = [], []
+    for position, character in enumerate(text):
+        for part in unicodedata.normalize("NFKD", character):
+            if not unicodedata.combining(part):
+                letters.append(part.lower())
+                origin.append(position)
+    return "".join(letters), origin
 
 
 class Redactor:
@@ -49,12 +81,10 @@ class Redactor:
         """
         self._alias_for = alias_for
         # Longest first, so "sao paulo" is replaced before a shorter value
-        # that is part of it. Letters match in any case, digits exactly.
+        # that is part of it. Matched in the folded text: any case, with or
+        # without accents.
         self._known = [
-            (
-                re.compile(rf"(?<![\w]){re.escape(value)}(?![\w])", re.IGNORECASE),
-                mask,
-            )
+            (re.compile(rf"(?<![\w]){re.escape(folded(value)[0])}(?![\w])"), mask)
             for value, mask in sorted(
                 (known_values or {}).items(), key=lambda item: -len(item[0])
             )
@@ -81,14 +111,27 @@ class Redactor:
             found["phone"] += 1
             return PHONE_MASK
 
+        text = normalised(text)
         text = RAW_ID_PATTERN.sub(replace_id, text)
         text = EMAIL_PATTERN.sub(replace_email, text)
         text = PHONE_CANDIDATE.sub(replace_phone, text)
         for pattern, mask in self._known:
-            text, count = pattern.subn(mask, text)
+            text, count = self._replace_known(text, pattern, mask)
             if count:
                 found[mask.strip("[]")] += count
         return text, found
+
+    @staticmethod
+    def _replace_known(text: str, pattern: re.Pattern, mask: str) -> tuple[str, int]:
+        """Replace a known value found in the folded text, in the text itself."""
+        letters, origin = folded(text)
+        spans = [
+            (origin[match.start()], origin[match.end() - 1] + 1)
+            for match in pattern.finditer(letters)
+        ]
+        for start, end in reversed(spans):
+            text = text[:start] + mask + text[end:]
+        return text, len(spans)
 
     def redact_value(self, value: object, found: Counter) -> object:
         """Clean every string inside nested dicts and lists."""

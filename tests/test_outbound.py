@@ -218,3 +218,36 @@ def test_nothing_found_logs_nothing(caplog):
         log_findings(Counter())
 
     assert caplog.records == []
+
+
+# --- Normalising before matching -------------------------------------------------
+
+
+def test_full_width_digits_and_zero_width_marks_hide_nothing():
+    text = "Numaram ０５３２\u200b１２３４５６７, e-postam ayse\u200b@ornek.com"
+
+    cleaned, found = Redactor().redact(text)
+
+    assert cleaned == "Numaram [phone], e-postam [email]"
+    assert found == Counter(phone=1, email=1)
+
+
+def test_turkish_letters_are_sent_as_they_are():
+    text = "Şikâyetim: ürün ığdırlı satıcıdan geldi, çok üzgünüm."
+
+    assert Redactor().redact(text)[0] == text
+
+
+def test_a_known_value_is_found_with_or_without_accents():
+    redactor = Redactor(known_values={"sao paulo": "[city]"})
+
+    cleaned, found = redactor.redact("São Paulo'dan, yani SAO PAULO'dan geliyor.")
+
+    assert cleaned == "[city]'dan, yani [city]'dan geliyor."
+    assert found == Counter(city=2)
+
+
+def test_accents_elsewhere_in_the_text_are_kept():
+    redactor = Redactor(known_values={"sao paulo": "[city]"})
+
+    assert redactor.redact("Müşteri São Paulo'da.")[0] == "Müşteri [city]'da."

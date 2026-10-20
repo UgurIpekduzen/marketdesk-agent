@@ -45,6 +45,16 @@ SHAPE_GUARD_CATCHES = {
     ("city", "plain"),
     ("city", "upper case"),
     ("zip", "plain"),
+    # Since the text is normalised and known values are matched without
+    # accents.
+    ("id", "zero-width inside"),
+    ("id", "full-width digits"),
+    ("email", "full-width at"),
+    ("email", "zero-width inside"),
+    ("phone", "full-width digits"),
+    ("phone", "zero-width inside"),
+    ("city", "with accents"),
+    ("city", "zero-width inside"),
 }
 CAUGHT_TODAY = {
     "outbound": SHAPE_GUARD_CATCHES,
