@@ -245,6 +245,11 @@ tasks:
     cmds:
       - "{{.RUN}} uv run python eval/build_multi_turn.py"
 
+  eval:build-en:
+    desc: Write the English golden and attack sets from the Turkish ones and eval/translations_en.json (no model calls)
+    cmds:
+      - "{{.RUN}} uv run python eval/build_english_sets.py"
+
   eval:judge-check:
     desc: Write the sheet for checking the judge's scores by hand; `-- --agreement` counts the filled-in sheet
     cmds:
