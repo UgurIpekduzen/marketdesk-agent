@@ -85,7 +85,6 @@ def telemetry_locked_out():
 
 switch_telemetry_off()
 with telemetry_locked_out():
-    from deepteam import red_team
     from deepteam.attacks.single_turn import (
         ROT13,
         Base64,
@@ -95,6 +94,7 @@ with telemetry_locked_out():
         PromptInjection,
         Roleplay,
     )
+    from deepteam.red_teamer import RedTeamer
     from deepteam.test_case import RTTurn
     from deepteam.vulnerabilities import (
         BFLA,
@@ -245,19 +245,29 @@ def vulnerabilities(classes, model: JudgeModel, purpose: str) -> list:
     ]
 
 
+# How DeepTeam is set up and run; the names are checked against its own
+# signatures by a test.
+RED_TEAMER_SETTINGS = {"async_mode": True, "max_concurrent": 1}
+SCAN_SETTINGS = {
+    "attacks_per_vulnerability_type": 1,
+    "ignore_errors": True,
+    "_upload_to_confident": False,
+}
+
+
 def scan(target: Target, classes, purpose: str, model: JudgeModel, attacks) -> list:
     """Run DeepTeam on one session type; one row per test case."""
-    assessment = red_team(
+    red_teamer = RedTeamer(
+        simulator_model=model,
+        evaluation_model=model,
+        target_purpose=purpose,
+        **RED_TEAMER_SETTINGS,
+    )
+    assessment = red_teamer.red_team(
         model_callback=target,
         vulnerabilities=vulnerabilities(classes, model, purpose),
         attacks=[attack() for attack in attacks],
-        simulator_model=model,
-        evaluation_model=model,
-        attacks_per_vulnerability_type=1,
-        ignore_errors=True,
-        max_concurrent=1,
-        target_purpose=purpose,
-        _upload_to_confident=False,
+        **SCAN_SETTINGS,
     )
     return [
         row(case, target.session, target.checks.get(case.input))

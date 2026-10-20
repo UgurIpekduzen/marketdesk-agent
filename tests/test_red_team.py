@@ -8,6 +8,7 @@ every answer besides the judge.
 
 import asyncio
 import importlib
+import inspect
 import os
 import sys
 
@@ -76,11 +77,15 @@ def test_without_the_switch_telemetry_stops_before_it_sends_anything(monkeypatch
 def test_a_scan_uploads_nothing_and_runs_one_attack_at_a_time(monkeypatch):
     seen = {}
 
-    def fake_red_team(**kwargs):
-        seen.update(kwargs)
-        return type("Assessment", (), {"test_cases": []})()
+    class FakeRedTeamer:
+        def __init__(self, **kwargs):
+            seen["setup"] = kwargs
 
-    monkeypatch.setattr(red_team, "red_team", fake_red_team)
+        def red_team(self, **kwargs):
+            seen["run"] = kwargs
+            return type("Assessment", (), {"test_cases": []})()
+
+    monkeypatch.setattr(red_team, "RedTeamer", FakeRedTeamer)
     model = object.__new__(red_team.JudgeModel)
 
     red_team.scan(
@@ -91,9 +96,26 @@ def test_a_scan_uploads_nothing_and_runs_one_attack_at_a_time(monkeypatch):
         red_team.ATTACKS,
     )
 
-    assert seen["_upload_to_confident"] is False
-    assert seen["max_concurrent"] == 1
-    assert seen["simulator_model"] is model and seen["evaluation_model"] is model
+    assert seen["run"]["_upload_to_confident"] is False
+    assert seen["setup"]["max_concurrent"] == 1
+    assert seen["setup"]["simulator_model"] is model
+    assert seen["setup"]["evaluation_model"] is model
+
+
+def test_every_setting_is_one_deepteam_takes():
+    """Checked against DeepTeam's own signatures, not a stand-in."""
+    setup = inspect.signature(red_team.RedTeamer.__init__).parameters
+    run = inspect.signature(red_team.RedTeamer.red_team).parameters
+
+    for name in (*red_team.RED_TEAMER_SETTINGS, "simulator_model", "evaluation_model"):
+        assert name in setup, name
+    for name in (
+        *red_team.SCAN_SETTINGS,
+        "model_callback",
+        "vulnerabilities",
+        "attacks",
+    ):
+        assert name in run, name
 
 
 # --- The attacker and judge model -----------------------------------------------
