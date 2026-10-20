@@ -6,7 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from src import messages
+from src import messages, messages_en
+from src.i18n import Language
 from src.ui.demo_customers import SITUATIONS
 from src.ui.examples import CUSTOMER_POLICY_COUNT, OPS_COUNT, pick_examples
 
@@ -74,3 +75,28 @@ def test_other_seeds_pick_other_questions(identity):
     picks = {tuple(pick_examples(identity, random.Random(seed))) for seed in range(20)}
 
     assert len(picks) > 1
+
+
+@pytest.mark.parametrize("identity", [("customer", "window_passed"), ("ops",)])
+def test_english_examples_are_the_translations_of_the_turkish_picks(identity):
+    """The same seed picks the same places in both pools, so an English page
+    offers the translations of what a Turkish page would."""
+    turkish = pick_examples(identity, random.Random(3))
+    english = pick_examples(identity, random.Random(3), Language.EN)
+
+    def place(question, catalog):
+        pools = [
+            *catalog.EXAMPLE_QUESTIONS_BY_SITUATION.values(),
+            catalog.EXAMPLE_QUESTIONS_GENERAL,
+            catalog.EXAMPLE_QUESTIONS_POLICY,
+            catalog.EXAMPLE_QUESTIONS_OPS,
+        ]
+        return next(
+            (number, pool.index(question))
+            for number, pool in enumerate(pools)
+            if question in pool
+        )
+
+    assert [place(q, messages) for q in turkish] == [
+        place(q, messages_en) for q in english
+    ]

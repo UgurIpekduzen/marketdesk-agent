@@ -127,7 +127,7 @@ UI_SESSION_REP = "Support representative"
 UI_REFRESH = "Refresh"
 UI_CHANGE = "Change"
 UI_EXAMPLES_HEADING = "Example questions"
-UI_NEW_CONVERSATION = "New conversation"
+UI_NEW_CONVERSATION = "New chat"
 UI_INPUT_CUSTOMER = "Write your question"
 UI_INPUT_OPS = "Write a metric question"
 UI_INPUT_WAITING_APPROVAL = "First approve or cancel the request below"
@@ -177,13 +177,21 @@ UI_NO_DATABASE = (
 # A credit line in the usual English form, like the dataset's name and
 # licence.
 UI_DATA_NOTE = "Data: Olist Brazilian E-Commerce, CC BY-NC-SA 4.0"
+# The language switch: its label is the same in both languages, so either
+# reader finds it.
+UI_LANGUAGE_SWITCH = "Dil · Language"
+UI_LANGUAGE_HELP = "Changing the language starts a new conversation."
+UI_LANGUAGE_CHANGED = (
+    "A new conversation started because the language changed. A request that "
+    "was waiting for approval in the earlier one was not created."
+)
 UI_SESSION_EXPIRED = (
     "The earlier chat was closed after a long time without activity; a new "
     "chat has started."
 )
 UI_ERROR_FULL = (
     "The demo is serving many visitors right now. Please try again in a few "
-    'minutes with the "New conversation" button.'
+    'minutes with the "New chat" button.'
 )
 UI_ERROR_TOO_LONG = "Your message is too long; please write at most {limit} characters."
 UI_ERROR_QUESTION_LIMIT = (

@@ -3,11 +3,12 @@
 import pytest
 
 import config
-from src import messages
+from src import messages, messages_en
 from src.agents.ops import Reply as OpsReply
 from src.agents.run_log import RunLog
 from src.agents.support import Reply as SupportReply
 from src.formatting import format_number, readable_table
+from src.i18n import Language
 from src.orchestrator import Answer, Intent
 from src.ui.chat_session import MessageTooLong
 from src.ui.question_limit import QuestionLimitReached
@@ -361,3 +362,47 @@ def test_tool_names_are_drawn_as_code_that_cannot_become_markdown():
 
 def test_an_answer_without_tools_says_so():
     assert tools_text([]) == messages.UI_STEPS_NO_TOOLS
+
+
+# --- English --------------------------------------------------------------
+
+
+def test_approval_card_in_english():
+    card = approval_card({**PENDING, "request_status": "PENDING_SENIOR"}, Language.EN)
+
+    assert card == {
+        messages_en.UI_APPROVAL_ORDER: "SIP-1",
+        messages_en.UI_APPROVAL_REASON: "damaged item",
+        messages_en.UI_APPROVAL_AMOUNT: "115.00 BRL",
+        messages_en.UI_APPROVAL_LEVEL: "waiting for senior approval",
+    }
+
+
+@pytest.mark.parametrize(
+    ("failure", "message"),
+    [
+        (RuntimeError("429 RESOURCE_EXHAUSTED"), messages_en.UI_ERROR_QUOTA),
+        (TimeoutError(), messages_en.UI_ERROR_TIMEOUT),
+        (KeyError("GEMINI_API_KEY"), messages_en.UI_ERROR_NOT_CONFIGURED),
+        (ZeroDivisionError("division by zero"), messages_en.UI_ERROR_GENERIC),
+    ],
+)
+def test_failure_becomes_a_plain_english_message(failure, message):
+    assert friendly_error(failure, Language.EN) == message
+
+
+def test_a_refused_message_is_the_english_routers_answer():
+    answer = Answer(
+        Intent.OPS_METRIC, messages_en.ROUTER_OPS_NOT_ALLOWED, None, router_log()
+    )
+
+    view = view_of(answer, Language.EN)
+
+    assert view.agent == messages_en.UI_AGENT_ROUTER
+
+
+def test_an_english_answer_without_tools_says_so_and_drops_images():
+    assert tools_text([], Language.EN) == messages_en.UI_STEPS_NO_TOOLS
+    assert without_images("![x](https://a.example/p.png)", Language.EN) == (
+        messages_en.UI_IMAGE_REMOVED
+    )

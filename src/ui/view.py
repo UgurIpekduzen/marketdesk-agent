@@ -11,6 +11,7 @@ import config
 from src import messages
 from src.formatting import format_money, how_computed
 from src.guardrails.guarded_llm import API_KEY_VARIABLES
+from src.i18n import DEFAULT_LANGUAGE, Language, catalog
 from src.orchestrator import Answer, Intent
 from src.tools.review_queue import RequestRow, TicketRow
 from src.ui.chat_session import MessageTooLong
@@ -19,9 +20,10 @@ from src.ui.session_pool import SessionLimitReached
 
 logger = logging.getLogger(__name__)
 
+# The catalog names of who answered, for the steps panel.
 AGENT_LABELS = {
-    Intent.SUPPORT: messages.UI_AGENT_SUPPORT,
-    Intent.OPS_METRIC: messages.UI_AGENT_OPS,
+    Intent.SUPPORT: "UI_AGENT_SUPPORT",
+    Intent.OPS_METRIC: "UI_AGENT_OPS",
 }
 # Chat avatars: icons of the page framework, so no image files.
 USER_AVATAR = ":material/person:"
@@ -32,12 +34,13 @@ REP_AVATAR = ":material/headset_mic:"
 # The router answers a message no agent of the session may take.
 ROUTER_AVATAR = ":material/smart_toy:"
 AGENT_AVATARS = {Intent.SUPPORT: SUPPORT_AVATAR, Intent.OPS_METRIC: OPS_AVATAR}
-# Marks in an error text, lower case, and the message shown for them.
+# Marks in an error text, lower case, and the catalog name of the message
+# shown for them.
 ERROR_MARKS = (
-    (("429", "resource_exhausted", "quota", "rate limit"), messages.UI_ERROR_QUOTA),
+    (("429", "resource_exhausted", "quota", "rate limit"), "UI_ERROR_QUOTA"),
     (
         ("503", "unavailable", "overloaded", "high demand", "connecterror"),
-        messages.UI_ERROR_BUSY,
+        "UI_ERROR_BUSY",
     ),
     # The provider refused the key: Gemini and Groq say it in these words.
     (
@@ -49,12 +52,12 @@ ERROR_MARKS = (
             "permission_denied",
             "unauthenticated",
         ),
-        messages.UI_ERROR_KEY_REFUSED,
+        "UI_ERROR_KEY_REFUSED",
     ),
     # No key at all: reading its environment variable failed.
     (
         tuple(f"keyerror '{name.lower()}'" for name in API_KEY_VARIABLES.values()),
-        messages.UI_ERROR_NOT_CONFIGURED,
+        "UI_ERROR_NOT_CONFIGURED",
     ),
 )
 # A markdown image, inline or by reference: the browser would fetch its
@@ -76,13 +79,13 @@ def escape_markdown(text: str) -> str:
     return MARKDOWN_CHARACTERS.sub(r"\\\1", text)
 
 
-def without_images(text: str) -> str:
+def without_images(text: str, language: Language = DEFAULT_LANGUAGE) -> str:
     """The text with no markdown image left to draw.
 
     The usual forms become a plain note; any other start of an image is
     escaped, so that a form the pattern misses cannot load either.
     """
-    cleaned, replaced = IMAGE_PATTERN.subn(messages.UI_IMAGE_REMOVED, text)
+    cleaned, replaced = IMAGE_PATTERN.subn(catalog(language).UI_IMAGE_REMOVED, text)
     escaped = cleaned.count(IMAGE_START)
     cleaned = cleaned.replace(IMAGE_START, ESCAPED_IMAGE_START)
     if replaced or escaped:
@@ -149,12 +152,13 @@ def unsaid_caveats(text: str, caveats: list[str]) -> list[str]:
     return [caveat for caveat in caveats if " ".join(caveat.split()) not in said]
 
 
-def view_of(answer: Answer) -> AnswerView:
+def view_of(answer: Answer, language: Language = DEFAULT_LANGUAGE) -> AnswerView:
+    texts = catalog(language)
     router = answer.router_log
     if answer.refused:
         return AnswerView(
-            text=without_images(answer.display),
-            agent=messages.UI_AGENT_ROUTER,
+            text=without_images(answer.display, language),
+            agent=texts.UI_AGENT_ROUTER,
             avatar=ROUTER_AVATAR,
             steps=router.steps,
             tokens=router.input_tokens + router.output_tokens,
@@ -163,8 +167,8 @@ def view_of(answer: Answer) -> AnswerView:
     log = reply.log
     gave_up = getattr(reply, "gave_up", False)
     return AnswerView(
-        text=without_images(reply.text),
-        agent=AGENT_LABELS[answer.intent],
+        text=without_images(reply.text, language),
+        agent=getattr(texts, AGENT_LABELS[answer.intent]),
         avatar=AGENT_AVATARS[answer.intent],
         tools=list(log.tool_calls),
         steps=router.steps + log.steps,
@@ -175,12 +179,12 @@ def view_of(answer: Answer) -> AnswerView:
         table=None if gave_up else last_table(log.tool_results),
         queries=list(getattr(reply, "queries", [])),
         queries_heading=(
-            messages.OPS_TRIED_SQL_HEADING if gave_up else messages.OPS_USED_SQL_HEADING
+            texts.OPS_TRIED_SQL_HEADING if gave_up else texts.OPS_USED_SQL_HEADING
         ),
         computed=[]
         if gave_up
         else [
-            escape_markdown(how_computed(computation))
+            escape_markdown(how_computed(computation, language))
             for computation in getattr(reply, "computations", [])
         ],
         caveats=unsaid_caveats(reply.text, list(getattr(reply, "caveats", []))),
@@ -189,76 +193,84 @@ def view_of(answer: Answer) -> AnswerView:
     )
 
 
-def tools_text(tools: list[str]) -> str:
+def tools_text(tools: list[str], language: Language = DEFAULT_LANGUAGE) -> str:
     """The tools of an answer for the steps panel, each as inline code.
 
     Inline code is not read as markdown, so a tool name can never become an
     image or a link; a backtick, which would end the code, is dropped.
     """
     if not tools:
-        return messages.UI_STEPS_NO_TOOLS
+        return catalog(language).UI_STEPS_NO_TOOLS
     return " → ".join(f"`{name.replace('`', '')}`" for name in tools)
 
 
-def approval_card(pending: dict) -> dict[str, str]:
+def approval_card(
+    pending: dict, language: Language = DEFAULT_LANGUAGE
+) -> dict[str, str]:
     """What the person is asked to approve: label -> value."""
+    texts = catalog(language)
     return {
-        messages.UI_APPROVAL_ORDER: pending["order"],
-        messages.UI_APPROVAL_REASON: messages.RETURN_REASON_LABELS[pending["reason"]],
-        messages.UI_APPROVAL_AMOUNT: format_money(pending["refund_amount"]),
-        messages.UI_APPROVAL_LEVEL: messages.REQUEST_STATUS_LABELS[
-            pending["request_status"]
-        ],
+        texts.UI_APPROVAL_ORDER: pending["order"],
+        texts.UI_APPROVAL_REASON: texts.RETURN_REASON_LABELS[pending["reason"]],
+        texts.UI_APPROVAL_AMOUNT: format_money(pending["refund_amount"], language),
+        texts.UI_APPROVAL_LEVEL: texts.REQUEST_STATUS_LABELS[pending["request_status"]],
     }
 
 
-def friendly_error(failure: BaseException) -> str:
+def friendly_error(
+    failure: BaseException, language: Language = DEFAULT_LANGUAGE
+) -> str:
     """The message shown for a failure. The details go to the log only."""
     logger.error("request failed", exc_info=failure)
+    texts = catalog(language)
     if isinstance(failure, SessionLimitReached):
-        return messages.UI_ERROR_FULL
+        return texts.UI_ERROR_FULL
     if isinstance(failure, MessageTooLong):
-        return messages.UI_ERROR_TOO_LONG.format(limit=config.MAX_MESSAGE_CHARS)
+        return texts.UI_ERROR_TOO_LONG.format(limit=config.MAX_MESSAGE_CHARS)
     if isinstance(failure, QuestionLimitReached):
-        return messages.UI_ERROR_QUESTION_LIMIT
+        return texts.UI_ERROR_QUESTION_LIMIT
     if isinstance(failure, TimeoutError):
-        return messages.UI_ERROR_TIMEOUT
+        return texts.UI_ERROR_TIMEOUT
     # The whole chain: the provider's error is often wrapped by the framework.
-    texts = []
+    chain = []
     current: BaseException | None = failure
-    while current is not None and len(texts) < 10:
-        texts.append(f"{type(current).__name__} {current}".lower())
+    while current is not None and len(chain) < 10:
+        chain.append(f"{type(current).__name__} {current}".lower())
         current = current.__cause__ or current.__context__
-    text = " ".join(texts)
-    for marks, message in ERROR_MARKS:
+    text = " ".join(chain)
+    for marks, name in ERROR_MARKS:
         if any(mark in text for mark in marks):
-            return message
-    return messages.UI_ERROR_GENERIC
+            return getattr(texts, name)
+    return texts.UI_ERROR_GENERIC
 
 
-def request_card(row: RequestRow) -> tuple[str, str]:
+def request_card(
+    row: RequestRow, language: Language = DEFAULT_LANGUAGE
+) -> tuple[str, str]:
     """A return request in the rep's queue: its title line and its details.
 
     Every value comes from the database and the rules, none from the model;
     ids are shown as hashes.
     """
-    title = messages.UI_REVIEW_REQUEST_TITLE.format(
+    texts = catalog(language)
+    title = texts.UI_REVIEW_REQUEST_TITLE.format(
         id=row.request_id, order=row.order_key, customer=row.customer_key
     )
-    details = messages.UI_REVIEW_REQUEST_DETAILS.format(
-        reason=messages.RETURN_REASON_LABELS.get(row.reason, row.reason),
-        amount=format_money(row.amount),
+    details = texts.UI_REVIEW_REQUEST_DETAILS.format(
+        reason=texts.RETURN_REASON_LABELS.get(row.reason, row.reason),
+        amount=format_money(row.amount, language),
         date=row.created_at[:10],
-        status=messages.REQUEST_STATUS_LABELS.get(row.status, row.status),
+        status=texts.REQUEST_STATUS_LABELS.get(row.status, row.status),
     )
     return title, details
 
 
-def ticket_title(row: TicketRow) -> str:
+def ticket_title(row: TicketRow, language: Language = DEFAULT_LANGUAGE) -> str:
     """A ticket's title line; its summary is drawn apart, as plain text."""
-    return messages.UI_REVIEW_TICKET_TITLE.format(
+    texts = catalog(language)
+    return texts.UI_REVIEW_TICKET_TITLE.format(
         number=row.number,
-        priority=messages.PRIORITY_LABELS.get(row.priority, row.priority),
+        priority=texts.PRIORITY_LABELS.get(row.priority, row.priority),
         date=row.created_at[:10],
         customer=row.customer_key,
     )

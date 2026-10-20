@@ -268,6 +268,14 @@ UI_NO_DATABASE = (
 # A credit line in the usual English form, like the dataset's name and
 # licence: an exception to the Turkish interface chosen by the author.
 UI_DATA_NOTE = "Data: Olist Brazilian E-Commerce, CC BY-NC-SA 4.0"
+# The language switch: its label is the same in both languages, so either
+# reader finds it.
+UI_LANGUAGE_SWITCH = "Dil · Language"
+UI_LANGUAGE_HELP = "Dil değişince yeni bir konuşma başlar."
+UI_LANGUAGE_CHANGED = (
+    "Dil değiştiği için yeni bir konuşma başladı. Önceki konuşmada onay "
+    "bekleyen bir talep varsa oluşturulmadı."
+)
 UI_SESSION_EXPIRED = (
     "Uzun süre işlem yapılmadığı için önceki sohbet kapatıldı; yeni bir sohbet "
     "başlatıldı."

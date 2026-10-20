@@ -15,7 +15,8 @@ from streamlit.proto.WidgetStates_pb2 import WidgetState
 from streamlit.testing.v1 import AppTest
 
 import config
-from src import messages
+from src import messages, messages_en
+from src.i18n import Language
 from src.tools.escalation import escalate_to_human
 from src.tools.session import Session
 from src.ui import examples, resources
@@ -170,7 +171,8 @@ def test_page_opens_on_the_choice_screen_without_a_session(open_page):
 def test_customers_are_offered_by_situation_and_no_id_is_shown(open_page):
     page = open_page(role=None)
 
-    assert page.radio[0].options == [messages.DEMO_CUSTOMER_LABELS["recent_delivery"]]
+    (customers,) = [radio for radio in page.radio if radio.key != "language"]
+    assert customers.options == [messages.DEMO_CUSTOMER_LABELS["recent_delivery"]]
     assert ALICE not in shown(page)
 
 
@@ -682,7 +684,9 @@ def test_a_clicked_example_is_sent_as_if_typed_and_the_examples_go(open_page):
 
 def test_examples_stay_the_same_until_a_new_conversation(open_page, monkeypatch):
     picks = iter([["birinci"], ["ikinci"], ["üçüncü"]])
-    monkeypatch.setattr(examples, "pick_examples", lambda identity, rng: next(picks))
+    monkeypatch.setattr(
+        examples, "pick_examples", lambda identity, rng, language: next(picks)
+    )
     page = open_page()
     assert example_labels(page) == ["birinci"]
 
@@ -813,13 +817,14 @@ def test_a_ticket_summary_is_plain_text_and_the_ticket_can_be_closed(
 def test_a_customer_missing_from_the_list_is_not_taken(open_page, monkeypatch):
     page = open_page(role=None)
     (start,) = [b for b in page.button if b.label == messages.UI_START_CUSTOMER]
+    (customers,) = [radio for radio in page.radio if radio.key != "language"]
 
     # The text and the start click in one run, as a visitor could send them.
     page = send_crafted_states(
         page,
         monkeypatch,
         {
-            page.radio[0].id: {"string_value": "someone"},
+            customers.id: {"string_value": "someone"},
             start.id: {"trigger_value": True},
         },
     )
@@ -1031,3 +1036,149 @@ def test_the_logo_files_are_svg_in_the_theme_colour(name):
     assert root.tag == "{http://www.w3.org/2000/svg}svg"
     assert root.get("aria-label") == "MarketDesk"
     assert settings["theme"]["primaryColor"] in path.read_text(encoding="utf-8")
+
+
+# --- Language -----------------------------------------------------------------
+
+
+def switch_language(page, language):
+    return page.radio(key="language").set_value(language).run()
+
+
+def browser_locale(monkeypatch, locale):
+    """Make the page read this locale from the browser."""
+    monkeypatch.setattr(type(st.context), "locale", property(lambda self: locale))
+
+
+def test_a_turkish_or_unknown_browser_gets_the_turkish_page(open_page, monkeypatch):
+    for locale in ("tr-TR", "de-DE", None):
+        browser_locale(monkeypatch, locale)
+        page = open_page(role=None)
+
+        assert page.session_state["language"] == Language.TR
+        assert page.subheader[0].value == messages.UI_CHOICE_HEADING
+
+
+def test_an_english_browser_gets_the_english_page(open_page, monkeypatch):
+    browser_locale(monkeypatch, "en-US")
+
+    page = open_page(role=None)
+
+    assert not page.exception
+    assert page.session_state["language"] == Language.EN
+    assert page.subheader[0].value == messages_en.UI_CHOICE_HEADING
+    assert labels(page) == [
+        messages_en.UI_START_CUSTOMER,
+        messages_en.UI_START_OPS,
+        messages_en.UI_START_REP,
+    ]
+    (customers,) = [radio for radio in page.radio if radio.key != "language"]
+    assert customers.options == [messages_en.DEMO_CUSTOMER_LABELS["recent_delivery"]]
+
+
+def test_the_switch_changes_the_choice_screen(open_page):
+    page = open_page(role=None)
+
+    page = switch_language(page, Language.EN)
+
+    assert not page.exception
+    assert page.subheader[0].value == messages_en.UI_CHOICE_HEADING
+    assert page.radio(key="language").label == messages.UI_LANGUAGE_SWITCH
+
+
+def test_a_customer_session_in_english(open_page):
+    page = open_page(role=None)
+    page = switch_language(page, Language.EN)
+
+    page = click(page, messages_en.UI_START_CUSTOMER)
+
+    assert not page.exception
+    assert messages_en.UI_SESSION_CUSTOMER in sidebar_text(page)
+    assert messages_en.DEMO_CUSTOMER_LABELS["recent_delivery"] in sidebar_text(page)
+    assert page.chat_input[0].placeholder == messages_en.UI_INPUT_CUSTOMER
+    pool = {
+        *messages_en.EXAMPLE_QUESTIONS_BY_SITUATION["recent_delivery"],
+        *messages_en.EXAMPLE_QUESTIONS_GENERAL,
+        *messages_en.EXAMPLE_QUESTIONS_POLICY,
+    }
+    assert set(example_labels(page)) <= pool
+
+
+def test_the_choice_screen_has_the_switch_outside_the_sidebar(open_page):
+    """A phone shows the sidebar closed; the language comes first."""
+    page = open_page(role=None)
+
+    assert not [radio for radio in page.sidebar.radio if radio.key == "language"]
+    assert page.radio(key="language").options == ["Türkçe", "English"]
+
+
+def test_in_a_session_the_switch_is_in_the_sidebar(open_page):
+    page = open_page()
+
+    assert [radio.key for radio in page.sidebar.radio] == ["language"]
+
+
+def test_the_examples_are_offered_again_after_the_language_changed(open_page):
+    page = open_page()
+
+    page = switch_language(page, Language.EN)
+
+    assert len(example_labels(page)) == 4
+    assert set(example_labels(page)) <= {
+        *messages_en.EXAMPLE_QUESTIONS_BY_SITUATION["recent_delivery"],
+        *messages_en.EXAMPLE_QUESTIONS_GENERAL,
+        *messages_en.EXAMPLE_QUESTIONS_POLICY,
+    }
+
+
+def test_changing_the_language_starts_a_new_conversation(open_page):
+    page = open_page(["support", "Merhaba."])
+    page = ask(page, "Merhaba")
+    first = page.session_state["session"]
+
+    page = switch_language(page, Language.EN)
+
+    assert not page.exception
+    assert first.closed
+    assert page.session_state["session"] is not first
+    # Only the note that says why the conversation is new.
+    assert [turn[0] for turn in page.session_state["turns"]] == ["notice"]
+    assert page.info[0].value == messages_en.UI_LANGUAGE_CHANGED
+    assert page.session_state["identity"] == ("customer", "recent_delivery")
+
+
+def test_a_request_waiting_for_approval_is_dropped_with_the_language(
+    open_page, synthetic_db_path
+):
+    page = open_page(RETURN_SCRIPT)
+    page = ask(page, "SIP-1 hasarlı, iade edin.")
+    assert page.session_state["pending"] is not None
+    before = written_orders(synthetic_db_path)
+
+    page = switch_language(page, Language.EN)
+
+    assert page.session_state["pending"] is None
+    assert messages_en.UI_APPROVE not in labels(page)
+    assert written_orders(synthetic_db_path) == before
+
+
+def test_a_language_the_page_does_not_have_is_turkish(open_page, monkeypatch):
+    page = switch_language(open_page(role=None), Language.EN)
+    widget_id = page.radio(key="language").id
+
+    # A choice past the end of the list, written by hand.
+    page = send_crafted(page, monkeypatch, widget_id, int_value=7)
+
+    assert not page.exception
+    assert page.session_state["language"] == Language.TR
+    assert page.subheader[0].value == messages.UI_CHOICE_HEADING
+
+
+def test_the_rep_console_in_english(open_page):
+    page = open_page(role=None)
+    page = switch_language(page, Language.EN)
+
+    page = click(page, messages_en.UI_START_REP)
+
+    assert not page.exception
+    assert page.subheader[0].value == messages_en.UI_REVIEW_HEADING
