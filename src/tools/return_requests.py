@@ -90,7 +90,9 @@ def create_return_request(
             "message": messages.AMOUNT_MISMATCH,
             "order": order,
             "refund_amount": str(decision.refund_amount),
-            "refund_amount_text": format_money(str(decision.refund_amount)),
+            "refund_amount_text": format_money(
+                str(decision.refund_amount), session.language
+            ),
         }
 
     request_status = decision.request_status.value
@@ -103,7 +105,7 @@ def create_return_request(
             "order": order,
             "reason": reason,
             "refund_amount": str(amount),
-            "refund_amount_text": format_money(str(amount)),
+            "refund_amount_text": format_money(str(amount), session.language),
             "request_status": request_status,
         }
 
@@ -137,7 +139,7 @@ def create_return_request(
         "order": order,
         "reason": reason,
         "refund_amount": str(amount),
-        "refund_amount_text": format_money(str(amount)),
+        "refund_amount_text": format_money(str(amount), session.language),
         "status": request_status,
     }
 

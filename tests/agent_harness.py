@@ -5,12 +5,15 @@ import json
 import sqlite3
 
 from src.agents.support import SupportAgent
+from src.i18n import DEFAULT_LANGUAGE
 from src.mcp_server.client import OrdersClient
 from src.orchestrator import Orchestrator
 from tests.synthetic_data import ALICE
 
 
-def with_agent(db_path, policy_index, fake, scenario, customer=ALICE):
+def with_agent(
+    db_path, policy_index, fake, scenario, customer=ALICE, language=DEFAULT_LANGUAGE
+):
     """Start the order server and the agent, run the scenario, stop both.
 
     scenario is an async function that gets the agent. Everything runs in
@@ -18,20 +21,24 @@ def with_agent(db_path, policy_index, fake, scenario, customer=ALICE):
     """
 
     async def run():
-        async with OrdersClient(db_path, customer) as orders:
-            agent = await SupportAgent.create(orders, customer, policy_index, fake)
+        async with OrdersClient(db_path, customer, language) as orders:
+            agent = await SupportAgent.create(
+                orders, customer, policy_index, fake, language
+            )
             return await scenario(agent)
 
     return asyncio.run(run())
 
 
-def with_customer_router(db_path, policy_index, fake, scenario, customer=ALICE):
+def with_customer_router(
+    db_path, policy_index, fake, scenario, customer=ALICE, language=DEFAULT_LANGUAGE
+):
     """Like with_agent, but the scenario gets the router of a customer session."""
 
     async def run():
-        async with OrdersClient(db_path, customer) as orders:
+        async with OrdersClient(db_path, customer, language) as orders:
             router = await Orchestrator.for_customer(
-                orders, customer, policy_index, fake
+                orders, customer, policy_index, fake, language
             )
             return await scenario(router)
 

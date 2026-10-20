@@ -26,7 +26,6 @@ from llama_index.core.tools import FunctionTool
 from llama_index.core.workflow import Context
 
 import config
-from src import messages
 from src.agents.loop_guard import REPEATED_CALL, LoopGuard
 from src.agents.run_log import RunLog
 from src.agents.runner import run_agent
@@ -34,8 +33,9 @@ from src.agents.sql_correction import LIMIT_REACHED, SqlCorrectionLimit
 from src.formatting import readable_table, table_text, worth_a_table
 from src.guardrails.guarded_llm import GuardedLLM, build_provider_llm
 from src.guardrails.outbound import Redactor
+from src.i18n import DEFAULT_LANGUAGE, LANGUAGE_NAMES, Language, catalog
 from src.knowledge.safe_views import ALLOWED_VIEWS
-from src.knowledge.semantic_layer import list_metrics, run_metric
+from src.knowledge.semantic_layer import list_metrics, load_semantic_layer, run_metric
 from src.knowledge.sql_runner import connect_read_only, run_sql
 
 AGENT_NAME = "ops"
@@ -46,7 +46,7 @@ MAX_ROWS_FOR_MODEL = 200
 
 SYSTEM_PROMPT = """\
 You are the operations data assistant of MarketDesk, an online marketplace.
-You are talking with an operations analyst. Always answer in Turkish,
+You are talking with an operations analyst. Always answer in {language},
 briefly, with the numbers, and say only what the question needs. Today is
 {today}; the data holds orders purchased before that day.
 
@@ -89,9 +89,7 @@ Rules:
    several rows, do not list them: say in one or two sentences what stands
    out (for example the highest and the lowest) and leave the rows to the
    table.
-Write numbers the Turkish way: a dot between thousands and a comma before
-the decimals (1.234,5). Money has two decimals and its currency
-(848.860,10 BRL).
+{number_rule}
 In SQL: an order has one row in v_orders but may have several rows in
 v_order_items and in v_order_payments. Never join items and payments in one
 query, since each payment row repeats the items: filter by payment with
@@ -107,6 +105,32 @@ delivery day is on or before today ('{today}').
 Views for run_sql (join them on order_key):
 {schema}
 """
+
+
+# How numbers are written in each language's answers.
+NUMBER_RULES = {
+    Language.TR: (
+        "Write numbers the Turkish way: a dot between thousands and a comma before\n"
+        "the decimals (1.234,5). Money has two decimals and its currency\n"
+        "(848.860,10 BRL)."
+    ),
+    Language.EN: (
+        "Write numbers the English way: a comma between thousands and a dot before\n"
+        "the decimals (1,234.5). Money has two decimals and its currency\n"
+        "(848,860.10 BRL)."
+    ),
+}
+
+
+def system_prompt(db_path: Path | str, language: Language = DEFAULT_LANGUAGE) -> str:
+    """The instructions for a session in this language."""
+    return SYSTEM_PROMPT.format(
+        today=config.SIMULATED_TODAY.isoformat(),
+        corrections=config.SQL_MAX_CORRECTIONS,
+        schema=view_schema(db_path),
+        language=LANGUAGE_NAMES[language],
+        number_rule=NUMBER_RULES[language],
+    )
 
 
 RUN_METRIC_DESCRIPTION = """\
@@ -143,14 +167,17 @@ class Reply:
     # for the "how it was computed" line. Not part of display: the judged
     # text stays what it was.
     computations: list[dict] = field(default_factory=list)
+    # The session's language: how the sources under the answer are written.
+    language: Language = DEFAULT_LANGUAGE
 
     @property
     def display(self) -> str:
         """The answer with its sources: the rows, the metric caveats and the SQL."""
+        messages = catalog(self.language)
         parts = [self.text]
-        table = readable_table(self.table) if self.table else None
+        table = readable_table(self.table, self.language) if self.table else None
         if table and table["rows"] and worth_a_table(table):
-            parts.append(table_text(table))
+            parts.append(table_text(table, self.language))
         if self.caveats:
             parts.append(
                 "\n".join(
@@ -197,8 +224,10 @@ class OpsAgent:
         self,
         db_path: Path | str,
         provider_llm: FunctionCallingLLM | None = None,
+        language: Language = DEFAULT_LANGUAGE,
     ) -> None:
         self._db_path = db_path
+        self._language = Language(language)
         # Read-only: this agent cannot write, whatever the model asks for.
         self._conn = connect_read_only(db_path)
         self._guard = LoopGuard()
@@ -216,11 +245,7 @@ class OpsAgent:
             llm=GuardedLLM(
                 inner=provider_llm or build_provider_llm(), redactor=Redactor()
             ),
-            system_prompt=SYSTEM_PROMPT.format(
-                today=config.SIMULATED_TODAY.isoformat(),
-                corrections=config.SQL_MAX_CORRECTIONS,
-                schema=view_schema(db_path),
-            ),
+            system_prompt=system_prompt(db_path, self._language),
         )
         self._context: Context | None = None
 
@@ -238,6 +263,12 @@ class OpsAgent:
         self, metric_name: str, filters: dict, group_by: list, ranking: dict
     ) -> dict:
         result = run_metric(self._conn, metric_name, filters, group_by, **ranking)
+        if "error" not in result and self._language != DEFAULT_LANGUAGE:
+            # The caveat the model repeats and the page shows, in the
+            # session's language.
+            result["caveat"] = (
+                load_semantic_layer().metrics[metric_name].caveat_in(self._language)
+            )
         if "error" not in result:
             self._queries.append(result["sql"])
             if result["caveat"] not in self._caveats:
@@ -268,9 +299,22 @@ class OpsAgent:
             self._table = {"columns": result["columns"], "rows": result["rows"]}
         return result
 
+    def _list_metrics(self) -> dict:
+        """The metrics, described and with their caveats in the session's
+        language."""
+        listed = list_metrics()
+        if self._language == DEFAULT_LANGUAGE:
+            return listed
+        metrics = load_semantic_layer().metrics
+        for metric in listed["metrics"]:
+            defined = metrics[metric["name"]]
+            metric["description"] = defined.description_in(self._language)
+            metric["caveat"] = defined.caveat_in(self._language)
+        return listed
+
     def _build_tools(self) -> list[FunctionTool]:
         async def list_metrics_tool() -> str:
-            return self._answer("list_metrics", {}, list_metrics)
+            return self._answer("list_metrics", {}, self._list_metrics)
 
         async def run_metric_tool(
             metric_name: str,
@@ -350,10 +394,11 @@ class OpsAgent:
         if self._sql_limit.exhausted and not self._answered_after_limit:
             # Decided here, not by the model: the corrections are used up.
             return Reply(
-                messages.SQL_GAVE_UP,
+                catalog(self._language).SQL_GAVE_UP,
                 log,
                 queries=list(self._sql_limit.failed_queries),
                 gave_up=True,
+                language=self._language,
             )
         return Reply(
             text,
@@ -362,4 +407,5 @@ class OpsAgent:
             list(self._caveats),
             table=self._table,
             computations=list(self._computations),
+            language=self._language,
         )

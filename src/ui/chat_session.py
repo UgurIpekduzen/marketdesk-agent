@@ -23,6 +23,7 @@ from pathlib import Path
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 
 import config
+from src.i18n import DEFAULT_LANGUAGE, Language
 from src.knowledge.policy_index import PolicyIndex
 from src.mcp_server.client import OrdersClient
 from src.orchestrator import Answer, Orchestrator, SessionType
@@ -80,10 +81,12 @@ class ChatSession:
         customer_unique_id: str | None = None,
         provider_llm: FunctionCallingLLM | None = None,
         question_limit: QuestionLimit | None = None,
+        language: Language = DEFAULT_LANGUAGE,
     ) -> None:
         """Open a customer session, or an operations session without a customer.
 
-        The session type is fixed here and cannot be changed afterwards.
+        The session type and the language are fixed here and cannot be
+        changed afterwards: a new language is a new session.
         question_limit, when given, is shared with the other sessions and
         counts every question that reaches the model.
         """
@@ -95,6 +98,7 @@ class ChatSession:
         self._customer = customer_unique_id
         self._provider_llm = provider_llm
         self._question_limit = question_limit
+        self.language = Language(language)
         self._closed = False
         # When the session was last given work, on the monotonic clock.
         self.last_used = time.monotonic()
@@ -130,16 +134,21 @@ class ChatSession:
     async def _serve(self) -> None:
         """Open the session and work until told to stop, all in one task."""
         if self.session_type is SessionType.CUSTOMER:
-            async with OrdersClient(self._db_path, self._customer) as orders:
+            async with OrdersClient(
+                self._db_path, self._customer, self.language
+            ) as orders:
                 router = await Orchestrator.for_customer(
                     orders,
                     self._customer,
                     self._policy_index,
                     self._provider_llm,
+                    self.language,
                 )
                 await self._work(router)
         else:
-            router = Orchestrator.for_ops(self._db_path, self._provider_llm)
+            router = Orchestrator.for_ops(
+                self._db_path, self._provider_llm, self.language
+            )
             try:
                 await self._work(router)
             finally:

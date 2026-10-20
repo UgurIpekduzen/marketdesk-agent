@@ -3,9 +3,9 @@
 Start it with:  python -m src.mcp_server.server
 
 One server process serves one signed-in customer. The application starts
-it with the customer and the database in two environment variables, and the
-process keeps the session for as long as it lives: who the customer is, the
-order aliases, and the approval of a return request. None of that is ever
+it with the customer, the database and the page's language in environment
+variables, and the process keeps the session for as long as it lives: who
+the customer is, the order aliases, and the approval of a return request. None of that is ever
 an argument of a tool, so the model cannot supply or change it.
 
 Two groups of tools:
@@ -30,6 +30,7 @@ from mcp.server.mcpserver import MCPServer
 import config
 from src import messages
 from src.guardrails.pii import hash_id
+from src.i18n import DEFAULT_LANGUAGE, Language
 from src.tools.eligibility import check_return_eligibility
 from src.tools.escalation import ensure_tickets_table, escalate_to_human
 from src.tools.orders import DEFAULT_LIST_LIMIT, get_order_status, list_customer_orders
@@ -39,6 +40,9 @@ from src.tools.session import Session, open_session
 SERVER_NAME = "marketdesk-orders"
 CUSTOMER_VARIABLE = "MARKETDESK_CUSTOMER"
 DB_VARIABLE = "MARKETDESK_DB"
+# The page's language: how amounts are written for the customer. A caller
+# that does not set it gets Turkish.
+LANGUAGE_VARIABLE = "MARKETDESK_LANGUAGE"
 
 # The tools the model may be given. Everything else is for application code.
 MODEL_TOOLS = (
@@ -69,7 +73,11 @@ def state() -> State:
         conn = sqlite3.connect(os.environ[DB_VARIABLE])
         ensure_tickets_table(conn)
         _state = State(
-            session=open_session(conn, os.environ[CUSTOMER_VARIABLE]),
+            session=open_session(
+                conn,
+                os.environ[CUSTOMER_VARIABLE],
+                Language(os.environ.get(LANGUAGE_VARIABLE, DEFAULT_LANGUAGE)),
+            ),
             conn=conn,
             simulated_today=config.SIMULATED_TODAY,
         )

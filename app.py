@@ -171,6 +171,7 @@ def open_session(identity: tuple, customer_unique_id: str | None) -> None:
                 index,
                 customer_unique_id,
                 question_limit=question_limit(),
+                language=page_language(),
             )
         )
     except Exception as failure:  # noqa: BLE001

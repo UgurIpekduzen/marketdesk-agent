@@ -28,7 +28,7 @@ from llama_index.core.tools import FunctionTool
 from llama_index.core.workflow import Context
 
 import config
-from src import messages, tracing
+from src import tracing
 from src.agents.loop_guard import REPEATED_CALL, LoopGuard
 from src.agents.run_log import RunLog
 from src.agents.runner import run_agent
@@ -36,6 +36,7 @@ from src.formatting import format_money
 from src.guardrails.guarded_llm import GuardedLLM, build_provider_llm
 from src.guardrails.outbound import Redactor
 from src.guardrails.pii import RAW_ID_PATTERN, hash_id
+from src.i18n import DEFAULT_LANGUAGE, LANGUAGE_NAMES, Language, catalog
 from src.knowledge.policy_index import PolicyIndex
 from src.mcp_server.client import OrdersClient
 from src.tools.eligibility import check_return_eligibility
@@ -49,7 +50,7 @@ AGENT_NAME = "support"
 SYSTEM_PROMPT = """\
 You are the customer support assistant of MarketDesk, an online marketplace.
 You are talking with one customer, who is already signed in. Always answer
-in Turkish, politely and briefly. Today is {today}.
+in {language}, politely and briefly. Today is {today}.
 
 What you can do:
 - tell the customer about their own orders (get_order_status,
@@ -95,7 +96,7 @@ Rules:
    the sections it returns. Build the answer on the section that answers
    what was asked, not on one that is only related; you may add what a
    related section says. Name the source of everything you use, exactly
-   as given in "citation", for example (İade Politikası, Bölüm 2). If the
+   as given in "citation", for example ({citation_example}). If the
    sections do not answer the question, or say the topic is not set
    ("belirlenmemiştir"), say that the policy does not cover it and offer to
    hand the case to a human. Do not guess.
@@ -124,10 +125,33 @@ Rules:
     what you could not do.
 Amounts are in BRL and dates are calendar days. To the customer, write an
 amount exactly as the tool's field ending in _text gives it (for example
-133,14 BRL), never the raw number. To a tool, pass the plain number: the
+{amount_example}), never the raw number. To a tool, pass the plain number: the
 amount of create_return_request is refund_amount as given (133.14). Rule
 ids such as R6 are internal: never write them.
 """
+
+
+# What the prompt shows in each language: a citation and an amount as the
+# tools write them for that language.
+PROMPT_EXAMPLES = {
+    Language.TR: {
+        "citation_example": "İade Politikası, Bölüm 2",
+        "amount_example": "133,14 BRL",
+    },
+    Language.EN: {
+        "citation_example": "Returns Policy, Section 2",
+        "amount_example": "133.14 BRL",
+    },
+}
+
+
+def system_prompt(language: Language = DEFAULT_LANGUAGE) -> str:
+    """The instructions for a session in this language."""
+    return SYSTEM_PROMPT.format(
+        today=config.SIMULATED_TODAY.isoformat(),
+        language=LANGUAGE_NAMES[language],
+        **PROMPT_EXAMPLES[language],
+    )
 
 
 @dataclass(frozen=True)
@@ -148,6 +172,7 @@ def build_tools(
     orders: OrdersClient,
     policy_index: PolicyIndex,
     guard: LoopGuard,
+    language: Language = DEFAULT_LANGUAGE,
 ) -> list[FunctionTool]:
     """The six tools the model may call.
 
@@ -203,7 +228,7 @@ def build_tools(
         return await locally(
             "search_policies",
             {"query": query, "k": k},
-            lambda: search_policies(policy_index, query, k),
+            lambda: search_policies(policy_index, query, k, language),
         )
 
     async def escalate_to_human_tool(summary: str, priority: str = "normal") -> str:
@@ -237,23 +262,24 @@ class SupportAgent:
         policy_index: PolicyIndex,
         redactor: Redactor,
         provider_llm: FunctionCallingLLM | None = None,
+        language: Language = DEFAULT_LANGUAGE,
     ) -> None:
         """Use SupportAgent.create, which asks the order server what to redact."""
         self._orders = orders
+        self._language = Language(language)
+        self._texts = catalog(self._language)
         self._customer_unique_id = customer_unique_id
         # Also used by the router, for its own call to the model.
         self.redactor = redactor
         self._guard = LoopGuard()
         self._agent = FunctionAgent(
             name=AGENT_NAME,
-            tools=build_tools(orders, policy_index, self._guard),
+            tools=build_tools(orders, policy_index, self._guard, self._language),
             # Whatever model is used, it is only ever reached through the guard.
             llm=GuardedLLM(
                 inner=provider_llm or build_provider_llm(), redactor=redactor
             ),
-            system_prompt=SYSTEM_PROMPT.format(
-                today=config.SIMULATED_TODAY.isoformat()
-            ),
+            system_prompt=system_prompt(self._language),
         )
         # Holds the conversation so far; created on the first message.
         self._context: Context | None = None
@@ -267,15 +293,22 @@ class SupportAgent:
         customer_unique_id: str,
         policy_index: PolicyIndex,
         provider_llm: FunctionCallingLLM | None = None,
+        language: Language = DEFAULT_LANGUAGE,
     ) -> Self:
-        """Build the agent for the customer the order server was started for."""
+        """Build the agent for the customer the order server was started for.
+
+        language is the session's: the answers are in it, and the order
+        server must have been started with the same one.
+        """
         info = await orders.session_info()
         # Raw ids that reach the guard are masked. Order numbers the customer
         # types are turned into aliases before that, in ask.
         redactor = Redactor(known_values=info["personal_values"])
         # The same values are masked in the spans of a traced run.
         tracing.register_personal_values(info["personal_values"])
-        return cls(orders, customer_unique_id, policy_index, redactor, provider_llm)
+        return cls(
+            orders, customer_unique_id, policy_index, redactor, provider_llm, language
+        )
 
     async def _alias_order_numbers(self, message: str) -> str:
         """Replace order numbers the customer typed with the server's aliases."""
@@ -301,14 +334,14 @@ class SupportAgent:
 
     # --- Human approval: code only, the model takes no part --------------
 
-    @staticmethod
-    def approval_summary(pending: dict) -> str:
-        """What the person is asked to approve, in Turkish."""
-        return messages.APPROVAL_SUMMARY.format(
+    def approval_summary(self, pending: dict) -> str:
+        """What the person is asked to approve, in the session's language."""
+        texts = self._texts
+        return texts.APPROVAL_SUMMARY.format(
             order=pending["order"],
-            reason=messages.RETURN_REASON_LABELS[pending["reason"]],
-            amount=format_money(pending["refund_amount"]),
-            status=messages.REQUEST_STATUS_LABELS[pending["request_status"]],
+            reason=texts.RETURN_REASON_LABELS[pending["reason"]],
+            amount=format_money(pending["refund_amount"], self._language),
+            status=texts.REQUEST_STATUS_LABELS[pending["request_status"]],
         )
 
     def _trace_approval(self, answer: str, result: dict) -> None:
@@ -333,16 +366,16 @@ class SupportAgent:
                 "the customer approved on screen, but the return request was "
                 f"not created: {result['error']}."
             )
-            return messages.RETURN_REQUEST_NOT_CREATED.format(
-                reason=result.get("message", result["error"])
+            return self._texts.RETURN_REQUEST_NOT_CREATED.format(
+                reason=self._refusal(result)
             )
         self._note = (
             "the customer approved on screen and the return request was "
             f"created for {result['order']} with status {result['status']}."
         )
-        return messages.RETURN_REQUEST_CREATED_DETAIL.format(
+        return self._texts.RETURN_REQUEST_CREATED_DETAIL.format(
             request_id=result["return_request_id"],
-            status=messages.REQUEST_STATUS_LABELS[result["status"]],
+            status=self._texts.REQUEST_STATUS_LABELS[result["status"]],
         )
 
     async def decline(self) -> str:
@@ -350,4 +383,17 @@ class SupportAgent:
         await self._orders.decline_pending()
         self._trace_approval("declined", {})
         self._note = "the customer declined on screen; no return request was created."
-        return messages.APPROVAL_DECLINED
+        return self._texts.APPROVAL_DECLINED
+
+    def _refusal(self, result: dict) -> str:
+        """Why the server did not write the request, for the person.
+
+        The server's own message is Turkish. In English the page says that
+        nothing waits for approval in words, and any other refusal by its
+        code: the rules changed between the card and the click.
+        """
+        if self._language == DEFAULT_LANGUAGE:
+            return result.get("message", result["error"])
+        if result["error"] == "NOTHING_PENDING":
+            return self._texts.NOTHING_PENDING
+        return result["error"]

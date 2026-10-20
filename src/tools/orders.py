@@ -12,6 +12,7 @@ from decimal import Decimal
 import config
 from src import messages
 from src.formatting import format_money
+from src.i18n import DEFAULT_LANGUAGE, Language
 from src.rules.returns import sum_money, to_calendar_day
 from src.tools.session import Session
 
@@ -52,7 +53,9 @@ def day_text(timestamp: str | None) -> str | None:
     return day.isoformat() if day else None
 
 
-def read_items(conn: sqlite3.Connection, order_id: str) -> list[dict]:
+def read_items(
+    conn: sqlite3.Connection, order_id: str, language: Language = DEFAULT_LANGUAGE
+) -> list[dict]:
     """Read the items of an order: category, price and freight, no ids."""
     rows = conn.execute(
         "SELECT COALESCE(t.product_category_name_english, p.product_category_name), "
@@ -71,9 +74,9 @@ def read_items(conn: sqlite3.Connection, order_id: str) -> list[dict]:
             {
                 "category": category,
                 "price": price_text,
-                "price_text": format_money(price_text),
+                "price_text": format_money(price_text, language),
                 "freight": freight_text,
-                "freight_text": format_money(freight_text),
+                "freight_text": format_money(freight_text, language),
             }
         )
     return items
@@ -114,7 +117,7 @@ def get_order_status(
         return dict(NOT_FOUND)
 
     order_id, status, purchased, handed_over, delivered, estimated = row
-    items = read_items(conn, order_id)
+    items = read_items(conn, order_id, session.language)
     return {
         "order": session.alias_for(order_id),
         "status": status,
@@ -124,7 +127,7 @@ def get_order_status(
         "estimated_delivery_on": day_text(estimated),
         "items": items,
         "items_total": items_total(items),
-        "items_total_text": format_money(items_total(items)),
+        "items_total_text": format_money(items_total(items), session.language),
     }
 
 
@@ -171,7 +174,7 @@ def list_customer_orders(
 
     orders = []
     for order_id, shown_status, purchased, _, delivered, estimated in rows:
-        total = items_total(read_items(conn, order_id))
+        total = items_total(read_items(conn, order_id, session.language))
         orders.append(
             {
                 "order": session.alias_for(order_id),
@@ -182,7 +185,7 @@ def list_customer_orders(
                 ),
                 "estimated_delivery_on": day_text(estimated),
                 "items_total": total,
-                "items_total_text": format_money(total),
+                "items_total_text": format_money(total, session.language),
             }
         )
     return {"orders": orders}

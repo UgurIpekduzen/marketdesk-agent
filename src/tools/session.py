@@ -18,6 +18,7 @@ from dataclasses import dataclass, field
 
 from src.guardrails.approval import Approvals
 from src.guardrails.outbound import Redactor
+from src.i18n import DEFAULT_LANGUAGE, Language
 
 CITY_MASK = "[city]"
 ZIP_MASK = "[zip]"
@@ -35,6 +36,9 @@ class Session:
     approvals: Approvals = field(default_factory=Approvals, repr=False)
     # Personal value -> the mask that replaces it in text sent to the model.
     personal_values: dict[str, str] = field(default_factory=dict, repr=False)
+    # The page's language, set when the session starts: how amounts are
+    # written for the customer.
+    language: Language = DEFAULT_LANGUAGE
 
     def alias_for(self, order_id: str) -> str:
         """Return the alias of an order, handing out a new one if needed."""
@@ -63,7 +67,11 @@ class Session:
         return Redactor(alias_for=self.alias_for, known_values=self.personal_values)
 
 
-def open_session(conn: sqlite3.Connection, customer_unique_id: str) -> Session:
+def open_session(
+    conn: sqlite3.Connection,
+    customer_unique_id: str,
+    language: Language = DEFAULT_LANGUAGE,
+) -> Session:
     """Start a session and load the customer's city and zip code prefix.
 
     A customer can have several of each, one per order. An unknown customer
@@ -80,4 +88,6 @@ def open_session(conn: sqlite3.Connection, customer_unique_id: str) -> Session:
             personal_values[city] = CITY_MASK
         if zip_prefix:
             personal_values[zip_prefix] = ZIP_MASK
-    return Session(customer_unique_id, personal_values=personal_values)
+    return Session(
+        customer_unique_id, personal_values=personal_values, language=language
+    )

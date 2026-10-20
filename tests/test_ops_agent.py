@@ -16,9 +16,9 @@ import pytest
 from src import messages
 from src.agents.ops import (
     MAX_ROWS_FOR_MODEL,
-    SYSTEM_PROMPT,
     OpsAgent,
     cut_rows,
+    system_prompt,
     view_schema,
 )
 from src.formatting import how_computed
@@ -101,7 +101,7 @@ def test_schema_is_read_from_the_database(synthetic_db_path):
     assert "v_return_requests(return_request_key, order_key, reason," in schema
 
 
-def test_system_prompt_holds_the_rules_the_agent_must_follow():
+def test_system_prompt_holds_the_rules_the_agent_must_follow(synthetic_db_path):
     for rule in (
         "Call list_metrics",
         "Always prefer a metric to your own SQL",
@@ -118,7 +118,7 @@ def test_system_prompt_holds_the_rules_the_agent_must_follow():
         "Never join items and payments in one\nquery",
         "add up its items per\norder first",
     ):
-        assert rule in SYSTEM_PROMPT, rule
+        assert rule in system_prompt(synthetic_db_path), rule
 
 
 def test_run_metric_tool_has_one_typed_argument_per_filter(agent):

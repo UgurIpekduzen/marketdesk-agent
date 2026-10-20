@@ -28,12 +28,12 @@ from typing import Self
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 
-from src import messages
 from src.agents.ops import OpsAgent
 from src.agents.run_log import RunLog
 from src.agents.support import SupportAgent
 from src.guardrails.guarded_llm import GuardedLLM, build_provider_llm
 from src.guardrails.outbound import Redactor
+from src.i18n import DEFAULT_LANGUAGE, Language, catalog
 from src.knowledge.policy_index import PolicyIndex
 from src.mcp_server.client import OrdersClient
 
@@ -57,12 +57,13 @@ ALLOWED_INTENT = {
     SessionType.OPS: Intent.OPS_METRIC,
 }
 
-# What a session is told when it asks for something it may not have.
+# What a session is told when it asks for something it may not have: the
+# names of the strings, said in the session's language.
 REFUSALS = {
-    (SessionType.CUSTOMER, Intent.OPS_METRIC): messages.ROUTER_OPS_NOT_ALLOWED,
-    (SessionType.CUSTOMER, Intent.OUT_OF_SCOPE): messages.ROUTER_OUT_OF_SCOPE_CUSTOMER,
-    (SessionType.OPS, Intent.SUPPORT): messages.ROUTER_SUPPORT_NOT_ALLOWED,
-    (SessionType.OPS, Intent.OUT_OF_SCOPE): messages.ROUTER_OUT_OF_SCOPE_OPS,
+    (SessionType.CUSTOMER, Intent.OPS_METRIC): "ROUTER_OPS_NOT_ALLOWED",
+    (SessionType.CUSTOMER, Intent.OUT_OF_SCOPE): "ROUTER_OUT_OF_SCOPE_CUSTOMER",
+    (SessionType.OPS, Intent.SUPPORT): "ROUTER_SUPPORT_NOT_ALLOWED",
+    (SessionType.OPS, Intent.OUT_OF_SCOPE): "ROUTER_OUT_OF_SCOPE_OPS",
 }
 
 CLASSIFIER_PROMPT = """\
@@ -119,9 +120,11 @@ class Orchestrator:
         agent: SupportAgent | OpsAgent,
         llm: GuardedLLM,
         customer_unique_id: str | None = None,
+        language: Language = DEFAULT_LANGUAGE,
     ) -> None:
         """Use for_customer or for_ops, which build the right agent."""
         self.session_type = session_type
+        self.language = Language(language)
         self._agent = agent
         self._llm = llm
         self._customer_unique_id = customer_unique_id
@@ -135,24 +138,31 @@ class Orchestrator:
         customer_unique_id: str,
         policy_index: PolicyIndex,
         provider_llm: FunctionCallingLLM | None = None,
+        language: Language = DEFAULT_LANGUAGE,
     ) -> Self:
-        """A router for a signed-in customer: the Support Agent and no other."""
+        """A router for a signed-in customer: the Support Agent and no other.
+
+        The order server must have been started in the same language.
+        """
         provider_llm = provider_llm or build_provider_llm()
         agent = await SupportAgent.create(
-            orders, customer_unique_id, policy_index, provider_llm
+            orders, customer_unique_id, policy_index, provider_llm, language
         )
         llm = GuardedLLM(inner=provider_llm, redactor=agent.redactor)
-        return cls(SessionType.CUSTOMER, agent, llm, customer_unique_id)
+        return cls(SessionType.CUSTOMER, agent, llm, customer_unique_id, language)
 
     @classmethod
     def for_ops(
-        cls, db_path: Path | str, provider_llm: FunctionCallingLLM | None = None
+        cls,
+        db_path: Path | str,
+        provider_llm: FunctionCallingLLM | None = None,
+        language: Language = DEFAULT_LANGUAGE,
     ) -> Self:
         """A router for operations staff: the Ops Data Agent and no other."""
         provider_llm = provider_llm or build_provider_llm()
-        agent = OpsAgent(db_path, provider_llm)
+        agent = OpsAgent(db_path, provider_llm, language)
         llm = GuardedLLM(inner=provider_llm, redactor=Redactor())
-        return cls(SessionType.OPS, agent, llm)
+        return cls(SessionType.OPS, agent, llm, language=language)
 
     def close(self) -> None:
         if isinstance(self._agent, OpsAgent):
@@ -191,7 +201,9 @@ class Orchestrator:
         # Authorization: a fixed table, read with the session type that was
         # set at sign-in. The message has no say in it.
         if intent != ALLOWED_INTENT[self.session_type]:
-            text = REFUSALS[(self.session_type, intent)]
+            text = getattr(
+                catalog(self.language), REFUSALS[(self.session_type, intent)]
+            )
             self._previous = (message, text)
             return Answer(intent, text, None, log)
 

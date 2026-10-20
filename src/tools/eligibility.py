@@ -65,7 +65,9 @@ def check_return_eligibility(
         "rule": decision.rule,
         "days_since_delivery": decision.days_since_delivery,
         "refund_amount": str(decision.refund_amount),
-        "refund_amount_text": format_money(str(decision.refund_amount)),
+        "refund_amount_text": format_money(
+            str(decision.refund_amount), session.language
+        ),
         # The rule engine flags every late delivery. Here the flag is shown
         # only while it still earns money, so it cannot be read as a promise.
         "freight_refund": decision.freight_refund and has_refund,
@@ -76,10 +78,12 @@ def check_return_eligibility(
             decision.request_status.value if decision.request_status else None
         ),
         "voucher_refund": str(decision.voucher_refund),
-        "voucher_refund_text": format_money(str(decision.voucher_refund)),
+        "voucher_refund_text": format_money(
+            str(decision.voucher_refund), session.language
+        ),
         "original_method_refund": str(decision.original_method_refund),
         "original_method_refund_text": format_money(
-            str(decision.original_method_refund)
+            str(decision.original_method_refund), session.language
         ),
         "seller_delay": decision.seller_delay,
     }

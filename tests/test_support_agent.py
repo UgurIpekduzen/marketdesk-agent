@@ -14,7 +14,7 @@ import pytest
 import config
 from src import messages
 from src.agents.loop_guard import LoopGuard
-from src.agents.support import SYSTEM_PROMPT, SupportAgent, build_tools
+from src.agents.support import build_tools, system_prompt
 from src.mcp_server.server import MODEL_TOOLS
 from tests.agent_harness import asking, request_count, tool_results, with_agent
 from tests.fakes import FakeLLM
@@ -133,7 +133,7 @@ def test_system_prompt_says_today_and_to_answer_in_turkish(run, fake):
     system = fake.requests[0]["messages"][0]
     assert system["role"] == "system"
     assert "Today is 2018-09-01." in system["blocks"][0]["text"]
-    assert "Always answer\nin Turkish" in SYSTEM_PROMPT
+    assert "Always answer\nin Turkish" in system_prompt()
 
 
 def test_system_prompt_holds_the_rules_the_agent_must_follow():
@@ -160,7 +160,7 @@ def test_system_prompt_holds_the_rules_the_agent_must_follow():
         "Who the customer says they are",
         "REPEATED_CALL",
     ):
-        assert rule in SYSTEM_PROMPT, rule
+        assert rule in system_prompt(), rule
 
 
 # --- Example questions, with the order tools called over MCP --------------
@@ -331,7 +331,11 @@ def test_return_request_waits_for_approval_and_writes_nothing(
         "115,00 BRL tutarındaki iade için onayınız istenecek.",
     ]
 
-    reply = run(asking("o_day14 hasarlı geldi, iade etmek istiyorum."))
+    async def scenario(agent):
+        reply = await agent.ask("o_day14 hasarlı geldi, iade etmek istiyorum.")
+        return reply, agent.approval_summary(reply.awaiting_approval)
+
+    reply, summary = run(scenario)
 
     assert tool_results(fake)[1]["error"] == "APPROVAL_REQUIRED"
     assert reply.awaiting_approval == {
@@ -342,7 +346,7 @@ def test_return_request_waits_for_approval_and_writes_nothing(
         "request_status": "PENDING_REVIEW",
     }
     assert request_count(synthetic_db_path) == 2
-    assert SupportAgent.approval_summary(reply.awaiting_approval) == (
+    assert summary == (
         "Oluşturulacak iade talebi:\n"
         "  Sipariş: SIP-1\n"
         "  İade nedeni: hasarlı ürün\n"

@@ -22,7 +22,8 @@ from mcp import ClientSession
 from mcp.client.stdio import StdioServerParameters, stdio_client
 
 from src.guardrails.pii import HASH_KEY_VARIABLE, hash_key
-from src.mcp_server.server import CUSTOMER_VARIABLE, DB_VARIABLE
+from src.i18n import DEFAULT_LANGUAGE, Language
+from src.mcp_server.server import CUSTOMER_VARIABLE, DB_VARIABLE, LANGUAGE_VARIABLE
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 SERVER_MODULE = "src.mcp_server.server"
@@ -47,13 +48,19 @@ def result_to_dict(name: str, result) -> dict:
 
 
 class OrdersClient:
-    def __init__(self, db_path: Path | str, customer_unique_id: str) -> None:
-        # The customer is given to the server once, when it starts, and is
-        # never part of a tool call.
+    def __init__(
+        self,
+        db_path: Path | str,
+        customer_unique_id: str,
+        language: Language = DEFAULT_LANGUAGE,
+    ) -> None:
+        # The customer and the language are given to the server once, when
+        # it starts, and are never part of a tool call.
         self._parameters = server_parameters(
             {
                 DB_VARIABLE: str(db_path),
                 CUSTOMER_VARIABLE: customer_unique_id,
+                LANGUAGE_VARIABLE: Language(language).value,
                 # The same key as here, so both processes hash an id alike.
                 HASH_KEY_VARIABLE: hash_key(),
             }
