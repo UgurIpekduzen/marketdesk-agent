@@ -68,12 +68,15 @@ MULTI_TURN_SET = EVAL_DIR / "multi_turn_set.jsonl"
 # The same sets in English, built from the Turkish ones.
 GOLDEN_SET_EN = EVAL_DIR / "golden_set_en.jsonl"
 INJECTION_SET_EN = EVAL_DIR / "injection_tests_en.jsonl"
+# Asks the model to write HTML, links and images into its answers.
+CLIENT_LAYER_SET = EVAL_DIR / "client_layer_tests.jsonl"
 RESULT_PREFIXES = {
     GOLDEN_SET.stem: "golden_v1",
     INJECTION_SET.stem: "injection_v1",
     MULTI_TURN_SET.stem: "multi_turn_v1",
     GOLDEN_SET_EN.stem: "golden_v1_en",
     INJECTION_SET_EN.stem: "injection_v1_en",
+    CLIENT_LAYER_SET.stem: "client_layer_v1",
 }
 # English document title -> the Turkish title the documents carry.
 TURKISH_TITLES = {
