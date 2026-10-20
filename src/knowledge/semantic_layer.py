@@ -24,6 +24,7 @@ import yaml
 
 import config
 from src import messages
+from src.i18n import Language
 
 METRICS_PATH = Path(__file__).resolve().parent.parent.parent / "metrics.yaml"
 
@@ -82,7 +83,16 @@ class Metric:
     denominator: str | None
     dimensions: tuple[str, ...]
     caveat: str
+    # What an English page shows instead of the Turkish description and caveat.
+    description_en: str
+    caveat_en: str
     join: str | None = None
+
+    def description_in(self, language: Language) -> str:
+        return self.description_en if language == Language.EN else self.description
+
+    def caveat_in(self, language: Language) -> str:
+        return self.caveat_en if language == Language.EN else self.caveat
 
 
 @dataclass(frozen=True)
@@ -130,8 +140,9 @@ def parse_semantic_layer(text: str) -> SemanticLayer:
                 raise ValueError(
                     f"metric {name!r}: unknown dimension {dimension_name!r}"
                 )
-        if not metric.caveat.strip():
-            raise ValueError(f"metric {name!r}: the caveat is empty")
+        for field in ("caveat", "caveat_en", "description_en"):
+            if not getattr(metric, field).strip():
+                raise ValueError(f"metric {name!r}: the {field} is empty")
         metrics[name] = metric
 
     return SemanticLayer(dimensions, metrics)

@@ -1,9 +1,10 @@
 """How numbers, money and result tables are written for the reader.
 
 Plain functions with no page framework, so the page, the command line and
-the evaluation write them alike. They write the Turkish way: a dot between thousands and
-a comma before the decimals. Only how a value is written changes; the value
-itself is never touched.
+the evaluation write them alike. They write the session's language's way:
+Turkish puts a dot between thousands and a comma before the decimals
+(1.234,5), English the other way round (1,234.5). Turkish is the default.
+Only how a value is written changes; the value itself is never touched.
 """
 
 from decimal import Decimal
@@ -12,7 +13,7 @@ import sqlglot
 from sqlglot import errors
 
 import config
-from src import messages
+from src.i18n import DEFAULT_LANGUAGE, Language, catalog
 from src.knowledge.semantic_layer import (
     DENOMINATOR,
     NUMERATOR,
@@ -20,51 +21,61 @@ from src.knowledge.semantic_layer import (
     load_semantic_layer,
 )
 
-# Headers of a result table: the dimensions by name, and the columns every
-# metric result has.
-COLUMN_HEADERS = {
-    **messages.UI_TABLE_DIMENSIONS,
-    NUMERATOR: messages.UI_COLUMN_NUMERATOR,
-    DENOMINATOR: messages.UI_COLUMN_DENOMINATOR,
-    VALUE: messages.UI_COLUMN_VALUE,
-}
 # A result written as text shows at most this many rows.
 MAX_TEXT_ROWS = 50
 
 
-def with_separators(text: str) -> str:
-    """Python's separators turned into the reader's: 1,234.5 -> 1.234,5."""
+def column_headers(language: Language = DEFAULT_LANGUAGE) -> dict[str, str]:
+    """Headers of a result table: the dimensions by name, and the columns
+    every metric result has."""
+    texts = catalog(language)
+    return {
+        **texts.UI_TABLE_DIMENSIONS,
+        NUMERATOR: texts.UI_COLUMN_NUMERATOR,
+        DENOMINATOR: texts.UI_COLUMN_DENOMINATOR,
+        VALUE: texts.UI_COLUMN_VALUE,
+    }
+
+
+def with_separators(text: str, language: Language = DEFAULT_LANGUAGE) -> str:
+    """Python's separators turned into the reader's: 1,234.5 stays as it is
+    in English and becomes 1.234,5 in Turkish."""
+    if language == Language.EN:
+        return text
     return text.replace(",", "\0").replace(".", ",").replace("\0", ".")
 
 
-def format_number(value: float, whole: bool) -> str:
-    """A number: 7.269; 1.255.695,13; 0,0076.
+def format_number(
+    value: float, whole: bool, language: Language = DEFAULT_LANGUAGE
+) -> str:
+    """A number: 7.269; 1.255.695,13; 0,0076 (in English 7,269; 1,255,695.13;
+    0.0076).
 
     A whole number keeps no decimals. Otherwise two decimals, or four below
     1, where rates live and two would round them away.
     """
     if whole:
-        return with_separators(f"{round(value):,}")
-    return with_separators(f"{value:,.{2 if abs(value) >= 1 else 4}f}")
+        return with_separators(f"{round(value):,}", language)
+    return with_separators(f"{value:,.{2 if abs(value) >= 1 else 4}f}", language)
 
 
-def format_amount(amount: str) -> str:
-    """A money amount, always with two decimals: 1.250,00.
+def format_amount(amount: str, language: Language = DEFAULT_LANGUAGE) -> str:
+    """A money amount, always with two decimals: 1.250,00 (1,250.00).
 
     Read as a Decimal, not a float, so no cent is lost on the way.
     """
-    return with_separators(f"{Decimal(amount):,.2f}")
+    return with_separators(f"{Decimal(amount):,.2f}", language)
 
 
-def format_money(amount: str) -> str:
-    """A money amount with its currency: 1.250,00 BRL."""
-    return messages.MONEY.format(amount=format_amount(amount))
+def format_money(amount: str, language: Language = DEFAULT_LANGUAGE) -> str:
+    """A money amount with its currency: 1.250,00 BRL (1,250.00 BRL)."""
+    return catalog(language).MONEY.format(amount=format_amount(amount, language))
 
 
-def readable_table(table: dict) -> dict:
+def readable_table(table: dict, language: Language = DEFAULT_LANGUAGE) -> dict:
     """A result table as the reader sees it.
 
-    The columns the semantic layer names get Turkish headers; a plain total
+    The columns the semantic layer names get headers in the language; a plain total
     has a numerator that only repeats the value, and that column is left
     out. For each numeric column it says whether it holds whole numbers,
     decided here on the raw values: the page's table library turns a whole
@@ -78,7 +89,8 @@ def readable_table(table: dict) -> dict:
             del columns[numerator]
             for row in rows:
                 del row[numerator]
-    headers = [COLUMN_HEADERS.get(column, column) for column in columns]
+    known = column_headers(language)
+    headers = [known.get(column, column) for column in columns]
     numbers = {}
     for position, header in enumerate(headers):
         values = [row[position] for row in rows if row[position] is not None]
@@ -99,7 +111,7 @@ def worth_a_table(table: dict) -> bool:
     return len(table["rows"]) > 1 or len(table["columns"]) > 1
 
 
-def table_text(table: dict) -> str:
+def table_text(table: dict, language: Language = DEFAULT_LANGUAGE) -> str:
     """A readable table as plain text, for the command line and the judge.
 
     Numbers are written like everywhere else and aligned right; a long
@@ -110,7 +122,7 @@ def table_text(table: dict) -> str:
         [
             ""
             if value is None
-            else format_number(value, table["numbers"][header])
+            else format_number(value, table["numbers"][header], language)
             if header in table["numbers"]
             else str(value)
             for header, value in zip(table["columns"], row, strict=True)
@@ -132,7 +144,7 @@ def table_text(table: dict) -> str:
     lines += [line(row) for row in cells]
     left_out = len(table["rows"]) - len(shown)
     if left_out:
-        lines.append(messages.TABLE_ROWS_LEFT_OUT.format(count=left_out))
+        lines.append(catalog(language).TABLE_ROWS_LEFT_OUT.format(count=left_out))
     return "\n".join(lines)
 
 
@@ -149,7 +161,7 @@ def readable_sql(query: str) -> str:
         return query
 
 
-def how_computed(computation: dict) -> str:
+def how_computed(computation: dict, language: Language = DEFAULT_LANGUAGE) -> str:
     """One metric call in words: metric, grouping, filters, period, ranking.
 
     computation holds what the ops agent passed to run_metric: metric,
@@ -157,11 +169,12 @@ def how_computed(computation: dict) -> str:
     what was computed whatever the answer says.
     """
     metric = load_semantic_layer().metrics[computation["metric"]]
+    messages = catalog(language)
     labels = messages.UI_TABLE_DIMENSIONS
     filters = dict(computation.get("filters") or {})
     start, end = filters.pop("purchase_from", None), filters.pop("purchase_to", None)
     ranking = computation.get("ranking") or {}
-    parts = [metric.description]
+    parts = [metric.description_in(language)]
     if computation.get("group_by"):
         parts.append(
             messages.COMPUTED_GROUP_BY.format(

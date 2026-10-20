@@ -2,7 +2,7 @@
 
 import pytest
 
-from src import messages
+from src import messages, messages_en
 from src.formatting import (
     MAX_TEXT_ROWS,
     format_amount,
@@ -15,6 +15,7 @@ from src.formatting import (
     with_separators,
     worth_a_table,
 )
+from src.i18n import Language
 
 
 def test_separators_are_swapped_the_turkish_way():
@@ -177,3 +178,70 @@ def test_how_computed_counts_items_for_an_item_metric():
 
     assert "en az 50 kalem" in line
     assert "azalan" not in line
+
+
+# --- English --------------------------------------------------------------
+
+
+def test_separators_stay_as_they_are_in_english():
+    assert with_separators("1,234,567.89", Language.EN) == "1,234,567.89"
+
+
+@pytest.mark.parametrize(
+    ("value", "whole", "text"),
+    [
+        (7269, True, "7,269"),
+        (1255695.13, False, "1,255,695.13"),
+        (0.007619, False, "0.0076"),
+        (-1234.5, False, "-1,234.50"),
+    ],
+)
+def test_numbers_are_written_the_english_way(value, whole, text):
+    assert format_number(value, whole, Language.EN) == text
+
+
+def test_money_is_written_the_english_way_with_its_currency():
+    assert format_amount("1250", Language.EN) == "1,250.00"
+    assert format_money("133.14", Language.EN) == "133.14 BRL"
+
+
+def test_a_table_as_text_has_english_headers_and_numbers():
+    table = readable_table(
+        {
+            "columns": ["purchase_month", "numerator", "value"],
+            "rows": [["2018-01", 7269, 7269], ["2018-02", 728, 728]],
+        },
+        Language.EN,
+    )
+
+    assert table_text(table, Language.EN) == (
+        "Month   | Value\n--------+------\n2018-01 | 7,269\n2018-02 |   728"
+    )
+
+
+def test_a_long_english_table_says_in_english_how_many_rows_it_left_out():
+    rows = [[f"S{number}", number] for number in range(MAX_TEXT_ROWS + 7)]
+    table = readable_table({"columns": ["state", "orders"], "rows": rows}, Language.EN)
+
+    lines = table_text(table, Language.EN).splitlines()
+
+    assert lines[-1] == messages_en.TABLE_ROWS_LEFT_OUT.format(count=7)
+
+
+def test_how_computed_in_english():
+    line = how_computed(
+        {
+            "metric": "late_delivery_rate",
+            "filters": {"purchase_month": ["2018-07"], "customer_state": ["SP", "RJ"]},
+            "group_by": ["product_category_en"],
+            "ranking": {"min_count": 100, "order": "value_desc", "top": 5},
+        },
+        Language.EN,
+    )
+
+    assert line == (
+        "Share of delivered orders delivered after the estimated date"
+        " · grouped by: Category · filter: Month = 2018-07; Customer state = SP, RJ"
+        " · at least 100 orders · by value, descending · top 5"
+        " · orders placed on or before 2018-09-01"
+    )

@@ -9,6 +9,7 @@ from datetime import date, datetime
 
 import pytest
 
+from src.i18n import Language
 from src.knowledge.semantic_layer import (
     METRICS_PATH,
     list_metrics,
@@ -106,6 +107,40 @@ def test_every_metric_has_all_its_fields():
         assert metric.numerator
         assert metric.dimensions
         assert metric.caveat
+
+
+def test_every_metric_has_an_english_description_and_caveat():
+    for metric in load_semantic_layer().metrics.values():
+        assert metric.description_in(Language.EN) == metric.description_en
+        assert metric.caveat_in(Language.EN) == metric.caveat_en
+        assert metric.description_in(Language.TR) == metric.description
+        assert metric.caveat_in(Language.TR) == metric.caveat
+        assert not set("çğıöşüÇĞİÖŞÜ") & set(metric.description_en + metric.caveat_en)
+
+
+def test_english_caveats_say_the_same_limits():
+    metrics = load_semantic_layer().metrics
+    assert "not revenue" in metrics["gmv"].caveat_en
+    assert "profit" in metrics["gmv"].caveat_en
+    for name in REQUIRED_METRICS - {"order_count", "gmv", "avg_order_value"}:
+        assert "not a cause" in metrics[name].caveat_en
+
+
+def test_a_metric_without_its_english_caveat_is_refused():
+    text = METRICS_PATH.read_text(encoding="utf-8")
+    broken = text.replace(
+        text[
+            text.index("    caveat_en:") : text.index(
+                "\n", text.index("    caveat_en:")
+            )
+            + 1
+        ],
+        "",
+        1,
+    )
+
+    with pytest.raises(ValueError, match="caveat_en"):
+        parse_semantic_layer(broken)
 
 
 def test_gmv_caveat_says_it_is_not_revenue_or_profit():
