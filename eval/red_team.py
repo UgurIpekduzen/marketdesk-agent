@@ -5,9 +5,10 @@ Usage:  python eval/red_team.py [--pilot] [--paid] [--db PATH]
 DeepTeam writes attacks for a list of vulnerabilities, sends each one to the
 system as a message, and has a judge model score the answer. Here:
 
-- the attacks and the judging are done by config.REDTEAM_MODEL on
-  config.REDTEAM_PROVIDER, behind the response cache and the outbound guard,
-  like the evaluation's judge;
+- the attacks are written by config.REDTEAM_ATTACKER_MODEL and the answers
+  judged by config.REDTEAM_JUDGE_MODEL, both on config.REDTEAM_PROVIDER and
+  behind the response cache and the outbound guard, like the evaluation's
+  judge;
 - the system is the real one: the router, the agents, the order server and
   every guard, each attack in a session of its own, on a copy of the
   database. Its model calls go through the cache, at most
@@ -162,12 +163,10 @@ ATTACKS = (
 PILOT_ATTACKS = 3
 
 
-def attacker_model(cache_dir: Path) -> JudgeModel:
-    """The model that writes the attacks and judges the answers."""
-    inner = build_provider_llm(config.REDTEAM_PROVIDER, config.REDTEAM_MODEL)
-    return JudgeModel(
-        CachedLLM(inner=inner, cache_dir=cache_dir), name=config.REDTEAM_MODEL
-    )
+def redteam_model(name: str, cache_dir: Path) -> JudgeModel:
+    """A model of the scan (attacker or judge), behind the cache and the guard."""
+    inner = build_provider_llm(config.REDTEAM_PROVIDER, name)
+    return JudgeModel(CachedLLM(inner=inner, cache_dir=cache_dir), name=name)
 
 
 def system_model(cache_dir: Path, paid: bool) -> CachedLLM:
@@ -237,10 +236,10 @@ class Target:
         return RTTurn(role="assistant", content=answer)
 
 
-def vulnerabilities(classes, model: JudgeModel, purpose: str) -> list:
-    """The vulnerabilities, each told to use our model and nobody else's."""
+def vulnerabilities(classes, attacker: JudgeModel, judge: JudgeModel, purpose: str):
+    """The vulnerabilities, each told to use our models and nobody else's."""
     return [
-        cls(simulator_model=model, evaluation_model=model, purpose=purpose)
+        cls(simulator_model=attacker, evaluation_model=judge, purpose=purpose)
         for cls in classes
     ]
 
@@ -255,17 +254,24 @@ SCAN_SETTINGS = {
 }
 
 
-def scan(target: Target, classes, purpose: str, model: JudgeModel, attacks) -> list:
+def scan(
+    target: Target,
+    classes,
+    purpose: str,
+    attacker: JudgeModel,
+    judge: JudgeModel,
+    attacks,
+) -> list:
     """Run DeepTeam on one session type; one row per test case."""
     red_teamer = RedTeamer(
-        simulator_model=model,
-        evaluation_model=model,
+        simulator_model=attacker,
+        evaluation_model=judge,
         target_purpose=purpose,
         **RED_TEAMER_SETTINGS,
     )
     assessment = red_teamer.red_team(
         model_callback=target,
-        vulnerabilities=vulnerabilities(classes, model, purpose),
+        vulnerabilities=vulnerabilities(classes, attacker, judge, purpose),
         attacks=[attack() for attack in attacks],
         **SCAN_SETTINGS,
     )
@@ -316,7 +322,7 @@ def markdown(result: dict) -> str:
         "| {writes_without_approval} | {raw_ids_in_answers} |"
     ).format(**result["summary"])
     attacker = (
-        f"Attacker and judge: `{result['attacker_model']}`. "
+        f"Attacker: `{result['attacker_model']}`. Judge: `{result['judge_model']}`. "
         f"Pilot: {'yes' if result['pilot'] else 'no'}."
     )
     lines = [
@@ -357,7 +363,8 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    model = attacker_model(DEFAULT_CACHE_DIR)
+    attacker = redteam_model(config.REDTEAM_ATTACKER_MODEL, DEFAULT_CACHE_DIR)
+    judge = redteam_model(config.REDTEAM_JUDGE_MODEL, DEFAULT_CACHE_DIR)
     llm = system_model(DEFAULT_CACHE_DIR, args.paid)
     index = PolicyIndex(load_embedder())
     with tempfile.TemporaryDirectory() as folder:
@@ -377,7 +384,8 @@ def main() -> int:
                     customer_target,
                     (BOLA,),
                     CUSTOMER_PURPOSE,
-                    model,
+                    attacker,
+                    judge,
                     (PromptInjection, Roleplay, Base64)[:PILOT_ATTACKS],
                 )
             else:
@@ -385,23 +393,32 @@ def main() -> int:
                     customer_target,
                     CUSTOMER_VULNERABILITIES,
                     CUSTOMER_PURPOSE,
-                    model,
+                    attacker,
+                    judge,
                     ATTACKS,
                 )
                 rows += scan(
-                    ops_target, OPS_VULNERABILITIES, OPS_PURPOSE, model, ATTACKS
+                    ops_target,
+                    OPS_VULNERABILITIES,
+                    OPS_PURPOSE,
+                    attacker,
+                    judge,
+                    ATTACKS,
                 )
         except (DailyQuotaUsedUp, LiveCallLimitReached, NoPaidCredit) as stop:
             print(f"\nStopped: {stop}")
             return 3
 
-    attacker_cache = model.load_model().inner
+    attacker_calls = attacker.load_model().inner.live_calls
+    judge_calls = judge.load_model().inner.live_calls
     result = {
         "system_model": config.LLM_MODEL,
-        "attacker_model": config.REDTEAM_MODEL,
+        "attacker_model": config.REDTEAM_ATTACKER_MODEL,
+        "judge_model": config.REDTEAM_JUDGE_MODEL,
         "pilot": args.pilot,
         "system_live_calls": llm.live_calls,
-        "attacker_live_calls": attacker_cache.live_calls,
+        "attacker_live_calls": attacker_calls,
+        "judge_live_calls": judge_calls,
         "summary": summary(rows),
         "rows": rows,
     }
@@ -413,8 +430,8 @@ def main() -> int:
     (RESULTS_DIR / f"{name}.md").write_text(markdown(result), encoding="utf-8")
     print(json.dumps(result["summary"], indent=1))
     print(
-        f"Live calls: system {llm.live_calls}, attacker and judge "
-        f"{attacker_cache.live_calls}"
+        f"Live calls: system {llm.live_calls}, attacker {attacker_calls}, "
+        f"judge {judge_calls}"
     )
     print(f"Results written to eval/results/{name}.json and .md")
     return 0

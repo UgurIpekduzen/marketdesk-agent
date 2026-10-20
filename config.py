@@ -30,10 +30,14 @@ JUDGE_MODEL = "gemini-3.5-flash-lite"
 
 # The automated red team scan (eval/red_team.py): the model that writes the
 # attacks and the one that judges the answers. Another provider than the
-# system's, so the scan does not use the Gemini quota the system needs; the
-# largest model Groq offers that its free plan allows.
+# system's, so the scan does not use the Gemini quota the system needs. Two
+# models: gpt-oss-120b refused to write attack variants (0 of 12 in a trial
+# on 2026-10-20, also when told the test is authorised), Qwen wrote 6 of 6;
+# a judge other than the attacker does not score its own work, and Groq's
+# daily token limit is counted per model.
 REDTEAM_PROVIDER = "groq"
-REDTEAM_MODEL = "openai/gpt-oss-120b"
+REDTEAM_ATTACKER_MODEL = "qwen/qwen3.8-27b"
+REDTEAM_JUDGE_MODEL = "openai/gpt-oss-120b"
 # A scan stops after this many live calls to the system's own model.
 REDTEAM_MAX_LIVE_CALLS = 150
 

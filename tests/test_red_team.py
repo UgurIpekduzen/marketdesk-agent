@@ -86,20 +86,22 @@ def test_a_scan_uploads_nothing_and_runs_one_attack_at_a_time(monkeypatch):
             return type("Assessment", (), {"test_cases": []})()
 
     monkeypatch.setattr(red_team, "RedTeamer", FakeRedTeamer)
-    model = object.__new__(red_team.JudgeModel)
+    attacker = object.__new__(red_team.JudgeModel)
+    judge = object.__new__(red_team.JudgeModel)
 
     red_team.scan(
         red_team.Target("ops", "db", llm=None),
         red_team.OPS_VULNERABILITIES,
         red_team.OPS_PURPOSE,
-        model,
+        attacker,
+        judge,
         red_team.ATTACKS,
     )
 
     assert seen["run"]["_upload_to_confident"] is False
     assert seen["setup"]["max_concurrent"] == 1
-    assert seen["setup"]["simulator_model"] is model
-    assert seen["setup"]["evaluation_model"] is model
+    assert seen["setup"]["simulator_model"] is attacker
+    assert seen["setup"]["evaluation_model"] is judge
 
 
 def test_every_setting_is_one_deepteam_takes():
@@ -121,7 +123,13 @@ def test_every_setting_is_one_deepteam_takes():
 # --- The attacker and judge model -----------------------------------------------
 
 
-def test_the_attacker_goes_through_the_guard_and_the_cache(monkeypatch, tmp_path):
+@pytest.mark.parametrize(
+    "name",
+    [red_team.config.REDTEAM_ATTACKER_MODEL, red_team.config.REDTEAM_JUDGE_MODEL],
+)
+def test_the_attacker_and_the_judge_go_through_the_guard_and_the_cache(
+    monkeypatch, tmp_path, name
+):
     asked = []
 
     def fake_provider(provider=None, model=None, paid=False):
@@ -130,25 +138,30 @@ def test_the_attacker_goes_through_the_guard_and_the_cache(monkeypatch, tmp_path
 
     monkeypatch.setattr(red_team, "build_provider_llm", fake_provider)
 
-    model = red_team.attacker_model(tmp_path)
+    model = red_team.redteam_model(name, tmp_path)
 
-    assert asked == [(red_team.config.REDTEAM_PROVIDER, red_team.config.REDTEAM_MODEL)]
+    assert asked == [(red_team.config.REDTEAM_PROVIDER, name)]
     assert isinstance(model.load_model(), GuardedLLM)
     assert isinstance(model.load_model().inner, CachedLLM)
-    assert model.get_model_name() == red_team.config.REDTEAM_MODEL
+    assert model.get_model_name() == name
 
 
-def test_every_vulnerability_is_told_to_use_our_model():
-    model = object.__new__(red_team.JudgeModel)
+def test_the_judge_is_not_the_attacker():
+    assert red_team.config.REDTEAM_JUDGE_MODEL != red_team.config.REDTEAM_ATTACKER_MODEL
+
+
+def test_every_vulnerability_is_told_to_use_our_models():
+    attacker = object.__new__(red_team.JudgeModel)
+    judge = object.__new__(red_team.JudgeModel)
 
     found = red_team.vulnerabilities(
-        red_team.CUSTOMER_VULNERABILITIES, model, red_team.CUSTOMER_PURPOSE
+        red_team.CUSTOMER_VULNERABILITIES, attacker, judge, red_team.CUSTOMER_PURPOSE
     )
 
     assert len(found) == len(red_team.CUSTOMER_VULNERABILITIES)
     for vulnerability in found:
-        assert vulnerability.simulator_model is model
-        assert vulnerability.evaluation_model is model
+        assert vulnerability.simulator_model is attacker
+        assert vulnerability.evaluation_model is judge
         assert vulnerability.purpose == red_team.CUSTOMER_PURPOSE
 
 
@@ -261,6 +274,7 @@ def test_the_report_lists_every_test_case_with_its_failed_checks():
     result = {
         "system_model": "m",
         "attacker_model": "a",
+        "judge_model": "j",
         "pilot": True,
         "summary": red_team.summary(rows()),
         "rows": rows(),
