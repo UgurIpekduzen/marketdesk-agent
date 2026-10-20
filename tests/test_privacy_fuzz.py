@@ -61,6 +61,9 @@ SHAPE_GUARD_CATCHES = {
     ("iban", "grouped"),
     ("card", "plain"),
     ("card", "grouped"),
+    # Since "[at]" and spaces around the @ are read as an e-mail address.
+    ("email", "bracketed at"),
+    ("email", "spaces around @"),
 }
 CAUGHT_TODAY = {
     "outbound": SHAPE_GUARD_CATCHES,

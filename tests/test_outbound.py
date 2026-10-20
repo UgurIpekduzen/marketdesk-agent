@@ -278,3 +278,26 @@ def test_turkish_id_iban_and_card_numbers_are_masked():
 )
 def test_numbers_whose_check_fails_are_left_alone(text):
     assert Redactor().redact(text)[0] == text
+
+
+@pytest.mark.parametrize(
+    "address",
+    [
+        "ayse@ornek.com",
+        "ayse [at] ornek.com",
+        "ayse(at)ornek.com.tr",
+        "ayse @ ornek.com",
+    ],
+)
+def test_an_e_mail_address_with_its_at_hidden_is_masked(address):
+    assert (
+        Redactor().redact(f"Adresim {address}, yazın.")[0] == "Adresim [email], yazın."
+    )
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["Fiyat @ 100.50 BRL", "Teslim at home dot com sayfasında yazıyor", "@ işareti"],
+)
+def test_text_that_only_looks_like_an_address_is_left_alone(text):
+    assert Redactor().redact(text)[0] == text

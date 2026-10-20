@@ -18,7 +18,13 @@ _generated_key: str | None = None
 RAW_ID_PATTERN = re.compile(r"\b[0-9a-f]{32}\b", re.IGNORECASE)
 MASK = "[id]"
 
-EMAIL_PATTERN = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
+# Also with spaces around the @ or with "[at]" or "(at)" in its place. The
+# last part of the domain is letters, so "fiyat @ 100.50" is not one; "at"
+# and "dot" written as words are left alone, as ordinary sentences have them.
+EMAIL_PATTERN = re.compile(
+    r"[\w.+-]+(?:\s*@\s*|\s*[\[(]at[\])]\s*)[\w-]+(?:\.[\w-]+)*\.[^\W\d_]{2,}",
+    re.IGNORECASE,
+)
 EMAIL_MASK = "[email]"
 
 # A run of digits with the separators people put in phone numbers. Whether
