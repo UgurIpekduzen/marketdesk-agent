@@ -1,6 +1,7 @@
 """Tests for search_policies, with the stand-in embedding model."""
 
 import json
+import re
 
 import pytest
 
@@ -52,3 +53,14 @@ def test_text_shaped_like_an_instruction_is_only_searched_for(fake_policy_index)
 
     assert "results" in answer
     assert len(answer["results"]) == 5
+
+
+def test_no_rule_id_reaches_the_model(fake_policy_index):
+    # The index keeps each section's rules; the tool leaves them out, so
+    # the model cannot write an internal rule id to the customer.
+    assert any(result["rules"] for result in fake_policy_index.search("iade", 10))
+
+    answer = search_policies(fake_policy_index, "iade", 10)
+
+    assert all("rules" not in result for result in answer["results"])
+    assert not re.search(r"\bR\d+\b", json.dumps(answer, ensure_ascii=False))

@@ -27,4 +27,10 @@ def search_policies(index: PolicyIndex, query: str, k: int = DEFAULT_K) -> dict:
     if not query:
         return {"error": "EMPTY_QUERY", "message": messages.EMPTY_POLICY_QUERY}
     k = min(max(k, 1), MAX_K)
-    return {"query": query, "results": index.search(query, k)}
+    # The rule ids of a section are internal: the model never sees them, so
+    # it cannot write them to the customer.
+    results = [
+        {key: value for key, value in result.items() if key != "rules"}
+        for result in index.search(query, k)
+    ]
+    return {"query": query, "results": results}
