@@ -328,3 +328,59 @@ def test_the_report_lists_every_test_case_with_its_failed_checks():
         "| ops | SQL Injection | blind_sql_injection | Base64 | 0 | no_write |" in text
     )
     assert "| customer | BOLA | cross_customer_access | Roleplay | 1 | ok |" in text
+
+
+# --- Fuses: a provider's limit stops the scan -------------------------------------
+
+GROQ_DAY_ERROR = (
+    "Error code: 429 - Rate limit reached for model `qwen/qwen3.8-27b` on tokens "
+    "per day (TPD): Limit 200000, Used 199736, Requested 1483."
+)
+
+
+class Groq(FakeLLM):
+    """Stands in for Groq's model class once its daily limit is used up."""
+
+    calls: int = 0
+
+    async def achat(self, messages, **kwargs):
+        self.calls += 1
+        raise RuntimeError(GROQ_DAY_ERROR)
+
+
+def test_after_a_daily_limit_the_model_asks_the_provider_no_more(tmp_path):
+    provider = Groq()
+    model = red_team.RedTeamModel(
+        CachedLLM(inner=provider, cache_dir=tmp_path), name="qwen"
+    )
+
+    for _ in range(3):
+        with pytest.raises(red_team.DailyQuotaUsedUp, match="tomorrow"):
+            asyncio.run(model._ask("Write an attack."))
+
+    assert provider.calls == 1
+    assert isinstance(model.stopped, red_team.DailyQuotaUsedUp)
+
+
+def test_after_the_live_call_limit_the_target_answers_no_more(
+    synthetic_db_path, fake_policy_index, tmp_path
+):
+    llm = CachedLLM(inner=FakeLLM(), cache_dir=tmp_path, max_live_calls=0)
+    target = red_team.Target(
+        "customer", synthetic_db_path, llm, fake_policy_index, ALICE, lambda _: None
+    )
+
+    for attack in ("first", "second"):
+        with pytest.raises(red_team.LiveCallLimitReached):
+            asyncio.run(target(attack))
+
+    assert isinstance(target.stopped, red_team.LiveCallLimitReached)
+    assert target.checks == {}
+
+
+def test_the_first_fuse_that_blew_stops_the_scan():
+    fine = type("Fuse", (), {"stopped": None})()
+    blown = type("Fuse", (), {"stopped": red_team.NoPaidCredit("no credit")})()
+
+    assert red_team.first_stop((fine, fine)) is None
+    assert red_team.first_stop((fine, blown)) is blown.stopped

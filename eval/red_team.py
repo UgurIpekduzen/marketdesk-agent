@@ -164,10 +164,32 @@ ATTACKS = (
 PILOT_ATTACKS = 3
 
 
-def redteam_model(name: str, cache_dir: Path) -> JudgeModel:
+# The errors after which a scan goes no further: a daily limit, the limit of
+# live calls, no paid credit. DeepTeam catches every error of a model or of
+# the target and tries again, so the scan would go on asking a provider that
+# has said no; the fuses below make every later call fail at once instead.
+STOPS = (DailyQuotaUsedUp, LiveCallLimitReached, NoPaidCredit)
+
+
+class RedTeamModel(JudgeModel):
+    """The attacker or the judge, with a fuse for a provider's limit."""
+
+    stopped: Exception | None = None
+
+    async def _ask(self, prompt: str) -> str:
+        if self.stopped is not None:
+            raise self.stopped
+        try:
+            return await super()._ask(prompt)
+        except STOPS as stop:
+            self.stopped = stop
+            raise
+
+
+def redteam_model(name: str, cache_dir: Path) -> RedTeamModel:
     """A model of the scan (attacker or judge), behind the cache and the guard."""
     inner = build_provider_llm(config.REDTEAM_PROVIDER, name)
-    return JudgeModel(CachedLLM(inner=inner, cache_dir=cache_dir), name=name)
+    return RedTeamModel(CachedLLM(inner=inner, cache_dir=cache_dir), name=name)
 
 
 def system_model(cache_dir: Path, paid: bool) -> CachedLLM:
@@ -210,6 +232,8 @@ class Target:
         self.customer = customer
         # Code checks by attack text, read back when the results are written.
         self.checks: dict[str, dict] = {}
+        # The error that stopped the system's model, once there is one.
+        self.stopped: Exception | None = None
         # Progress: attacks answered, of how many the scans expect.
         self.report = report
         self.answered = 0
@@ -237,8 +261,14 @@ class Target:
             return (await router.ask(attack)).display
 
     async def __call__(self, input: str, turns=None) -> RTTurn:
+        if self.stopped is not None:
+            raise self.stopped
         before, live_before = self._requests(), self.llm.live_calls
-        answer = await self._ask(input)
+        try:
+            answer = await self._ask(input)
+        except STOPS as stop:
+            self.stopped = stop
+            raise
         checks = code_checks(answer, before, self._requests())
         self.checks[input] = checks
         self.answered += 1
@@ -374,6 +404,11 @@ def markdown(result: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
+def first_stop(fuses) -> Exception | None:
+    """The error that stopped a model or the target, if any did."""
+    return next((fuse.stopped for fuse in fuses if fuse.stopped is not None), None)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--db", type=Path, default=DEFAULT_DB_PATH)
@@ -405,6 +440,7 @@ def main() -> int:
         customer_target = Target("customer", db_copy, llm, index, customer)
         ops_target = Target("ops", db_copy, llm)
         try:
+            fuses = (attacker, judge, customer_target, ops_target)
             if args.pilot:
                 rows = scan(
                     customer_target,
@@ -423,15 +459,21 @@ def main() -> int:
                     judge,
                     ATTACKS,
                 )
-                rows += scan(
-                    ops_target,
-                    OPS_VULNERABILITIES,
-                    OPS_PURPOSE,
-                    attacker,
-                    judge,
-                    ATTACKS,
-                )
-        except (DailyQuotaUsedUp, LiveCallLimitReached, NoPaidCredit) as stop:
+                if first_stop(fuses) is None:
+                    rows += scan(
+                        ops_target,
+                        OPS_VULNERABILITIES,
+                        OPS_PURPOSE,
+                        attacker,
+                        judge,
+                        ATTACKS,
+                    )
+            stop = first_stop(fuses)
+            if stop is not None:
+                raise stop
+        except STOPS as stop:
+            # Nothing is written: the next run takes what was done so far
+            # from the cache and goes on from there.
             print(f"\nStopped: {stop}")
             return 3
 
