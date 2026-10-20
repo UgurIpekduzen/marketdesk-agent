@@ -528,8 +528,9 @@ def run(
     # The run works on a copy of the database, so it may write to it.
     conn = sqlite3.connect(db_path)
     rows = []
+    started = time.monotonic()
     try:
-        for example in examples:
+        for number, example in enumerate(examples, start=1):
             reset_tickets(conn)
             prepared = prepare(example, conn)
             seconds_before, live_before = llm.seconds, llm.live_calls
@@ -551,19 +552,44 @@ def run(
             row["live_calls"] = llm.live_calls - live_before
             rows.append(row)
             failed = [name for name, ok in row["checks"].items() if not ok]
+            counter = progress(number, len(examples))
             if row["split"] == "test" and not show_test:
-                report(f"{row['id']:>3}  held out")
+                # Only the counter: the live calls of one example would show
+                # how many steps it took.
+                report(f"{counter}  {row['id']:>3}  held out")
             else:
                 report(
-                    f"{row['id']:>3}  {'ok  ' if row['success'] else 'FAIL'}  "
+                    f"{counter}  {row['id']:>3}  "
+                    f"{'ok  ' if row['success'] else 'FAIL'}  "
                     f"{', '.join(row['tools_called']) or '-'}"
                     + (f"   failed: {', '.join(failed)}" if failed else "")
+                    + f"   {calls_so_far(row['live_calls'], llm, judge, started)}"
                 )
             if pause and row["live_calls"]:
                 time.sleep(pause)
     finally:
         conn.close()
     return rows
+
+
+def progress(number: int, total: int) -> str:
+    """Where the run is, as [7/84], padded so the lines stay aligned."""
+    return f"[{number:>{len(str(total))}}/{total}]"
+
+
+def judge_live_calls(judge) -> int:
+    """Live calls the judge has made so far; 0 without a judge."""
+    return judge.live_calls if judge else 0
+
+
+def calls_so_far(example_live: int, llm: CachedLLM, judge, started: float) -> str:
+    """The live calls of this example and of the run, and the time so far."""
+    minutes, seconds = divmod(int(time.monotonic() - started), 60)
+    judge_part = f", judge {judge_live_calls(judge)}" if judge else ""
+    return (
+        f"live +{example_live} (system {llm.live_calls}{judge_part})"
+        f"   {minutes}:{seconds:02d}"
+    )
 
 
 def cached_llm(inner, cache_dir: Path, paid: bool) -> CachedLLM:
@@ -671,9 +697,7 @@ def main() -> int:
     text += f"\n\nDatabase copy unchanged by the run: {'yes' if unchanged else 'no'}"
     print(f"\n{text}\n")
     print(f"Model calls: {llm.live_calls} live, {llm.hits} from the cache")
-    # The judge's own cache: the guard in front of it wraps it.
-    judge_live = judge.model.load_model().inner.live_calls if judge else 0
-    paid_live_calls = llm.live_calls + judge_live if args.paid else 0
+    paid_live_calls = llm.live_calls + judge_live_calls(judge) if args.paid else 0
     if args.paid:
         print(f"Live calls on the paid key (system and judge): {paid_live_calls}")
 

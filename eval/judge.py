@@ -181,6 +181,12 @@ class Judge:
         self.model = JudgeModel(provider_llm)
         self.language = Language(language)
 
+    @property
+    def live_calls(self) -> int:
+        """Calls that reached the provider: those of the cache the evaluation
+        puts in front of the judge; 0 for a model without one."""
+        return getattr(self.model.load_model().inner, "live_calls", 0)
+
     def _g_eval(self, name: str, steps: list[str]) -> GEval:
         return GEval(
             name=name,

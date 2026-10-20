@@ -456,9 +456,10 @@ def test_outcome_of_a_test_example_is_not_reported(
     )
 
     assert "ok" in lines[0]
+    # The counter only: no outcome, no tools and no live calls.
     assert [line.split() for line in lines[1:]] == [
-        ["O", "held", "out"],
-        ["P", "held", "out"],
+        ["[2/3]", "O", "held", "out"],
+        ["[3/3]", "P", "held", "out"],
     ]
 
 
@@ -516,6 +517,7 @@ class StubJudge:
 
     def __init__(self):
         self.seen = []
+        self.live_calls = 0
 
     def policy_answer(self, question, answer, documents=None):
         self.documents = documents
@@ -824,3 +826,40 @@ def test_strict_exit_code_marks_a_failed_example_or_a_changed_database():
     assert run_eval.exit_code(bad, unchanged=True, strict=True) == 1
     assert run_eval.exit_code(good, unchanged=False, strict=True) == 1
     assert run_eval.exit_code(bad, unchanged=False, strict=False) == 0
+
+
+def test_each_line_says_where_the_run_is_and_what_it_has_spent(
+    synthetic_db_path, fake_policy_index, tmp_path
+):
+    lines = []
+    llm = CachedLLM(inner=FakeLLM(script=list(GOOD_SCRIPT)), cache_dir=tmp_path / "c")
+
+    run_eval.run(
+        [SUPPORT_EXAMPLE, OPS_EXAMPLE, POLICY_EXAMPLE],
+        synthetic_db_path,
+        fake_policy_index,
+        llm,
+        report=lines.append,
+    )
+
+    assert [line.split()[0] for line in lines] == ["[1/3]", "[2/3]", "[3/3]"]
+    # The run's live calls only grow, and the last line holds them all.
+    totals = [int(line.split("(system ")[1].split(")")[0]) for line in lines]
+    assert totals == sorted(totals)
+    assert totals[-1] == llm.live_calls
+    assert all("live +" in line for line in lines)
+
+
+def test_the_counter_is_padded_to_the_width_of_the_total():
+    assert run_eval.progress(7, 84) == "[ 7/84]"
+    assert run_eval.progress(84, 84) == "[84/84]"
+    assert run_eval.progress(1, 1) == "[1/1]"
+
+
+def test_the_judge_calls_are_shown_only_with_a_judge(tmp_path):
+    llm = CachedLLM(inner=FakeLLM(script=[]), cache_dir=tmp_path / "c")
+
+    text = run_eval.calls_so_far(2, llm, None, started=0.0)
+
+    assert text.startswith("live +2 (system 0)")
+    assert "judge" not in text

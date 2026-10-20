@@ -11,6 +11,7 @@ import pytest
 
 from eval import judge as judge_module
 from eval.judge import Judge, JudgeModel
+from eval.llm_cache import CachedLLM
 from src.i18n import Language
 from tests.fakes import FakeLLM
 
@@ -186,3 +187,19 @@ def test_the_steps_name_the_language_of_the_questions():
     assert turkish == judge_module.HELPFULNESS_STEPS
     assert "in English" in english[0]
     assert not any("Turkish" in step for step in english)
+
+
+def test_live_calls_are_those_of_the_cache_in_front_of_the_judge(tmp_path):
+    cached = CachedLLM(
+        inner=FakeLLM(script=[TRUTHS, CLAIMS, VERDICTS, REASON, G_EVAL]),
+        cache_dir=tmp_path / "c",
+    )
+    judge = Judge(cached)
+
+    judge.policy_answer("Kaç gün?", "14 gün.")
+
+    assert judge.live_calls == cached.live_calls > 0
+
+
+def test_a_judge_without_a_cache_counts_no_live_calls():
+    assert Judge(FakeLLM(script=[])).live_calls == 0

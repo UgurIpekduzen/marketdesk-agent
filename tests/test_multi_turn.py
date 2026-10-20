@@ -184,7 +184,7 @@ def test_outcome_of_a_test_example_is_not_reported(run):
         CARD_SCRIPT,
     )
 
-    assert lines == ["MX-test  held out"]
+    assert lines == ["[1/1]  MX-test  held out"]
 
 
 def test_summary_counts_the_clicks_and_names_dev_flows_only():
