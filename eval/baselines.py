@@ -43,6 +43,7 @@ from eval.llm_cache import (
     CachedLLM,
     DailyQuotaUsedUp,
     LiveCallLimitReached,
+    NoPaidCredit,
 )
 from eval.run_eval import (
     DEFAULT_DB_PATH,
@@ -453,7 +454,7 @@ def main() -> int:
                 show_test=args.show_test,
                 judge=judge,
             )
-        except (DailyQuotaUsedUp, LiveCallLimitReached) as stop:
+        except (DailyQuotaUsedUp, LiveCallLimitReached, NoPaidCredit) as stop:
             print(f"\nStopped: {stop}")
             return 3
 

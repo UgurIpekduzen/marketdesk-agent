@@ -15,7 +15,9 @@ from eval.llm_cache import (
     CachedLLM,
     DailyQuotaUsedUp,
     LiveCallLimitReached,
+    NoPaidCredit,
     is_daily_quota,
+    is_out_of_credit,
     is_transient,
 )
 from src.agents.runner import run_agent
@@ -238,6 +240,13 @@ DAILY_ERROR = (
     "requests, limit: 500, model: gemini-3.5-flash-lite. quotaId: "
     "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
 )
+# The answer of the paid key with no prepaid credit left, as it came.
+NO_CREDIT_ERROR = (
+    "402 RESOURCE_EXHAUSTED. {'error': {'code': 402, 'message': 'Your "
+    "prepayment credits are depleted. Please go to AI Studio at "
+    "https://ai.studio/projects to manage your project and billing.', "
+    "'status': 'RESOURCE_EXHAUSTED'}}"
+)
 MINUTE_ERROR = (
     "429 RESOURCE_EXHAUSTED. You exceeded your current quota. quotaId: "
     "GenerateRequestsPerMinutePerProjectPerModel-FreeTier"
@@ -283,6 +292,24 @@ def test_the_daily_quota_stops_at_once_without_waiting(tmp_path):
         ask_once(llm)
 
     assert inner.calls == 1
+
+
+def test_no_prepaid_credit_stops_at_once_without_waiting(tmp_path):
+    inner = Failing(script=["x"], answers=0, error=NO_CREDIT_ERROR)
+    llm = CachedLLM(inner=inner, cache_dir=tmp_path, retry_seconds=3600)
+
+    with pytest.raises(NoPaidCredit, match="Add credit"):
+        ask_once(llm)
+
+    assert inner.calls == 1
+
+
+def test_no_prepaid_credit_is_told_apart_from_the_quotas():
+    assert is_out_of_credit(RuntimeError(NO_CREDIT_ERROR))
+    assert not is_transient(RuntimeError(NO_CREDIT_ERROR))
+    assert not is_daily_quota(RuntimeError(NO_CREDIT_ERROR))
+    assert not is_out_of_credit(RuntimeError(MINUTE_ERROR))
+    assert not is_out_of_credit(RuntimeError(DAILY_ERROR))
 
 
 def test_the_minute_limit_is_waited_out(tmp_path):

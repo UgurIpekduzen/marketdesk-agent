@@ -41,8 +41,17 @@ TRANSIENT_MARKS = ("503", "unavailable", "overloaded", "429", "resource_exhauste
 DAILY_QUOTA_MARKS = ("perday", "per_day", "per day")
 
 
+# Marks of the error that says the paid key's prepaid credit is gone (402):
+# it also says RESOURCE_EXHAUSTED, but waiting does not help.
+NO_CREDIT_MARKS = ("prepayment credits", "402 resource_exhausted")
+
+
 class DailyQuotaUsedUp(RuntimeError):
     """The free daily quota is gone: the run stops, to go on with --paid."""
+
+
+class NoPaidCredit(RuntimeError):
+    """The paid key has no prepaid credit left: the run stops until some is added."""
 
 
 class LiveCallLimitReached(RuntimeError):
@@ -56,7 +65,11 @@ def error_text(failure: BaseException) -> str:
 def is_transient(failure: BaseException) -> bool:
     """Whether an error of the provider is worth waiting out."""
     text = error_text(failure)
-    return any(mark in text for mark in TRANSIENT_MARKS) and not is_daily_quota(failure)
+    return (
+        any(mark in text for mark in TRANSIENT_MARKS)
+        and not is_daily_quota(failure)
+        and not is_out_of_credit(failure)
+    )
 
 
 def is_daily_quota(failure: BaseException) -> bool:
@@ -65,6 +78,12 @@ def is_daily_quota(failure: BaseException) -> bool:
     return ("429" in text or "resource_exhausted" in text) and any(
         mark in text for mark in DAILY_QUOTA_MARKS
     )
+
+
+def is_out_of_credit(failure: BaseException) -> bool:
+    """Whether the error says the paid key's prepaid credit is used up."""
+    text = error_text(failure)
+    return any(mark in text for mark in NO_CREDIT_MARKS)
 
 
 class CachedLLM(FunctionCallingLLM):
@@ -167,6 +186,12 @@ class CachedLLM(FunctionCallingLLM):
                         "The free daily quota is used up. Run the same command "
                         "again with --paid to finish on the paid key; the answers "
                         "so far are in the cache."
+                    ) from failure
+                if is_out_of_credit(failure):
+                    raise NoPaidCredit(
+                        "The paid key has no prepaid credit left. Add credit in "
+                        "AI Studio (the project's Billing page) and run the same "
+                        "command again; the answers so far are in the cache."
                     ) from failure
                 if attempt == self.retries or not is_transient(failure):
                     raise

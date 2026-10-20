@@ -40,6 +40,7 @@ from eval.llm_cache import (
     CachedLLM,
     DailyQuotaUsedUp,
     LiveCallLimitReached,
+    NoPaidCredit,
 )
 from src import messages_en
 from src.guardrails.guarded_llm import (
@@ -675,7 +676,7 @@ def main() -> int:
                 show_test=args.show_test,
                 judge=judge,
             )
-        except (DailyQuotaUsedUp, LiveCallLimitReached) as stop:
+        except (DailyQuotaUsedUp, LiveCallLimitReached, NoPaidCredit) as stop:
             # Nothing is written: the next run takes the answers so far from
             # the cache and goes on from there.
             print(f"\nStopped: {stop}")
