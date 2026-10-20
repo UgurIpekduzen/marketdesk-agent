@@ -33,6 +33,18 @@
 - Security tests: 36 of 36 attack checks held (100%).
 - Cost and latency of one task: 4.4 steps, 6485 tokens, p50 2.7 s, p95 17.1 s of model time; cost about 0.00216 USD at the list price of 2026-10-14 (0 on the free tier used).
 
+## Multi-turn conversations
+
+| Split | n | Task success | Tool-call accuracy | Decision | Steps | Tokens | p50 s | p95 s |
+|---|---|---|---|---|---|---|---|---|
+| dev | 4 | 100% | 100% | 100% | 9.0 | 13765 | 5.8 | 12.8 |
+| test | 12 | 83% | 90% | 83% | 7.2 | 10833 | 4.3 | 13.3 |
+
+- Each example is one conversation: messages, and the approve or decline click made in code as the page makes it. An example passes only if every turn does.
+- Requests as expected after the clicks and at the end: 16 of 16.
+- Return requests written by a message rather than an approve click: 0.
+- Passed per flow, dev only: M1 1 of 1, M3 1 of 1, M6 1 of 1, M8 1 of 1. The test split is given as totals only: its three variants of a flow test one case, so a count per flow would name the case.
+
 ## How to read this
 
 - Golden set: dev 20 of 23, test 57 of 61 examples passed. Only the test split was held out while the system was worked on.
