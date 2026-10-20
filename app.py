@@ -39,6 +39,7 @@ from src.ui.view import (
     approval_card,
     friendly_error,
     request_card,
+    safe_markdown,
     ticket_title,
     tools_text,
     view_of,
@@ -407,10 +408,12 @@ def draw_turns() -> None:
             with st.chat_message("assistant", avatar=content.avatar):
                 draw_answer(content)
             continue
-        # The person's messages, and the support agent's word on an approval.
+        # The person's messages, and the support agent's word on an approval
+        # (a fixed text). What the person typed loads no image and makes no
+        # link, as in an answer.
         avatar = USER_AVATAR if role == "user" else SUPPORT_AVATAR
         with st.chat_message(role, avatar=avatar):
-            st.markdown(content)
+            st.markdown(safe_markdown(content, page_language()))
 
 
 def draw_approval(session: ChatSession) -> None:
@@ -445,7 +448,7 @@ def answer(session: ChatSession, question: str) -> None:
     language = page_language()
     st.session_state.turns.append(("user", question))
     with st.chat_message("user", avatar=USER_AVATAR):
-        st.markdown(question)
+        st.markdown(safe_markdown(question, language))
     try:
         with st.spinner(catalog(language).UI_THINKING):
             view = view_of(session.ask(question), language)

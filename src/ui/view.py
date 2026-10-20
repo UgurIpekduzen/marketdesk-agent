@@ -72,11 +72,35 @@ ESCAPED_IMAGE_START = "!\\["
 # Characters markdown reads as formatting, escaped where a text partly comes
 # from the model's arguments (a filter value) and must be drawn as written.
 MARKDOWN_CHARACTERS = re.compile(r"([\\`*_{}\[\]()#+\-.!|<>~$])")
+# Links in an answer. The system never needs one (the policies hold no
+# addresses), and a link a model was talked into writing ("pay here") is a
+# way to send a customer anywhere. Each form loses its target:
+# [text](address) keeps its text;
+INLINE_LINK = re.compile(r"(?<![!\\])\[([^\]]*)\]\((?:[^()]|\([^()]*\))*\)")
+# a reference definition ("[r]: address") is taken out, so "[text][r]" is text;
+LINK_DEFINITION = re.compile(r"^ {0,3}\[[^\]]+\]:[ \t]*\S.*$", re.MULTILINE)
+# "<scheme:...>" is drawn as written;
+AUTOLINK = re.compile(r"<(?=[a-z][a-z0-9+.\-]*:)", re.IGNORECASE)
+# a bare address is drawn as code, which markdown never turns into a link.
+BARE_ADDRESS = re.compile(
+    r"(?:\b[a-z][a-z0-9+.\-]*://|\bwww\.)[^\s<>`]+", re.IGNORECASE
+)
 
 
 def escape_markdown(text: str) -> str:
-    """The text with every markdown character escaped: drawn as written."""
-    return MARKDOWN_CHARACTERS.sub(r"\\\1", text)
+    """The text with every markdown character escaped: drawn as written.
+
+    Escaping does not stop a written address from being made a link (the
+    link is found in the text once the escapes are read), so an address is
+    drawn as code instead.
+    """
+    parts, last = [], 0
+    for match in BARE_ADDRESS.finditer(text):
+        parts.append(MARKDOWN_CHARACTERS.sub(r"\\\1", text[last : match.start()]))
+        parts.append(f"`{match.group()}`")
+        last = match.end()
+    parts.append(MARKDOWN_CHARACTERS.sub(r"\\\1", text[last:]))
+    return "".join(parts)
 
 
 def without_images(text: str, language: Language = DEFAULT_LANGUAGE) -> str:
@@ -95,6 +119,30 @@ def without_images(text: str, language: Language = DEFAULT_LANGUAGE) -> str:
             escaped,
         )
     return cleaned
+
+
+def without_links(text: str) -> str:
+    """The text with no markdown link left to click; the words stay."""
+    text, inline = INLINE_LINK.subn(r"\1", text)
+    text, defined = LINK_DEFINITION.subn("", text)
+    text, auto = AUTOLINK.subn("\\\\<", text)
+    text, bare = BARE_ADDRESS.subn(lambda match: f"`{match.group()}`", text)
+    if inline or defined or auto or bare:
+        logger.warning(
+            "made %d links, %d link definitions, %d autolinks and %d addresses "
+            "plain in a text",
+            inline,
+            defined,
+            auto,
+            bare,
+        )
+    return text
+
+
+def safe_markdown(text: str, language: Language = DEFAULT_LANGUAGE) -> str:
+    """A text from the model or the visitor, as it may be drawn as markdown:
+    no image to load, no link to click."""
+    return without_links(without_images(text, language))
 
 
 @dataclass(frozen=True)
@@ -157,7 +205,7 @@ def view_of(answer: Answer, language: Language = DEFAULT_LANGUAGE) -> AnswerView
     router = answer.router_log
     if answer.refused:
         return AnswerView(
-            text=without_images(answer.display, language),
+            text=safe_markdown(answer.display, language),
             agent=texts.UI_AGENT_ROUTER,
             avatar=ROUTER_AVATAR,
             steps=router.steps,
@@ -167,7 +215,7 @@ def view_of(answer: Answer, language: Language = DEFAULT_LANGUAGE) -> AnswerView
     log = reply.log
     gave_up = getattr(reply, "gave_up", False)
     return AnswerView(
-        text=without_images(reply.text, language),
+        text=safe_markdown(reply.text, language),
         agent=getattr(texts, AGENT_LABELS[answer.intent]),
         avatar=AGENT_AVATARS[answer.intent],
         tools=list(log.tool_calls),

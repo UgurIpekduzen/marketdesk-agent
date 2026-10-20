@@ -15,11 +15,14 @@ from src.ui.question_limit import QuestionLimitReached
 from src.ui.session_pool import SessionLimitReached
 from src.ui.view import (
     approval_card,
+    escape_markdown,
     friendly_error,
+    safe_markdown,
     tools_text,
     unsaid_caveats,
     view_of,
     without_images,
+    without_links,
 )
 
 PENDING = {
@@ -406,3 +409,43 @@ def test_an_english_answer_without_tools_says_so_and_drops_images():
     assert without_images("![x](https://a.example/p.png)", Language.EN) == (
         messages_en.UI_IMAGE_REMOVED
     )
+
+
+# --- Links: the system never needs one, so none is left to click ------------------
+
+
+@pytest.mark.parametrize(
+    ("text", "drawn"),
+    [
+        ("[Ödeme sayfası](https://evil.example/pay)", "Ödeme sayfası"),
+        ("[tıkla](javascript:alert(1))", "tıkla"),
+        ("[Belge](data:text/html;base64,PHNjcmlwdD4=)", "Belge"),
+        ("[tıkla][r]\n\n[r]: https://evil.example/r", "[tıkla][r]\n\n"),
+        # The < escaped, the address drawn as code: neither makes a link.
+        ("<https://evil.example/a>", "\\<`https://evil.example/a`>"),
+        ("Bakın: https://evil.example/b?x=1", "Bakın: `https://evil.example/b?x=1`"),
+        ("www.evil.example/c adresine", "`www.evil.example/c` adresine"),
+    ],
+)
+def test_every_form_of_link_loses_its_target(text, drawn):
+    assert without_links(text) == drawn
+
+
+def test_an_answer_without_links_is_left_as_it_is():
+    text = "SIP-1 teslim edildi (İade Politikası, Bölüm 2). **133,14 BRL** iade."
+
+    assert safe_markdown(text) == text
+
+
+def test_safe_markdown_takes_out_images_and_links_together():
+    text = "![x](https://evil.example/i.png) [öde](https://evil.example/p)"
+
+    assert safe_markdown(text) == f"{messages.UI_IMAGE_REMOVED} öde"
+
+
+def test_an_address_in_an_escaped_text_is_drawn_as_code():
+    # Escaping alone does not stop markdown from making the address a link.
+    assert escape_markdown("Ay = https://evil.example/x.y") == (
+        "Ay = `https://evil.example/x.y`"
+    )
+    assert escape_markdown("2018-07") == "2018\\-07"

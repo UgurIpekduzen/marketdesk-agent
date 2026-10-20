@@ -367,6 +367,26 @@ def test_an_image_in_the_model_answer_reaches_no_other_site(open_page):
     assert messages.UI_IMAGE_REMOVED in text
 
 
+def test_a_link_in_the_model_answer_cannot_be_clicked(open_page):
+    page = open_page(["support", "Ödemeyi [buradan](https://evil.example/pay) yapın."])
+
+    page = ask(page, "Nasıl ödeme yaparım?")
+
+    text = shown(page)
+    assert "evil.example" not in text
+    assert "Ödemeyi buradan yapın." in text
+
+
+def test_a_link_or_image_the_visitor_types_is_drawn_inert(open_page):
+    page = open_page(["support", "Yardımcı olayım."])
+
+    page = ask(page, "![x](https://evil.example/i.png) [bak](https://evil.example/b)")
+
+    text = shown(page)
+    assert "evil.example" not in text
+    assert "bak" in text
+
+
 def test_policy_answer_shows_its_source(open_page):
     page = open_page(
         [
@@ -596,7 +616,8 @@ def test_a_filter_value_from_the_model_is_drawn_as_written(open_page):
     (line,) = [c for c in captions(page) if c.startswith(messages.COMPUTED_HEADING)]
     # Every markdown character escaped: no image, no link is drawn.
     assert "![" not in line
-    assert "\\!\\[x\\]\\(https://evil\\.example/leak\\)" in line
+    # The address is drawn as code, which is never made a link.
+    assert "\\!\\[x\\]\\(`https://evil.example/leak)`" in line
 
 
 def test_a_single_value_is_said_without_a_table(open_page):
