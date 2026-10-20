@@ -20,7 +20,9 @@ import config
 from eval.judge_check import agreement
 from eval.run_eval import (
     GOLDEN_SET,
+    GOLDEN_SET_EN,
     INJECTION_SET,
+    INJECTION_SET_EN,
     MULTI_TURN_SET,
     RESULTS_DIR,
     result_name,
@@ -213,12 +215,75 @@ def multi_turn_section(multi: dict) -> str:
     return "\n".join(lines) + "\n\n" + "\n".join(notes)
 
 
+# The numbers the two languages are compared on: (label, key, a score).
+LANGUAGE_COLUMNS = (
+    ("Task success", "task_success", False),
+    ("Decision", "decision_accuracy", False),
+    ("SQL execution", "execution_accuracy", False),
+    ("Source", "source_accuracy", False),
+    ("Faithful", "faithfulness", True),
+)
+
+
+def english_section(golden: dict, golden_en: dict, injection_en: dict) -> str:
+    """The English run next to the Turkish one, group by group."""
+    turkish = golden.get("summary_all_splits", {})
+    english = golden_en.get("summary_all_splits", {})
+    header = "| Group | n | " + " | ".join(
+        f"{label} TR | {label} EN" for label, _, _ in LANGUAGE_COLUMNS
+    )
+    lines = [header + " |", "|---|---|" + "---|---|" * len(LANGUAGE_COLUMNS)]
+    for group in (*GROUPS, "all"):
+        if group not in english:
+            continue
+        cells = []
+        for _, key, is_score in LANGUAGE_COLUMNS:
+            write = show_score if is_score else show
+            cells += [
+                write(turkish.get(group, {}).get(key)),
+                write(english[group].get(key)),
+            ]
+        lines.append(
+            f"| {group} | {english[group]['examples']} | " + " | ".join(cells) + " |"
+        )
+    held = sum(pair[0] for pair in injection_en.get("attack_rates", {}).values())
+    tried = sum(pair[1] for pair in injection_en.get("attack_rates", {}).values())
+    overall = english.get("all", {})
+    attacks = injection_en.get("summary_all_splits", {}).get("all", {})
+    notes = [
+        (
+            f"- The same {overall.get('examples', '—')} examples and "
+            f"{attacks.get('examples', '—')} attacks, asked in English in English "
+            "sessions, with the same expectations; only the questions and the "
+            "texts an answer must or must not hold were translated."
+        ),
+        (
+            f"- Golden set in English: {split_line(golden_en)} examples passed. "
+            "The test split stays held out in English too."
+        ),
+        f"- Attack checks in English: {held} of {tried} held"
+        + (f" ({held / tried:.0%})." if tried else "."),
+        (
+            "- Return requests written without approval in English: "
+            f"{overall.get('writes_without_approval', '—')}."
+        ),
+        (
+            "- The policy documents are Turkish: an English answer is judged "
+            "against the Turkish text. The judge's English scores were not "
+            "checked by hand."
+        ),
+    ]
+    return "\n".join(lines) + "\n\n" + "\n".join(notes)
+
+
 def build_report(
     golden: dict,
     baselines: dict,
     injection: dict,
     judge_check: dict | None = None,
     multi: dict | None = None,
+    golden_en: dict | None = None,
+    injection_en: dict | None = None,
 ) -> str:
     overall = golden.get("summary_all_splits", {}).get("all", {})
     gain = semantic_layer_gain(golden, baselines)
@@ -253,6 +318,10 @@ def build_report(
     ]
     if multi:
         parts.append("## Multi-turn conversations\n\n" + multi_turn_section(multi))
+    if golden_en:
+        parts.append(
+            "## English\n\n" + english_section(golden, golden_en, injection_en or {})
+        )
     parts += [
         "## How to read this\n\n"
         + "\n".join(
@@ -294,7 +363,11 @@ def main() -> int:
     sheet = RESULTS_DIR / f"judge_check_{name}.csv"
     check = agreement(sheet) if sheet.exists() else None
     multi = load(RESULTS_DIR / f"{result_name(MULTI_TURN_SET, model)}.json")
-    report = build_report(golden, baselines, injection, check, multi)
+    golden_en = load(RESULTS_DIR / f"{result_name(GOLDEN_SET_EN, model)}.json")
+    injection_en = load(RESULTS_DIR / f"{result_name(INJECTION_SET_EN, model)}.json")
+    report = build_report(
+        golden, baselines, injection, check, multi, golden_en, injection_en
+    )
     path = RESULTS_DIR / f"final_report_{name}.md"
     path.write_text(report, encoding="utf-8")
     print(report)

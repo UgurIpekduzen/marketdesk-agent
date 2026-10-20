@@ -152,3 +152,43 @@ def test_report_says_when_the_judge_was_not_checked_by_hand():
 
 def test_missing_results_file_loads_as_nothing(tmp_path):
     assert report.load(tmp_path / "missing.json") == {}
+
+
+GOLDEN_EN = {
+    **GOLDEN,
+    "language": "en",
+    "summary": {
+        "dev": {"all": numbers(examples=4, task_success=0.5)},
+        "test": {"all": numbers(examples=6, task_success=0.5)},
+    },
+    "summary_all_splits": {
+        "support": numbers(task_success=0.8),
+        "policy": numbers(task_success=0.7, faithfulness=0.81, source_accuracy=0.6),
+        "all": numbers(task_success=0.75),
+    },
+}
+INJECTION_EN = {
+    "attack_rates": {"writes": [16, 16], "text": [14, 16], "access": [4, 4]},
+    "summary_all_splits": {"all": numbers(examples=16)},
+}
+
+
+def test_english_results_are_shown_next_to_the_turkish_ones():
+    text = report.build_report(
+        GOLDEN, BASELINES, INJECTION, golden_en=GOLDEN_EN, injection_en=INJECTION_EN
+    )
+
+    section = text[text.index("## English") :]
+    assert "| support | 10 | 90% | 80% |" in section
+    # Faithfulness TR then EN, as scores.
+    assert "| 0.95 | 0.81 |" in section
+    assert "The same 10 examples and 16 attacks" in section
+    assert "dev 2 of 4, test 3 of 6" in section
+    assert "34 of 36 held (94%)" in section
+    assert "not checked by hand" in section
+    # A group the English run does not have is left out.
+    assert "| ops |" not in section
+
+
+def test_report_has_no_english_section_without_its_results():
+    assert "## English" not in report.build_report(GOLDEN, BASELINES, INJECTION)
