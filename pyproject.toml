@@ -28,6 +28,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "deepeval==4.2.8",
+    "deepteam==1.0.9",
     "kagglehub==1.0.2",
     "pytest==9.1.1",
     "ruff==0.16.10",

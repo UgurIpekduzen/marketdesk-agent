@@ -469,6 +469,25 @@ wheels = [
 ]
 
 [[package]]
+name = "deepteam"
+version = "1.0.9"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "aiohttp" },
+    { name = "deepeval" },
+    { name = "grpcio" },
+    { name = "openai" },
+    { name = "pyyaml" },
+    { name = "requests" },
+    { name = "tabulate" },
+    { name = "tqdm" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/11/eb/def5b5461d6a6483a3495b489b28aa72228ff8622b6bb9ace17d2774af90/deepteam-1.0.9.tar.gz", hash = "sha256:d44fb6bc34f02e4ac17cce459bcb9d1590c5589337597b609c4442578336e641", size = 494799, upload-time = "2026-08-12T19:01:04.009Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2b/b7/a4342683a0d45c49d569a65259372b29d10c653aa940b734d6ffaa940b73/deepteam-1.0.9-py3-none-any.whl", hash = "sha256:e1fd00e476baa3e25fc80f080a25bee743089b5d0bb92800ee8ff666752c68d7", size = 874991, upload-time = "2026-08-12T19:01:07.359Z" },
+]
+
+[[package]]
 name = "defusedxml"
 version = "0.7.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1173,6 +1192,7 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "deepeval" },
+    { name = "deepteam" },
     { name = "kagglehub" },
     { name = "pytest" },
     { name = "ruff" },
@@ -1202,6 +1222,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "deepeval", specifier = "==4.2.8" },
+    { name = "deepteam", specifier = "==1.0.9" },
     { name = "kagglehub", specifier = "==1.0.2" },
     { name = "pytest", specifier = "==9.1.1" },
     { name = "ruff", specifier = "==0.16.10" },
