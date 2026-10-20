@@ -401,3 +401,19 @@ def test_the_server_connection_still_writes_a_request_and_a_ticket(synthetic_db_
     assert "error" not in written and "error" not in ticket
     assert request_count(synthetic_db_path) == before + 1
 
+
+def test_a_failing_tool_tells_the_caller_no_detail(tmp_path):
+    """The SDK keeps the error and its traceback in the server process; the
+    agent, and so the model, only learns that the tool failed."""
+    empty = tmp_path / "empty.db"
+    sqlite3.connect(empty).close()
+
+    async def scenario(orders):
+        return await orders.call("get_order_status", {"order_ref": "SIP-1"})
+
+    with pytest.raises(RuntimeError) as failure:
+        with_server(empty, scenario)
+
+    text = str(failure.value)
+    assert "Error executing tool get_order_status" in text
+    assert "no such table" not in text and str(empty) not in text
