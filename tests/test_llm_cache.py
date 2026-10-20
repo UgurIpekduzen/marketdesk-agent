@@ -16,6 +16,7 @@ from eval.llm_cache import (
     DailyQuotaUsedUp,
     LiveCallLimitReached,
     NoPaidCredit,
+    daily_quota_message,
     is_daily_quota,
     is_out_of_credit,
     is_transient,
@@ -284,8 +285,12 @@ def ask_once(llm):
     return asyncio.run(llm.achat([ChatMessage(role="user", content="Merhaba")]))
 
 
+class GoogleGenAI(Failing):
+    """Stands in for Gemini's model class: its message points to --paid."""
+
+
 def test_the_daily_quota_stops_at_once_without_waiting(tmp_path):
-    inner = Failing(script=["x"], answers=0)
+    inner = GoogleGenAI(script=["x"], answers=0)
     llm = CachedLLM(inner=inner, cache_dir=tmp_path, retry_seconds=3600)
 
     with pytest.raises(DailyQuotaUsedUp, match="--paid"):
@@ -310,6 +315,37 @@ def test_no_prepaid_credit_is_told_apart_from_the_quotas():
     assert not is_daily_quota(RuntimeError(NO_CREDIT_ERROR))
     assert not is_out_of_credit(RuntimeError(MINUTE_ERROR))
     assert not is_out_of_credit(RuntimeError(DAILY_ERROR))
+
+
+# Groq's answer once the tokens of the day are used up, as its documentation
+# shows it.
+GROQ_DAY_ERROR = (
+    "Error code: 429 - {'error': {'message': 'Rate limit reached for model "
+    "`openai/gpt-oss-120b` in organization `org_x` service tier `on_demand` on "
+    "tokens per day (TPD): Limit 200000, Used 199980, Requested 1200. Please try "
+    "again in 8m38.4s.', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}"
+)
+
+
+class Groq(Failing):
+    """Stands in for Groq's model class: the message names the provider."""
+
+
+def test_the_daily_limit_of_another_provider_says_to_wait_not_to_pay(tmp_path):
+    inner = Groq(script=["x"], answers=0, error=GROQ_DAY_ERROR)
+    llm = CachedLLM(inner=inner, cache_dir=tmp_path, retry_seconds=3600)
+
+    with pytest.raises(DailyQuotaUsedUp, match="tomorrow") as stop:
+        ask_once(llm)
+
+    assert "--paid" not in str(stop.value)
+    assert inner.calls == 1
+
+
+def test_only_gemini_is_told_to_go_on_with_the_paid_key():
+    assert "--paid" in daily_quota_message("GoogleGenAI")
+    assert "Groq" in daily_quota_message("Groq")
+    assert "--paid" not in daily_quota_message("Groq")
 
 
 def test_the_minute_limit_is_waited_out(tmp_path):

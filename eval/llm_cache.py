@@ -86,6 +86,19 @@ def is_out_of_credit(failure: BaseException) -> bool:
     return any(mark in text for mark in NO_CREDIT_MARKS)
 
 
+def daily_quota_message(provider_class: str) -> str:
+    """What to do once a provider's daily limit stopped a run."""
+    if provider_class == "GoogleGenAI":
+        return (
+            "The free daily quota is used up. Run the same command again with "
+            "--paid to finish on the paid key; the answers so far are in the cache."
+        )
+    return (
+        f"The daily limit of {provider_class} is used up. Run the same command "
+        "again tomorrow; the answers so far are in the cache."
+    )
+
+
 class CachedLLM(FunctionCallingLLM):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -183,9 +196,7 @@ class CachedLLM(FunctionCallingLLM):
             except Exception as failure:
                 if is_daily_quota(failure):
                     raise DailyQuotaUsedUp(
-                        "The free daily quota is used up. Run the same command "
-                        "again with --paid to finish on the paid key; the answers "
-                        "so far are in the cache."
+                        daily_quota_message(type(self.inner).__name__)
                     ) from failure
                 if is_out_of_credit(failure):
                     raise NoPaidCredit(
