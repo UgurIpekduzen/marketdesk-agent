@@ -30,6 +30,7 @@ import shutil
 import sqlite3
 import sys
 import tempfile
+import time
 import types
 from contextlib import contextmanager
 from pathlib import Path
@@ -118,7 +119,7 @@ from eval.llm_cache import (
     LiveCallLimitReached,
     NoPaidCredit,
 )
-from eval.run_eval import DEFAULT_DB_PATH, RESULTS_DIR, request_count
+from eval.run_eval import DEFAULT_DB_PATH, RESULTS_DIR, progress, request_count
 from src.guardrails.guarded_llm import build_provider_llm
 from src.guardrails.pii import RAW_ID_PATTERN
 from src.knowledge.embedding import load_embedder
@@ -200,6 +201,7 @@ class Target:
         llm: CachedLLM,
         index: PolicyIndex | None = None,
         customer: str | None = None,
+        report=print,
     ) -> None:
         self.session = session
         self.db_path = db_path
@@ -208,6 +210,11 @@ class Target:
         self.customer = customer
         # Code checks by attack text, read back when the results are written.
         self.checks: dict[str, dict] = {}
+        # Progress: attacks answered, of how many the scans expect.
+        self.report = report
+        self.answered = 0
+        self.expected = 0
+        self.started = time.monotonic()
 
     def _requests(self) -> int:
         conn = sqlite3.connect(self.db_path)
@@ -230,10 +237,23 @@ class Target:
             return (await router.ask(attack)).display
 
     async def __call__(self, input: str, turns=None) -> RTTurn:
-        before = self._requests()
+        before, live_before = self._requests(), self.llm.live_calls
         answer = await self._ask(input)
-        self.checks[input] = code_checks(answer, before, self._requests())
+        checks = code_checks(answer, before, self._requests())
+        self.checks[input] = checks
+        self.answered += 1
+        self.report(self.progress_line(checks, self.llm.live_calls - live_before))
         return RTTurn(role="assistant", content=answer)
+
+    def progress_line(self, checks: dict, live: int) -> str:
+        """One line per answered attack: where the scan is and what it spent."""
+        failed = [name for name, ok in checks.items() if not ok]
+        minutes, seconds = divmod(int(time.monotonic() - self.started), 60)
+        return (
+            f"{progress(self.answered, max(self.expected, self.answered))}  "
+            f"{self.session:<8}  {'FAIL ' + ', '.join(failed) if failed else 'ok'}"
+            f"   live +{live} (system {self.llm.live_calls})   {minutes}:{seconds:02d}"
+        )
 
 
 def vulnerabilities(classes, attacker: JudgeModel, judge: JudgeModel, purpose: str):
@@ -263,6 +283,12 @@ def scan(
     attacks,
 ) -> list:
     """Run DeepTeam on one session type; one row per test case."""
+    found = vulnerabilities(classes, attacker, judge, purpose)
+    # One attack for every type of every vulnerability.
+    target.expected += (
+        sum(len(vulnerability.types) for vulnerability in found)
+        * (SCAN_SETTINGS["attacks_per_vulnerability_type"])
+    )
     red_teamer = RedTeamer(
         simulator_model=attacker,
         evaluation_model=judge,
@@ -271,7 +297,7 @@ def scan(
     )
     assessment = red_teamer.red_team(
         model_callback=target,
-        vulnerabilities=vulnerabilities(classes, attacker, judge, purpose),
+        vulnerabilities=found,
         attacks=[attack() for attack in attacks],
         **SCAN_SETTINGS,
     )
