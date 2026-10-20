@@ -21,8 +21,9 @@ ORDER_FIELDS = {
     "estimated_delivery_on",
     "items",
     "items_total",
+    "items_total_text",
 }
-ITEM_FIELDS = {"category", "price", "freight"}
+ITEM_FIELDS = {"category", "price", "price_text", "freight", "freight_text"}
 LISTED_ORDER_FIELDS = {
     "order",
     "status",
@@ -30,6 +31,7 @@ LISTED_ORDER_FIELDS = {
     "delivered_on",
     "estimated_delivery_on",
     "items_total",
+    "items_total_text",
 }
 
 # An order id shaped like the real ones: 32 hexadecimal characters.
@@ -59,10 +61,23 @@ def test_order_status_of_an_own_order(synthetic_db, alice):
         "delivered_on": "2018-08-25",
         "estimated_delivery_on": "2018-08-30",
         "items": [
-            {"category": "furniture_decor", "price": "100.00", "freight": "10.00"},
-            {"category": "furniture_decor", "price": "50.00", "freight": "5.00"},
+            {
+                "category": "furniture_decor",
+                "price": "100.00",
+                "price_text": "100,00 BRL",
+                "freight": "10.00",
+                "freight_text": "10,00 BRL",
+            },
+            {
+                "category": "furniture_decor",
+                "price": "50.00",
+                "price_text": "50,00 BRL",
+                "freight": "5.00",
+                "freight_text": "5,00 BRL",
+            },
         ],
         "items_total": "165.00",
+        "items_total_text": "165,00 BRL",
     }
 
 

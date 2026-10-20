@@ -13,6 +13,7 @@ from decimal import Decimal, InvalidOperation
 
 import config
 from src import messages
+from src.formatting import format_money
 from src.guardrails.approval import ReturnAction
 from src.rules.returns import (
     BLOCKING_REQUEST_STATUSES,
@@ -89,6 +90,7 @@ def create_return_request(
             "message": messages.AMOUNT_MISMATCH,
             "order": order,
             "refund_amount": str(decision.refund_amount),
+            "refund_amount_text": format_money(str(decision.refund_amount)),
         }
 
     request_status = decision.request_status.value
@@ -101,6 +103,7 @@ def create_return_request(
             "order": order,
             "reason": reason,
             "refund_amount": str(amount),
+            "refund_amount_text": format_money(str(amount)),
             "request_status": request_status,
         }
 
@@ -134,6 +137,7 @@ def create_return_request(
         "order": order,
         "reason": reason,
         "refund_amount": str(amount),
+        "refund_amount_text": format_money(str(amount)),
         "status": request_status,
     }
 

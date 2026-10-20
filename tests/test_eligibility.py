@@ -32,11 +32,14 @@ def test_eligible_order(synthetic_db, alice):
         "rule": "R7",
         "days_since_delivery": 7,
         "refund_amount": "200.00",
+        "refund_amount_text": "200,00 BRL",
         "freight_refund": False,
         "freight_only_claim": False,
         "request_status": "PENDING_REVIEW",
         "voucher_refund": "50.00",
+        "voucher_refund_text": "50,00 BRL",
         "original_method_refund": "150.00",
+        "original_method_refund_text": "150,00 BRL",
         "seller_delay": False,
     }
 
@@ -49,11 +52,14 @@ def test_order_that_cannot_be_returned_yet(synthetic_db, alice):
         "rule": "R3",
         "days_since_delivery": None,
         "refund_amount": "0.00",
+        "refund_amount_text": "0,00 BRL",
         "freight_refund": False,
         "freight_only_claim": False,
         "request_status": None,
         "voucher_refund": "0.00",
+        "voucher_refund_text": "0,00 BRL",
         "original_method_refund": "0.00",
+        "original_method_refund_text": "0,00 BRL",
         "seller_delay": False,
     }
 

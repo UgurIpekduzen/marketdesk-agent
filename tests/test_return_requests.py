@@ -66,6 +66,7 @@ def test_call_without_approval_writes_nothing(synthetic_db, alice):
         "order": "SIP-1",
         "reason": "damaged",
         "refund_amount": "115.00",
+        "refund_amount_text": "115,00 BRL",
         "request_status": "PENDING_REVIEW",
     }
     assert request_count(synthetic_db) == EXISTING_REQUESTS
@@ -153,6 +154,7 @@ def test_approved_call_writes_exactly_one_row(synthetic_db, alice):
         "order": "SIP-1",
         "reason": "damaged",
         "refund_amount": "115.00",
+        "refund_amount_text": "115,00 BRL",
         "status": "PENDING_REVIEW",
     }
     assert [tuple(row) for row in new_requests(synthetic_db)] == [

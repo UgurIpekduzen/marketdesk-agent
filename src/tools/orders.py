@@ -11,6 +11,7 @@ from decimal import Decimal
 
 import config
 from src import messages
+from src.formatting import format_money
 from src.rules.returns import sum_money, to_calendar_day
 from src.tools.session import Session
 
@@ -63,14 +64,19 @@ def read_items(conn: sqlite3.Connection, order_id: str) -> list[dict]:
         "WHERE i.order_id = ? ORDER BY i.order_item_id",
         (order_id,),
     ).fetchall()
-    return [
-        {
-            "category": category,
-            "price": str(sum_money([price])),
-            "freight": str(sum_money([freight])),
-        }
-        for category, price, freight in rows
-    ]
+    items = []
+    for category, price, freight in rows:
+        price_text, freight_text = str(sum_money([price])), str(sum_money([freight]))
+        items.append(
+            {
+                "category": category,
+                "price": price_text,
+                "price_text": format_money(price_text),
+                "freight": freight_text,
+                "freight_text": format_money(freight_text),
+            }
+        )
+    return items
 
 
 def items_total(items: list[dict]) -> str:
@@ -89,7 +95,8 @@ def get_order_status(
 
     order_ref is the order alias from an earlier answer (for example SIP-1)
     or the order number the customer wrote. Dates are calendar days and
-    amounts are in BRL. If the customer has no such order the result is
+    amounts are in BRL; each amount has a _text field that writes it for
+    the customer (for example "133,14 BRL"). If the customer has no such order the result is
     {"error": "NOT_FOUND", "message": ...}.
     """
     row = conn.execute(
@@ -117,6 +124,7 @@ def get_order_status(
         "estimated_delivery_on": day_text(estimated),
         "items": items,
         "items_total": items_total(items),
+        "items_total_text": format_money(items_total(items)),
     }
 
 
@@ -133,7 +141,8 @@ def list_customer_orders(
     given, keeps only orders in that status: created, approved, invoiced,
     processing, shipped, delivered, canceled or unavailable. Each order
     comes with its alias (for example SIP-1), which the other order tools
-    accept. Dates are calendar days and amounts are in BRL.
+    accept. Dates are calendar days and amounts are in BRL; items_total_text
+    writes the total for the customer (for example "133,14 BRL").
     """
     if status is not None and status not in ORDER_STATUSES:
         return {
@@ -162,6 +171,7 @@ def list_customer_orders(
 
     orders = []
     for order_id, shown_status, purchased, _, delivered, estimated in rows:
+        total = items_total(read_items(conn, order_id))
         orders.append(
             {
                 "order": session.alias_for(order_id),
@@ -171,7 +181,8 @@ def list_customer_orders(
                     day_text(delivered) if shown_status == "delivered" else None
                 ),
                 "estimated_delivery_on": day_text(estimated),
-                "items_total": items_total(read_items(conn, order_id)),
+                "items_total": total,
+                "items_total_text": format_money(total),
             }
         )
     return {"orders": orders}
