@@ -30,6 +30,9 @@ services:
       UV_CACHE_DIR: /tmp/uv-cache
       # Install exactly what uv.lock says; never rewrite the lock in here.
       UV_FROZEN: "1"
+      # Print each line at once, also into a pipe (`task eval | tee log`),
+      # so a long run can be followed.
+      PYTHONUNBUFFERED: "1"
     env_file:
       - path: .env
         required: false
