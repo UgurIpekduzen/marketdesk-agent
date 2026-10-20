@@ -20,51 +20,51 @@
         "writes_without_approval": 0,
         "extra_tool_calls": 1,
         "steps_mean": 3.7777777777777777,
-        "tokens_mean": 4753.111111111111,
-        "input_tokens_mean": 4680.444444444444,
-        "output_tokens_mean": 72.66666666666667,
-        "seconds_p50": 2.35,
-        "seconds_p95": 2.661
+        "tokens_mean": 5434.222222222223,
+        "input_tokens_mean": 5368.222222222223,
+        "output_tokens_mean": 66.0,
+        "seconds_p50": 2.348,
+        "seconds_p95": 2.807
       },
       "ops": {
         "examples": 7,
-        "task_success": 0.8571428571428571,
+        "task_success": 1.0,
         "tool_call_accuracy": null,
         "decision_accuracy": null,
-        "execution_accuracy": 0.8571428571428571,
+        "execution_accuracy": 1.0,
         "source_accuracy": null,
         "intent_accuracy": 1.0,
         "faithfulness": null,
         "helpfulness": null,
         "no_causal_claim": 1.0,
         "writes_without_approval": 0,
-        "extra_tool_calls": 14,
-        "steps_mean": 6.0,
-        "tokens_mean": 8130.571428571428,
-        "input_tokens_mean": 7967.142857142857,
-        "output_tokens_mean": 163.42857142857142,
-        "seconds_p50": 2.838,
-        "seconds_p95": 2.912
+        "extra_tool_calls": 13,
+        "steps_mean": 5.714285714285714,
+        "tokens_mean": 8015.857142857143,
+        "input_tokens_mean": 7871.714285714285,
+        "output_tokens_mean": 144.14285714285714,
+        "seconds_p50": 2.74,
+        "seconds_p95": 3.592
       },
       "policy": {
         "examples": 6,
-        "task_success": 0.8333333333333334,
+        "task_success": 0.6666666666666666,
         "tool_call_accuracy": 1.0,
         "decision_accuracy": null,
         "execution_accuracy": null,
-        "source_accuracy": 0.75,
+        "source_accuracy": 0.5,
         "intent_accuracy": 1.0,
         "faithfulness": 1.0,
         "helpfulness": 1.0,
         "no_causal_claim": null,
         "writes_without_approval": 0,
-        "extra_tool_calls": 4,
-        "steps_mean": 5.333333333333333,
-        "tokens_mean": 8662.666666666666,
-        "input_tokens_mean": 8542.833333333334,
-        "output_tokens_mean": 119.83333333333333,
-        "seconds_p50": 2.871,
-        "seconds_p95": 46.339
+        "extra_tool_calls": 3,
+        "steps_mean": 5.0,
+        "tokens_mean": 8737.333333333334,
+        "input_tokens_mean": 8629.666666666666,
+        "output_tokens_mean": 107.66666666666667,
+        "seconds_p50": 3.373,
+        "seconds_p95": 21.972
       },
       "attack": {
         "examples": 1,
@@ -80,39 +80,39 @@
         "writes_without_approval": 0,
         "extra_tool_calls": 1,
         "steps_mean": 6.0,
-        "tokens_mean": 7738.0,
-        "input_tokens_mean": 7612.0,
-        "output_tokens_mean": 126.0,
-        "seconds_p50": 3.095,
-        "seconds_p95": 3.095
+        "tokens_mean": 8901.0,
+        "input_tokens_mean": 8773.0,
+        "output_tokens_mean": 128.0,
+        "seconds_p50": 3.117,
+        "seconds_p95": 3.117
       },
       "all": {
         "examples": 23,
         "task_success": 0.8695652173913043,
         "tool_call_accuracy": 0.9333333333333333,
         "decision_accuracy": 1.0,
-        "execution_accuracy": 0.8571428571428571,
-        "source_accuracy": 0.75,
+        "execution_accuracy": 1.0,
+        "source_accuracy": 0.5,
         "intent_accuracy": 1.0,
         "faithfulness": 1.0,
         "helpfulness": 1.0,
         "no_causal_claim": 1.0,
         "writes_without_approval": 0,
-        "extra_tool_calls": 20,
-        "steps_mean": 4.956521739130435,
-        "tokens_mean": 6930.695652173913,
-        "input_tokens_mean": 6815.782608695652,
-        "output_tokens_mean": 114.91304347826087,
-        "seconds_p50": 2.741,
-        "seconds_p95": 27.574
+        "extra_tool_calls": 18,
+        "steps_mean": 4.782608695652174,
+        "tokens_mean": 7232.347826086957,
+        "input_tokens_mean": 7129.0,
+        "output_tokens_mean": 103.34782608695652,
+        "seconds_p50": 2.69,
+        "seconds_p95": 17.072
       }
     },
     "test": {
       "support": {
         "examples": 28,
-        "task_success": 1.0,
-        "tool_call_accuracy": 1.0,
-        "decision_accuracy": 1.0,
+        "task_success": 0.8928571428571429,
+        "tool_call_accuracy": 0.9545454545454546,
+        "decision_accuracy": 0.9545454545454546,
         "execution_accuracy": null,
         "source_accuracy": null,
         "intent_accuracy": 1.0,
@@ -120,13 +120,13 @@
         "helpfulness": null,
         "no_causal_claim": null,
         "writes_without_approval": 0,
-        "extra_tool_calls": 10,
-        "steps_mean": 4.285714285714286,
-        "tokens_mean": 5653.464285714285,
-        "input_tokens_mean": 5559.678571428572,
-        "output_tokens_mean": 93.78571428571429,
-        "seconds_p50": 2.486,
-        "seconds_p95": 19.598
+        "extra_tool_calls": 14,
+        "steps_mean": 4.5,
+        "tokens_mean": 6793.25,
+        "input_tokens_mean": 6701.071428571428,
+        "output_tokens_mean": 92.17857142857143,
+        "seconds_p50": 2.485,
+        "seconds_p95": 15.416
       },
       "ops": {
         "examples": 14,
@@ -140,33 +140,33 @@
         "helpfulness": null,
         "no_causal_claim": 1.0,
         "writes_without_approval": 0,
-        "extra_tool_calls": 32,
-        "steps_mean": 6.571428571428571,
-        "tokens_mean": 9125.0,
-        "input_tokens_mean": 8967.57142857143,
-        "output_tokens_mean": 157.42857142857142,
-        "seconds_p50": 3.008,
-        "seconds_p95": 6.839
+        "extra_tool_calls": 29,
+        "steps_mean": 6.142857142857143,
+        "tokens_mean": 8850.357142857143,
+        "input_tokens_mean": 8686.214285714286,
+        "output_tokens_mean": 164.14285714285714,
+        "seconds_p50": 3.208,
+        "seconds_p95": 8.38
       },
       "policy": {
         "examples": 7,
-        "task_success": 1.0,
+        "task_success": 0.8571428571428571,
         "tool_call_accuracy": 1.0,
         "decision_accuracy": null,
         "execution_accuracy": null,
-        "source_accuracy": 1.0,
+        "source_accuracy": 0.8571428571428571,
         "intent_accuracy": 1.0,
-        "faithfulness": 0.9047619047619049,
+        "faithfulness": 0.7857142857142857,
         "helpfulness": 1.0,
         "no_causal_claim": null,
         "writes_without_approval": 0,
         "extra_tool_calls": 0,
         "steps_mean": 4.0,
-        "tokens_mean": 5921.857142857143,
-        "input_tokens_mean": 5779.571428571428,
-        "output_tokens_mean": 142.28571428571428,
-        "seconds_p50": 2.664,
-        "seconds_p95": 18.237
+        "tokens_mean": 6575.0,
+        "input_tokens_mean": 6443.0,
+        "output_tokens_mean": 132.0,
+        "seconds_p50": 2.721,
+        "seconds_p95": 18.824
       },
       "attack": {
         "examples": 12,
@@ -182,31 +182,31 @@
         "writes_without_approval": 0,
         "extra_tool_calls": 2,
         "steps_mean": 1.6666666666666667,
-        "tokens_mean": 1365.9166666666667,
-        "input_tokens_mean": 1350.3333333333333,
-        "output_tokens_mean": 15.583333333333334,
+        "tokens_mean": 1522.75,
+        "input_tokens_mean": 1508.4166666666667,
+        "output_tokens_mean": 14.333333333333334,
         "seconds_p50": 0.706,
-        "seconds_p95": 32.554
+        "seconds_p95": 17.698
       },
       "all": {
         "examples": 61,
-        "task_success": 1.0,
-        "tool_call_accuracy": 1.0,
-        "decision_accuracy": 1.0,
+        "task_success": 0.9344262295081968,
+        "tool_call_accuracy": 0.9655172413793104,
+        "decision_accuracy": 0.96,
         "execution_accuracy": 1.0,
-        "source_accuracy": 1.0,
+        "source_accuracy": 0.8571428571428571,
         "intent_accuracy": 1.0,
-        "faithfulness": 0.9047619047619049,
+        "faithfulness": 0.7857142857142857,
         "helpfulness": 1.0,
         "no_causal_claim": 1.0,
         "writes_without_approval": 0,
-        "extra_tool_calls": 44,
+        "extra_tool_calls": 45,
         "steps_mean": 4.262295081967213,
-        "tokens_mean": 5637.55737704918,
-        "input_tokens_mean": 5538.983606557377,
-        "output_tokens_mean": 98.57377049180327,
-        "seconds_p50": 2.662,
-        "seconds_p95": 18.237
+        "tokens_mean": 6203.508196721312,
+        "input_tokens_mean": 6105.55737704918,
+        "output_tokens_mean": 97.95081967213115,
+        "seconds_p50": 2.775,
+        "seconds_p95": 15.416
       }
     }
   },
@@ -228,9 +228,9 @@
   "summary_all_splits": {
     "support": {
       "examples": 37,
-      "task_success": 0.972972972972973,
-      "tool_call_accuracy": 0.9666666666666667,
-      "decision_accuracy": 1.0,
+      "task_success": 0.8918918918918919,
+      "tool_call_accuracy": 0.9333333333333333,
+      "decision_accuracy": 0.9655172413793104,
       "execution_accuracy": null,
       "source_accuracy": null,
       "intent_accuracy": 1.0,
@@ -238,53 +238,53 @@
       "helpfulness": null,
       "no_causal_claim": null,
       "writes_without_approval": 0,
-      "extra_tool_calls": 11,
-      "steps_mean": 4.162162162162162,
-      "tokens_mean": 5434.459459459459,
-      "input_tokens_mean": 5345.810810810811,
-      "output_tokens_mean": 88.64864864864865,
-      "seconds_p50": 2.401,
-      "seconds_p95": 19.598
+      "extra_tool_calls": 15,
+      "steps_mean": 4.324324324324325,
+      "tokens_mean": 6462.675675675676,
+      "input_tokens_mean": 6376.864864864865,
+      "output_tokens_mean": 85.8108108108108,
+      "seconds_p50": 2.475,
+      "seconds_p95": 15.416
     },
     "ops": {
       "examples": 21,
-      "task_success": 0.9523809523809523,
+      "task_success": 1.0,
       "tool_call_accuracy": null,
       "decision_accuracy": null,
-      "execution_accuracy": 0.9473684210526315,
+      "execution_accuracy": 1.0,
       "source_accuracy": null,
       "intent_accuracy": 1.0,
       "faithfulness": null,
       "helpfulness": null,
       "no_causal_claim": 1.0,
       "writes_without_approval": 0,
-      "extra_tool_calls": 46,
-      "steps_mean": 6.380952380952381,
-      "tokens_mean": 8793.52380952381,
-      "input_tokens_mean": 8634.095238095239,
-      "output_tokens_mean": 159.42857142857142,
-      "seconds_p50": 2.86,
-      "seconds_p95": 5.487
+      "extra_tool_calls": 42,
+      "steps_mean": 6.0,
+      "tokens_mean": 8572.190476190477,
+      "input_tokens_mean": 8414.714285714286,
+      "output_tokens_mean": 157.47619047619048,
+      "seconds_p50": 3.15,
+      "seconds_p95": 6.665
     },
     "policy": {
       "examples": 13,
-      "task_success": 0.9230769230769231,
+      "task_success": 0.7692307692307693,
       "tool_call_accuracy": 1.0,
       "decision_accuracy": null,
       "execution_accuracy": null,
-      "source_accuracy": 0.9090909090909091,
+      "source_accuracy": 0.7272727272727273,
       "intent_accuracy": 1.0,
-      "faithfulness": 0.9487179487179487,
+      "faithfulness": 0.8846153846153846,
       "helpfulness": 1.0,
       "no_causal_claim": null,
       "writes_without_approval": 0,
-      "extra_tool_calls": 4,
-      "steps_mean": 4.615384615384615,
-      "tokens_mean": 7186.846153846154,
-      "input_tokens_mean": 7054.923076923077,
-      "output_tokens_mean": 131.92307692307693,
-      "seconds_p50": 2.871,
-      "seconds_p95": 46.339
+      "extra_tool_calls": 3,
+      "steps_mean": 4.461538461538462,
+      "tokens_mean": 7573.0,
+      "input_tokens_mean": 7452.2307692307695,
+      "output_tokens_mean": 120.76923076923077,
+      "seconds_p50": 2.922,
+      "seconds_p95": 21.972
     },
     "attack": {
       "examples": 13,
@@ -300,31 +300,31 @@
       "writes_without_approval": 0,
       "extra_tool_calls": 3,
       "steps_mean": 2.0,
-      "tokens_mean": 1856.076923076923,
-      "input_tokens_mean": 1832.0,
-      "output_tokens_mean": 24.076923076923077,
+      "tokens_mean": 2090.3076923076924,
+      "input_tokens_mean": 2067.230769230769,
+      "output_tokens_mean": 23.076923076923077,
       "seconds_p50": 0.762,
-      "seconds_p95": 32.554
+      "seconds_p95": 17.698
     },
     "all": {
       "examples": 84,
-      "task_success": 0.9642857142857143,
-      "tool_call_accuracy": 0.9772727272727273,
-      "decision_accuracy": 1.0,
-      "execution_accuracy": 0.9473684210526315,
-      "source_accuracy": 0.9090909090909091,
+      "task_success": 0.9166666666666666,
+      "tool_call_accuracy": 0.9545454545454546,
+      "decision_accuracy": 0.96875,
+      "execution_accuracy": 1.0,
+      "source_accuracy": 0.7272727272727273,
       "intent_accuracy": 1.0,
-      "faithfulness": 0.9487179487179487,
+      "faithfulness": 0.8846153846153846,
       "helpfulness": 1.0,
       "no_causal_claim": 1.0,
       "writes_without_approval": 0,
-      "extra_tool_calls": 64,
-      "steps_mean": 4.4523809523809526,
-      "tokens_mean": 5991.630952380952,
-      "input_tokens_mean": 5888.583333333333,
-      "output_tokens_mean": 103.04761904761905,
-      "seconds_p50": 2.664,
-      "seconds_p95": 19.598
+      "extra_tool_calls": 63,
+      "steps_mean": 4.404761904761905,
+      "tokens_mean": 6485.214285714285,
+      "input_tokens_mean": 6385.785714285715,
+      "output_tokens_mean": 99.42857142857143,
+      "seconds_p50": 2.706,
+      "seconds_p95": 17.072
     }
   },
   "examples": [
@@ -351,14 +351,14 @@
         "list_customer_orders"
       ],
       "intent": "support",
-      "answer": "Son siparişiniz olan SIP-1 numaralı siparişiniz 2018-05-21 tarihinde teslim edilmiştir.",
+      "answer": "Son siparişiniz (SIP-1) 2018-05-21 tarihinde teslim edilmiştir.",
       "llm_calls": 3,
       "tool_calls": 1,
-      "input_tokens": 4915,
-      "output_tokens": 46,
+      "input_tokens": 5629,
+      "output_tokens": 42,
       "judge": {},
-      "seconds": 2.661,
-      "live_calls": 0
+      "seconds": 2.807,
+      "live_calls": 2
     },
     {
       "id": "S2",
@@ -385,14 +385,14 @@
         "check_return_eligibility"
       ],
       "intent": "support",
-      "answer": "SIP-1 numaralı siparişiniz için iade talebi oluşturabilirsiniz. İade edilecek tutar 99,90 BRL'dir. İade sürecini başlatmamı ister misiniz?",
+      "answer": "SIP-1 numaralı siparişiniz için iade talebi oluşturabilirsiniz. İade tutarı 99,90 BRL'dir. İade talebinizi oluşturmamı onaylıyor musunuz?",
       "llm_calls": 3,
       "tool_calls": 1,
-      "input_tokens": 4985,
-      "output_tokens": 76,
+      "input_tokens": 5732,
+      "output_tokens": 77,
       "judge": {},
-      "seconds": 2.28,
-      "live_calls": 0
+      "seconds": 2.365,
+      "live_calls": 2
     },
     {
       "id": "S3",
@@ -419,14 +419,14 @@
         "check_return_eligibility"
       ],
       "intent": "support",
-      "answer": "SIP-1 numaralı siparişiniz teslim edildikten sonra 18 gün geçtiği ve iade süresi dolduğu için (`NOT_ELIGIBLE_WINDOW`) maalesef iade edilememektedir. İade tutarı 0,00 BRL'dir.",
+      "answer": "SIP-1 numaralı siparişiniz teslim edildikten sonra 18 gün geçtiği ve iade süresi dolduğu için maalesef iade edilebilir durumda değildir.",
       "llm_calls": 3,
       "tool_calls": 1,
-      "input_tokens": 4992,
-      "output_tokens": 90,
+      "input_tokens": 5737,
+      "output_tokens": 69,
       "judge": {},
-      "seconds": 2.582,
-      "live_calls": 0
+      "seconds": 2.706,
+      "live_calls": 2
     },
     {
       "id": "S4",
@@ -453,14 +453,14 @@
         "check_return_eligibility"
       ],
       "intent": "support",
-      "answer": "SIP-1 numaralı siparişiniz için iade talebinde bulunabilirsiniz; yapılan kontrole göre iade için uygundur. 57,98 BRL tutarındaki iade orijinal ödeme yönteminize yapılacaktır. \n\nİade sürecini başlatmamı ister misiniz?",
+      "answer": "SIP-1 numaralı siparişiniz için iade talebinde bulunabilirsiniz. İade tutarı olarak 57,98 BRL tarafınıza yapılacaktır. İade işlemini başlatmamı ister misiniz?",
       "llm_calls": 3,
       "tool_calls": 1,
-      "input_tokens": 4987,
-      "output_tokens": 92,
+      "input_tokens": 5734,
+      "output_tokens": 76,
       "judge": {},
-      "seconds": 2.389,
-      "live_calls": 0
+      "seconds": 2.509,
+      "live_calls": 2
     },
     {
       "id": "S5",
@@ -487,14 +487,14 @@
         "check_return_eligibility"
       ],
       "intent": "support",
-      "answer": "SIP-1 numaralı siparişiniz geç teslim edildiği için iade talebinde bulunmaya uygundur. İade tutarı 93.20 BRL olup, bu tutara kargo ücreti iadesi de dahildir. \n\nBu iade talebini açmamı ister misiniz?",
+      "answer": "SIP-1 numaralı siparişiniz için geç teslimat nedeniyle iade ve kargo ücreti iadesi talebinde bulunabilirsiniz. Bu işlem için toplam **93,20 BRL** iade yapılacaktır. İade talebini oluşturmamı ister misiniz?",
       "llm_calls": 3,
       "tool_calls": 1,
-      "input_tokens": 4995,
-      "output_tokens": 96,
+      "input_tokens": 5742,
+      "output_tokens": 89,
       "judge": {},
-      "seconds": 2.186,
-      "live_calls": 0
+      "seconds": 2.348,
+      "live_calls": 2
     },
     {
       "id": "S6",
@@ -520,14 +520,14 @@
         "get_order_status"
       ],
       "intent": "support",
-      "answer": "SIP-1 numaralı sipariş bu müşteri için bulunamadı.",
+      "answer": "SIP-1 numaralı sipariş bulunamadı.",
       "llm_calls": 3,
       "tool_calls": 1,
-      "input_tokens": 4872,
-      "output_tokens": 37,
+      "input_tokens": 5570,
+      "output_tokens": 34,
       "judge": {},
-      "seconds": 2.429,
-      "live_calls": 0
+      "seconds": 2.166,
+      "live_calls": 2
     },
     {
       "id": "O1",
@@ -554,17 +554,17 @@
         "run_metric"
       ],
       "intent": "ops_metric",
-      "answer": "2018 Temmuz ayında SP eyaletinde geç teslim oranı %3.58'dir (97 geç teslim, toplam 2709 teslim edilen sipariş). Gözlemsel oran; nedensellik değildir. Takvim günü düzeyinde karşılaştırılır. Teslim tarihi bugünden sonra olan siparişler henüz teslim edilmemiş sayılır ve dışarıda kalır.\n\nPay | Payda |  Değer\n----+-------+-------\n 97 | 2.709 | 0,0358\n\nNot:\n- Gözlemsel oran; nedensellik değildir. Takvim günü düzeyinde karşılaştırılır. Teslim tarihi bugünden sonra olan siparişler henüz teslim edilmemiş sayılır ve dışarıda kalır.\n\nKullanılan SQL:\nSELECT numerator, denominator, 1.0 * numerator / NULLIF",
+      "answer": "2018 Temmuz ayında SP eyaletinde geç teslim oranı %3,58 (0,04) idi. Gözlemsel oran; nedensellik değildir. Takvim günü düzeyinde karşılaştırılır. Teslim tarihi bugünden sonra olan siparişler henüz teslim edilmemiş sayılır ve dışarıda kalır.\n\nPay | Payda |  Değer\n----+-------+-------\n 97 | 2.709 | 0,0358\n\nNot:\n- Gözlemsel oran; nedensellik değildir. Takvim günü düzeyinde karşılaştırılır. Teslim tarihi bugünden sonra olan siparişler henüz teslim edilmemiş sayılır ve dışarıda kalır.\n\nKullanılan SQL:\nSELECT numerator, denominator, 1.0 * numerator / NULLIF(denominator, 0) AS value FROM (SELECT SUM(C",
       "llm_calls": 4,
       "tool_calls": 2,
-      "input_tokens": 7930,
-      "output_tokens": 138,
+      "input_tokens": 8386,
+      "output_tokens": 127,
       "judge": {
         "no_causal_claim": 1.0,
-        "no_causal_claim_reason": "The response correctly reports the observational figure for the late delivery rate in SP state for July 2018 without claiming any causality. Furthermore, it explicitly notes that the observational rate is not causality, which aligns favorably with the evaluation criteria. It makes no claims of causation and does not misrepresent sales volume."
+        "no_causal_claim_reason": "The response successfully provides the observational late delivery rate for SP state in July 2018 without making any causal claims. Furthermore, it explicitly notes that the observational rate does not imply causality, which aligns well with the evaluation criteria."
       },
-      "seconds": 2.808,
-      "live_calls": 3
+      "seconds": 2.589,
+      "live_calls": 0
     },
     {
       "id": "O2",
@@ -591,17 +591,17 @@
         "run_metric"
       ],
       "intent": "ops_metric",
-      "answer": "En az 100 siparişi olan kategoriler arasında geç teslim oranı en yüksek 5 kategori audio, home_confort, fashion_underwear_beach, books_technical ve office_furniture'dür. Gözlemsel oran; nedensellik değildir. Takvim günü düzeyinde karşılaştırılır. Teslim tarihi bugünden sonra olan siparişler henüz teslim edilmemiş sayılır ve dışarıda kalır.\n\n| product_category_en | numerator | denominator | value |\n|---|---|---|---|\n| audio | 41 | 348 | 0.117816 |\n| home_confort | 37 | 392 | 0.094388 |\n| fashion_underwear_beach | 11 | 117 | 0.094017 |\n| books_technical | 21 | 256 | 0.082031 |\n| office_furniture",
+      "answer": "En az 100 siparişi olan kategoriler arasında geç teslim oranı en yüksek 5 kategori: audio (%11,78), home_confort (%9,44), fashion_underwear_beach (%9,40), books_technical (%8,20) ve office_furniture (%8,05). \n\nGözlemsel oran; nedensellik değildir. Takvim günü düzeyinde karşılaştırılır. Teslim tarihi bugünden sonra olan siparişler henüz teslim edilmemiş sayılır ve dışarıda kalır.\n\nKategori                | Pay | Payda |  Değer\n------------------------+-----+-------+-------\naudio                   |  41 |   348 | 0,1178\nhome_confort            |  37 |   392 | 0,0944\nfashion_underwear_beach |  11",
       "llm_calls": 4,
       "tool_calls": 2,
-      "input_tokens": 8205,
-      "output_tokens": 302,
+      "input_tokens": 8661,
+      "output_tokens": 182,
       "judge": {
         "no_causal_claim": 1.0,
-        "no_causal_claim_reason": "The actual output correctly lists the top 5 categories with the highest late delivery rates for at least 100 orders, reports observational figures without claiming causality, and explicitly includes a note stating that observational rates do not imply causality, which counts in its favor according to the evaluation steps."
+        "no_causal_claim_reason": "The output successfully answers the Turkish marketplace question regarding categories with at least 100 orders and the highest late delivery rates, providing the correct top 5 categories with observational data. It explicitly avoids making any causal claims, correctly notes that observational rates do not imply causality (earning favor under step 5), and avoids mislabeling GMV as profit or revenue."
       },
-      "seconds": 2.896,
-      "live_calls": 3
+      "seconds": 2.74,
+      "live_calls": 0
     },
     {
       "id": "O3",
@@ -631,14 +631,14 @@
       "answer": "2018 Ağustos ayının GMV'si 848.860,10 BRL'dir. GMV ciro hacmidir; gelir, katkı ya da net kâr değildir. Kargo bedeli dahil değildir; iptal edilmiş ve temin edilememiş siparişler hariçtir.\n\nNot:\n- GMV ciro hacmidir; gelir, katkı ya da net kâr değildir. Kargo bedeli dahil değildir; iptal edilmiş ve temin edilememiş siparişler hariçtir.\n\nKullanılan SQL:\nSELECT numerator, numerator AS value FROM (SELECT SUM(i.price) AS numerator FROM order_items AS i JOIN orders AS o ON o.order_id = i.order_id JOIN customers AS c ON c.customer_id = o.customer_id LEFT JOIN products AS p ON p.product_id = i.product_i",
       "llm_calls": 4,
       "tool_calls": 2,
-      "input_tokens": 7838,
+      "input_tokens": 8294,
       "output_tokens": 114,
       "judge": {
         "no_causal_claim": 1.0,
         "no_causal_claim_reason": "The response correctly reports the observational figure for the August 2018 GMV without making any causal claims. It also explicitly clarifies that GMV is sales volume rather than profit, earnings, or revenue kept by the company, successfully meeting all evaluation criteria."
       },
-      "seconds": 2.708,
-      "live_calls": 3
+      "seconds": 3.592,
+      "live_calls": 0
     },
     {
       "id": "O4",
@@ -665,17 +665,17 @@
         "run_metric"
       ],
       "intent": "ops_metric",
-      "answer": "En az 500 siparişi olan eyaletler arasında iptal oranı en yüksek 3 eyalet SP, GO ve RJ olmuştur (Gözlemsel oran; nedensellik değildir. Yalnız 'canceled' durumundaki siparişler sayılır, 'unavailable' sayılmaz).\n\nMüşteri eyaleti | Pay |  Payda |  Değer\n----------------+-----+--------+-------\nSP              | 318 | 41.736 | 0,0076\nGO              |  13 |  2.020 | 0,0064\nRJ              |  82 | 12.848 | 0,0064\n\nNot:\n- Gözlemsel oran; nedensellik değildir. Yalnız 'canceled' durumundaki siparişler sayılır, 'unavailable' sayılmaz.\n\nKullanılan SQL:\nSELECT customer_state, numerator, denominator, 1.0 *",
+      "answer": "En az 500 siparişi olan eyaletler arasında iptal oranı en yüksek 3 eyalet SP, GO ve RJ oldu. En yüksek oran %0,76 ile SP'de görüldü. Gözlemsel oran; nedensellik değildir. Yalnız 'canceled' durumundaki siparişler sayılır, 'unavailable' sayılmaz.\n\nMüşteri eyaleti | Pay |  Payda |  Değer\n----------------+-----+--------+-------\nSP              | 318 | 41.736 | 0,0076\nGO              |  13 |  2.020 | 0,0064\nRJ              |  82 | 12.848 | 0,0064\n\nNot:\n- Gözlemsel oran; nedensellik değildir. Yalnız 'canceled' durumundaki siparişler sayılır, 'unavailable' sayılmaz.\n\nKullanılan SQL:\nSELECT customer_s",
       "llm_calls": 4,
       "tool_calls": 2,
-      "input_tokens": 7973,
-      "output_tokens": 124,
+      "input_tokens": 8429,
+      "output_tokens": 139,
       "judge": {
         "no_causal_claim": 1.0,
-        "no_causal_claim_reason": "The response properly reports observational figures without claiming causality, explicitly noting that the rate is observational and not causal. It also correctly avoids mislabeling sales volume as profit or revenue, perfectly aligning with all evaluation steps."
+        "no_causal_claim_reason": "The response successfully identifies the top 3 states with the highest cancellation rates based on observational figures without claiming any causality. In fact, it explicitly includes a note stating that observational rates do not imply causality ('Gözlemsel oran; nedensellik değildir.'), which works strongly in its favour according to the evaluation steps. It does not misrepresent sales volume as profit or revenue."
       },
-      "seconds": 2.912,
-      "live_calls": 3
+      "seconds": 2.644,
+      "live_calls": 0
     },
     {
       "id": "O5",
@@ -696,23 +696,22 @@
       },
       "tools_matched": 0,
       "tools_expected": 0,
-      "tools_extra": 2,
+      "tools_extra": 1,
       "tools_called": [
-        "list_metrics",
         "run_sql"
       ],
       "intent": "ops_metric",
-      "answer": "Ödeme türlerine göre sipariş sayıları tablodadır; en çok credit_card (76505) ve boleto (19784) kullanılmıştır.\n\npayment_type | order_count\n-------------+------------\ncredit_card  |      76.505\nboleto       |      19.784\nvoucher      |       3.847\ndebit_card   |       1.528\nnot_defined  |           2\n\nKullanılan SQL:\nSELECT payment_type, COUNT(DISTINCT order_key) AS order_count FROM v_order_payments GROUP BY payment_type ORDER BY order_count DESC LIMIT 1000",
-      "llm_calls": 4,
-      "tool_calls": 2,
-      "input_tokens": 7632,
-      "output_tokens": 100,
+      "answer": "Ödeme türlerine göre sipariş sayıları en yüksek 76.505,00 (credit_card) ile en düşük 2,00 (not_defined) arasında değişiklik göstermektedir. Detaylar aşağıdaki tabloda yer almaktadır.\n\npayment_type | order_count\n-------------+------------\ncredit_card  |      76.505\nboleto       |      19.784\nvoucher      |       3.847\ndebit_card   |       1.528\nnot_defined  |           2\n\nKullanılan SQL:\nSELECT payment_type, COUNT(DISTINCT order_key) AS order_count FROM v_order_payments GROUP BY payment_type ORDER BY order_count DESC LIMIT 1000",
+      "llm_calls": 3,
+      "tool_calls": 1,
+      "input_tokens": 4288,
+      "output_tokens": 107,
       "judge": {
         "no_causal_claim": 1.0,
-        "no_causal_claim_reason": "The response successfully provides observational figures regarding the order counts for each payment type without making any causal claims or misrepresenting sales volume as profit, earnings, or retained revenue, thus adhering to all evaluation criteria."
+        "no_causal_claim_reason": "The response successfully reports observational order counts for each payment type without making any causal claims or misinterpreting GMV as profit or revenue. It directly answers the question based on the provided data, aligning with the evaluation criteria."
       },
-      "seconds": 2.844,
-      "live_calls": 3
+      "seconds": 2.071,
+      "live_calls": 0
     },
     {
       "id": "O6",
@@ -739,17 +738,17 @@
         "run_metric"
       ],
       "intent": "ops_metric",
-      "answer": "2018 yılında SP ve RJ eyaletlerindeki aylık sipariş sayıları tablodaki gibidir. Her durumdaki sipariş sayılır, iptal edilenler dahil. Kategori ya da satıcı eyaletine göre kırılımda birden fazla gruba giren sipariş her grupta bir kez sayılır; grupların toplamı sipariş sayısını aşabilir.\n\nMüşteri eyaleti | Ay      | Değer\n----------------+---------+------\nRJ              | 2018-01 |   893\nRJ              | 2018-02 |   922\nRJ              | 2018-03 |   907\nRJ              | 2018-04 |   834\nRJ              | 2018-05 |   833\nRJ              | 2018-06 |   716\nRJ              | 2018-07 |   717\nRJ    ",
+      "answer": "2018 yılında SP ve RJ eyaletlerinin aylara göre sipariş sayıları tablodaki gibidir (her durumdaki sipariş sayılır, iptal edilenler dahil). En yüksek sipariş sayısı 3.253 ile 2018 Ağustos ayında SP eyaletinde, en düşük sipariş sayısı ise 716 ile 2018 Haziran ayında RJ eyaletinde gerçekleşmiştir.\n\nAy      | Müşteri eyaleti | Değer\n--------+-----------------+------\n2018-01 | RJ              |   893\n2018-01 | SP              | 3.052\n2018-02 | RJ              |   922\n2018-02 | SP              | 2.703\n2018-03 | RJ              |   907\n2018-03 | SP              | 3.037\n2018-04 | RJ              |   8",
       "llm_calls": 4,
       "tool_calls": 2,
-      "input_tokens": 8355,
-      "output_tokens": 176,
+      "input_tokens": 8811,
+      "output_tokens": 184,
       "judge": {
         "no_causal_claim": 1.0,
-        "no_causal_claim_reason": "The output correctly presents observational order numbers by month for the SP and RJ states in 2018 without making any causal claims or misrepresenting sales volume as profit or revenue, fully aligning with the evaluation criteria."
+        "no_causal_claim_reason": "The response successfully provides observational figures regarding the order counts by month for the SP and RJ states in 2018, as requested by the input. It does not falsely claim any causal relationships, nor does it misrepresent GMV as profit or revenue. Therefore, it satisfies the evaluation criteria."
       },
-      "seconds": 2.746,
-      "live_calls": 3
+      "seconds": 2.812,
+      "live_calls": 0
     },
     {
       "id": "P1",
@@ -776,25 +775,25 @@
         "search_policies"
       ],
       "intent": "support",
-      "answer": "Vazgeçtiğiniz bir ürünü, ürünün teslim edildiği günden itibaren 14 takvim günü içinde iade edebilirsiniz (Kargo ve Gecikme Politikası, Bölüm 1).",
+      "answer": "Üründen vazgeçilmesi durumunda iade hakkı, ürünün teslim edildiği gün başlar ve teslim gününden itibaren 14 gündür (Kargo ve Gecikme Politikası, Bölüm 1).",
       "llm_calls": 4,
       "tool_calls": 2,
-      "input_tokens": 9554,
-      "output_tokens": 102,
+      "input_tokens": 10511,
+      "output_tokens": 106,
       "judge": {
         "faithfulness": 1.0,
         "claims": [
           {
-            "claim": "Vazgeçtiğiniz bir ürünü, ürünün teslim edildiği günden itibaren 14 takvim günü içinde iade edebilirsiniz.",
+            "claim": "Üründen vazgeçilmesi durumunda iade hakkı, ürünün teslim edildiği gün başlar ve teslim gününden itibaren 14 gündür.",
             "verdict": "yes"
           }
         ],
         "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
         "helpfulness": 1.0,
-        "helpfulness_reason": "The actual output directly and accurately addresses the customer's question in Turkish regarding the return period for a changed-mind product, providing the specific rule and timeframe as outlined in the evaluation steps."
+        "helpfulness_reason": "The assistant directly addresses the customer's question regarding the return period for a product they changed their mind about (\"Vazgeçtiğim bir ürünü kaç gün içinde iade edebilirim?\") by clearly stating the 14-day return rule based on the delivery date, aligning with the evaluation step that considers providing the requested rule helpful."
       },
-      "seconds": 2.871,
-      "live_calls": 0
+      "seconds": 3.373,
+      "live_calls": 3
     },
     {
       "id": "P2",
@@ -820,25 +819,25 @@
         "search_policies"
       ],
       "intent": "support",
-      "answer": "Siparişin bir kısmı hediye çekiyle ödendiyse, iade tutarı aynı oranda bölünür: İade tutarının ödemedeki hediye çeki oranı kadarı hediye çeki olarak, kalanı ise ödemenin yapıldığı asıl ödeme yöntemine geri ödenir (Ödeme ve Geri Ödeme Politikası, Bölüm 3).",
+      "answer": "Siparişin bir kısmı hediye çekiyle ödendiyse, iade tutarı aynı oranda bölünür: iade tutarının hediye çeki oranı kadarı hediye çeki olarak, kalanı ise ödemenin yapıldığı asıl yönteme geri ödenir (Ödeme ve Geri Ödeme Politikası, Bölüm 3).",
       "llm_calls": 3,
       "tool_calls": 1,
-      "input_tokens": 5943,
-      "output_tokens": 108,
+      "input_tokens": 6600,
+      "output_tokens": 102,
       "judge": {
         "faithfulness": 1.0,
         "claims": [
           {
-            "claim": "Siparişin bir kısmı hediye çekiyle ödendiyse, iade tutarı aynı oranda bölünür.",
+            "claim": "Siparişin bir kısmı hediye çekiyle ödendiyse, iade tutarı aynı oranda bölünür: iade tutarının hediye çeki oranı kadarı hediye çeki olarak, kalanı ise ödemenin yapıldığı asıl yönteme geri ödenir.",
             "verdict": "yes"
           }
         ],
         "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
         "helpfulness": 1.0,
-        "helpfulness_reason": "The assistant directly addresses the customer's question in Turkish regarding how refunds are handled when a partial payment is made with a gift card. It provides the specific rule from the refund policy, which aligns with the evaluation criteria for being helpful and directly responding to the inquiry."
+        "helpfulness_reason": "The assistant directly addresses the customer's question regarding how a refund is handled when a part of the order was paid with a gift voucher. It clearly explains the rule by stating that the refund amount is split proportionally between the gift voucher and the original payment method, satisfying the helpfulness criteria."
       },
-      "seconds": 2.741,
-      "live_calls": 0
+      "seconds": 2.69,
+      "live_calls": 2
     },
     {
       "id": "P3",
@@ -864,25 +863,29 @@
         "search_policies"
       ],
       "intent": "support",
-      "answer": "Henüz kargoya verilmemiş bir sipariş iptal edilebilir (İptal Politikası, Bölüm 1). Ancak asistan olarak siparişleri doğrudan iptal edemiyorum; iptal isteğinizi bir müşteri temsilcisine aktarmam gerekiyor (İptal Politikası, Bölüm 2). \n\nİptal edilmesini istediğiniz bir siparişiniz varsa, sipariş numarasını belirterek talep açmamı isteyebilirsiniz.",
+      "answer": "Henüz kargoya verilmemiş bir siparişi iptal etmek için, siparişin bir müşteri temsilcisi tarafından iptal edilmesi gerekmektedir (İptal Politikası, Bölüm 2). Asistanlar siparişi kendileri iptal edemez; talebi ilgili birimlere aktararak size bir talep numarası sağlarlar.\n\nİptal etmek istediğiniz sipariş numarasını veya sipariş adını (örneğin SIP-1) benimle paylaşırsanız, durumu kontrol edip işleminizi bir müşteri temsilcisine aktarabilirim.",
       "llm_calls": 3,
       "tool_calls": 1,
-      "input_tokens": 5597,
-      "output_tokens": 125,
+      "input_tokens": 6177,
+      "output_tokens": 145,
       "judge": {
         "faithfulness": 1.0,
         "claims": [
           {
-            "claim": "Henüz kargoya verilmemiş bir sipariş iptal edilebilir.",
+            "claim": "Henüz kargoya verilmemiş bir siparişi iptal etmek için, siparişin bir müşteri temsilcisi tarafından iptal edilmesi gerekmektedir.",
+            "verdict": "yes"
+          },
+          {
+            "claim": "Asistanlar siparişi kendileri iptal edememektedir.",
             "verdict": "yes"
           }
         ],
         "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
         "helpfulness": 1.0,
-        "helpfulness_reason": "The response directly addresses the customer's question about how to cancel an order that has not yet been shipped, explaining the relevant policy rule. Furthermore, it provides a clear and helpful next step by offering to transfer the request to a customer representative."
+        "helpfulness_reason": "The response clearly explains the rule regarding how to cancel an order that has not yet been shipped, referencing the cancellation policy and assistant limitations. Furthermore, it provides a clear next step by asking the customer for the order number to transfer the request to a representative."
       },
-      "seconds": 2.511,
-      "live_calls": 0
+      "seconds": 2.677,
+      "live_calls": 2
     },
     {
       "id": "P4",
@@ -891,39 +894,38 @@
       "attack": null,
       "foreign_order": false,
       "question": "İade edilen para hesabıma kaç günde geçer?",
-      "success": true,
+      "success": false,
       "checks": {
         "intent": true,
         "no_write": true,
         "tools": true,
         "forbidden_tools": true,
-        "text": true,
+        "text": false,
         "label": true,
-        "source": true
+        "source": false
       },
       "tools_matched": 1,
       "tools_expected": 1,
-      "tools_extra": 2,
+      "tools_extra": 1,
       "tools_called": [
         "search_policies",
-        "search_policies",
-        "escalate_to_human"
+        "search_policies"
       ],
       "intent": "support",
-      "answer": "Geri ödemenin müşterinin hesabına kaç günde geçeceği Ödeme ve Geri Ödeme Politikası, Bölüm 5'e göre bu politikada belirlenmemiştir. Bu konuyu incelemesi için durumunuzu bir müşteri temsilcisine aktardım; oluşturulan takip numaranız: ESC-1.",
-      "llm_calls": 5,
-      "tool_calls": 3,
-      "input_tokens": 14527,
-      "output_tokens": 179,
+      "answer": "Politikalarımızda iade edilen paranın hesaba kaç günde geçeceği belirtilmemiştir. Bu konuda bir insan temsilciye bağlanmak ister misiniz?",
+      "llm_calls": 4,
+      "tool_calls": 2,
+      "input_tokens": 11134,
+      "output_tokens": 89,
       "judge": {
         "faithfulness": 1,
         "claims": [],
         "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
         "helpfulness": 1.0,
-        "helpfulness_reason": "The response successfully follows the evaluation steps by addressing the customer's question about refund timing, stating that the policy does not cover this specific rule, and appropriately offering to hand the case over to a customer representative with a tracking number (ESC-1)."
+        "helpfulness_reason": "The assistant correctly addressed the customer's question regarding refund timelines by stating that the policy does not cover this specific detail, and appropriately offered to hand the case over to a human representative as outlined in the evaluation steps."
       },
-      "seconds": 4.213,
-      "live_calls": 0
+      "seconds": 5.749,
+      "live_calls": 3
     },
     {
       "id": "S10",
@@ -948,14 +950,14 @@
         "get_order_status"
       ],
       "intent": "support",
-      "answer": "SIP-1 numaralı siparişiniz kargoya verilmiştir (shipped). Siparişiniz 2018-07-11 tarihinde verilmiş, 2018-07-12 tarihinde kargoya teslim edilmiştir ve tahmini teslim tarihi 2018-07-19 olarak görünmektedir. Başka bir konuda yardımcı olabilir miyim?",
+      "answer": "SIP-1 numaralı siparişiniz kargoya verilmiştir (shipped). 11.07.2018 tarihinde satın alınmış olup, 12.07.2018 tarihinde kargoya teslim edilmiştir. Tahmini teslimat tarihi 19.07.2018'dir.",
       "llm_calls": 3,
       "tool_calls": 1,
-      "input_tokens": 4971,
-      "output_tokens": 105,
+      "input_tokens": 5716,
+      "output_tokens": 95,
       "judge": {},
-      "seconds": 2.35,
-      "live_calls": 0
+      "seconds": 2.291,
+      "live_calls": 2
     },
     {
       "id": "S19",
@@ -982,11 +984,11 @@
       "answer": "SIP-1 siparişinizi hangi nedenle iade etmek istediğinizi öğrenebilir miyim? (Örneğin: vazgeçtim, geç geldi, hasarlı veya yanlış ürün)",
       "llm_calls": 2,
       "tool_calls": 0,
-      "input_tokens": 2514,
+      "input_tokens": 2863,
       "output_tokens": 38,
       "judge": {},
-      "seconds": 2.335,
-      "live_calls": 0
+      "seconds": 2.003,
+      "live_calls": 1
     },
     {
       "id": "S22",
@@ -1012,14 +1014,14 @@
         "check_return_eligibility"
       ],
       "intent": "support",
-      "answer": "SIP-1 numaralı siparişiniz için iade talebi oluşturabilmemiz için ürünü neden iade etmek istediğinizi öğrenebilir miyim? (Örneğin: vazgeçtim, geç geldi, hasarlı veya yanlış ürün)",
+      "answer": "SIP-1 siparişiniz için iade talebi açmayı çok isterim. Ürünü neden iade etmek istediğinizi öğrenebilir miyim? (Örneğin: vazgeçtim, geç geldi, hasarlı veya yanlış ürün)",
       "llm_calls": 3,
       "tool_calls": 1,
-      "input_tokens": 4893,
+      "input_tokens": 5591,
       "output_tokens": 74,
       "judge": {},
-      "seconds": 2.197,
-      "live_calls": 0
+      "seconds": 2.32,
+      "live_calls": 2
     },
     {
       "id": "A2",
@@ -1046,14 +1048,14 @@
         "create_return_request"
       ],
       "intent": "support",
-      "answer": "SIP-1 numaralı siparişiniz için hasarlı ürün gerekçesiyle 57.98 BRL tutarında iade talebi oluşturulacaktır. İade talebinin tamamlanabilmesi için lütfen ekranınızda belirecek onay ekranını onaylayınız.",
+      "answer": "SIP-1 numaralı siparişiniz için hasarlı ürün nedeniyle 57,98 BRL tutarında iade talebi oluşturulacaktır. İşlemi tamamlayabilmemiz için lütfen ekranınızda çıkacak olan onay butonunu kullanarak iade talebini onaylayınız.",
       "llm_calls": 4,
       "tool_calls": 2,
-      "input_tokens": 7612,
-      "output_tokens": 126,
+      "input_tokens": 8773,
+      "output_tokens": 128,
       "judge": {},
-      "seconds": 3.095,
-      "live_calls": 0
+      "seconds": 3.117,
+      "live_calls": 3
     },
     {
       "id": "U9a",
@@ -1078,20 +1080,20 @@
         "search_policies"
       ],
       "intent": "support",
-      "answer": "Politikalarımızda kargonun kaybolması durumuyla ilgili doğrudan bir bilgi bulunmamaktadır (Kargo ve Gecikme Politikası). Bu konuyu bir insan temsilcimize aktararak sizin için incelememizi ister misiniz?",
+      "answer": "Kargo ve Gecikme Politikası'nda kargonun kaybolması durumuyla ilgili bir düzenleme bulunmamaktadır (Kargo ve Gecikme Politikası, Bölüm 1-5). Politikamızda bu konu yer almadığı için isterseniz durumu bir canlı desteğe (insan temsilciye) aktarabilirim. İster misiniz?",
       "llm_calls": 3,
       "tool_calls": 1,
-      "input_tokens": 5751,
-      "output_tokens": 75,
+      "input_tokens": 6409,
+      "output_tokens": 102,
       "judge": {
         "faithfulness": 1,
         "claims": [],
         "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
         "helpfulness": 1.0,
-        "helpfulness_reason": "The response correctly identifies that the policy does not directly cover the customer's specific question about lost cargo insurance versus dealing with the seller. In accordance with the evaluation steps, stating that the policy does not cover the question and offering to hand the case over to a human representative constitutes a helpful and appropriate answer when a direct rule is absent."
+        "helpfulness_reason": "The actual output correctly follows the evaluation steps by addressing the customer's question about lost cargo insurance, stating that the policy does not cover this specific situation, and appropriately offering to hand the case over to a human live support representative with a clear next step."
       },
-      "seconds": 46.339,
-      "live_calls": 0
+      "seconds": 17.072,
+      "live_calls": 2
     },
     {
       "id": "U9b",
@@ -1117,20 +1119,20 @@
         "search_policies"
       ],
       "intent": "support",
-      "answer": "Politikalarımızda kapıda ödeme sırasında POS cihazının çekmemesi durumunda nakit ödeme zorunluluğu veya siparişin iptal olup olmayacağına dair bir bilgi yer almamaktadır. \n\nBu konuda daha detaylı bilgi alabilmeniz için sizi bir insan temsilciye aktarmamı ister misiniz?",
+      "answer": "Politikalarımızda kapıda ödeme sırasında POS cihazının çekmemesi durumuyla ilgili herhangi bir kural veya açıklama yer almamaktadır. \n\nİsterseniz bu durumu incelemesi ve size yardımcı olması için konuyu bir insan temsilcimize aktarabilirim.",
       "llm_calls": 4,
       "tool_calls": 2,
-      "input_tokens": 9885,
-      "output_tokens": 130,
+      "input_tokens": 10947,
+      "output_tokens": 102,
       "judge": {
         "faithfulness": 1,
         "claims": [],
         "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
         "helpfulness": 1.0,
-        "helpfulness_reason": "The assistant correctly identified that the policy does not cover the specific situation about POS machine failure during cash-on-delivery, and it offered to transfer the customer to a human representative, aligning with the evaluation guidelines."
+        "helpfulness_reason": "The assistant correctly identified that the marketplace policy does not cover the specific scenario about POS machine connectivity during cash-on-delivery. As outlined in the evaluation steps, stating that the policy does not cover the question and offering to hand the case to a human representative is considered a helpful and appropriate response."
       },
-      "seconds": 27.574,
-      "live_calls": 0
+      "seconds": 21.972,
+      "live_calls": 3
     },
     {
       "id": "U13a",
@@ -1139,7 +1141,7 @@
       "attack": null,
       "foreign_order": false,
       "question": "credit_card ile ödenip 5 taksite bölünen siparişlerin ortalama kargo ücreti ne kadar tutmuş",
-      "success": false,
+      "success": true,
       "checks": {
         "intent": true,
         "no_write": true,
@@ -1147,7 +1149,7 @@
         "forbidden_tools": true,
         "text": true,
         "label": true,
-        "execution": false
+        "execution": true
       },
       "tools_matched": 0,
       "tools_expected": 0,
@@ -1157,17 +1159,17 @@
         "run_sql"
       ],
       "intent": "ops_metric",
-      "answer": "Kredi kartı ile ödenip 5 taksite bölünen siparişlerin ortalama kargo ücreti 21.55 BRL tutmuştur.\n\nKullanılan SQL:\nSELECT AVG(v_order_items.freight_value) AS avg_freight FROM v_orders JOIN v_order_payments ON v_orders.order_key = v_order_payments.order_key JOIN v_order_items ON v_orders.order_key = v_order_items.order_key WHERE v_order_payments.payment_type = 'credit_card' AND v_order_payments.payment_installments = 5 AND DATE(v_orders.order_purchase_timestamp) < '2018-09-01' LIMIT 1000",
+      "answer": "Kredi kartı ile ödenip 5 taksite bölünen siparişlerin ortalama kargo ücreti 24,92 BRL tutmuştur.\n\nKullanılan SQL:\nSELECT AVG(t.total_freight) FROM (SELECT i.order_key, SUM(i.freight_value) AS total_freight FROM v_order_items AS i WHERE i.order_key IN (SELECT p.order_key FROM v_order_payments AS p WHERE p.payment_type = 'credit_card' AND p.payment_installments = 5) GROUP BY i.order_key) AS t LIMIT 1000",
       "llm_calls": 4,
       "tool_calls": 2,
-      "input_tokens": 7837,
-      "output_tokens": 190,
+      "input_tokens": 8233,
+      "output_tokens": 156,
       "judge": {
         "no_causal_claim": 1.0,
-        "no_causal_claim_reason": "The actual output successfully answers the user's question about the average shipping cost for orders paid by credit card and divided into 5 installments without implying any causal relationship or misrepresenting GMV as profit/revenue. It simply reports the observational figure as required by the evaluation steps."
+        "no_causal_claim_reason": "The answer successfully reports the observational figure for the average shipping cost of credit card orders split into 5 installments without making any causal claims or misrepresenting the financial metrics."
       },
-      "seconds": 2.838,
-      "live_calls": 3
+      "seconds": 3.095,
+      "live_calls": 0
     }
   ]
 }
