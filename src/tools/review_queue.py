@@ -23,6 +23,7 @@ from pathlib import Path
 
 from src import messages
 from src.guardrails.pii import hash_id
+from src.guardrails.write_access import restrict_writes
 from src.rules.returns import RequestStatus
 from src.tools.escalation import (
     TICKET_CLOSED,
@@ -37,6 +38,8 @@ logger = logging.getLogger(__name__)
 # The only identity that may hold a queue: the support rep session.
 REP_IDENTITY = ("rep",)
 DECISIONS = (RequestStatus.APPROVED, RequestStatus.REJECTED)
+# The only values the console may change.
+STATUS_COLUMNS = (("return_requests", "status"), (TICKETS_TABLE, "status"))
 # How many decided requests the rep sees, newest first.
 DECIDED_SHOWN = 20
 PRIORITY_ORDER = "CASE priority WHEN 'high' THEN 0 WHEN 'normal' THEN 1 ELSE 2 END"
@@ -72,14 +75,20 @@ class ReviewQueue:
         if tuple(identity) != REP_IDENTITY:
             raise NotARepSession(identity[0] if identity else None)
         self._db_path = db_path
-        with self._connect() as conn:
-            # A database built before tickets were kept gets the table.
-            ensure_tickets_table(conn)
+        # A database built before tickets were kept gets the table, on a
+        # connection of its own: the console's connections may not create it.
+        conn = sqlite3.connect(db_path)
+        try:
+            with conn:
+                ensure_tickets_table(conn)
+        finally:
+            conn.close()
 
     def _connect(self) -> sqlite3.Connection:
         # A short connection per call: the order servers write to the same
-        # file, and nothing is held open between clicks.
-        return sqlite3.connect(self._db_path)
+        # file, and nothing is held open between clicks. It may change the
+        # status of a request or a ticket and nothing else.
+        return restrict_writes(sqlite3.connect(self._db_path), updates=STATUS_COLUMNS)
 
     # --- Reading ------------------------------------------------------------
 

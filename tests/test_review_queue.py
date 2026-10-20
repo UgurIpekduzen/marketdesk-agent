@@ -1,5 +1,6 @@
 """Tests for the support rep's review queue: decisions made in code only."""
 
+import hashlib
 import logging
 import sqlite3
 
@@ -224,3 +225,32 @@ def test_a_ticket_is_closed_once(queue, synthetic_db_path):
 
 def test_an_unknown_ticket_is_not_found(queue):
     assert queue.close_ticket(999)["error"] == "NOT_FOUND"
+
+
+# --- Least privilege of the console's connection -----------------------------
+
+
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "UPDATE return_requests SET refund_amount = 1000",
+        f"UPDATE {TICKETS_TABLE} SET summary = 'x'",
+        "INSERT INTO return_requests (order_id) VALUES ('x')",
+        "DELETE FROM return_requests",
+        "UPDATE orders SET order_status = 'canceled'",
+        "DROP TABLE orders",
+    ],
+)
+def test_the_console_connection_may_change_only_the_status(
+    queue, synthetic_db_path, sql
+):
+    add_request(synthetic_db_path)
+    add_ticket(synthetic_db_path)
+    before = hashlib.sha256(synthetic_db_path.read_bytes()).hexdigest()
+    conn = queue._connect()
+
+    with pytest.raises(sqlite3.DatabaseError, match="not authorized"), conn:
+        conn.execute(sql)
+    conn.close()
+
+    assert hashlib.sha256(synthetic_db_path.read_bytes()).hexdigest() == before
