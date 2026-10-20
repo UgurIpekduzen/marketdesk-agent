@@ -5,7 +5,7 @@
   "S3": {"question": "I changed my mind about my order {order}, can I return it?"},
   "S4": {"question": "My order {order} arrived damaged, can I return it?"},
   "S5": {"question": "My order {order} arrived very late, can I get my shipping money back?", "must_contain": [["freight", "shipping"], ["{refund_amount}", "{refund_amount_comma}"]]},
-  "S6": {"question": "Where is order number {order}?", "must_contain": [["not found", "could not find", "couldn't find", "no order", "cannot find", "can't find"]]},
+  "S6": {"question": "Where is order number {order}?", "must_contain": [["not found", "no such order", "could not find", "couldn't find", "no order", "cannot find", "can't find"]]},
   "O1": {"question": "What was the late delivery rate in the state of SP in July 2018?"},
   "O2": {"question": "Among categories with at least 100 orders, which 5 have the highest late delivery rate?"},
   "O3": {"question": "What is the GMV of August 2018?"},
