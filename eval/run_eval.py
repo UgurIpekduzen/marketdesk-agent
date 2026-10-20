@@ -52,11 +52,16 @@ EVAL_DIR = Path(__file__).resolve().parent
 GOLDEN_SET = EVAL_DIR / "golden_set.jsonl"
 RESULTS_DIR = EVAL_DIR / "results"
 DEFAULT_DB_PATH = Path("data/marketdesk.db")
-GROUPS = ("support", "ops", "policy", "attack")
+GROUPS = ("support", "ops", "policy", "attack", "multi")
 NOT_FOUND = "NOT_FOUND"
 # The sets that are run, and what their results files are called.
 INJECTION_SET = EVAL_DIR / "injection_tests.jsonl"
-RESULT_PREFIXES = {GOLDEN_SET.stem: "golden_v1", INJECTION_SET.stem: "injection_v1"}
+MULTI_TURN_SET = EVAL_DIR / "multi_turn_set.jsonl"
+RESULT_PREFIXES = {
+    GOLDEN_SET.stem: "golden_v1",
+    INJECTION_SET.stem: "injection_v1",
+    MULTI_TURN_SET.stem: "multi_turn_v1",
+}
 # dev: examples that may be read one by one while the system is worked on.
 # test: held out. Only their totals are reported, so that nothing is tuned
 # on them; an example that gets inspected has to move to dev.
@@ -500,10 +505,18 @@ def run(
             reset_tickets(conn)
             prepared = prepare(example, conn)
             seconds_before, live_before = llm.seconds, llm.live_calls
-            answer = asyncio.run(ask(example, prepared, db_path, index, llm))
-            row = score(example, prepared, answer, request_count(conn))
-            if judge is not None:
-                row["judge"] = judged(judge, example, answer.display)
+            if "turns" in example:
+                # Imported here: the module builds on this one.
+                from eval import multi_turn
+
+                row = asyncio.run(
+                    multi_turn.converse(example, prepared, db_path, index, llm, conn)
+                )
+            else:
+                answer = asyncio.run(ask(example, prepared, db_path, index, llm))
+                row = score(example, prepared, answer, request_count(conn))
+                if judge is not None:
+                    row["judge"] = judged(judge, example, answer.display)
             # Time spent in model calls: the real time of each call, also
             # when the answer came from the cache.
             row["seconds"] = round(llm.seconds - seconds_before, 3)
@@ -592,6 +605,12 @@ def main() -> int:
     text = results_text(summary, rows)
     if any(row["group"] == "attack" for row in rows):
         text += f"\n\n{attack_text(rows)}"
+    multi = None
+    if any(row["group"] == "multi" for row in rows):
+        from eval import multi_turn
+
+        multi = multi_turn.multi_turn_summary(rows)
+        text += f"\n\n{multi_turn.multi_turn_text(multi)}"
     # A run may write a return request only where an example sets the stage
     # or approves; an attack set has neither, so its copy must not change.
     text += f"\n\nDatabase copy unchanged by the run: {'yes' if unchanged else 'no'}"
@@ -610,6 +629,8 @@ def main() -> int:
             "summary": summary,
             "attack_rates": attack_rates(rows),
             "database_unchanged": unchanged,
+            # Only a multi-turn run: the rows written and the dev flows.
+            "multi_turn": multi,
             # Per group over both splits, for the comparison with the baselines.
             "summary_all_splits": summarise_by_group(rows),
             # The answers of the test split are not written down.

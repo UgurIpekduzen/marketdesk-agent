@@ -21,6 +21,7 @@ from eval.judge_check import agreement
 from eval.run_eval import (
     GOLDEN_SET,
     INJECTION_SET,
+    MULTI_TURN_SET,
     RESULTS_DIR,
     result_name,
     show,
@@ -165,11 +166,59 @@ def judge_check_line(check: dict | None) -> str:
     )
 
 
+def multi_turn_section(multi: dict) -> str:
+    """The multi-turn run: totals per split, the clicks and the dev flows."""
+    lines = [
+        (
+            "| Split | n | Task success | Tool-call accuracy | Decision | Steps "
+            "| Tokens | p50 s | p95 s |"
+        ),
+        "|---|---|---|---|---|---|---|---|---|",
+    ]
+    for split, groups in multi.get("summary", {}).items():
+        numbers = groups["all"]
+        lines.append(
+            f"| {split} | {numbers['examples']} | {show(numbers['task_success'])} "
+            f"| {show(numbers['tool_call_accuracy'])} "
+            f"| {show(numbers['decision_accuracy'])} "
+            f"| {show(numbers['steps_mean'], percent=False)} "
+            f"| {numbers['tokens_mean']:.0f} "
+            f"| {show(numbers['seconds_p50'], percent=False)} "
+            f"| {show(numbers['seconds_p95'], percent=False)} |"
+        )
+    extra = multi.get("multi_turn") or {}
+    held, tried = extra.get("written", [0, 0])
+    flows = ", ".join(
+        f"{flow} {passed} of {run}"
+        for flow, (passed, run) in extra.get("dev_flows", {}).items()
+    )
+    overall = multi.get("summary_all_splits", {}).get("all", {})
+    notes = [
+        (
+            "- Each example is one conversation: messages, and the approve or "
+            "decline click made in code as the page makes it. An example passes "
+            "only if every turn does."
+        ),
+        f"- Requests as expected after the clicks and at the end: {held} of {tried}.",
+        (
+            "- Return requests written by a message rather than an approve click: "
+            f"{overall.get('writes_without_approval', '—')}."
+        ),
+        (
+            f"- Passed per flow, dev only: {flows or 'none'}. The test split is "
+            "given as totals only: its three variants of a flow test one case, so "
+            "a count per flow would name the case."
+        ),
+    ]
+    return "\n".join(lines) + "\n\n" + "\n".join(notes)
+
+
 def build_report(
     golden: dict,
     baselines: dict,
     injection: dict,
     judge_check: dict | None = None,
+    multi: dict | None = None,
 ) -> str:
     overall = golden.get("summary_all_splits", {}).get("all", {})
     gain = semantic_layer_gain(golden, baselines)
@@ -201,6 +250,10 @@ def build_report(
                 ),
             ]
         ),
+    ]
+    if multi:
+        parts.append("## Multi-turn conversations\n\n" + multi_turn_section(multi))
+    parts += [
         "## How to read this\n\n"
         + "\n".join(
             [
@@ -240,7 +293,8 @@ def main() -> int:
     injection = load(RESULTS_DIR / f"{result_name(INJECTION_SET, model)}.json")
     sheet = RESULTS_DIR / f"judge_check_{name}.csv"
     check = agreement(sheet) if sheet.exists() else None
-    report = build_report(golden, baselines, injection, check)
+    multi = load(RESULTS_DIR / f"{result_name(MULTI_TURN_SET, model)}.json")
+    report = build_report(golden, baselines, injection, check, multi)
     path = RESULTS_DIR / f"final_report_{name}.md"
     path.write_text(report, encoding="utf-8")
     print(report)
