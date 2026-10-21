@@ -39,6 +39,7 @@ FAILURE_MESSAGES = {
     failures.PROVIDER_BUSY: "UI_ERROR_BUSY",
     failures.KEY_REFUSED: "UI_ERROR_KEY_REFUSED",
     failures.KEY_NOT_SET: "UI_ERROR_NOT_CONFIGURED",
+    failures.DAILY_BUDGET: "UI_ERROR_DAILY_BUDGET",
     failures.RUN_FAILED: "UI_ERROR_GENERIC",
 }
 # A markdown image, inline or by reference: the browser would fetch its

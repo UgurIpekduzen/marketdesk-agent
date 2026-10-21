@@ -289,6 +289,9 @@ UI_ERROR_QUESTION_LIMIT = (
     "Demo şu an çok yoğun: bu saat için soru sınırına ulaşıldı. Lütfen biraz "
     "sonra tekrar deneyin."
 )
+UI_ERROR_DAILY_BUDGET = (
+    "Demo bugünkü soru hakkını doldurdu. Lütfen yarın tekrar deneyin."
+)
 UI_NO_CUSTOMERS = "Veritabanında örnek müşteri bulunamadı."
 UI_ERROR_QUOTA = (
     "Yapay zekâ servisinin ücretsiz kullanım kotası şu an dolmuş görünüyor. "

@@ -198,6 +198,9 @@ UI_ERROR_QUESTION_LIMIT = (
     "The demo is very busy right now: the question limit for this hour has "
     "been reached. Please try again a little later."
 )
+UI_ERROR_DAILY_BUDGET = (
+    "The demo has used up today's questions. Please try again tomorrow."
+)
 UI_NO_CUSTOMERS = "No example customers were found in the database."
 UI_ERROR_QUOTA = (
     "The AI service's free usage quota seems to be used up right now. Please "

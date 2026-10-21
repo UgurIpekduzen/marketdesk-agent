@@ -23,10 +23,12 @@ from pathlib import Path
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 
 import config
+from src.guardrails.guarded_llm import build_provider_llm
 from src.i18n import DEFAULT_LANGUAGE, Language
 from src.knowledge.policy_index import PolicyIndex
 from src.mcp_server.client import OrdersClient
 from src.orchestrator import Answer, Orchestrator, SessionType
+from src.ui.call_budget import CallBudget, CountedLLM
 from src.ui.question_limit import QuestionLimit
 
 logger = logging.getLogger(__name__)
@@ -82,13 +84,15 @@ class ChatSession:
         provider_llm: FunctionCallingLLM | None = None,
         question_limit: QuestionLimit | None = None,
         language: Language = DEFAULT_LANGUAGE,
+        call_budget: CallBudget | None = None,
     ) -> None:
         """Open a customer session, or an operations session without a customer.
 
         The session type and the language are fixed here and cannot be
         changed afterwards: a new language is a new session.
         question_limit, when given, is shared with the other sessions and
-        counts every question that reaches the model.
+        counts every question that reaches the model; call_budget, when
+        given, is shared too and counts every call made to the model.
         """
         self.session_type = (
             SessionType.CUSTOMER if customer_unique_id else SessionType.OPS
@@ -96,7 +100,12 @@ class ChatSession:
         self._db_path = db_path
         self._policy_index = policy_index
         self._customer = customer_unique_id
+        if call_budget is not None:
+            provider_llm = CountedLLM(
+                inner=provider_llm or build_provider_llm(), budget=call_budget
+            )
         self._provider_llm = provider_llm
+        self._call_budget = call_budget
         self._question_limit = question_limit
         self.language = Language(language)
         self._closed = False
@@ -183,6 +192,8 @@ class ChatSession:
         whatever the page shows, every message passes this way."""
         if len(message) > config.MAX_MESSAGE_CHARS:
             raise MessageTooLong(f"{len(message)} characters")
+        if self._call_budget is not None and not self._closed:
+            self._call_budget.check()
         if self._question_limit is not None and not self._closed:
             self._question_limit.take()
         return self._do(lambda router: router.ask(message))

@@ -11,9 +11,12 @@ from pathlib import Path
 import pytest
 
 import config
+from src import messages
 from src.orchestrator import Intent, SessionType
+from src.ui.call_budget import CallBudget, CallBudgetReached
 from src.ui.chat_session import ChatSession, MessageTooLong, SessionClosed
 from src.ui.question_limit import QuestionLimit, QuestionLimitReached
+from src.ui.view import friendly_error
 from tests.agent_harness import request_count
 from tests.fakes import FakeLLM
 from tests.synthetic_data import ALICE
@@ -26,13 +29,14 @@ def open_session(synthetic_db_path, fake_policy_index):
     """Open sessions with a scripted model; all are closed after the test."""
     sessions = []
 
-    def start(script, customer=ALICE, question_limit=None):
+    def start(script, customer=ALICE, question_limit=None, call_budget=None):
         session = ChatSession(
             synthetic_db_path,
             fake_policy_index,
             customer,
             FakeLLM(script=list(script)),
             question_limit=question_limit,
+            call_budget=call_budget,
         )
         sessions.append(session)
         return session
@@ -202,6 +206,71 @@ def test_sessions_share_the_question_limit_and_approvals_do_not_count(
 
     with pytest.raises(QuestionLimitReached):
         second.ask("Merhaba")
+
+
+def model_requests(session):
+    """The requests the session's stand-in model has received."""
+    return session._provider_llm.inner.requests
+
+
+def test_the_call_budget_counts_every_model_call(open_session):
+    # The router's call, one step with a tool, and the answer: three calls.
+    budget = CallBudget(per_day=3)
+    session = open_session(
+        ["support", [("get_order_status", {"order_ref": "o_day14"})], "Teslim."],
+        call_budget=budget,
+    )
+
+    session.ask("o_day14 nerede?")
+
+    with pytest.raises(CallBudgetReached):
+        session.ask("Bir soru daha")
+    assert len(model_requests(session)) == 3
+
+
+def test_a_run_that_reaches_the_budget_stops_in_the_middle(open_session):
+    budget = CallBudget(per_day=2)
+    session = open_session(
+        ["support", [("get_order_status", {"order_ref": "o_day14"})], "Teslim."],
+        call_budget=budget,
+    )
+
+    with pytest.raises(Exception) as failure:
+        session.ask("o_day14 nerede?")
+
+    assert friendly_error(failure.value) == messages.UI_ERROR_DAILY_BUDGET
+    assert len(model_requests(session)) == 2
+
+
+def test_sessions_share_the_call_budget(open_session):
+    budget = CallBudget(per_day=1)
+    first = open_session(["out_of_scope"], call_budget=budget)
+    second = open_session([], call_budget=budget)
+
+    first.ask("Bir şiir yaz")
+
+    with pytest.raises(CallBudgetReached):
+        second.ask("Merhaba")
+    assert model_requests(second) == []
+
+
+def test_clicks_on_the_card_use_no_model_call_and_write_once(
+    open_session, synthetic_db_path
+):
+    budget = CallBudget(per_day=3)
+    session = open_session(
+        ["support", [("create_return_request", RETURN)], "Onayınız istenecek."],
+        call_budget=budget,
+    )
+    at_start = request_count(synthetic_db_path)
+    session.ask("o_day14 hasarlı geldi, iade istiyorum")
+
+    # The budget is used up by the question; the clicks still work.
+    replies = [session.approve() for _ in range(3)] + [session.decline()]
+
+    assert "oluşturuldu" in replies[0]
+    assert request_count(synthetic_db_path) == at_start + 1
+    assert len(model_requests(session)) == 3
 
 
 def test_closing_ends_the_thread_and_refuses_more_work(open_session):

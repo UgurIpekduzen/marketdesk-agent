@@ -27,6 +27,7 @@ from src.i18n import Language, catalog, from_locale
 from src.rules.returns import RequestStatus
 from src.tools.review_queue import REP_IDENTITY, ReviewQueue
 from src.ui import examples, resources
+from src.ui.call_budget import CallBudget
 from src.ui.chat_session import ChatSession
 from src.ui.question_limit import QuestionLimit
 from src.ui.session_pool import SessionPool
@@ -83,6 +84,12 @@ def session_pool() -> SessionPool:
 def question_limit() -> QuestionLimit:
     """One per server process, shared by every visitor."""
     return QuestionLimit(config.MAX_QUESTIONS_PER_HOUR)
+
+
+@st.cache_resource
+def call_budget() -> CallBudget:
+    """One per server process: the model calls of every visitor in a day."""
+    return CallBudget(config.MAX_MODEL_CALLS_PER_DAY)
 
 
 @st.cache_resource
@@ -173,6 +180,7 @@ def open_session(identity: tuple, customer_unique_id: str | None) -> None:
                 customer_unique_id,
                 question_limit=question_limit(),
                 language=page_language(),
+                call_budget=call_budget(),
             )
         )
     except Exception as failure:  # noqa: BLE001

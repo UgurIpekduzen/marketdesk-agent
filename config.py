@@ -144,3 +144,9 @@ MAX_MESSAGE_CHARS = 1000
 # about 500 model requests a day and a question takes 3 to 5; the rest is
 # left for the evaluation.
 MAX_QUESTIONS_PER_HOUR = 60
+# Model calls all visitors together may make in the last 24 hours. A question
+# can take up to MAX_STEPS + 1 calls (the router and every step), so the
+# hourly question limit alone would let one visitor use the free tier's 500
+# requests a day within an hour (measured 2026-10-21). Counted at each call;
+# 100 are left for the evaluation.
+MAX_MODEL_CALLS_PER_DAY = 400

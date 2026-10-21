@@ -40,6 +40,8 @@ def open_page(monkeypatch, synthetic_db_path, fake_policy_index):
         fake = FakeLLM(script=list(script))
         monkeypatch.setattr(resources, "db_path", lambda: Path(synthetic_db_path))
         monkeypatch.setattr(resources, "load_policy_index", lambda: fake_policy_index)
+        # The page's sessions count their calls around the model they build.
+        monkeypatch.setattr("src.ui.chat_session.build_provider_llm", lambda: fake)
         monkeypatch.setattr("src.orchestrator.build_provider_llm", lambda: fake)
         if customer:
             # One known customer, so the scripts can name their orders.
@@ -977,6 +979,18 @@ def test_the_hourly_question_limit_is_said_plainly(open_page, monkeypatch):
 
     assert not page.exception
     assert page.error[0].value == messages.UI_ERROR_QUESTION_LIMIT
+
+
+def test_the_daily_call_budget_is_said_plainly(open_page, monkeypatch):
+    # The router's call and the answer: two calls, the whole budget.
+    monkeypatch.setattr(config, "MAX_MODEL_CALLS_PER_DAY", 2)
+    page = open_page(["support", "Merhaba."])
+    page = ask(page, "Merhaba")
+
+    page = ask(page, "Bir soru daha")
+
+    assert not page.exception
+    assert page.error[0].value == messages.UI_ERROR_DAILY_BUDGET
 
 
 def test_a_click_on_an_approve_button_that_is_gone_writes_nothing(

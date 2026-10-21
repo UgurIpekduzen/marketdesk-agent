@@ -11,11 +11,16 @@ QUOTA_EXCEEDED = "QUOTA_EXCEEDED"
 PROVIDER_BUSY = "PROVIDER_BUSY"
 KEY_REFUSED = "KEY_REFUSED"
 KEY_NOT_SET = "KEY_NOT_SET"
+DAILY_BUDGET = "DAILY_BUDGET"
 # Any other failure of a run.
 RUN_FAILED = "RUN_FAILED"
 
+# Said by the page's daily budget of model calls when it is used up.
+BUDGET_MARK = "daily model call budget"
+
 # Marks in an error text, lower case, and the code for them.
 FAILURE_MARKS = (
+    ((BUDGET_MARK,), DAILY_BUDGET),
     (("429", "resource_exhausted", "quota", "rate limit"), QUOTA_EXCEEDED),
     (
         ("503", "unavailable", "overloaded", "high demand", "connecterror"),
