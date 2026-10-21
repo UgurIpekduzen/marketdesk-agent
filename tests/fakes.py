@@ -3,12 +3,16 @@
 FakeLLM plays back a script and records every request it receives, exactly
 as a provider would see it. A script step is either a text (the model's
 answer), a list of (tool name, arguments) pairs (the model asks for
-tools) or an exception (the provider fails).
+tools) or an exception (the provider fails). FakeEmbedder stands in for the
+embedding model.
 """
 
+import hashlib
+import re
 from collections.abc import Sequence
 from typing import Any
 
+import numpy as np
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -127,3 +131,27 @@ class FakeLLM(FunctionCallingLLM):
             for block in response.message.blocks
             if isinstance(block, ToolCallBlock)
         ]
+
+
+class FakeEmbedder:
+    """Stands in for the embedding model: no download, same interface.
+
+    A text becomes a vector of word counts, each word (cut to its first five
+    letters, to forgive Turkish endings) hashed into one of 256 slots. Texts
+    that share words get similar vectors, which is all these tests need.
+    """
+
+    DIMENSIONS = 256
+
+    def _embed(self, texts):
+        vectors = np.zeros((len(texts), self.DIMENSIONS))
+        for row, text in enumerate(texts):
+            for word in re.findall(r"\w+", text.lower()):
+                slot = int(hashlib.sha256(word[:5].encode()).hexdigest(), 16)
+                vectors[row, slot % self.DIMENSIONS] += 1
+            if not vectors[row].any():
+                vectors[row, 0] = 1
+        return vectors / np.linalg.norm(vectors, axis=1, keepdims=True)
+
+    embed_queries = _embed
+    embed_passages = _embed
