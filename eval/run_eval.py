@@ -43,6 +43,7 @@ from eval.llm_cache import (
     LiveCallLimitReached,
     NoPaidCredit,
 )
+from eval.terminal_table import terminal_tables
 from src import messages_en
 from src.guardrails.guarded_llm import (
     build_judge_provider_llm,
@@ -841,7 +842,7 @@ def main() -> int:
     # A run may write a return request only where an example sets the stage
     # or approves; an attack set has neither, so its copy must not change.
     text += f"\n\nDatabase copy unchanged by the run: {'yes' if unchanged else 'no'}"
-    print(f"\n{text}\n")
+    print(f"\n{terminal_tables(text)}\n")
     print(f"Model calls: {llm.live_calls} live, {llm.hits} from the cache")
     # The independent judge is not on the system's provider, so not on the
     # paid key either.
