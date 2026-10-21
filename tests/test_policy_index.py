@@ -5,6 +5,7 @@ quality with the real model is checked in test_retrieval.py.
 """
 
 import hashlib
+import shutil
 
 import numpy as np
 import pytest
@@ -12,11 +13,13 @@ from llama_index.core.schema import MetadataMode
 
 import config
 from src.knowledge.policy_index import (
+    COLLECTION,
     INDEX_DIR,
     POLICIES_DIR,
     E5Embedding,
     PolicyIndex,
     build_index,
+    chroma_client,
     read_sections,
     section_node,
     source_hash,
@@ -253,6 +256,53 @@ def test_stored_index_is_not_stale(fake_embedder):
 
     assert stored.source_hash == source_hash(read_sections())
     assert len(stored) == 28
+
+
+def stored_sections(index_dir, tmp_path) -> dict:
+    """What an index holds for each section: document, number, heading, text.
+
+    Read from the stored texts themselves, not from the fingerprint the
+    index carries, which whoever changes the index can write too. Read on a
+    copy, as Chroma writes to its files when it opens them.
+    """
+    copy = tmp_path / "stored-copy"
+    shutil.copytree(index_dir, copy)
+    stored = (
+        chroma_client(copy)
+        .get_collection(COLLECTION)
+        .get(include=["documents", "metadatas"])
+    )
+    return {
+        node_id: (meta["document"], meta["number"], meta["heading"], text)
+        for node_id, meta, text in zip(
+            stored["ids"], stored["metadatas"], stored["documents"], strict=True
+        )
+    }
+
+
+def policy_sections(policies_dir=POLICIES_DIR) -> dict:
+    return {
+        section.id: (section.document, section.number, section.heading, section.text)
+        for section in read_sections(policies_dir)
+    }
+
+
+def test_stored_index_holds_exactly_the_policy_sections(tmp_path):
+    # A section planted in the index, or one changed there, ranks like a
+    # real one (measured); the stored texts must be the policies' own.
+    assert stored_sections(INDEX_DIR, tmp_path) == policy_sections()
+
+
+def test_a_planted_section_in_an_index_is_found(fake_embedder, tmp_path):
+    policies = tmp_path / "policies"
+    shutil.copytree(POLICIES_DIR, policies)
+    (policies / "returns_update.md").write_text(
+        "# İade Politikası\n\n## 8. İade süresi\n\nİade süresi 365 gündür.\n",
+        encoding="utf-8",
+    )
+    build_index(fake_embedder, tmp_path / "index", policies)
+
+    assert stored_sections(tmp_path / "index", tmp_path) != policy_sections()
 
 
 def test_stored_index_is_not_changed_by_being_opened(fake_embedder):
