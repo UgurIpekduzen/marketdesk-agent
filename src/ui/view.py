@@ -8,9 +8,8 @@ import re
 from dataclasses import dataclass, field
 
 import config
-from src import messages
+from src import failures, messages
 from src.formatting import format_money, how_computed
-from src.guardrails.guarded_llm import API_KEY_VARIABLES
 from src.i18n import DEFAULT_LANGUAGE, Language, catalog
 from src.orchestrator import Answer, Intent
 from src.tools.review_queue import RequestRow, TicketRow
@@ -34,32 +33,14 @@ REP_AVATAR = ":material/headset_mic:"
 # The router answers a message no agent of the session may take.
 ROUTER_AVATAR = ":material/smart_toy:"
 AGENT_AVATARS = {Intent.SUPPORT: SUPPORT_AVATAR, Intent.OPS_METRIC: OPS_AVATAR}
-# Marks in an error text, lower case, and the catalog name of the message
-# shown for them.
-ERROR_MARKS = (
-    (("429", "resource_exhausted", "quota", "rate limit"), "UI_ERROR_QUOTA"),
-    (
-        ("503", "unavailable", "overloaded", "high demand", "connecterror"),
-        "UI_ERROR_BUSY",
-    ),
-    # The provider refused the key: Gemini and Groq say it in these words.
-    (
-        (
-            "api_key_invalid",
-            "api key not valid",
-            "invalid_api_key",
-            "invalid api key",
-            "permission_denied",
-            "unauthenticated",
-        ),
-        "UI_ERROR_KEY_REFUSED",
-    ),
-    # No key at all: reading its environment variable failed.
-    (
-        tuple(f"keyerror '{name.lower()}'" for name in API_KEY_VARIABLES.values()),
-        "UI_ERROR_NOT_CONFIGURED",
-    ),
-)
+# The message shown for each kind of provider failure, by catalog name.
+FAILURE_MESSAGES = {
+    failures.QUOTA_EXCEEDED: "UI_ERROR_QUOTA",
+    failures.PROVIDER_BUSY: "UI_ERROR_BUSY",
+    failures.KEY_REFUSED: "UI_ERROR_KEY_REFUSED",
+    failures.KEY_NOT_SET: "UI_ERROR_NOT_CONFIGURED",
+    failures.RUN_FAILED: "UI_ERROR_GENERIC",
+}
 # A markdown image, inline or by reference: the browser would fetch its
 # address as soon as the answer is drawn, so a model talked into writing
 # one could send data to any site without a click.
@@ -279,17 +260,7 @@ def friendly_error(
         return texts.UI_ERROR_QUESTION_LIMIT
     if isinstance(failure, TimeoutError):
         return texts.UI_ERROR_TIMEOUT
-    # The whole chain: the provider's error is often wrapped by the framework.
-    chain = []
-    current: BaseException | None = failure
-    while current is not None and len(chain) < 10:
-        chain.append(f"{type(current).__name__} {current}".lower())
-        current = current.__cause__ or current.__context__
-    text = " ".join(chain)
-    for marks, name in ERROR_MARKS:
-        if any(mark in text for mark in marks):
-            return getattr(texts, name)
-    return texts.UI_ERROR_GENERIC
+    return getattr(texts, FAILURE_MESSAGES[failures.failure_code(failure)])
 
 
 def request_card(
