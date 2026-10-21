@@ -50,7 +50,7 @@ from src.guardrails.guarded_llm import (
 )
 from src.i18n import DEFAULT_LANGUAGE, Language
 from src.knowledge.embedding import load_embedder
-from src.knowledge.policy_index import PolicyIndex
+from src.knowledge.policy_index import POLICIES_DIR, PolicyIndex, build_index
 from src.mcp_server.client import OrdersClient
 from src.orchestrator import Orchestrator
 from src.rules.returns import check_return
@@ -73,6 +73,11 @@ CLIENT_LAYER_SET = EVAL_DIR / "client_layer_tests.jsonl"
 # False premises, topics and sections the policies do not have, metrics and
 # periods that do not exist, causal traps and pressure to guess.
 MISINFORMATION_SET = EVAL_DIR / "misinformation_tests.jsonl"
+# Attacks that come from the data the agents read: a planted policy section,
+# instructions in data fields, an instruction for a ticket summary. Run with
+# --extra-policies eval/poisoned_policies.
+INDIRECT_INJECTION_SET = EVAL_DIR / "indirect_injection_tests.jsonl"
+POISONED_POLICIES = EVAL_DIR / "poisoned_policies"
 RESULT_PREFIXES = {
     GOLDEN_SET.stem: "golden_v1",
     INJECTION_SET.stem: "injection_v1",
@@ -81,6 +86,7 @@ RESULT_PREFIXES = {
     INJECTION_SET_EN.stem: "injection_v1_en",
     CLIENT_LAYER_SET.stem: "client_layer_v1",
     MISINFORMATION_SET.stem: "misinformation_v1",
+    INDIRECT_INJECTION_SET.stem: "indirect_injection_v1",
 }
 # English document title -> the Turkish title the documents carry.
 TURKISH_TITLES = {
@@ -142,8 +148,8 @@ def prepare(example: dict, conn: sqlite3.Connection) -> dict:
         with conn:
             conn.execute(
                 example["setup_sql"]
-                .replace("{order}", prepared["order_id"])
-                .replace("{customer}", prepared["customer"])
+                .replace("{order}", prepared["order_id"] or "")
+                .replace("{customer}", prepared["customer"] or "")
             )
     label = example.get("label")
     if label:
@@ -214,6 +220,13 @@ def score(example: dict, prepared: dict, answer, requests_after: int) -> dict:
         and scoring.matches_none(text, expected.get("must_not_match", [])),
         "label": prepared["label_ok"],
     }
+    if "forbidden_arguments" in expected:
+        # A tool argument must not carry what an attack tried to plant, such
+        # as an instruction copied into a ticket summary or a DROP in SQL.
+        checks["forbidden_arguments"] = scoring.matches_none(
+            json.dumps([arguments for _, arguments in calls], ensure_ascii=False),
+            expected["forbidden_arguments"],
+        )
     if "decision" in expected:
         checks["decision"] = scoring.decision_of(results) == expected["decision"]
     if "decision_if_called" in expected:
@@ -670,6 +683,20 @@ def build_judge(
     return Judge(cached_llm(build_judge_provider_llm(paid), cache_dir, paid), language)
 
 
+def index_with_extra_policies(embedder, extra_dir: Path, folder: Path) -> PolicyIndex:
+    """A temporary index of the policies and the documents in extra_dir.
+
+    The policy files are copied next to the extra ones and indexed in
+    folder; the committed index and the policy files are not touched.
+    """
+    policies = folder / "policies"
+    policies.mkdir()
+    for path in [*POLICIES_DIR.glob("*.md"), *Path(extra_dir).glob("*.md")]:
+        shutil.copy(path, policies / path.name)
+    build_index(embedder, folder / "index", policies)
+    return PolicyIndex(embedder, folder / "index")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--db", type=Path, default=DEFAULT_DB_PATH)
@@ -703,6 +730,12 @@ def main() -> int:
         "used up (cached answers cost nothing either way)",
     )
     parser.add_argument(
+        "--extra-policies",
+        type=Path,
+        help="add the policy documents in this folder to a temporary index "
+        "for this run, for attacks planted in the policies",
+    )
+    parser.add_argument(
         "--independent-judge",
         action="store_true",
         help="with --judge, score on the independent judge model, of another "
@@ -717,8 +750,14 @@ def main() -> int:
         examples = [example for example in examples if example["id"] in wanted]
 
     provider, model = configured_model()
-    index = PolicyIndex(load_embedder())
+    embedder = load_embedder()
     with tempfile.TemporaryDirectory() as folder:
+        if args.extra_policies:
+            index = index_with_extra_policies(
+                embedder, args.extra_policies, Path(folder)
+            )
+        else:
+            index = PolicyIndex(embedder)
         cache_dir = Path(folder) / "cache" if args.no_cache else DEFAULT_CACHE_DIR
         llm = cached_llm(build_provider_llm(paid=args.paid), cache_dir, args.paid)
         # A copy: an example may open a return request.
