@@ -961,6 +961,8 @@ def test_the_independent_judge_runs_on_its_own_provider_and_model(
     ]
     assert config.INDEPENDENT_JUDGE_PROVIDER != config.LLM_PROVIDER
     assert judge.model.get_model_name() == config.INDEPENDENT_JUDGE_MODEL
+    # Scored on GEval's own scale, out of 10.
+    assert judge.ops_steps[-1].startswith("Score 10 ")
 
 
 # --- Planted data: setups without an order, tool arguments -------------------

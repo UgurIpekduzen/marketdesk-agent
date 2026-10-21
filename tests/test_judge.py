@@ -157,6 +157,23 @@ def test_ops_answer_gets_the_causal_claim_score():
     # The judge's instructions are the ones written in this project.
     assert "observational" in sent(fake, 0)
     assert "profit" in sent(fake, 0)
+    assert "Score 1 if" in sent(fake, 0)
+
+
+def test_ops_answer_can_be_scored_with_steps_out_of_ten():
+    fake = FakeLLM(script=[json.dumps({"score": 10, "reason": "İddia yok."})])
+    judge = Judge(fake, ops_steps=judge_module.NO_CAUSAL_CLAIM_STEPS_OUT_OF_TEN)
+
+    scores = judge.ops_answer("Geç teslim puanı düşürdü mü?", "Ortalama puan 2,27.")
+
+    assert scores["no_causal_claim"] == pytest.approx(1.0)
+    assert "Score 10 if" in sent(fake, 0)
+    assert "Score 1 if" not in sent(fake, 0)
+    # Only the scale differs from the configured judge's steps.
+    assert (
+        judge_module.NO_CAUSAL_CLAIM_STEPS_OUT_OF_TEN[:-1]
+        == judge_module.NO_CAUSAL_CLAIM_STEPS[:-1]
+    )
 
 
 def test_claims_prompt_carries_the_note_on_what_is_not_a_claim():

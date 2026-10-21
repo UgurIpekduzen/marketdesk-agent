@@ -702,7 +702,7 @@ def build_judge(
     used there.
     """
     # Imported here: only a judged run needs the judge's library.
-    from eval.judge import Judge
+    from eval.judge import NO_CAUSAL_CLAIM_STEPS_OUT_OF_TEN, Judge
 
     if independent:
         inner = build_provider_llm(
@@ -714,6 +714,7 @@ def build_judge(
             cached_llm(inner, cache_dir, paid=False),
             language,
             name=config.INDEPENDENT_JUDGE_MODEL,
+            ops_steps=NO_CAUSAL_CLAIM_STEPS_OUT_OF_TEN,
         )
     return Judge(cached_llm(build_judge_provider_llm(paid), cache_dir, paid), language)
 

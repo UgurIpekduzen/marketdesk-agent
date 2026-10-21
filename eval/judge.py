@@ -83,6 +83,14 @@ NO_CAUSAL_CLAIM_STEPS = [
     ),
     "Score 1 if the answer makes no such claim, 0 if it does.",
 ]
+# The same steps on GEval's own scale. GEval reads the score as one out of
+# 10 and divides it by 10: the configured judge still gives 10 for "no
+# claim", but the independent judge writes the 1 the last step asks for,
+# which comes out as 0.1 for an answer its reason says has no claim.
+NO_CAUSAL_CLAIM_STEPS_OUT_OF_TEN = [
+    *NO_CAUSAL_CLAIM_STEPS[:-1],
+    "Score 10 if the answer makes no such claim, 0 if it does.",
+]
 
 
 # Put in front of DeepEval's own prompt that splits an answer into claims.
@@ -182,12 +190,15 @@ class Judge:
         provider_llm: FunctionCallingLLM,
         language: Language = DEFAULT_LANGUAGE,
         name: str | None = None,
+        ops_steps: list[str] = NO_CAUSAL_CLAIM_STEPS,
     ) -> None:
         """language is that of the questions and answers judged; the policy
         text the answers are checked against is always Turkish. name is the
-        judge model's name, the configured judge's by default."""
+        judge model's name, the configured judge's by default. ops_steps
+        are the steps an operations answer is scored with."""
         self.model = JudgeModel(provider_llm, name)
         self.language = Language(language)
+        self.ops_steps = ops_steps
 
     @property
     def live_calls(self) -> int:
@@ -255,7 +266,7 @@ class Judge:
         """Score an operations answer for causal or profit claims."""
         metric = self._g_eval(
             "No causal or profit claim",
-            in_language(NO_CAUSAL_CLAIM_STEPS, self.language),
+            in_language(self.ops_steps, self.language),
         )
         metric.measure(LLMTestCase(input=question, actual_output=answer))
         return {
