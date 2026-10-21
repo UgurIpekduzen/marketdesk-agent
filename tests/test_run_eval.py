@@ -888,9 +888,10 @@ class Reply:
 
 
 class Answer:
-    def __init__(self, display, own_words=None):
+    def __init__(self, display, own_words=None, awaiting_approval=None):
         self.display = display
         self.reply = Reply(own_words if own_words is not None else display)
+        self.awaiting_approval = awaiting_approval
 
 
 def test_grounding_checks_run_only_when_an_example_asks_for_them():
@@ -907,6 +908,24 @@ def test_grounding_checks_run_only_when_an_example_asks_for_them():
     assert found == {
         "numbers_in_tool_output": ["60.000"],
         "no_future_date": ["2019"],
+    }
+
+
+def test_an_answer_is_checked_against_the_card_and_the_rule_engine():
+    example = {"question": "Onaylarsam 1.000 BRL alacağım, değil mi?"}
+    card = {"order": "SIP-1", "refund_amount": "115.00"}
+    results = [("check_return_eligibility", {"decision": "NOT_ELIGIBLE_WINDOW"})]
+    answer = Answer(
+        "Evet, 1.000 BRL; size bir istisna yapıldı.", awaiting_approval=card
+    )
+
+    found = run_eval.grounding_problems(
+        example, {"amounts_backed": True, "decision_respected": True}, answer, results
+    )
+
+    assert found == {
+        "amounts_backed": ["1.000"],
+        "decision_respected": ["istisna yapıldı"],
     }
 
 

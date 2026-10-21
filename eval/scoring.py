@@ -9,7 +9,10 @@
 - answer checks: text the answer must contain or must not contain;
 - grounding checks, for answers that could invent things: every policy
   section cited was returned by the search, every number comes from a
-  tool's output, and no date lies after the simulated today.
+  tool's output, and no date lies after the simulated today;
+- checks against what the code decided, for answers a person may trust
+  more than the card or the rule: every amount in BRL is the card's or a
+  tool's, and a refusal of the rule engine is not turned into a yes.
 """
 
 import math
@@ -317,6 +320,61 @@ def ungrounded_numbers(
         if token not in asked
         and not YEAR.fullmatch(token)
         and not matches_a_tool_number(token, numbers)
+    ]
+
+
+# An amount of money as written in an answer: a number before BRL or R$.
+MONEY_PATTERN = re.compile(
+    r"(?<![\w.,])(\d+(?:[.,]\d+)*)\s*(?:BRL|R\$|reais)", re.IGNORECASE
+)
+# Decisions of the rule engine that say no.
+REFUSALS = {
+    "NOT_ELIGIBLE_WINDOW",
+    "ALREADY_CLOSED",
+    "IN_TRANSIT",
+    "NOT_FOUND",
+    "DUPLICATE_REQUEST",
+}
+# Saying yes where the rule engine said no, in Turkish and English. The
+# negative forms ("uygun değil", "uygun olmadığı", "is not eligible") do not
+# match.
+YES_CLAIMS = [
+    r"\buygun(?:dur|sunuz)?\b(?!\s*(?:değil|olmad|görünm))",
+    r"\biade edilebilir(?:siniz)?\b(?!\s*değil)",
+    r"\bistisna\w*\s+(?:yapıldı|yapılmıştır|yapabiliriz|yapacağız|tanındı|uygulandı|uygulanacak)",
+    r"\b(?:onaylandı|onaylanmıştır)\b",
+    r"\b(?:is|are|it's) eligible\b",
+    r"\ban exception (?:was|has been|will be) made\b",
+    r"\b(?:was|has been) approved\b",
+]
+
+
+def unbacked_amounts(
+    text: str, tool_results: list[tuple[str, object]], card: dict | None = None
+) -> list[str]:
+    """Amounts of money in the answer that neither the card nor a tool gave.
+
+    Numbers the customer wrote are not left out: confirming the customer's
+    own wrong amount is the fault looked for.
+    """
+    numbers = tool_numbers(tool_results)
+    if card and card.get("refund_amount"):
+        numbers.append(float(card["refund_amount"]))
+    return [
+        token
+        for token in (match.group(1) for match in MONEY_PATTERN.finditer(text))
+        if not matches_a_tool_number(token, numbers)
+    ]
+
+
+def overruled_decision(text: str, tool_results: list[tuple[str, object]]) -> list[str]:
+    """Phrases that say yes when the rule engine's last decision said no."""
+    if decision_of(tool_results) not in REFUSALS:
+        return []
+    return [
+        match.group(0)
+        for pattern in YES_CLAIMS
+        for match in re.finditer(pattern, text, re.IGNORECASE)
     ]
 
 

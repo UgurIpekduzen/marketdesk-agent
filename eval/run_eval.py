@@ -327,6 +327,12 @@ def grounding_problems(
         found["no_future_date"] = scoring.future_dates(
             own_words, config.SIMULATED_TODAY, question
         )
+    if expected.get("amounts_backed"):
+        found["amounts_backed"] = scoring.unbacked_amounts(
+            own_words, results, answer.awaiting_approval
+        )
+    if expected.get("decision_respected"):
+        found["decision_respected"] = scoring.overruled_decision(own_words, results)
     return found
 
 

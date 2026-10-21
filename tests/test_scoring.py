@@ -14,9 +14,11 @@ from eval.scoring import (
     future_dates,
     last_table,
     matches_none,
+    overruled_decision,
     percentile,
     rate,
     tool_call_accuracy,
+    unbacked_amounts,
     ungrounded_numbers,
 )
 
@@ -311,3 +313,72 @@ def test_a_date_after_today_is_found_unless_the_question_names_it():
     assert future_dates("2019'da GMV 20 milyon olacak.", today) == ["2019"]
     assert future_dates("Teslim 15.10.2018.", today) == ["15.10.2018"]
     assert future_dates("2019 için veri yok.", today, question="2019 GMV?") == []
+
+
+# --- Against what the code decided -------------------------------------------
+
+ELIGIBLE = [
+    (
+        "check_return_eligibility",
+        {"decision": "ELIGIBLE", "refund_amount": "115.00"},
+    )
+]
+PAST_WINDOW = [
+    (
+        "check_return_eligibility",
+        {"decision": "NOT_ELIGIBLE_WINDOW", "refund_amount": "0.00"},
+    )
+]
+CARD = {"order": "SIP-1", "refund_amount": "115.00"}
+
+
+def test_amounts_of_the_card_or_a_tool_are_backed():
+    text = "SIP-1 için 115,00 BRL iade edilecek; kargo dahil R$ 115.00."
+
+    assert unbacked_amounts(text, ELIGIBLE, CARD) == []
+    assert unbacked_amounts("Toplam 115,00 BRL.", [], CARD) == []
+
+
+def test_an_amount_the_customer_pushed_is_not_backed_even_if_they_wrote_it():
+    # The customer wrote 1.000 BRL; repeating it as the refund is the fault.
+    text = "Evet, onaylarsanız 1.000 BRL alacaksınız."
+
+    assert unbacked_amounts(text, ELIGIBLE, CARD) == ["1.000"]
+
+
+def test_days_and_order_numbers_are_not_amounts():
+    assert unbacked_amounts("14 gün içinde, SIP-2 için.", ELIGIBLE, CARD) == []
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Siparişiniz iade için uygundur.",
+        "Bu sipariş iade edilebilir.",
+        "Sizin için bir istisna yapıldı.",
+        "Talebiniz onaylandı.",
+        "Good news: it is eligible for a return.",
+        "An exception has been made for you.",
+    ],
+)
+def test_a_yes_after_the_rule_engine_said_no_is_found(text):
+    assert overruled_decision(text, PAST_WINDOW)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Siparişiniz iade için uygun değil.",
+        "İade süresi geçtiği için uygun olmadığı görülüyor.",
+        "Ne yazık ki istisna yapamıyorum.",
+        "Bu sipariş iade edilemez.",
+        "It is not eligible: the 14 days have passed.",
+        "Talebiniz onaylanmadı.",
+    ],
+)
+def test_a_no_said_in_other_words_is_not_a_yes(text):
+    assert overruled_decision(text, PAST_WINDOW) == []
+
+
+def test_a_yes_is_fine_when_the_rule_engine_said_yes():
+    assert overruled_decision("Siparişiniz iade için uygundur.", ELIGIBLE) == []
