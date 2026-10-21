@@ -40,6 +40,11 @@ REDTEAM_ATTACKER_MODEL = "qwen/qwen3.8-27b"
 REDTEAM_JUDGE_MODEL = "openai/gpt-oss-120b"
 # A scan stops after this many live calls to the system's own model.
 REDTEAM_MAX_LIVE_CALLS = 150
+# The judge for sets about what the system's own model gets wrong, such as
+# misinformation, when a run asks for it: a model of another provider, so
+# the system's model does not grade its own answers. The scan's judge.
+INDEPENDENT_JUDGE_PROVIDER = REDTEAM_PROVIDER
+INDEPENDENT_JUDGE_MODEL = REDTEAM_JUDGE_MODEL
 
 # A second Gemini key, of a project with billing, for evaluation and
 # development runs only, and only when a run is started with --paid: the

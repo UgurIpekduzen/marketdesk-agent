@@ -6,6 +6,7 @@ import sqlite3
 
 import pytest
 
+import config
 from eval import run_eval
 from eval.llm_cache import CachedLLM
 from src import messages_en
@@ -919,3 +920,26 @@ def test_an_invented_citation_is_named():
         {"question": "?"}, {"citations_returned": True}, answer, []
     )
     assert found == {"citations_returned": ["İade Politikası, 9"]}
+
+
+# --- The independent judge ----------------------------------------------------
+
+
+def test_the_independent_judge_runs_on_its_own_provider_and_model(
+    monkeypatch, tmp_path
+):
+    built = []
+
+    def build(provider=None, model=None, paid=False):
+        built.append((provider, model, paid))
+        return FakeLLM()
+
+    monkeypatch.setattr(run_eval, "build_provider_llm", build)
+
+    judge = run_eval.build_judge(tmp_path, paid=True, independent=True)
+
+    assert built == [
+        (config.INDEPENDENT_JUDGE_PROVIDER, config.INDEPENDENT_JUDGE_MODEL, False)
+    ]
+    assert config.INDEPENDENT_JUDGE_PROVIDER != config.LLM_PROVIDER
+    assert judge.model.get_model_name() == config.INDEPENDENT_JUDGE_MODEL

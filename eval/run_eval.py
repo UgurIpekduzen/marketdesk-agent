@@ -640,12 +640,29 @@ def cached_llm(inner, cache_dir: Path, paid: bool) -> CachedLLM:
 
 
 def build_judge(
-    cache_dir: Path, language: Language = DEFAULT_LANGUAGE, paid: bool = False
+    cache_dir: Path,
+    language: Language = DEFAULT_LANGUAGE,
+    paid: bool = False,
+    independent: bool = False,
 ):
-    """The judge on the judge model, behind the same response cache."""
+    """The judge on the judge model, behind the same response cache.
+
+    independent puts it on the independent judge model instead, of another
+    provider than the system's; the paid key is the system's, so it is not
+    used there.
+    """
     # Imported here: only a judged run needs the judge's library.
     from eval.judge import Judge
 
+    if independent:
+        inner = build_provider_llm(
+            config.INDEPENDENT_JUDGE_PROVIDER, config.INDEPENDENT_JUDGE_MODEL
+        )
+        return Judge(
+            cached_llm(inner, cache_dir, paid=False),
+            language,
+            name=config.INDEPENDENT_JUDGE_MODEL,
+        )
     return Judge(cached_llm(build_judge_provider_llm(paid), cache_dir, paid), language)
 
 
@@ -681,6 +698,13 @@ def main() -> int:
         help="make the live calls on the paid key, once the free daily quota is "
         "used up (cached answers cost nothing either way)",
     )
+    parser.add_argument(
+        "--independent-judge",
+        action="store_true",
+        help="with --judge, score on the independent judge model, of another "
+        "provider than the system's; the system's answers can come from the "
+        "cache of an earlier run",
+    )
     args = parser.parse_args()
 
     examples = load_golden(args.golden)
@@ -701,7 +725,11 @@ def main() -> int:
         if len(languages) > 1:
             raise ValueError("a run holds the examples of one language")
         language = languages.pop() if languages else DEFAULT_LANGUAGE
-        judge = build_judge(cache_dir, language, args.paid) if args.judge else None
+        judge = (
+            build_judge(cache_dir, language, args.paid, args.independent_judge)
+            if args.judge
+            else None
+        )
         hash_before = content_hash(db_copy)
         try:
             rows = run(
@@ -735,7 +763,10 @@ def main() -> int:
     text += f"\n\nDatabase copy unchanged by the run: {'yes' if unchanged else 'no'}"
     print(f"\n{text}\n")
     print(f"Model calls: {llm.live_calls} live, {llm.hits} from the cache")
-    paid_live_calls = llm.live_calls + judge_live_calls(judge) if args.paid else 0
+    # The independent judge is not on the system's provider, so not on the
+    # paid key either.
+    paid_judge_calls = 0 if args.independent_judge else judge_live_calls(judge)
+    paid_live_calls = llm.live_calls + paid_judge_calls if args.paid else 0
     if args.paid:
         print(f"Live calls on the paid key (system and judge): {paid_live_calls}")
 
@@ -750,7 +781,7 @@ def main() -> int:
             "provider": provider,
             "model": model,
             "temperature": config.LLM_TEMPERATURE,
-            "judge_model": config.JUDGE_MODEL if args.judge else None,
+            "judge_model": judge.model.get_model_name() if judge else None,
             "summary": summary,
             "attack_rates": attack_rates(rows),
             "database_unchanged": unchanged,

@@ -178,11 +178,15 @@ def in_language(steps: list[str], language: Language) -> list[str]:
 
 class Judge:
     def __init__(
-        self, provider_llm: FunctionCallingLLM, language: Language = DEFAULT_LANGUAGE
+        self,
+        provider_llm: FunctionCallingLLM,
+        language: Language = DEFAULT_LANGUAGE,
+        name: str | None = None,
     ) -> None:
         """language is that of the questions and answers judged; the policy
-        text the answers are checked against is always Turkish."""
-        self.model = JudgeModel(provider_llm)
+        text the answers are checked against is always Turkish. name is the
+        judge model's name, the configured judge's by default."""
+        self.model = JudgeModel(provider_llm, name)
         self.language = Language(language)
 
     @property
