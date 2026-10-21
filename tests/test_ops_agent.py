@@ -536,6 +536,24 @@ def test_third_identical_call_is_not_run(agent, fake):
     ]
 
 
+def test_calls_past_the_tool_limit_of_a_message_are_not_run(agent, fake):
+    # Twenty different queries asked for in one step: only the first twelve
+    # reach the database.
+    calls = [
+        ("run_sql", {"query": f"SELECT COUNT(*) FROM v_orders WHERE {n} = {n}"})
+        for n in range(20)
+    ]
+    fake.script = [calls, "Bitti."]
+
+    reply = ask(agent, "Her birini ayrı say.")
+
+    # The calls run side by side, so their results may come back in any order.
+    errors = [result.get("error") for result in tool_results(fake)]
+    assert errors.count(None) == 12
+    assert errors.count("TOOL_LIMIT") == 8
+    assert len(reply.queries) == 12
+
+
 def test_run_stops_at_the_step_limit(agent, fake):
     fake.script = [
         [

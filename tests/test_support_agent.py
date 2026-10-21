@@ -504,6 +504,18 @@ def test_repeat_count_starts_again_with_the_next_message(run, fake):
     assert "REPEATED_CALL" not in str(tool_results(fake))
 
 
+def test_calls_past_the_tool_limit_of_a_message_are_not_run(run, fake):
+    calls = [("get_order_status", {"order_ref": f"o_{n}"}) for n in range(20)]
+    fake.script = [calls, "Bitti."]
+
+    run(asking("Bütün siparişlerime aynı anda bak."))
+
+    # The calls run side by side, so their results may come back in any order.
+    errors = [result.get("error") for result in tool_results(fake)]
+    assert len(errors) == 20
+    assert errors.count("TOOL_LIMIT") == 8
+
+
 def test_run_stops_at_the_step_limit(run, fake):
     fake.script = [
         [("get_order_status", {"order_ref": f"o_{number}"})] for number in range(30)

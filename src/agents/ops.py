@@ -26,7 +26,7 @@ from llama_index.core.tools import FunctionTool
 from llama_index.core.workflow import Context
 
 import config
-from src.agents.loop_guard import REPEATED_CALL, LoopGuard
+from src.agents.loop_guard import LoopGuard
 from src.agents.run_log import RunLog
 from src.agents.runner import run_agent
 from src.agents.sql_correction import LIMIT_REACHED, SqlCorrectionLimit
@@ -255,8 +255,9 @@ class OpsAgent:
     # --- Tools ------------------------------------------------------------
 
     def _answer(self, name: str, arguments: dict, run: Callable[[], dict]) -> str:
-        if not self._guard.allows(name, arguments):
-            return json.dumps(REPEATED_CALL)
+        refusal = self._guard.refusal(name, arguments)
+        if refusal is not None:
+            return json.dumps(refusal)
         return json.dumps(cut_rows(run()), ensure_ascii=False)
 
     def _run_metric(

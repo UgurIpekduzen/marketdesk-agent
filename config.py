@@ -107,6 +107,11 @@ EMBEDDING_MAX_TOKENS = 512
 
 # Upper limit on the steps an agent may take for one user message.
 MAX_STEPS = 8
+# Upper limit on the tool calls of one user message, over all its steps: a
+# model may ask for many calls in one step. Measured on 2026-10-21, no
+# example of the golden, attack or multi-turn sets used more than 4; with 12
+# a message runs at most 12 queries of SQL_TIMEOUT_SECONDS each.
+MAX_TOOL_CALLS_PER_MESSAGE = 12
 
 # --- Tracing ------------------------------------------------------------
 

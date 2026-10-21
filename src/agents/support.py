@@ -29,7 +29,7 @@ from llama_index.core.workflow import Context
 
 import config
 from src import tracing
-from src.agents.loop_guard import REPEATED_CALL, LoopGuard
+from src.agents.loop_guard import LoopGuard
 from src.agents.run_log import RunLog
 from src.agents.runner import run_agent
 from src.formatting import format_money
@@ -186,8 +186,9 @@ def build_tools(
     async def answer(
         name: str, arguments: dict, run: Callable[[], Awaitable[dict]]
     ) -> str:
-        if not guard.allows(name, arguments):
-            return json.dumps(REPEATED_CALL)
+        refusal = guard.refusal(name, arguments)
+        if refusal is not None:
+            return json.dumps(refusal)
         return json.dumps(await run(), ensure_ascii=False)
 
     async def over_mcp(name: str, arguments: dict) -> str:
