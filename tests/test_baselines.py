@@ -234,7 +234,9 @@ def test_outcome_of_a_test_example_is_not_reported(run):
 
     run([held_out], ["SELECT COUNT(*) FROM orders"], report=lines.append)
 
-    assert [line.split() for line in lines] == [["B2", "O", "held", "out"]]
+    assert [line.split() for line in lines] == [
+        ["[1/1]", "██████████", "100%", "B2", "O", "held", "out"]
+    ]
 
 
 def test_outcome_of_a_test_example_is_reported_on_request(run):
@@ -309,6 +311,9 @@ def test_no_final_rows_without_a_results_file(tmp_path):
 
 
 class StubJudge:
+    # No model behind it: no live calls to count.
+    live_calls = 0
+
     def __init__(self):
         self.seen = []
 
@@ -333,3 +338,17 @@ def test_judge_scores_the_policy_answers_of_the_baselines_only(run):
     assert table[0].endswith("| Faithful | Helpful |")
     assert table[3].endswith("| 1.00 | 0.50 |")
     assert table[5].endswith("| — | — |")
+
+
+def test_each_line_counts_the_runs_of_all_baselines_together(run):
+    lines = []
+
+    run(EXAMPLES, GOOD_SCRIPT, report=lines.append)
+
+    total = len(baselines.planned(EXAMPLES))
+    assert [line.split()[0] for line in lines] == [
+        f"[{number}/{total}]" for number in range(1, total + 1)
+    ]
+    assert [line.split()[3] for line in lines] == [
+        baseline for baseline, _ in baselines.planned(EXAMPLES)
+    ]

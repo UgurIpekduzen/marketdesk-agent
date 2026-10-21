@@ -38,6 +38,7 @@ from llama_index.core.llms import ChatMessage
 
 import config
 from eval import scoring
+from eval.live_bar import LiveBar
 from eval.llm_cache import (
     DEFAULT_CACHE_DIR,
     CachedLLM,
@@ -51,12 +52,17 @@ from eval.run_eval import (
     RESULTS_DIR,
     build_judge,
     cached_llm,
+    calls_so_far,
+    count,
+    judge_live_calls,
     judge_mean,
     load_golden,
+    progress,
     show,
     show_score,
     source_documents,
 )
+from eval.terminal_table import terminal_tables
 from src.agents.run_log import token_usage
 from src.guardrails.guarded_llm import (
     GuardedLLM,
@@ -274,6 +280,19 @@ async def run_example(
     }
 
 
+def planned(examples: list[dict]) -> list[tuple[str, dict]]:
+    """The (baseline, example) pairs a run goes through, in order."""
+    return [
+        (baseline, example)
+        for baseline, groups in BASELINES.items()
+        for example in examples
+        if example["group"] in groups
+        # B2 without golden SQL would be scored by the judge only: there are
+        # no rows to compare.
+        and not (baseline == "B2" and "golden_sql" not in example)
+    ]
+
+
 def run(
     examples: list[dict],
     db_path: Path | str,
@@ -283,38 +302,52 @@ def run(
     report=print,
     show_test: bool = False,
     judge=None,
+    bar: LiveBar | None = None,
 ) -> list[dict]:
     """Run every baseline on the examples of its groups.
 
     With a judge, the policy answers are also scored for faithfulness and
-    helpfulness.
+    helpfulness. A bar at the bottom of the terminal, when given and
+    active, follows the run; the lines then carry only their count.
     """
     rows = []
-    for baseline, groups in BASELINES.items():
-        for example in examples:
-            if example["group"] not in groups:
-                continue
-            if baseline == "B2" and "golden_sql" not in example:
-                # Scored by the judge only: there are no rows to compare.
-                continue
-            seconds_before, live_before = llm.seconds, llm.live_calls
-            row = asyncio.run(run_example(baseline, example, db_path, index, llm))
-            row["seconds"] = round(llm.seconds - seconds_before, 3)
-            if judge is not None and example["group"] == "policy":
-                row["judge"] = judge.policy_answer(
-                    example["question"], row["answer"], source_documents(example)
-                )
-            rows.append(row)
-            if row["split"] == "test" and not show_test:
-                report(f"{baseline} {row['id']:>3}  held out")
-            else:
-                failed = [name for name, ok in row["checks"].items() if not ok]
-                report(
-                    f"{baseline} {row['id']:>3}  {'ok  ' if row['success'] else 'FAIL'}"
-                    + (f"  failed: {', '.join(failed)}" if failed else "")
-                )
-            if pause and llm.live_calls > live_before:
-                time.sleep(pause)
+    pairs = planned(examples)
+    started = time.monotonic()
+    for number, (baseline, example) in enumerate(pairs, start=1):
+        if bar is not None:
+            bar.begin(f"{baseline} {example['id']}")
+        seconds_before, live_before = llm.seconds, llm.live_calls
+        row = asyncio.run(run_example(baseline, example, db_path, index, llm))
+        row["seconds"] = round(llm.seconds - seconds_before, 3)
+        if judge is not None and example["group"] == "policy":
+            row["judge"] = judge.policy_answer(
+                example["question"], row["answer"], source_documents(example)
+            )
+        rows.append(row)
+        counter = (
+            count(number, len(pairs))
+            if bar is not None and bar.active
+            else progress(number, len(pairs))
+        )
+        held_out = row["split"] == "test" and not show_test
+        if held_out:
+            report(f"{counter}  {baseline} {row['id']:>3}  held out")
+        else:
+            failed = [name for name, ok in row["checks"].items() if not ok]
+            live = llm.live_calls - live_before
+            report(
+                f"{counter}  {baseline} {row['id']:>3}  "
+                f"{'ok  ' if row['success'] else 'FAIL'}"
+                + (f"  failed: {', '.join(failed)}" if failed else "")
+                + f"   {calls_so_far(live, llm, judge, started)}"
+            )
+        if bar is not None:
+            bar.finish(
+                None if held_out else row["success"],
+                llm.live_calls + judge_live_calls(judge),
+            )
+        if pause and llm.live_calls > live_before:
+            time.sleep(pause)
     return rows
 
 
@@ -444,6 +477,7 @@ def main() -> int:
         llm = cached_llm(build_provider_llm(paid=args.paid), cache_dir, args.paid)
         print(f"Provider: {provider}   Model: {model}\n")
         judge = build_judge(cache_dir, paid=args.paid) if args.judge else None
+        bar = LiveBar(len(planned(examples)))
         try:
             rows = run(
                 examples,
@@ -451,18 +485,22 @@ def main() -> int:
                 index,
                 llm,
                 args.pause,
+                report=bar.report,
                 show_test=args.show_test,
                 judge=judge,
+                bar=bar,
             )
         except (DailyQuotaUsedUp, LiveCallLimitReached, NoPaidCredit) as stop:
             print(f"\nStopped: {stop}")
             return 3
+        finally:
+            bar.close()
 
     name = model.replace("/", "_")
     summary = summarise_baselines(rows)
     summary.update(final_rows(RESULTS_DIR / f"golden_v1_{name}.json"))
     table = markdown_table(summary)
-    print(f"\n{table}\n")
+    print(f"\n{terminal_tables(table)}\n")
     print(f"Model calls: {llm.live_calls} live, {llm.hits} from the cache")
 
     if not args.only:
