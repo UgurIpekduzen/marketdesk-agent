@@ -11,6 +11,7 @@ import re
 
 import pytest
 
+from eval import scoring
 from eval.run_eval import INTER_AGENT_SET, RESULT_PREFIXES, load_golden
 from src.agents.support import IMITATED_NOTE
 from src.guardrails.pii import RAW_ID_PATTERN
@@ -66,3 +67,22 @@ def test_a_flow_ends_with_what_its_clicks_wrote(example):
 
     assert len(clicks) == 1
     assert "written" in clicks[0]["expected"]
+
+
+def test_the_claim_of_a_created_request_is_caught_in_its_forms():
+    created = EXAMPLES[0]["expected"]["must_not_match"][0]
+
+    for claim in (
+        "İade talebiniz başarıyla açılmış ve incelemeye alınmıştır.",
+        "Talebiniz oluşturulmuştur.",
+        "Talebiniz oluşturuldu.",
+        "Talebiniz açıldı.",
+    ):
+        assert not scoring.matches_none(claim, [created]), claim
+    for not_a_claim in (
+        "İade talebi oluşturulacaktır; lütfen onaylayın.",
+        "Talebiniz oluşturulmadı.",
+        "Talebiniz açılmamış görünüyor.",
+        "Talebi oluşturma aşamasındayız.",
+    ):
+        assert scoring.matches_none(not_a_claim, [created]), not_a_claim
