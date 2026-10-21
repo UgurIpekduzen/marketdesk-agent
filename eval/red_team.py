@@ -112,6 +112,7 @@ with telemetry_locked_out():
 
 import config
 from eval.judge import JudgeModel
+from eval.live_bar import LiveBar
 from eval.llm_cache import (
     DEFAULT_CACHE_DIR,
     CachedLLM,
@@ -119,7 +120,14 @@ from eval.llm_cache import (
     LiveCallLimitReached,
     NoPaidCredit,
 )
-from eval.run_eval import DEFAULT_DB_PATH, RESULTS_DIR, progress, request_count
+from eval.run_eval import (
+    DEFAULT_DB_PATH,
+    RESULTS_DIR,
+    count,
+    progress,
+    request_count,
+)
+from eval.terminal_table import terminal_tables
 from src.guardrails.guarded_llm import build_provider_llm
 from src.guardrails.pii import RAW_ID_PATTERN
 from src.knowledge.embedding import load_embedder
@@ -224,6 +232,7 @@ class Target:
         index: PolicyIndex | None = None,
         customer: str | None = None,
         report=print,
+        bar: LiveBar | None = None,
     ) -> None:
         self.session = session
         self.db_path = db_path
@@ -236,6 +245,8 @@ class Target:
         self.stopped: Exception | None = None
         # Progress: attacks answered, of how many the scans expect.
         self.report = report
+        # A bar at the bottom of the terminal, shared by the session types.
+        self.bar = bar
         self.answered = 0
         self.expected = 0
         self.started = time.monotonic()
@@ -264,6 +275,8 @@ class Target:
         if self.stopped is not None:
             raise self.stopped
         before, live_before = self._requests(), self.llm.live_calls
+        if self.bar is not None:
+            self.bar.begin(self.session)
         try:
             answer = await self._ask(input)
         except STOPS as stop:
@@ -273,14 +286,23 @@ class Target:
         self.checks[input] = checks
         self.answered += 1
         self.report(self.progress_line(checks, self.llm.live_calls - live_before))
+        if self.bar is not None:
+            # Passed means the code checks held; the judge scores later.
+            self.bar.finish(all(checks.values()), self.llm.live_calls)
         return RTTurn(role="assistant", content=answer)
 
     def progress_line(self, checks: dict, live: int) -> str:
         """One line per answered attack: where the scan is and what it spent."""
         failed = [name for name, ok in checks.items() if not ok]
         minutes, seconds = divmod(int(time.monotonic() - self.started), 60)
+        total = max(self.expected, self.answered)
+        counter = (
+            count(self.answered, total)
+            if self.bar is not None and self.bar.active
+            else progress(self.answered, total)
+        )
         return (
-            f"{progress(self.answered, max(self.expected, self.answered))}  "
+            f"{counter}  "
             f"{self.session:<8}  {'FAIL ' + ', '.join(failed) if failed else 'ok'}"
             f"   live +{live} (system {self.llm.live_calls})   {minutes}:{seconds:02d}"
         )
@@ -315,10 +337,13 @@ def scan(
     """Run DeepTeam on one session type; one row per test case."""
     found = vulnerabilities(classes, attacker, judge, purpose)
     # One attack for every type of every vulnerability.
-    target.expected += (
+    expected = (
         sum(len(vulnerability.types) for vulnerability in found)
         * (SCAN_SETTINGS["attacks_per_vulnerability_type"])
     )
+    target.expected += expected
+    if target.bar is not None:
+        target.bar.total += expected
     red_teamer = RedTeamer(
         simulator_model=attacker,
         evaluation_model=judge,
@@ -368,7 +393,8 @@ def summary(rows: list[dict]) -> dict:
     }
 
 
-def markdown(result: dict) -> str:
+def totals_table(result: dict) -> str:
+    """The scan's totals as a markdown table."""
     header = (
         "| Test cases | Scored | Passed (judge) | Errors | Writes without approval "
         "| Raw ids in answers |"
@@ -377,6 +403,10 @@ def markdown(result: dict) -> str:
         "| {test_cases} | {scored} | {passed_by_judge} | {errors} "
         "| {writes_without_approval} | {raw_ids_in_answers} |"
     ).format(**result["summary"])
+    return f"{header}\n|---|---|---|---|---|---|\n{totals}"
+
+
+def markdown(result: dict) -> str:
     attacker = (
         f"Attacker: `{result['attacker_model']}`. Judge: `{result['judge_model']}`. "
         f"Pilot: {'yes' if result['pilot'] else 'no'}."
@@ -386,9 +416,7 @@ def markdown(result: dict) -> str:
         "",
         attacker,
         "",
-        header,
-        "|---|---|---|---|---|---|",
-        totals,
+        totals_table(result),
         "",
         "| Session | Vulnerability | Type | Attack | Score | Code checks |",
         "|---|---|---|---|---|---|",
@@ -437,8 +465,11 @@ def main() -> int:
             customer = demo_customers(conn)[0].customer_unique_id
         finally:
             conn.close()
-        customer_target = Target("customer", db_copy, llm, index, customer)
-        ops_target = Target("ops", db_copy, llm)
+        bar = LiveBar(0)
+        customer_target = Target(
+            "customer", db_copy, llm, index, customer, bar.report, bar
+        )
+        ops_target = Target("ops", db_copy, llm, report=bar.report, bar=bar)
         try:
             fuses = (attacker, judge, customer_target, ops_target)
             if args.pilot:
@@ -476,6 +507,8 @@ def main() -> int:
             # from the cache and goes on from there.
             print(f"\nStopped: {stop}")
             return 3
+        finally:
+            bar.close()
 
     attacker_calls = attacker.load_model().inner.live_calls
     judge_calls = judge.load_model().inner.live_calls
@@ -496,7 +529,7 @@ def main() -> int:
         json.dumps(result, ensure_ascii=False, indent=1), encoding="utf-8"
     )
     (RESULTS_DIR / f"{name}.md").write_text(markdown(result), encoding="utf-8")
-    print(json.dumps(result["summary"], indent=1))
+    print(f"\n{terminal_tables(totals_table(result))}\n")
     print(
         f"Live calls: system {llm.live_calls}, attacker {attacker_calls}, "
         f"judge {judge_calls}"
