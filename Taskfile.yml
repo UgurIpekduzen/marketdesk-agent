@@ -126,8 +126,16 @@ tasks:
       - "{{.RUN}} uv run pytest -m model {{.CLI_ARGS}}"
 
   check:
-    desc: Lint and test, the same checks CI runs
+    desc: Lint and test, the same checks CI runs; ends with the total time
+    vars:
+      STARTED:
+        sh: date +%s
     cmds:
+      # Runs last, also when lint or a test fails; the task still fails then.
+      - defer: >-
+          elapsed=$(( $(date +%s) - {{.STARTED}} ));
+          printf 'Total time: %d h %d min %d s (lint and tests)\n'
+          $((elapsed / 3600)) $((elapsed % 3600 / 60)) $((elapsed % 60))
       - task: lint
       - task: test
 
