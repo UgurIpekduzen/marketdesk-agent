@@ -459,8 +459,8 @@ def test_outcome_of_a_test_example_is_not_reported(
     assert "ok" in lines[0]
     # The counter only: no outcome, no tools and no live calls.
     assert [line.split() for line in lines[1:]] == [
-        ["[2/3]", "O", "held", "out"],
-        ["[3/3]", "P", "held", "out"],
+        ["[2/3]", "███████░░░", "67%", "O", "held", "out"],
+        ["[3/3]", "██████████", "100%", "P", "held", "out"],
     ]
 
 
@@ -852,9 +852,22 @@ def test_each_line_says_where_the_run_is_and_what_it_has_spent(
 
 
 def test_the_counter_is_padded_to_the_width_of_the_total():
-    assert run_eval.progress(7, 84) == "[ 7/84]"
-    assert run_eval.progress(84, 84) == "[84/84]"
-    assert run_eval.progress(1, 1) == "[1/1]"
+    assert run_eval.progress(7, 84).startswith("[ 7/84] ")
+    assert run_eval.progress(84, 84).startswith("[84/84] ")
+    assert run_eval.progress(1, 1).startswith("[1/1] ")
+
+
+def test_the_counter_has_a_bar_and_a_percentage():
+    assert run_eval.progress(0, 4) == "[0/4] ░░░░░░░░░░   0%"
+    assert run_eval.progress(1, 4) == "[1/4] ██░░░░░░░░  25%"
+    assert run_eval.progress(7, 84) == "[ 7/84] █░░░░░░░░░   8%"
+    assert run_eval.progress(84, 84) == "[84/84] ██████████ 100%"
+
+
+def test_lines_of_one_run_keep_the_same_width():
+    widths = {len(run_eval.progress(number, 84)) for number in range(1, 85)}
+
+    assert widths == {len("[84/84] ██████████ 100%")}
 
 
 def test_the_judge_calls_are_shown_only_with_a_judge(tmp_path):

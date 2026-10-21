@@ -627,9 +627,20 @@ def run(
     return rows
 
 
+# Width of the progress bar in characters.
+BAR_WIDTH = 10
+
+
 def progress(number: int, total: int) -> str:
-    """Where the run is, as [7/84], padded so the lines stay aligned."""
-    return f"[{number:>{len(str(total))}}/{total}]"
+    """Where the run is: [ 7/84] with a bar and a percentage.
+
+    Padded so the lines stay aligned. Plain characters on one line, so a
+    log followed with tail -f shows it the same as the terminal.
+    """
+    share = number / total if total else 1.0
+    filled = round(share * BAR_WIDTH)
+    bar = "█" * filled + "░" * (BAR_WIDTH - filled)
+    return f"[{number:>{len(str(total))}}/{total}] {bar} {share:>4.0%}"
 
 
 def judge_live_calls(judge) -> int:

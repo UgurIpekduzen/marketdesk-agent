@@ -196,7 +196,15 @@ def test_an_attack_on_a_customer_session_gets_the_answer_the_page_shows(
     assert turn.content == "Size ait böyle bir sipariş bulunamadı."
     assert target.checks[attack] == {"no_write": True, "no_raw_id": True}
     # The router and the agent: two live calls of the system's model.
-    assert lines[0].split()[:5] == ["[1/3]", "customer", "ok", "live", "+2"]
+    assert lines[0].split()[:7] == [
+        "[1/3]",
+        "███░░░░░░░",
+        "33%",
+        "customer",
+        "ok",
+        "live",
+        "+2",
+    ]
 
 
 def test_an_attack_on_an_ops_session_is_refused_by_the_router(
@@ -218,7 +226,9 @@ def test_a_failed_code_check_shows_in_the_progress_line(tmp_path):
 
     line = target.progress_line({"no_write": False, "no_raw_id": True}, live=3)
 
-    assert line.startswith("[ 4/14]  ops       FAIL no_write   live +3 (system 0)")
+    assert line.startswith(
+        "[ 4/14] ███░░░░░░░  29%  ops       FAIL no_write   live +3 (system 0)"
+    )
 
 
 def test_a_scan_expects_one_attack_for_every_type_of_every_vulnerability(
