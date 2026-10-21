@@ -16,6 +16,7 @@ The four order tools are called over MCP, on the project's own server. The
 policy search and the hand-over to a human run in this process.
 """
 
+import contextlib
 import inspect
 import json
 from collections.abc import Awaitable, Callable
@@ -286,6 +287,8 @@ class SupportAgent:
         self._context: Context | None = None
         # Something the model has to be told with the next message.
         self._note: str | None = None
+        # The return request the person was last shown for approval.
+        self._shown_request: dict | None = None
 
     @classmethod
     async def create(
@@ -328,10 +331,36 @@ class SupportAgent:
             self._note = None
         self._guard.reset()
 
-        text, log = await run_agent(
-            self._agent, self._context, message, self._customer_unique_id
-        )
-        return Reply(text, log, await self._orders.pending_approval())
+        try:
+            text, log = await run_agent(
+                self._agent, self._context, message, self._customer_unique_id
+            )
+        except Exception:
+            # The original failure is what the page reports; a server that
+            # cannot be reached for the drop keeps the request, still unwritten.
+            with contextlib.suppress(Exception):
+                await self._drop_unseen_request()
+            raise
+        reply = Reply(text, log, await self._orders.pending_approval())
+        self._shown_request = reply.awaiting_approval
+        return reply
+
+    async def _drop_unseen_request(self) -> None:
+        """Drop a return request this failed message left waiting.
+
+        The model asked for it, but the message failed before an answer, so
+        the person saw an error instead of the approval card. Kept, the card
+        would come up with whatever they write next, and the model would see
+        the request after that new message. A request shown before the
+        failure stays: the person can still answer its card.
+        """
+        pending = await self._orders.pending_approval()
+        if pending is not None and pending != self._shown_request:
+            await self._orders.decline_pending()
+            self._note = (
+                "the last message failed while a return request was waiting "
+                "for approval; it was dropped and nothing was created."
+            )
 
     # --- Human approval: code only, the model takes no part --------------
 
@@ -361,6 +390,7 @@ class SupportAgent:
     async def approve(self) -> str:
         """The person said yes: have the server write the request."""
         result = await self._orders.approve_pending()
+        self._shown_request = None
         self._trace_approval("approved", result)
         if "error" in result:
             self._note = (
@@ -382,6 +412,7 @@ class SupportAgent:
     async def decline(self) -> str:
         """The person said no: nothing is written."""
         await self._orders.decline_pending()
+        self._shown_request = None
         self._trace_approval("declined", {})
         self._note = "the customer declined on screen; no return request was created."
         return self._texts.APPROVAL_DECLINED
