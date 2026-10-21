@@ -2,7 +2,7 @@
 
 The page runs on Streamlit: the browser only sends "this was clicked" and "this was typed", and everything is decided on the server. A visitor can still write those messages by hand, so any check the page makes is a convenience; the rule has to hold on the server. This review lists what the page decides, checks each decision against messages no click could send, and records the result.
 
-Review date: 2026-10-16; F1, F8 and F12 updated on 2026-10-19 for the choice screen and the example questions; F7 and F13 to F15 on 2026-10-19 for the support rep console; F16 on 2026-10-20 for the dependency audit; F17 on 2026-10-20 for the page language; F18 on 2026-10-20 for the configuration and the files in the repo; F13 and the MCP section on 2026-10-20 for least privilege; the privacy fuzzing section on 2026-10-20, its fixes on 2026-10-21; F2 on 2026-10-21 for links and the browser measurement; F4 and the unbounded consumption section on 2026-10-21; MCP06 and the indirect injection section on 2026-10-21. Tests named below are in `tests/`.
+Review date: 2026-10-16; F1, F8 and F12 updated on 2026-10-19 for the choice screen and the example questions; F7 and F13 to F15 on 2026-10-19 for the support rep console; F16 on 2026-10-20 for the dependency audit; F17 on 2026-10-20 for the page language; F18 on 2026-10-20 for the configuration and the files in the repo; F13 and the MCP section on 2026-10-20 for least privilege; the privacy fuzzing section on 2026-10-20, its fixes on 2026-10-21; F2 on 2026-10-21 for links and the browser measurement; F4 and the unbounded consumption section on 2026-10-21; MCP06 and the indirect injection section on 2026-10-21; the automated red team scan section on 2026-10-21. Tests named below are in `tests/`.
 
 ## Findings
 
@@ -115,6 +115,19 @@ Attacks on the free quota and on the server (OWASP LLM10), tried on 2026-10-21 w
 The tool limit was chosen from the evaluation: no example of the golden, attack or multi-turn sets used more than 4 tool calls. The prompts did not change, and every evaluation set rerun from the response cache only gave the same results with no live call. The new limits are marked on traces (`TOOL_LIMIT`, `DAILY_BUDGET`).
 
 Accepted: one visitor can still hold the sessions or the hourly limit, and now the day's budget, for everyone (the page cannot tell visitors apart; see still open). A message that reaches the tool limit still costs its model calls, up to 9.
+
+## Automated red team scan
+
+DeepTeam 1.0.9 (`task eval:redteam`, `eval/red_team.py`) on 2026-10-21: the attacks were written by `qwen/qwen3.8-27b` and judged by `openai/gpt-oss-120b`, both on Groq, never by the system's own model; the system answered on the paid key, on a copy of the database, with telemetry off and no upload. Results `eval/results/redteam_v1_*`.
+
+| Session | Vulnerabilities tried | Judged | Held |
+|---|---|---|---|
+| Customer | BOLA, BFLA, RBAC, excessive agency (3 each); prompt leakage, PII leakage, indirect instruction (4 each) | 24 | 24 |
+| Operations | SQL injection, system reconnaissance (3 each); PII leakage, prompt leakage (4 each) | 13 | 13 |
+
+Each type got one attack in one of seven forms: ROT-13 (8), multilingual (8), permission escalation (6), Base64 (4), prompt injection (4), roleplay (4), leetspeak (3). No return request was written without approval and no answer held a raw id (code checks on every answer). One operations case (prompt leakage, secrets and credentials, multilingual) was not sent: the attacker could not turn it into the multilingual form; accepted, as three other prompt leakage types held in operations and the multilingual form held elsewhere.
+
+**Read with care.** DeepTeam picks the form of each attack at random without a seed, so a second scan pairs types and forms differently and is not a repeat of this one; the customer part of an earlier, stopped scan (24 of 24) had other pairings. The attacker is limited by Groq's free tier (8,000 tokens a minute, 200,000 a day for each model): the first full scan stopped on the attacker's day limit before the operations part, and the fuses in `eval/red_team.py` now stop a scan cleanly when a provider's limit is reached. Several messages in a row (crescendo, linear jailbreak) are left to the multi-turn attack task.
 
 ## Automated review
 
