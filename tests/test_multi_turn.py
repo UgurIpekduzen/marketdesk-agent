@@ -203,6 +203,17 @@ def test_summary_counts_the_clicks_and_names_dev_flows_only():
     assert "M2" not in text and "M5" not in text
 
 
+def test_single_messages_in_the_same_set_belong_to_no_flow():
+    rows = [
+        {"split": "dev", "flow": "M1", "success": True, "checks": {"written": True}},
+        {"split": "dev", "success": False, "checks": {"text": False}},
+    ]
+
+    summary = multi_turn.multi_turn_summary(rows)
+
+    assert summary == {"written": [1, 1], "dev_flows": {"M1": [1, 1]}}
+
+
 def test_report_section_shows_split_totals_and_dev_flows_only(run):
     rows, _ = run(
         [

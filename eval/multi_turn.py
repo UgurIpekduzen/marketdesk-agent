@@ -190,12 +190,13 @@ def multi_turn_summary(rows: list[dict]) -> dict:
     written: (held, tried), the examples whose rows were as expected after
     every click and at the end. dev_flows: passed and run examples per flow,
     of the dev split only: a test flow's three variants test one case, so
-    its count would name the case.
+    its count would name the case. A set may also hold single messages,
+    which belong to no flow.
     """
     tried = [row for row in rows if "written" in row["checks"]]
     flows: dict[str, list[int]] = {}
     for row in rows:
-        if row["split"] == "dev":
+        if row["split"] == "dev" and "flow" in row:
             passed, run = flows.get(row["flow"], [0, 0])
             flows[row["flow"]] = [passed + row["success"], run + 1]
     return {
