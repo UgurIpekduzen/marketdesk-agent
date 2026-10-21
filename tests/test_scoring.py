@@ -279,6 +279,15 @@ def test_numbers_from_the_tool_pass_however_they_are_written():
         assert ungrounded_numbers(text, [table]) == [], text
 
 
+def test_a_number_with_both_marks_is_read_only_the_way_it_can_be():
+    # Seen in the first live run: the English reading of a Turkish number
+    # left "322,02" after the point and stopped the run.
+    table = ("run_metric", {"rows": [[904322.02], [1234567.5]]})
+
+    for text in ("GMV 904.322,02 BRL.", "GMV 904,322.02 BRL.", "1.234.567,50 BRL."):
+        assert ungrounded_numbers(text, [table]) == [], text
+
+
 def test_a_number_no_tool_returned_is_found():
     table = ("run_metric", {"rows": [[54011]]})
 

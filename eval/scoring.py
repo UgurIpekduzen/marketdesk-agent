@@ -246,6 +246,10 @@ def number_readings(token: str) -> set[tuple[float, int, float]]:
         groups = whole.lstrip("-").split(thousands)
         if len(groups) > 1 and not all(len(group) == 3 for group in groups[1:]):
             continue
+        # The other mark may not appear after the decimal one: "904.322,02"
+        # is Turkish, never 904 point "322,02".
+        if not fraction.isdigit() and fraction:
+            continue
         value = float(
             whole.replace(thousands, "") + ("." + fraction if fraction else "")
         )
