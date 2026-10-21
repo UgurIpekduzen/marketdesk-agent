@@ -7,9 +7,16 @@ import pytest
 
 import config
 from scripts import load_sqlite
-from tests import synthetic_data
+from tests import progress_line, synthetic_data
 from tests.fakes import FakeEmbedder
 from tests.test_load_sqlite import write_raw
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_configure(config):
+    # One progress line in a terminal instead of pytest's dots; last, so
+    # pytest's terminal reporter is there to be replaced.
+    progress_line.register(config)
 
 
 @pytest.fixture(scope="session")
