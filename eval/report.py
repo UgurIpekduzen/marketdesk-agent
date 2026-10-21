@@ -29,6 +29,7 @@ from eval.run_eval import (
     show,
     show_score,
 )
+from eval.terminal_table import terminal_tables
 from src.guardrails.guarded_llm import configured_model
 
 GROUPS = ("support", "policy", "ops", "attack")
@@ -370,7 +371,8 @@ def main() -> int:
     )
     path = RESULTS_DIR / f"final_report_{name}.md"
     path.write_text(report, encoding="utf-8")
-    print(report)
+    # The file keeps markdown; the terminal gets the tables framed.
+    print(terminal_tables(report))
     print(f"Report written to eval/results/{path.name}")
     return 0
 
