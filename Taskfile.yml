@@ -187,6 +187,11 @@ tasks:
     cmds:
       - "{{.RUN}} uv run python scripts/check_embedding.py"
 
+  trace:examples:
+    desc: Send example traces of every error kind to the tracing target, with the stand-in model (no model calls); `-- --target phoenix` for Phoenix
+    cmds:
+      - "{{.RUN}} uv run python scripts/trace_examples.py {{.CLI_ARGS}}"
+
   # --- Agents ------------------------------------------------------------
 
   agent:check:
