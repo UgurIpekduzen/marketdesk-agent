@@ -13,6 +13,7 @@ import config
 from src import tracing
 from src.agents.ops import OpsAgent
 from src.guardrails.pii import HASH_KEY_VARIABLE, RAW_ID_PATTERN, hash_id
+from src.orchestrator import Orchestrator
 from tests.agent_harness import asking, with_agent
 from tests.fakes import FakeLLM
 from tests.synthetic_data import ALICE
@@ -550,3 +551,76 @@ def test_no_target_gets_an_embedding_vector(traced, fake_policy_index):
     # The attribute is there, so the check would see a vector if one came.
     assert vectors
     assert not any(is_vector(value) for value in vectors)
+
+
+def routed(db_path, script, question):
+    """Send one question through an operations session's router."""
+    import asyncio
+
+    router = Orchestrator.for_ops(db_path, FakeLLM(script=script))
+    try:
+        return asyncio.run(router.ask(question))
+    finally:
+        router.close()
+
+
+def test_router_and_agent_are_one_trace_marked_with_the_class(
+    traced, synthetic_db_path
+):
+    exporter = traced()
+    script = ["ops_metric", [("run_metric", {"metric_name": "order_count"})], "29."]
+
+    routed(synthetic_db_path, script, "Kaç sipariş var?")
+
+    (message,) = spans_named(exporter, "message")
+    assert message.attributes["marketdesk.session_type"] == "ops"
+    assert message.attributes["marketdesk.intent"] == "ops_metric"
+    assert "marketdesk.error" not in message.attributes
+    spans = exporter.get_finished_spans()
+    assert len(spans) > 1
+    assert {span.context.trace_id for span in spans} == {message.context.trace_id}
+
+
+def test_a_refused_message_is_marked_on_its_trace(traced, synthetic_db_path):
+    exporter = traced()
+
+    routed(synthetic_db_path, ["support"], "SIP-1 nerede?")
+
+    (message,) = spans_named(exporter, "message")
+    assert message.attributes["marketdesk.intent"] == "support"
+    assert message.attributes["marketdesk.error"] == "ROUTER_REFUSED"
+
+
+def test_a_run_at_the_step_limit_is_marked_on_its_trace(traced, synthetic_db_path):
+    exporter = traced()
+    script = ["ops_metric"] + [
+        [("run_metric", {"metric_name": "order_count", "customer_state": [str(n)]})]
+        for n in range(30)
+    ]
+
+    routed(synthetic_db_path, script, "Her eyalet için tek tek say.")
+
+    (message,) = spans_named(exporter, "message")
+    assert message.attributes["marketdesk.error"] == "STEP_LIMIT"
+
+
+@pytest.mark.parametrize(
+    "failure, code",
+    [
+        (RuntimeError("429 RESOURCE_EXHAUSTED: Gizli hata metni"), "QUOTA_EXCEEDED"),
+        (RuntimeError("503 UNAVAILABLE: Gizli hata metni"), "PROVIDER_BUSY"),
+        (RuntimeError("Gizli hata metni"), "RUN_FAILED"),
+    ],
+)
+def test_a_failure_is_marked_by_its_kind_without_its_text(
+    traced, synthetic_db_path, failure, code
+):
+    exporter = traced("langfuse")
+
+    # The router's call works, the agent's first call fails.
+    with pytest.raises(RuntimeError):
+        routed(synthetic_db_path, ["ops_metric", failure], "Kaç sipariş var?")
+
+    (message,) = spans_named(exporter, "message")
+    assert message.attributes["marketdesk.error"] == code
+    assert "Gizli hata metni" not in dump(exporter)

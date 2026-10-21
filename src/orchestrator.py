@@ -27,10 +27,13 @@ from typing import Self
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.llms.function_calling import FunctionCallingLLM
+from opentelemetry.trace import Span
 
+from src import tracing
 from src.agents.ops import OpsAgent
 from src.agents.run_log import RunLog
 from src.agents.support import SupportAgent
+from src.failures import failure_code
 from src.guardrails.guarded_llm import GuardedLLM, build_provider_llm
 from src.guardrails.outbound import Redactor
 from src.i18n import DEFAULT_LANGUAGE, Language, catalog
@@ -38,6 +41,8 @@ from src.knowledge.policy_index import PolicyIndex
 from src.mcp_server.client import OrdersClient
 
 ROUTER_NAME = "router"
+# Put on the trace of a message the session may not have answered.
+ROUTER_REFUSED = "ROUTER_REFUSED"
 
 
 class SessionType(StrEnum):
@@ -196,11 +201,26 @@ class Orchestrator:
 
     async def ask(self, message: str) -> Answer:
         """Classify the message, then pass it on or refuse it."""
-        intent, log = await self.classify(message)
+        # One span for the whole message, so the router's call and the
+        # agent's run are one trace, found by its class and its error.
+        with tracing.span(
+            "message", session_type=str(self.session_type), language=str(self.language)
+        ) as current:
+            try:
+                return await self._answer(message, current)
+            except Exception as error:
+                tracing.annotate(current, error=failure_code(error))
+                raise
 
-        # Authorization: a fixed table, read with the session type that was
-        # set at sign-in. The message has no say in it.
+    async def _answer(self, message: str, current: Span | None) -> Answer:
+        """The answer to a message, with its class put on the message span."""
+        intent, log = await self.classify(message)
+        tracing.annotate(current, intent=str(intent))
+
+        # Authorization: a fixed table, read with the session type that
+        # was set at sign-in. The message has no say in it.
         if intent != ALLOWED_INTENT[self.session_type]:
+            tracing.annotate(current, error=ROUTER_REFUSED)
             text = getattr(
                 catalog(self.language), REFUSALS[(self.session_type, intent)]
             )

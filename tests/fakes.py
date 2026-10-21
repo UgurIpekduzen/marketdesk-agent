@@ -2,8 +2,8 @@
 
 FakeLLM plays back a script and records every request it receives, exactly
 as a provider would see it. A script step is either a text (the model's
-answer) or a list of (tool name, arguments) pairs (the model asks for
-tools).
+answer), a list of (tool name, arguments) pairs (the model asks for
+tools) or an exception (the provider fails).
 """
 
 from collections.abc import Sequence
@@ -48,6 +48,9 @@ class FakeLLM(FunctionCallingLLM):
             }
         )
         step = self.script.pop(0) if self.script else "(end of script)"
+        # An exception in the script is raised, as a failing provider would.
+        if isinstance(step, BaseException):
+            raise step
         if isinstance(step, str):
             blocks = [TextBlock(text=step)]
         else:

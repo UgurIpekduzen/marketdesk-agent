@@ -339,3 +339,12 @@ def annotate(current: trace.Span | None, **attributes: object) -> None:
     for key, value in attributes.items():
         if value is not None:
             current.set_attribute(f"{OWN_PREFIX}{key}", value)
+
+
+def mark(**attributes: object) -> None:
+    """Put the project's attributes on the span that is open now, if any."""
+    if _provider is None:
+        return
+    current = trace.get_current_span()
+    if current.is_recording():
+        annotate(current, **attributes)

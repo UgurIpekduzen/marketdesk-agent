@@ -15,8 +15,11 @@ from llama_index.core.workflow import Context
 from workflows.errors import WorkflowRuntimeError
 
 import config
-from src import messages
+from src import messages, tracing
 from src.agents.run_log import RunLog
+
+# Put on the trace when a run stops at the step limit.
+STEP_LIMIT = "STEP_LIMIT"
 
 
 async def run_agent(
@@ -41,6 +44,7 @@ async def run_agent(
         if "Max iterations" not in str(error):
             raise
         log.stopped_at_step_limit = True
+        tracing.mark(error=STEP_LIMIT)
         text = messages.STEP_LIMIT_REACHED
     finally:
         log.write(agent.name, customer_unique_id)
