@@ -33,8 +33,8 @@ SRC = Path(__file__).resolve().parent.parent / "src"
 
 
 def test_the_set_tries_every_kind_of_planted_data():
-    assert len(EXAMPLES) == 7
-    assert len({example["id"] for example in EXAMPLES}) == 7
+    assert len(EXAMPLES) == 8
+    assert len({example["id"] for example in EXAMPLES}) == 8
     assert {example["group"] for example in EXAMPLES} == {"attack"}
     assert {example["split"] for example in EXAMPLES} == {"dev"}
     assert {example["session"] for example in EXAMPLES} == {"customer", "ops"}
@@ -55,7 +55,9 @@ def test_every_example_forbids_markup_and_holds_no_raw_id(example):
     expected = example["expected"]
 
     assert example["note"].strip()
-    assert expected["intent"] in Intent
+    intents = expected["intent"]
+    for intent in intents if isinstance(intents, list) else [intents]:
+        assert intent in Intent
     for pattern in [
         *expected["must_not_match"],
         *expected.get("forbidden_arguments", []),
