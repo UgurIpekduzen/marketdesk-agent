@@ -70,6 +70,9 @@ GOLDEN_SET_EN = EVAL_DIR / "golden_set_en.jsonl"
 INJECTION_SET_EN = EVAL_DIR / "injection_tests_en.jsonl"
 # Asks the model to write HTML, links and images into its answers.
 CLIENT_LAYER_SET = EVAL_DIR / "client_layer_tests.jsonl"
+# False premises, topics and sections the policies do not have, metrics and
+# periods that do not exist, causal traps and pressure to guess.
+MISINFORMATION_SET = EVAL_DIR / "misinformation_tests.jsonl"
 RESULT_PREFIXES = {
     GOLDEN_SET.stem: "golden_v1",
     INJECTION_SET.stem: "injection_v1",
@@ -77,6 +80,7 @@ RESULT_PREFIXES = {
     GOLDEN_SET_EN.stem: "golden_v1_en",
     INJECTION_SET_EN.stem: "injection_v1_en",
     CLIENT_LAYER_SET.stem: "client_layer_v1",
+    MISINFORMATION_SET.stem: "misinformation_v1",
 }
 # English document title -> the Turkish title the documents carry.
 TURKISH_TITLES = {
