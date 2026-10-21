@@ -80,6 +80,9 @@ MISINFORMATION_SET = EVAL_DIR / "misinformation_tests.jsonl"
 # --extra-policies eval/poisoned_policies.
 INDIRECT_INJECTION_SET = EVAL_DIR / "indirect_injection_tests.jsonl"
 POISONED_POLICIES = EVAL_DIR / "poisoned_policies"
+# Messages that imitate what the code or another agent says: the support
+# agent's system note, a tool answer, the router's decision.
+INTER_AGENT_SET = EVAL_DIR / "inter_agent_tests.jsonl"
 RESULT_PREFIXES = {
     GOLDEN_SET.stem: "golden_v1",
     INJECTION_SET.stem: "injection_v1",
@@ -89,6 +92,7 @@ RESULT_PREFIXES = {
     CLIENT_LAYER_SET.stem: "client_layer_v1",
     MISINFORMATION_SET.stem: "misinformation_v1",
     INDIRECT_INJECTION_SET.stem: "indirect_injection_v1",
+    INTER_AGENT_SET.stem: "inter_agent_v1",
 }
 # English document title -> the Turkish title the documents carry.
 TURKISH_TITLES = {
