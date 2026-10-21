@@ -441,7 +441,7 @@ def test_support_agent_return_flow_with_approval(support):
     conn.close()
     # The alias the model used stood for the order the customer typed.
     assert written == (order_id, "PENDING_REVIEW")
-    assert "created for SIP-1 with status PENDING_REVIEW" in fake.sent_text()
+    assert "SIP-1: the customer approved on screen" in fake.sent_text()
     assert "APPROVAL_REQUIRED" in fake.sent_text()
     assert_nothing_personal_was_sent(fake)
 

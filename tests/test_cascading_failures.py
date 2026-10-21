@@ -36,13 +36,8 @@ def run(synthetic_db_path, fake_policy_index, fake):
     return run_scenario
 
 
-def user_texts(request: dict) -> list[str]:
-    return [
-        block["text"]
-        for message in request["messages"]
-        if message["role"] == "user"
-        for block in message["blocks"]
-    ]
+def instructions(request: dict) -> str:
+    return request["messages"][0]["blocks"][0]["text"]
 
 
 def test_a_card_shown_before_a_failure_can_still_be_answered(
@@ -83,9 +78,10 @@ def test_a_request_the_person_never_saw_is_dropped_when_the_message_fails(
     assert card_with_next_answer is None
     # A click that comes anyway finds nothing to write.
     assert request_count(synthetic_db_path) == ROWS_BEFORE
-    # The model is told, with the next message, that nothing was created.
-    assert user_texts(fake.requests[-1])[-1].startswith(
-        "[Note from the system: the last message failed while a return request"
+    # The model is told, in its instructions, that nothing was created.
+    assert instructions(fake.requests[-1]).endswith(
+        "- SIP-1: a message failed while this return request was waiting for "
+        "approval; it was dropped and nothing was created.\n"
     )
 
 
@@ -110,9 +106,6 @@ def test_a_failure_after_the_click_writes_nothing_more(run, fake, synthetic_db_p
 
     assert reply.awaiting_approval is None
     assert request_count(synthetic_db_path) == ROWS_BEFORE + 1
-    # The note on the click was sent with the message that failed; that
-    # message stays in the conversation, so the model still gets the note.
-    assert any(
-        text.startswith("[Note from the system: the customer approved on screen")
-        for text in user_texts(fake.requests[-1])
-    )
+    # The record of the click is in the instructions of every later call,
+    # the failed message or not.
+    assert "the customer approved on screen" in instructions(fake.requests[-1])
