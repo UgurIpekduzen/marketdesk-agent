@@ -3,7 +3,7 @@
 Usage:  python scripts/trace_examples.py [--target langfuse|phoenix]
 
 Fills a tracing tool with one trace per kind of error the project marks
-(a refused message, the step limit, a quota or busy provider, a rejected or
+(a refused message, the step and tool limits, a quota or busy provider, a rejected or
 failing query, a repeated call, a missing order, an approval asked for,
 approved and declined, a duplicate request), so its views can be built and
 shown without waiting for real failures. Uses the stand-in model and
@@ -64,6 +64,10 @@ OPS_EXAMPLES = {
     ),
     "repeated call": (["ops_metric", COUNT, COUNT, COUNT, "29."], "Kaç sipariş var?"),
     "step limit": (["ops_metric", *EACH_STATE], "Her eyalet için tek tek say."),
+    "tool limit": (
+        ["ops_metric", [call for [call] in EACH_STATE] * 2, "Bitti."],
+        "Hepsini aynı anda say.",
+    ),
     "quota": (
         ["ops_metric", RuntimeError("429 RESOURCE_EXHAUSTED")],
         "Kaç sipariş var?",

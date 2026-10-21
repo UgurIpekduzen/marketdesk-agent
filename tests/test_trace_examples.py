@@ -31,6 +31,7 @@ def test_the_examples_hold_every_error_kind(
     assert errors == {
         "ROUTER_REFUSED",
         "STEP_LIMIT",
+        "TOOL_LIMIT",
         "QUOTA_EXCEEDED",
         "PROVIDER_BUSY",
         "SQL_REJECTED",
