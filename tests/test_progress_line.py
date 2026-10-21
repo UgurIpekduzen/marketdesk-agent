@@ -101,12 +101,14 @@ def test_only_a_terminal_at_the_default_verbosity_gets_the_line():
     assert not active(Config(-1), Stream(terminal=True))
 
 
-def run_sample(tmp_path: Path, terminal: bool) -> str:
+def run_sample(tmp_path: Path, terminal: bool, workers: int = 0) -> str:
     """Run a small test file with the progress line; its output as text."""
     (tmp_path / "test_sample.py").write_text(SAMPLE)
     (tmp_path / "test_second.py").write_text("def test_four(): pass\n")
     (tmp_path / "conftest.py").write_text(SAMPLE_CONFTEST)
     command = [sys.executable, "-m", "pytest", "-p", "no:cacheprovider", str(tmp_path)]
+    if workers:
+        command += ["-n", str(workers)]
     env = {**os.environ, "PYTHONPATH": str(ROOT), "COLUMNS": "120"}
     if not terminal:
         done = subprocess.run(
@@ -145,6 +147,15 @@ def test_in_a_terminal_the_run_shows_one_line_and_names_the_failure(tmp_path):
     assert updates.count("\n") == 1
     # pytest's own dots are gone; its summary is still there.
     assert "test_sample.py ..." not in plain
+    assert "1 failed, 4 passed, 1 xfailed" in plain
+
+
+def test_with_workers_the_line_counts_the_tests_of_all_of_them(tmp_path):
+    output = run_sample(tmp_path, terminal=True, workers=2)
+
+    plain = re.sub(r"\x1b\[[0-9;]*m", "", output)
+    assert "[6/6] ██████████ 100%  ✓ 4  ✗ 1  x 1" in plain
+    assert "✗ test_sample.py::test_fails" in plain
     assert "1 failed, 4 passed, 1 xfailed" in plain
 
 

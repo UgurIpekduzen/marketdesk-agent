@@ -31,6 +31,7 @@ dev = [
     "deepteam==1.0.9",
     "kagglehub==1.0.2",
     "pytest==9.1.1",
+    "pytest-xdist==3.8.0",
     "ruff==0.16.10",
 ]
 
@@ -49,8 +50,10 @@ testpaths = ["tests"]
 # network once. They are left out by default; run them with `task test:model`.
 markers = ["model: needs the real embedding model"]
 # deepeval registers a pytest plugin that would load the library, and with
-# it .env, into every test run. The tests do not use it.
-addopts = "-m 'not model' -p no:deepeval"
+# it .env, into every test run. The tests do not use it. -n auto runs the
+# tests on one worker per CPU (pytest-xdist): each test that starts an order
+# server or the page takes a second or two, and they add up.
+addopts = "-m 'not model' -p no:deepeval -n auto"
 # The agent framework inspects model objects in a way pydantic has
 # deprecated; an agent run raises hundreds of these, none from this project.
 filterwarnings = [

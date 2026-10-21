@@ -4,7 +4,8 @@
 
 pytest's own dots and file lines are left out; a failing test gets a line of
 its own above the progress line, and pytest's summary follows at the end as
-usual. Only in a terminal and at the default verbosity: when the output goes
+usual. With workers (-n, pytest-xdist) the line counts the tests of all of
+them. Only in a terminal and at the default verbosity: when the output goes
 to a file or a pipe (a log, tee, CI), or with -v or -q, pytest writes as it
 always does.
 """
@@ -119,9 +120,17 @@ class ProgressLine:
 
     @pytest.hookimpl(trylast=True)
     def pytest_collection_finish(self, session: pytest.Session) -> None:
-        self.total = len(session.items)
+        # With workers (pytest-xdist) this process collects nothing; the
+        # workers report what they collected below.
+        if session.items:
+            self.total = len(session.items)
         self.started = time.monotonic()
         self.reporter.write("\n")
+
+    @pytest.hookimpl(optionalhook=True)
+    def pytest_xdist_node_collection_finished(self, node, ids: list[str]) -> None:
+        # Every worker collects the whole run; the tests are shared out.
+        self.total = len(ids)
 
     @pytest.hookimpl(wrapper=True)
     def pytest_report_teststatus(self, report: pytest.TestReport):
