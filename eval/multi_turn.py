@@ -89,6 +89,9 @@ async def converse(
             orders, prepared["customer"], index, llm, language
         )
         pending = None
+        # Tool results of the turns so far: a later turn is held to the
+        # decision an earlier one got.
+        earlier: list = []
         for turn in example["turns"]:
             expected = run_eval.fill(turn["expected"], prepared["placeholders"])
             written = written_rows(conn, order_id, start_id)
@@ -102,7 +105,10 @@ async def converse(
                     {**prepared, "requests_before": before},
                     answer,
                     run_eval.request_count(conn),
+                    earlier,
                 )
+                log = getattr(answer.reply, "log", None)
+                earlier = [*earlier, *(log.tool_results if log else [])]
                 if "written_so_far" in expected:
                     row["checks"]["written_so_far"] = (
                         len(written) == expected["written_so_far"]

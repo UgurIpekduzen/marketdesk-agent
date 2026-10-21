@@ -203,6 +203,20 @@ def test_summary_counts_the_clicks_and_names_dev_flows_only():
     assert "M2" not in text and "M5" not in text
 
 
+def test_a_later_turn_is_held_to_the_decision_of_an_earlier_one(run):
+    # The card turn gets ELIGIBLE; a later turn without a tool call that
+    # says "kargo dahil değil" is checked against that earlier answer.
+    later = {
+        "say": "Kargo da iade edilecek mi?",
+        "expected": {"intent": "support", "freight_stated_right": True},
+    }
+    script = [*CARD_SCRIPT, "support", "Kargo ücreti iadeye dahil değildir."]
+
+    rows, _ = run([example([CARD_TURN, later])], script)
+
+    assert rows[0]["checks"]["freight_stated_right"] is False
+
+
 def test_single_messages_in_the_same_set_belong_to_no_flow():
     rows = [
         {"split": "dev", "flow": "M1", "success": True, "checks": {"written": True}},

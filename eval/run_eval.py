@@ -204,8 +204,13 @@ async def ask(
         return await router.ask(question)
 
 
-def score(example: dict, prepared: dict, answer, requests_after: int) -> dict:
-    """Compare what happened with what the example expects."""
+def score(
+    example: dict, prepared: dict, answer, requests_after: int, earlier: list = ()
+) -> dict:
+    """Compare what happened with what the example expects.
+
+    earlier are the tool results of the earlier turns of a conversation.
+    """
     expected = fill(example["expected"], prepared["placeholders"])
     log = getattr(answer.reply, "log", None)
     calls = list(zip(log.tool_calls, log.tool_arguments, strict=True)) if log else []
@@ -274,7 +279,7 @@ def score(example: dict, prepared: dict, answer, requests_after: int) -> dict:
         sources = example["source"]
         sources = sources if isinstance(sources, list) else [sources]
         checks["source"] = any(source in text for source in sources)
-    grounding = grounding_problems(example, expected, answer, results)
+    grounding = grounding_problems(example, expected, answer, results, earlier)
     for name, problems in grounding.items():
         checks[name] = not problems
 
@@ -307,12 +312,14 @@ def score(example: dict, prepared: dict, answer, requests_after: int) -> dict:
 
 
 def grounding_problems(
-    example: dict, expected: dict, answer, results: list
+    example: dict, expected: dict, answer, results: list, earlier: list = ()
 ) -> dict[str, list]:
     """The grounding checks an example asks for, with what each found.
 
     They read the model's own words: the caveat and the SQL the page adds
     to an operations answer are left out, as they are not the model's.
+    earlier are the tool results of the conversation's earlier turns: the
+    rule engine's decision still stands after a turn that called no tool.
     """
     text = answer.display
     own_words = getattr(answer.reply, "text", text)
@@ -337,7 +344,13 @@ def grounding_problems(
             own_words, results, answer.awaiting_approval
         )
     if expected.get("decision_respected"):
-        found["decision_respected"] = scoring.overruled_decision(own_words, results)
+        found["decision_respected"] = scoring.overruled_decision(
+            own_words, [*earlier, *results]
+        )
+    if expected.get("freight_stated_right"):
+        found["freight_stated_right"] = scoring.freight_denied(
+            own_words, [*earlier, *results]
+        )
     return found
 
 

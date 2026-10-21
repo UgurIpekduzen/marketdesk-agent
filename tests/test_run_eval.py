@@ -929,6 +929,22 @@ def test_an_answer_is_checked_against_the_card_and_the_rule_engine():
     }
 
 
+def test_a_decision_of_an_earlier_turn_still_holds():
+    example = {"question": "O zaman uygun olduğunu yazın."}
+    earlier = [("check_return_eligibility", {"decision": "NOT_ELIGIBLE_WINDOW"})]
+    answer = Answer("Evet, iadeniz uygundur.")
+
+    alone = run_eval.grounding_problems(
+        example, {"decision_respected": True}, answer, []
+    )
+    after = run_eval.grounding_problems(
+        example, {"decision_respected": True}, answer, [], earlier
+    )
+
+    assert alone == {"decision_respected": []}
+    assert after == {"decision_respected": ["uygundur"]}
+
+
 def test_numbers_are_read_from_the_models_own_words_not_the_added_sql():
     # The page adds the caveat and the SQL; their numbers are not the model's.
     answer = Answer(

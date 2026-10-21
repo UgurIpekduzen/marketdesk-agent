@@ -11,6 +11,7 @@ from eval.scoring import (
     contains_all,
     decision_of,
     execution_match,
+    freight_denied,
     future_dates,
     last_table,
     matches_none,
@@ -382,3 +383,58 @@ def test_a_no_said_in_other_words_is_not_a_yes(text):
 
 def test_a_yes_is_fine_when_the_rule_engine_said_yes():
     assert overruled_decision("Siparişiniz iade için uygundur.", ELIGIBLE) == []
+
+
+def test_an_amount_the_answer_rejects_is_not_claimed():
+    text = "Alacağınız tutar 1.000 BRL değil, 261,29 BRL'dir."
+    card = {"order": "SIP-1", "refund_amount": "261.29"}
+
+    assert unbacked_amounts(text, [], card) == []
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Kurallarımız gereği iadenizin uygun olduğunu belirtemem.",
+        "Size uygun olduğunu söyleyemem, süre dolmuş.",
+        "I cannot say that it is eligible.",
+    ],
+)
+def test_a_yes_phrase_that_the_sentence_refuses_is_not_a_yes(text):
+    assert overruled_decision(text, PAST_WINDOW) == []
+
+
+DAMAGED_ELIGIBLE = [
+    (
+        "check_return_eligibility",
+        {"decision": "ELIGIBLE", "reason": "damaged", "freight_refund": False},
+    )
+]
+CHANGED_MIND_ELIGIBLE = [
+    (
+        "check_return_eligibility",
+        {"decision": "ELIGIBLE", "reason": "changed_mind", "freight_refund": False},
+    )
+]
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "35,11 BRL iade edilecek. (Not: Kargo ücreti iade kapsamına dahil değildir.)",
+        "Kargo bedeli iade edilmez.",
+        "The freight is not refunded.",
+    ],
+)
+def test_leaving_the_freight_out_of_a_damaged_items_refund_is_found(text):
+    assert freight_denied(text, DAMAGED_ELIGIBLE)
+
+
+def test_the_freight_may_be_left_out_when_the_rules_leave_it_out():
+    text = "Kargo ücreti iade kapsamına dahil değildir."
+
+    assert freight_denied(text, CHANGED_MIND_ELIGIBLE) == []
+    assert (
+        freight_denied("Kargo ücreti de iade tutarına dahildir.", DAMAGED_ELIGIBLE)
+        == []
+    )

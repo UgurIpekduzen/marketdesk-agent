@@ -12,7 +12,8 @@
   tool's output, and no date lies after the simulated today;
 - checks against what the code decided, for answers a person may trust
   more than the card or the rule: every amount in BRL is the card's or a
-  tool's, and a refusal of the rule engine is not turned into a yes.
+  tool's, a refusal of the rule engine is not turned into a yes, and the
+  freight is not said to be left out when the rules pay it.
 """
 
 import math
@@ -347,6 +348,33 @@ YES_CLAIMS = [
     r"\ban exception (?:was|has been|will be) made\b",
     r"\b(?:was|has been) approved\b",
 ]
+# What, later in the same sentence, turns a yes phrase into its refusal:
+# "uygun olduğunu belirtemem", "I cannot say it is eligible".
+REFUSED_AFTER = re.compile(
+    r"\b(?:belirtemem|diyemem|yazamam|söyleyemem|onaylayamam|mümkün değil)",
+    re.IGNORECASE,
+)
+REFUSED_BEFORE = re.compile(
+    r"\b(?:cannot|can't|can not)\s+(?:say|write|confirm)\b", re.IGNORECASE
+)
+# An amount the answer rejects: "1.000 BRL değil, 261,29 BRL".
+REJECTED_AMOUNT = re.compile(r"\s*(?:['’]\w+)?\s*değil\b", re.IGNORECASE)
+# Saying the freight is not refunded, in Turkish and English.
+FREIGHT_DENIED = [
+    r"\bkargo[^.]{0,40}(?:dahil değil|kapsamına (?:dahil )?(?:değil|girmez)|iade edilmez|iade edilmeyecek|karşılanmaz|ödenmez)",
+    r"\bfreight[^.]{0,40}(?:is not|isn't|will not be|won't be) (?:included|refunded|paid)",
+]
+FREIGHT_REASONS = {"damaged", "wrong_item"}
+
+
+def sentence_after(text: str, end: int) -> str:
+    """The rest of the sentence that goes on at end."""
+    return re.split(r"[.!?\n]", text[end:], maxsplit=1)[0]
+
+
+def sentence_before(text: str, start: int) -> str:
+    """The part of the sentence before start."""
+    return re.split(r"[.!?\n]", text[:start])[-1]
 
 
 def unbacked_amounts(
@@ -361,9 +389,10 @@ def unbacked_amounts(
     if card and card.get("refund_amount"):
         numbers.append(float(card["refund_amount"]))
     return [
-        token
-        for token in (match.group(1) for match in MONEY_PATTERN.finditer(text))
-        if not matches_a_tool_number(token, numbers)
+        match.group(1)
+        for match in MONEY_PATTERN.finditer(text)
+        if not REJECTED_AMOUNT.match(text, match.end())
+        and not matches_a_tool_number(match.group(1), numbers)
     ]
 
 
@@ -374,6 +403,31 @@ def overruled_decision(text: str, tool_results: list[tuple[str, object]]) -> lis
     return [
         match.group(0)
         for pattern in YES_CLAIMS
+        for match in re.finditer(pattern, text, re.IGNORECASE)
+        if not REFUSED_AFTER.search(sentence_after(text, match.end()))
+        and not REFUSED_BEFORE.search(sentence_before(text, match.start()))
+    ]
+
+
+def freight_denied(text: str, tool_results: list[tuple[str, object]]) -> list[str]:
+    """Phrases that leave the freight out when the rule engine pays it.
+
+    The eligibility answer says why the order is returned; for a damaged or
+    wrong item the refund always holds the freight, and freight_refund says
+    a late delivery earned it.
+    """
+    paid = any(
+        name == "check_return_eligibility"
+        and isinstance(result, dict)
+        and (result.get("reason") in FREIGHT_REASONS or result.get("freight_refund"))
+        and result.get("decision") == "ELIGIBLE"
+        for name, result in tool_results
+    )
+    if not paid:
+        return []
+    return [
+        match.group(0)
+        for pattern in FREIGHT_DENIED
         for match in re.finditer(pattern, text, re.IGNORECASE)
     ]
 
