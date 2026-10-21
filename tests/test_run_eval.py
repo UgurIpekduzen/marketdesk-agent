@@ -943,8 +943,8 @@ def test_the_independent_judge_runs_on_its_own_provider_and_model(
 ):
     built = []
 
-    def build(provider=None, model=None, paid=False):
-        built.append((provider, model, paid))
+    def build(provider=None, model=None, paid=False, reasoning_effort=None):
+        built.append((provider, model, paid, reasoning_effort))
         return FakeLLM()
 
     monkeypatch.setattr(run_eval, "build_provider_llm", build)
@@ -952,7 +952,12 @@ def test_the_independent_judge_runs_on_its_own_provider_and_model(
     judge = run_eval.build_judge(tmp_path, paid=True, independent=True)
 
     assert built == [
-        (config.INDEPENDENT_JUDGE_PROVIDER, config.INDEPENDENT_JUDGE_MODEL, False)
+        (
+            config.INDEPENDENT_JUDGE_PROVIDER,
+            config.INDEPENDENT_JUDGE_MODEL,
+            False,
+            config.INDEPENDENT_JUDGE_REASONING_EFFORT,
+        )
     ]
     assert config.INDEPENDENT_JUDGE_PROVIDER != config.LLM_PROVIDER
     assert judge.model.get_model_name() == config.INDEPENDENT_JUDGE_MODEL

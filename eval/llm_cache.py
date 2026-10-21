@@ -131,6 +131,12 @@ class CachedLLM(FunctionCallingLLM):
             "messages": [message.model_dump(mode="json") for message in messages],
             "kwargs": kwargs,
         }
+        # Settings the model was built with, such as how much a reasoning
+        # model thinks, change its answer. Only added when there are some,
+        # so the keys of every model built without them stay as they were.
+        settings = getattr(self.inner, "additional_kwargs", None)
+        if settings:
+            request["settings"] = settings
         encoded = json.dumps(request, sort_keys=True, default=str, ensure_ascii=False)
         return hashlib.sha256(encoded.encode()).hexdigest()
 

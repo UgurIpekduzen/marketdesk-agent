@@ -135,13 +135,17 @@ def configured_model() -> tuple[str, str]:
 
 
 def build_provider_llm(
-    provider: str | None = None, model: str | None = None, paid: bool = False
+    provider: str | None = None,
+    model: str | None = None,
+    paid: bool = False,
+    reasoning_effort: str | None = None,
 ) -> FunctionCallingLLM:
     """Create a provider's model: by default the one config.py names.
 
     paid uses the key of the project with billing (config.PAID_KEY_VARIABLE)
     instead of the free one; only evaluation runs started with --paid pass
-    it, never the page or the agents.
+    it, never the page or the agents. reasoning_effort sets how much a
+    reasoning model on Groq thinks before it answers.
     """
     if provider is None or model is None:
         provider, model = configured_model()
@@ -149,6 +153,8 @@ def build_provider_llm(
         raise ValueError(f"unknown LLM provider in config.py: {provider!r}")
     if paid and provider != "gemini":
         raise ValueError("the paid key is a Gemini key")
+    if reasoning_effort is not None and provider != "groq":
+        raise ValueError("reasoning_effort is a setting of Groq's reasoning models")
     api_key = os.environ[
         config.PAID_KEY_VARIABLE if paid else API_KEY_VARIABLES[provider]
     ]
@@ -162,7 +168,14 @@ def build_provider_llm(
         )
     from llama_index.llms.groq import Groq
 
-    return Groq(model=model, api_key=api_key, temperature=config.LLM_TEMPERATURE)
+    return Groq(
+        model=model,
+        api_key=api_key,
+        temperature=config.LLM_TEMPERATURE,
+        additional_kwargs=(
+            {"reasoning_effort": reasoning_effort} if reasoning_effort else {}
+        ),
+    )
 
 
 def build_judge_provider_llm(paid: bool = False) -> FunctionCallingLLM:

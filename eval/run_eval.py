@@ -706,7 +706,9 @@ def build_judge(
 
     if independent:
         inner = build_provider_llm(
-            config.INDEPENDENT_JUDGE_PROVIDER, config.INDEPENDENT_JUDGE_MODEL
+            config.INDEPENDENT_JUDGE_PROVIDER,
+            config.INDEPENDENT_JUDGE_MODEL,
+            reasoning_effort=config.INDEPENDENT_JUDGE_REASONING_EFFORT,
         )
         return Judge(
             cached_llm(inner, cache_dir, paid=False),

@@ -88,6 +88,28 @@ def test_other_tools_or_settings_are_another_entry(cached, fake):
     assert len(fake.requests) == 2
 
 
+class SetFake(FakeLLM):
+    """A stand-in model built with extra settings, as a Groq model can be."""
+
+    additional_kwargs: dict = Field(default_factory=dict)
+
+
+def test_settings_are_part_of_the_entry_and_none_leave_it_as_it_was(tmp_path):
+    model = SetFake(script=["bir", "iki", "üç"])
+    cached = CachedLLM(inner=model, cache_dir=tmp_path)
+
+    chat(cached, "merhaba")
+    model.additional_kwargs = {"reasoning_effort": "low"}
+    chat(cached, "merhaba")
+    # Empty settings count as none: the first entry is found again, as the
+    # entries of every model built without settings are.
+    model.additional_kwargs = {}
+    chat(cached, "merhaba")
+
+    assert len(model.requests) == 2
+    assert cached.hits == 1
+
+
 def test_another_temperature_is_another_entry(cached, fake, monkeypatch):
     chat(cached, "merhaba")
     monkeypatch.setattr(config, "LLM_TEMPERATURE", 0.7)

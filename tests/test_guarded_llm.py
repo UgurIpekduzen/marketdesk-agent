@@ -270,9 +270,36 @@ def test_provider_model_gets_name_key_and_temperature(
     guarded_llm.build_provider_llm()
 
     expected_model = config.LLM_FALLBACK_MODEL if use_fallback else config.LLM_MODEL
-    assert created == [
-        {"model": expected_model, "api_key": "test-key", "temperature": 0}
-    ]
+    expected = {"model": expected_model, "api_key": "test-key", "temperature": 0}
+    if use_fallback:
+        # A Groq model is built with no extra settings unless asked.
+        expected["additional_kwargs"] = {}
+    assert created == [expected]
+
+
+def test_a_groq_model_can_be_told_how_much_to_think(monkeypatch):
+    created = []
+    monkeypatch.setattr(
+        importlib.import_module("llama_index.llms.groq"),
+        "Groq",
+        recording_provider(created),
+    )
+    monkeypatch.setenv("GROQ_API_KEY", "test-key")
+
+    guarded_llm.build_provider_llm(
+        "groq", "openai/gpt-oss-120b", reasoning_effort="low"
+    )
+
+    assert created[0]["additional_kwargs"] == {"reasoning_effort": "low"}
+
+
+def test_only_groq_models_take_a_reasoning_effort(monkeypatch):
+    monkeypatch.setenv("GEMINI_API_KEY_FREE", "test-key")
+
+    with pytest.raises(ValueError, match="reasoning_effort"):
+        guarded_llm.build_provider_llm(
+            "gemini", config.LLM_MODEL, reasoning_effort="low"
+        )
 
 
 def test_missing_api_key_is_an_error(monkeypatch):

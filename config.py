@@ -45,6 +45,10 @@ REDTEAM_MAX_LIVE_CALLS = 150
 # the system's model does not grade its own answers. The scan's judge.
 INDEPENDENT_JUDGE_PROVIDER = REDTEAM_PROVIDER
 INDEPENDENT_JUDGE_MODEL = REDTEAM_JUDGE_MODEL
+# How much the independent judge thinks before it answers. At the default,
+# gpt-oss-120b spent so much of its output on thinking that a list of the
+# facts in the whole policy text was cut off before its end (2026-10-21).
+INDEPENDENT_JUDGE_REASONING_EFFORT = "low"
 
 # A second Gemini key, of a project with billing, for evaluation and
 # development runs only, and only when a run is started with --paid: the
