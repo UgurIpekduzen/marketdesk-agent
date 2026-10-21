@@ -35,6 +35,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 import config
 from eval import scoring
+from eval.live_bar import LiveBar
 from eval.llm_cache import (
     DEFAULT_CACHE_DIR,
     CachedLLM,
@@ -573,12 +574,15 @@ def run(
     report=print,
     show_test: bool = False,
     judge=None,
+    bar: LiveBar | None = None,
 ) -> list[dict]:
     """Run and score the examples one after another.
 
     The outcome of a test example is not reported unless show_test is set.
     With a judge, policy answers are also scored for faithfulness and
-    helpfulness and ops answers for causal claims.
+    helpfulness and ops answers for causal claims. A bar at the bottom of
+    the terminal, when given and active, follows the run; the lines then
+    carry only their count.
     """
     # The run works on a copy of the database, so it may write to it.
     conn = sqlite3.connect(db_path)
@@ -586,6 +590,8 @@ def run(
     started = time.monotonic()
     try:
         for number, example in enumerate(examples, start=1):
+            if bar is not None:
+                bar.begin(example["id"])
             reset_tickets(conn)
             prepared = prepare(example, conn)
             seconds_before, live_before = llm.seconds, llm.live_calls
@@ -607,8 +613,13 @@ def run(
             row["live_calls"] = llm.live_calls - live_before
             rows.append(row)
             failed = [name for name, ok in row["checks"].items() if not ok]
-            counter = progress(number, len(examples))
-            if row["split"] == "test" and not show_test:
+            counter = (
+                count(number, len(examples))
+                if bar is not None and bar.active
+                else progress(number, len(examples))
+            )
+            held_out = row["split"] == "test" and not show_test
+            if held_out:
                 # Only the counter: the live calls of one example would show
                 # how many steps it took.
                 report(f"{counter}  {row['id']:>3}  held out")
@@ -619,6 +630,11 @@ def run(
                     f"{', '.join(row['tools_called']) or '-'}"
                     + (f"   failed: {', '.join(failed)}" if failed else "")
                     + f"   {calls_so_far(row['live_calls'], llm, judge, started)}"
+                )
+            if bar is not None:
+                bar.finish(
+                    None if held_out else row["success"],
+                    llm.live_calls + judge_live_calls(judge),
                 )
             if pause and row["live_calls"]:
                 time.sleep(pause)
@@ -631,6 +647,11 @@ def run(
 BAR_WIDTH = 10
 
 
+def count(number: int, total: int) -> str:
+    """[ 7/84], padded so the lines stay aligned."""
+    return f"[{number:>{len(str(total))}}/{total}]"
+
+
 def progress(number: int, total: int) -> str:
     """Where the run is: [ 7/84] with a bar and a percentage.
 
@@ -640,7 +661,7 @@ def progress(number: int, total: int) -> str:
     share = number / total if total else 1.0
     filled = round(share * BAR_WIDTH)
     bar = "█" * filled + "░" * (BAR_WIDTH - filled)
-    return f"[{number:>{len(str(total))}}/{total}] {bar} {share:>4.0%}"
+    return f"{count(number, total)} {bar} {share:>4.0%}"
 
 
 def judge_live_calls(judge) -> int:
@@ -785,6 +806,7 @@ def main() -> int:
             else None
         )
         hash_before = content_hash(db_copy)
+        bar = LiveBar(len(examples))
         try:
             rows = run(
                 examples,
@@ -792,14 +814,18 @@ def main() -> int:
                 index,
                 llm,
                 args.pause,
+                report=bar.report,
                 show_test=args.show_test,
                 judge=judge,
+                bar=bar,
             )
         except (DailyQuotaUsedUp, LiveCallLimitReached, NoPaidCredit) as stop:
             # Nothing is written: the next run takes the answers so far from
             # the cache and goes on from there.
             print(f"\nStopped: {stop}")
             return 3
+        finally:
+            bar.close()
         unchanged = content_hash(db_copy) == hash_before
 
     summary = summarise_by_split(rows)
