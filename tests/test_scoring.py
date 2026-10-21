@@ -1,17 +1,23 @@
 """Tests for the evaluation scoring."""
 
+from datetime import date
+
 import pytest
 
 from eval.scoring import (
     arguments_match,
+    citations,
+    citations_returned,
     contains_all,
     decision_of,
     execution_match,
+    future_dates,
     last_table,
     matches_none,
     percentile,
     rate,
     tool_call_accuracy,
+    ungrounded_numbers,
 )
 
 CHECK = {
@@ -224,3 +230,75 @@ def test_percentiles_by_nearest_rank():
     assert percentile(values, 95) == 10.0
     assert percentile([4.2], 95) == 4.2
     assert percentile([], 50) is None
+
+
+# --- Grounding ----------------------------------------------------------------
+
+SEARCH = (
+    "search_policies",
+    {
+        "query": "iade süresi",
+        "results": [
+            {"citation": "İade Politikası, Bölüm 2", "text": "14 takvim günü"},
+            {"citation": "Kargo ve Gecikme Politikası, Bölüm 3", "text": "10 gün"},
+        ],
+    },
+)
+
+
+def test_citations_are_read_in_both_languages():
+    text = (
+        "Süre 14 gündür (İade Politikası, Bölüm 2). See Shipping and Delays "
+        "Policy, Section 3."
+    )
+
+    assert citations(text) == {
+        ("İade Politikası", 2),
+        ("Kargo ve Gecikme Politikası", 3),
+    }
+
+
+def test_a_cited_section_must_have_come_back_from_the_search():
+    assert citations_returned("Bkz. İade Politikası, Bölüm 2.", [SEARCH])
+    assert not citations_returned("Bkz. İade Politikası, Bölüm 9.", [SEARCH])
+    assert not citations_returned("Bkz. İade Politikası, Bölüm 2.", [])
+    assert citations_returned("Politikada bu konu belirlenmemiştir.", [])
+
+
+def test_numbers_from_the_tool_pass_however_they_are_written():
+    table = ("run_metric", {"rows": [[13591643.7, 0.0812, 54011]]})
+
+    for text in (
+        "GMV 13.591.643,70 BRL.",
+        "GMV yaklaşık 13,6 milyon BRL.",
+        "Geç teslim oranı %8,1.",
+        "Oran 0,08.",
+        "54.011 sipariş.",
+        "54,011 orders.",
+    ):
+        assert ungrounded_numbers(text, [table]) == [], text
+
+
+def test_a_number_no_tool_returned_is_found():
+    table = ("run_metric", {"rows": [[54011]]})
+
+    assert ungrounded_numbers("Yaklaşık 60.000 sipariş var.", [table]) == ["60.000"]
+    assert ungrounded_numbers("Tahminim 99441.", []) == ["99441"]
+
+
+def test_dates_citations_list_numbers_and_the_questions_numbers_are_left_out():
+    text = (
+        "1. 2018-08-01 ile 01.09.2018 arasında (İade Politikası, Bölüm 2).\n"
+        "2. Sorduğunuz %50 artış verilerde görünmüyor."
+    )
+
+    assert ungrounded_numbers(text, [], question="GMV %50 arttı mı?") == []
+
+
+def test_a_date_after_today_is_found_unless_the_question_names_it():
+    today = date(2018, 9, 1)
+
+    assert future_dates("Veriler 2018-09-01'e kadar.", today) == []
+    assert future_dates("2019'da GMV 20 milyon olacak.", today) == ["2019"]
+    assert future_dates("Teslim 15.10.2018.", today) == ["15.10.2018"]
+    assert future_dates("2019 için veri yok.", today, question="2019 GMV?") == []

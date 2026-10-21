@@ -246,6 +246,9 @@ def score(example: dict, prepared: dict, answer, requests_after: int) -> dict:
         sources = example["source"]
         sources = sources if isinstance(sources, list) else [sources]
         checks["source"] = any(source in text for source in sources)
+    grounding = grounding_problems(example, expected, answer, results)
+    for name, problems in grounding.items():
+        checks[name] = not problems
 
     router_log = answer.router_log
     return {
@@ -270,7 +273,38 @@ def score(example: dict, prepared: dict, answer, requests_after: int) -> dict:
         "tool_calls": len(calls),
         "input_tokens": router_log.input_tokens + (log.input_tokens if log else 0),
         "output_tokens": router_log.output_tokens + (log.output_tokens if log else 0),
+        # What a grounding check found: invented sections, numbers, dates.
+        **({"grounding": grounding} if any(grounding.values()) else {}),
     }
+
+
+def grounding_problems(
+    example: dict, expected: dict, answer, results: list
+) -> dict[str, list]:
+    """The grounding checks an example asks for, with what each found.
+
+    They read the model's own words: the caveat and the SQL the page adds
+    to an operations answer are left out, as they are not the model's.
+    """
+    text = answer.display
+    own_words = getattr(answer.reply, "text", text)
+    question = example["question"]
+    found = {}
+    if expected.get("citations_returned"):
+        found["citations_returned"] = sorted(
+            f"{title}, {number}"
+            for title, number in scoring.citations(text)
+            - scoring.returned_sections(results)
+        )
+    if expected.get("numbers_in_tool_output"):
+        found["numbers_in_tool_output"] = scoring.ungrounded_numbers(
+            own_words, results, question
+        )
+    if expected.get("no_future_date"):
+        found["no_future_date"] = scoring.future_dates(
+            own_words, config.SIMULATED_TODAY, question
+        )
+    return found
 
 
 def source_documents(example: dict) -> list[str] | None:

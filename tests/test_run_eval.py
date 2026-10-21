@@ -863,3 +863,59 @@ def test_the_judge_calls_are_shown_only_with_a_judge(tmp_path):
 
     assert text.startswith("live +2 (system 0)")
     assert "judge" not in text
+
+
+# --- Grounding checks ---------------------------------------------------------
+
+
+class Reply:
+    def __init__(self, text):
+        self.text = text
+
+
+class Answer:
+    def __init__(self, display, own_words=None):
+        self.display = display
+        self.reply = Reply(own_words if own_words is not None else display)
+
+
+def test_grounding_checks_run_only_when_an_example_asks_for_them():
+    example = {"question": "Kaç sipariş var?"}
+    answer = Answer("Yaklaşık 60.000 sipariş, 2019'da daha fazla olacak.")
+
+    assert run_eval.grounding_problems(example, {}, answer, []) == {}
+    found = run_eval.grounding_problems(
+        example,
+        {"numbers_in_tool_output": True, "no_future_date": True},
+        answer,
+        [("run_metric", {"rows": [[54011]]})],
+    )
+    assert found == {
+        "numbers_in_tool_output": ["60.000"],
+        "no_future_date": ["2019"],
+    }
+
+
+def test_numbers_are_read_from_the_models_own_words_not_the_added_sql():
+    # The page adds the caveat and the SQL; their numbers are not the model's.
+    answer = Answer(
+        "29 sipariş.\n\nNot: 10 gün.\n\nKullanılan SQL: SELECT 1 LIMIT 1000",
+        own_words="29 sipariş.",
+    )
+
+    found = run_eval.grounding_problems(
+        {"question": "Kaç?"},
+        {"numbers_in_tool_output": True},
+        answer,
+        [("run_metric", {"rows": [[29]]})],
+    )
+    assert found == {"numbers_in_tool_output": []}
+
+
+def test_an_invented_citation_is_named():
+    answer = Answer("Bkz. İade Politikası, Bölüm 9.")
+
+    found = run_eval.grounding_problems(
+        {"question": "?"}, {"citations_returned": True}, answer, []
+    )
+    assert found == {"citations_returned": ["İade Politikası, 9"]}
