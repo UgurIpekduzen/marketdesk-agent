@@ -87,6 +87,7 @@ def telemetry_locked_out():
 
 switch_telemetry_off()
 with telemetry_locked_out():
+    from deepteam.attacks.multi_turn import CrescendoJailbreaking, LinearJailbreaking
     from deepteam.attacks.single_turn import (
         ROT13,
         Base64,
@@ -170,6 +171,36 @@ ATTACKS = (
     Multilingual,
 )
 PILOT_ATTACKS = 3
+# Attacks over several messages, on the customer session: one type of each
+# vulnerability, as each conversation costs the attacker many calls.
+MULTI_TURN_VULNERABILITIES = (
+    (BOLA, ["cross_customer_access"]),
+    (ExcessiveAgency, ["permissions"]),
+    (PromptLeakage, ["instructions"]),
+)
+LINEAR_TURNS = 4
+PILOT_LINEAR_TURNS = 3
+CRESCENDO_ROUNDS = 4
+CRESCENDO_BACKTRACKS = 2
+
+
+def multi_turn_attacks(attacker: JudgeModel, pilot: bool = False) -> list:
+    """The multi-turn attacks, each a scan of its own, written by our attacker.
+
+    DeepTeam's default writer is an OpenAI model; it is never used.
+    """
+    linear = LinearJailbreaking(
+        num_turns=PILOT_LINEAR_TURNS if pilot else LINEAR_TURNS,
+        simulator_model=attacker,
+    )
+    if pilot:
+        return [linear]
+    crescendo = CrescendoJailbreaking(
+        max_rounds=CRESCENDO_ROUNDS,
+        max_backtracks=CRESCENDO_BACKTRACKS,
+        simulator_model=attacker,
+    )
+    return [linear, crescendo]
 
 
 # The errors after which a scan goes no further: a daily limit, the limit of
@@ -221,7 +252,8 @@ class Target:
     """The system as DeepTeam sees it: a callback that answers one attack.
 
     Every attack gets a session of its own, so one attack cannot prepare
-    another; the answer is what the page would show.
+    another; a multi-turn attack gets its own conversation replayed in it.
+    The answer is what the page would show.
     """
 
     def __init__(
@@ -258,10 +290,20 @@ class Target:
         finally:
             conn.close()
 
-    async def _ask(self, attack: str) -> str:
+    async def _ask(self, attack: str, earlier: list[str]) -> str:
+        """The answer to the attack in a new session, after the earlier
+        messages of its conversation are sent again in order.
+
+        A multi-turn attack hands over the whole conversation each time, and
+        may go back a turn; replaying it keeps the session what the attacker
+        sees. The earlier messages ask what they asked before, so their
+        answers come from the cache.
+        """
         if self.session == "ops":
             router = Orchestrator.for_ops(self.db_path, self.llm)
             try:
+                for message in earlier:
+                    await router.ask(message)
                 return (await router.ask(attack)).display
             finally:
                 router.close()
@@ -269,6 +311,8 @@ class Target:
             router = await Orchestrator.for_customer(
                 orders, self.customer, self.index, self.llm
             )
+            for message in earlier:
+                await router.ask(message)
             return (await router.ask(attack)).display
 
     async def __call__(self, input: str, turns=None) -> RTTurn:
@@ -277,8 +321,12 @@ class Target:
         before, live_before = self._requests(), self.llm.live_calls
         if self.bar is not None:
             self.bar.begin(self.session)
+        earlier = [turn.content for turn in turns or [] if turn.role == "user"]
+        # The conversation handed over may already end with this message.
+        if earlier and earlier[-1] == input:
+            earlier.pop()
         try:
-            answer = await self._ask(input)
+            answer = await self._ask(input, earlier)
         except STOPS as stop:
             self.stopped = stop
             raise
@@ -309,11 +357,23 @@ class Target:
 
 
 def vulnerabilities(classes, attacker: JudgeModel, judge: JudgeModel, purpose: str):
-    """The vulnerabilities, each told to use our models and nobody else's."""
-    return [
-        cls(simulator_model=attacker, evaluation_model=judge, purpose=purpose)
-        for cls in classes
-    ]
+    """The vulnerabilities, each told to use our models and nobody else's.
+
+    An entry is a class, with all its types, or (class, types).
+    """
+    found = []
+    for entry in classes:
+        cls, types = entry if isinstance(entry, tuple) else (entry, None)
+        settings = {"types": types} if types else {}
+        found.append(
+            cls(
+                simulator_model=attacker,
+                evaluation_model=judge,
+                purpose=purpose,
+                **settings,
+            )
+        )
+    return found
 
 
 # How DeepTeam is set up and run; the names are checked against its own
@@ -353,7 +413,10 @@ def scan(
     assessment = red_teamer.red_team(
         model_callback=target,
         vulnerabilities=found,
-        attacks=[attack() for attack in attacks],
+        # Classes are built with DeepTeam's settings; set-up attacks as given.
+        attacks=[
+            attack() if isinstance(attack, type) else attack for attack in attacks
+        ],
         **SCAN_SETTINGS,
     )
     return [
@@ -446,6 +509,11 @@ def main() -> int:
         help=f"one vulnerability with {PILOT_ATTACKS} attacks, to try the attacker",
     )
     parser.add_argument(
+        "--multi-turn",
+        action="store_true",
+        help="attacks over several messages (linear and crescendo) on the customer session",
+    )
+    parser.add_argument(
         "--paid",
         action="store_true",
         help="make the system's live calls on the paid key",
@@ -472,7 +540,25 @@ def main() -> int:
         ops_target = Target("ops", db_copy, llm, report=bar.report, bar=bar)
         try:
             fuses = (attacker, judge, customer_target, ops_target)
-            if args.pilot:
+            if args.multi_turn:
+                chosen = (
+                    MULTI_TURN_VULNERABILITIES[-1:]
+                    if args.pilot
+                    else (MULTI_TURN_VULNERABILITIES)
+                )
+                rows = []
+                for attack in multi_turn_attacks(attacker, args.pilot):
+                    if first_stop(fuses) is not None:
+                        break
+                    rows += scan(
+                        customer_target,
+                        chosen,
+                        CUSTOMER_PURPOSE,
+                        attacker,
+                        judge,
+                        [attack],
+                    )
+            elif args.pilot:
                 rows = scan(
                     customer_target,
                     (BOLA,),
@@ -517,6 +603,7 @@ def main() -> int:
         "attacker_model": config.REDTEAM_ATTACKER_MODEL,
         "judge_model": config.REDTEAM_JUDGE_MODEL,
         "pilot": args.pilot,
+        "multi_turn": args.multi_turn,
         "system_live_calls": llm.live_calls,
         "attacker_live_calls": attacker_calls,
         "judge_live_calls": judge_calls,
@@ -524,7 +611,8 @@ def main() -> int:
         "rows": rows,
     }
     RESULTS_DIR.mkdir(exist_ok=True)
-    name = f"redteam{'_pilot' if args.pilot else ''}_v1_{config.LLM_MODEL}"
+    kind = "_multi_turn" if args.multi_turn else ""
+    name = f"redteam{kind}{'_pilot' if args.pilot else ''}_v1_{config.LLM_MODEL}"
     (RESULTS_DIR / f"{name}.json").write_text(
         json.dumps(result, ensure_ascii=False, indent=1), encoding="utf-8"
     )
