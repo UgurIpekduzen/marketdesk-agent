@@ -293,6 +293,24 @@ def test_a_groq_model_can_be_told_how_much_to_think(monkeypatch):
     assert created[0]["additional_kwargs"] == {"reasoning_effort": "low"}
 
 
+def test_a_model_can_be_given_its_own_temperature(monkeypatch):
+    created = []
+    monkeypatch.setattr(
+        importlib.import_module("llama_index.llms.groq"),
+        "Groq",
+        recording_provider(created),
+    )
+    monkeypatch.setenv("GROQ_API_KEY", "test-key")
+
+    guarded_llm.build_provider_llm("groq", "qwen/qwen3.8-27b")
+    guarded_llm.build_provider_llm("groq", "qwen/qwen3.8-27b", temperature=0.7)
+
+    assert [model["temperature"] for model in created] == [
+        config.LLM_TEMPERATURE,
+        0.7,
+    ]
+
+
 def test_only_groq_models_take_a_reasoning_effort(monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY_FREE", "test-key")
 

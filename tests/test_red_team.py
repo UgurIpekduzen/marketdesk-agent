@@ -185,7 +185,7 @@ def test_the_attacker_and_the_judge_go_through_the_guard_and_the_cache(
 ):
     asked = []
 
-    def fake_provider(provider=None, model=None, paid=False):
+    def fake_provider(provider=None, model=None, paid=False, temperature=None):
         asked.append((provider, model))
         return FakeLLM()
 
@@ -197,6 +197,25 @@ def test_the_attacker_and_the_judge_go_through_the_guard_and_the_cache(
     assert isinstance(model.load_model(), GuardedLLM)
     assert isinstance(model.load_model().inner, CachedLLM)
     assert model.get_model_name() == name
+
+
+def test_the_multi_turn_attacker_is_told_what_the_messages_are_for(tmp_path):
+    attacker = red_team.RedTeamModel(
+        CachedLLM(inner=(fake := FakeLLM(script=["Saldırı."])), cache_dir=tmp_path)
+    )
+    attacker.instructions = red_team.ATTACKER_INSTRUCTIONS
+    judge = red_team.RedTeamModel(
+        CachedLLM(inner=(plain := FakeLLM(script=["Puan."])), cache_dir=tmp_path / "j")
+    )
+
+    asyncio.run(attacker.a_generate("Bir saldırı yaz."))
+    asyncio.run(judge.a_generate("Puanla."))
+
+    sent = fake.requests[0]["messages"]
+    assert [message["role"] for message in sent] == ["system", "user"]
+    assert "authorized security evaluation" in str(sent[0])
+    # The judge, and the single-turn attacker, ask as they always did.
+    assert [message["role"] for message in plain.requests[0]["messages"]] == ["user"]
 
 
 def test_the_judge_is_not_the_attacker():

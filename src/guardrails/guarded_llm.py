@@ -139,13 +139,15 @@ def build_provider_llm(
     model: str | None = None,
     paid: bool = False,
     reasoning_effort: str | None = None,
+    temperature: float | None = None,
 ) -> FunctionCallingLLM:
     """Create a provider's model: by default the one config.py names.
 
     paid uses the key of the project with billing (config.PAID_KEY_VARIABLE)
     instead of the free one; only evaluation runs started with --paid pass
     it, never the page or the agents. reasoning_effort sets how much a
-    reasoning model on Groq thinks before it answers.
+    reasoning model on Groq thinks before it answers. temperature, when
+    given, replaces config.LLM_TEMPERATURE.
     """
     if provider is None or model is None:
         provider, model = configured_model()
@@ -158,20 +160,20 @@ def build_provider_llm(
     api_key = os.environ[
         config.PAID_KEY_VARIABLE if paid else API_KEY_VARIABLES[provider]
     ]
+    if temperature is None:
+        temperature = config.LLM_TEMPERATURE
 
     # Imported here: this is the only place that knows the providers.
     if provider == "gemini":
         from llama_index.llms.google_genai import GoogleGenAI
 
-        return GoogleGenAI(
-            model=model, api_key=api_key, temperature=config.LLM_TEMPERATURE
-        )
+        return GoogleGenAI(model=model, api_key=api_key, temperature=temperature)
     from llama_index.llms.groq import Groq
 
     return Groq(
         model=model,
         api_key=api_key,
-        temperature=config.LLM_TEMPERATURE,
+        temperature=temperature,
         additional_kwargs=(
             {"reasoning_effort": reasoning_effort} if reasoning_effort else {}
         ),

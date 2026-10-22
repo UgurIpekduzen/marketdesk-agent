@@ -40,6 +40,10 @@ REDTEAM_ATTACKER_MODEL = "qwen/qwen3.8-27b"
 REDTEAM_JUDGE_MODEL = "openai/gpt-oss-120b"
 # A scan stops after this many live calls to the system's own model.
 REDTEAM_MAX_LIVE_CALLS = 150
+# The attacker of the multi-turn scan writes with some variety. At 0, and
+# with its answers cached, an attack it once refused to write is refused
+# again on every run (2 of 6 conversations on 2026-10-22).
+REDTEAM_MULTI_TURN_ATTACKER_TEMPERATURE = 0.7
 # The judge for sets about what the system's own model gets wrong, such as
 # misinformation, when a run asks for it: a model of another provider, so
 # the system's model does not grade its own answers. The scan's judge.
