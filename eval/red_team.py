@@ -258,9 +258,17 @@ def redteam_model(
     cache_dir: Path,
     temperature: float | None = None,
     instructions: str | None = None,
+    provider: str | None = None,
+    paid: bool = False,
 ) -> RedTeamModel:
-    """A model of the scan (attacker or judge), behind the cache and the guard."""
-    inner = build_provider_llm(config.REDTEAM_PROVIDER, name, temperature=temperature)
+    """A model of the scan (attacker or judge), behind the cache and the guard.
+
+    provider is the scan's (config.REDTEAM_PROVIDER) unless another is named;
+    paid asks for the paid key, which only a Gemini model can use.
+    """
+    inner = build_provider_llm(
+        provider or config.REDTEAM_PROVIDER, name, paid=paid, temperature=temperature
+    )
     model = RedTeamModel(CachedLLM(inner=inner, cache_dir=cache_dir), name=name)
     model.instructions = instructions
     return model
@@ -535,7 +543,8 @@ def totals_table(result: dict) -> str:
 
 def markdown(result: dict) -> str:
     attacker = (
-        f"Attacker: `{result['attacker_model']}`. Judge: `{result['judge_model']}`. "
+        f"Attacker: `{result['attacker_model']}` "
+        f"({result.get('attacker_provider', config.REDTEAM_PROVIDER)}). Judge: `{result['judge_model']}`. "
         f"Pilot: {'yes' if result['pilot'] else 'no'}."
     )
     lines = [
@@ -557,6 +566,25 @@ def markdown(result: dict) -> str:
             f"{', '.join(failed) or ('ok' if checks else '-')} |"
         )
     return "\n".join(lines) + "\n"
+
+
+def result_name(multi_turn: bool, pilot: bool, attacker: str | None = None) -> str:
+    """The name of a scan's results files. A scan with an attacker other than
+    the configured one has its own, so it never replaces the main results."""
+    kind = "_multi_turn" if multi_turn else ""
+    by = f"_by-{attacker}" if attacker else ""
+    return f"redteam{kind}{'_pilot' if pilot else ''}_v1_{config.LLM_MODEL}{by}"
+
+
+def attacker_choice_problem(
+    provider: str | None, model: str | None, paid: bool
+) -> str | None:
+    """What is wrong with the attacker the command line names, if anything."""
+    if (provider is None) != (model is None):
+        return "--attacker-provider and --attacker-model go together"
+    if provider == "gemini" and not paid:
+        return "a Gemini attacker runs on the paid key: add --paid"
+    return None
 
 
 def first_stop(fuses) -> Exception | None:
@@ -582,17 +610,40 @@ def main() -> int:
         action="store_true",
         help="make the system's live calls on the paid key",
     )
+    parser.add_argument(
+        "--attacker-provider",
+        help="write the attacks with a model of another provider, to compare "
+        "attackers (needs --attacker-model; a Gemini attacker needs --paid)",
+    )
+    parser.add_argument(
+        "--attacker-model",
+        help="the model of --attacker-provider that writes the attacks",
+    )
     args = parser.parse_args()
+    problem = attacker_choice_problem(
+        args.attacker_provider, args.attacker_model, args.paid
+    )
+    if problem:
+        parser.error(problem)
 
-    attacker = (
-        redteam_model(
-            config.REDTEAM_ATTACKER_MODEL,
-            DEFAULT_CACHE_DIR,
-            temperature=config.REDTEAM_MULTI_TURN_ATTACKER_TEMPERATURE,
-            instructions=ATTACKER_INSTRUCTIONS,
-        )
-        if args.multi_turn
-        else redteam_model(config.REDTEAM_ATTACKER_MODEL, DEFAULT_CACHE_DIR)
+    attacker_provider = args.attacker_provider or config.REDTEAM_PROVIDER
+    attacker_name = args.attacker_model or config.REDTEAM_ATTACKER_MODEL
+    # The attacker of another provider runs on the paid key when it is
+    # Gemini: the free key's daily limit is for the system.
+    attacker_paid = args.paid and attacker_provider == "gemini"
+    attacker = redteam_model(
+        attacker_name,
+        DEFAULT_CACHE_DIR,
+        provider=attacker_provider,
+        paid=attacker_paid,
+        **(
+            {
+                "temperature": config.REDTEAM_MULTI_TURN_ATTACKER_TEMPERATURE,
+                "instructions": ATTACKER_INSTRUCTIONS,
+            }
+            if args.multi_turn
+            else {}
+        ),
     )
     judge = redteam_model(config.REDTEAM_JUDGE_MODEL, DEFAULT_CACHE_DIR)
     llm = system_model(DEFAULT_CACHE_DIR, args.paid)
@@ -680,7 +731,8 @@ def main() -> int:
     judge_calls = judge.load_model().inner.live_calls
     result = {
         "system_model": config.LLM_MODEL,
-        "attacker_model": config.REDTEAM_ATTACKER_MODEL,
+        "attacker_provider": attacker_provider,
+        "attacker_model": attacker_name,
         "judge_model": config.REDTEAM_JUDGE_MODEL,
         "pilot": args.pilot,
         "multi_turn": args.multi_turn,
@@ -691,8 +743,7 @@ def main() -> int:
         "rows": rows,
     }
     RESULTS_DIR.mkdir(exist_ok=True)
-    kind = "_multi_turn" if args.multi_turn else ""
-    name = f"redteam{kind}{'_pilot' if args.pilot else ''}_v1_{config.LLM_MODEL}"
+    name = result_name(args.multi_turn, args.pilot, args.attacker_model)
     (RESULTS_DIR / f"{name}.json").write_text(
         json.dumps(result, ensure_ascii=False, indent=1), encoding="utf-8"
     )

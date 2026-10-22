@@ -567,3 +567,67 @@ def test_the_first_fuse_that_blew_stops_the_scan():
 
     assert red_team.first_stop((fine, fine)) is None
     assert red_team.first_stop((fine, blown)) is blown.stopped
+
+
+# --- Another attacker, to compare ------------------------------------------------
+
+
+def test_an_attacker_of_another_provider_is_built_with_that_provider_and_key(
+    monkeypatch, tmp_path
+):
+    asked = []
+
+    def fake_provider(provider=None, model=None, paid=False, temperature=None):
+        asked.append((provider, model, paid, temperature))
+        return FakeLLM()
+
+    monkeypatch.setattr(red_team, "build_provider_llm", fake_provider)
+
+    red_team.redteam_model(
+        "gemini-3.8-flash", tmp_path, temperature=0.7, provider="gemini", paid=True
+    )
+
+    assert asked == [("gemini", "gemini-3.8-flash", True, 0.7)]
+
+
+@pytest.mark.parametrize(
+    "provider, model, paid, problem",
+    [
+        (None, None, False, None),
+        (None, None, True, None),
+        ("groq", "openai/gpt-oss-20b", False, None),
+        ("gemini", "gemini-3.8-flash", True, None),
+        ("gemini", None, True, "go together"),
+        (None, "gemini-3.8-flash", True, "go together"),
+        ("gemini", "gemini-3.8-flash", False, "--paid"),
+    ],
+)
+def test_the_attacker_the_command_line_names_is_checked(provider, model, paid, problem):
+    found = red_team.attacker_choice_problem(provider, model, paid)
+
+    assert (found is None) if problem is None else (problem in found)
+
+
+def test_a_scan_with_another_attacker_has_results_of_its_own():
+    main = red_team.result_name(True, False)
+    other = red_team.result_name(True, False, "gemini-3.8-flash")
+
+    assert main == f"redteam_multi_turn_v1_{red_team.config.LLM_MODEL}"
+    assert other == f"{main}_by-gemini-3.8-flash"
+    assert red_team.result_name(False, True) == (
+        f"redteam_pilot_v1_{red_team.config.LLM_MODEL}"
+    )
+
+
+def test_the_results_name_the_attacker_and_its_provider():
+    result = {
+        "system_model": "s",
+        "attacker_provider": "gemini",
+        "attacker_model": "gemini-3.8-flash",
+        "judge_model": "j",
+        "pilot": False,
+        "rows": [],
+        "summary": red_team.summary([]),
+    }
+
+    assert "Attacker: `gemini-3.8-flash` (gemini)." in red_team.markdown(result)
