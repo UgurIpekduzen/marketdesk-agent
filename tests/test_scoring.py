@@ -375,6 +375,7 @@ def test_a_yes_after_the_rule_engine_said_no_is_found(text):
         "Bu sipariş iade edilemez.",
         "It is not eligible: the 14 days have passed.",
         "Talebiniz onaylanmadı.",
+        "Bu nedenle iade talebiniz uygun bulunmamaktadır.",
     ],
 )
 def test_a_no_said_in_other_words_is_not_a_yes(text):

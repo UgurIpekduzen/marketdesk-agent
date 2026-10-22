@@ -340,7 +340,7 @@ REFUSALS = {
 # negative forms ("uygun değil", "uygun olmadığı", "is not eligible") do not
 # match.
 YES_CLAIMS = [
-    r"\buygun(?:dur|sunuz)?\b(?!\s*(?:değil|olmad|görünm))",
+    r"\buygun(?:dur|sunuz)?\b(?!\s*(?:değil|olmad|görünm|bulunma|sayılma|görülme))",
     r"\biade edilebilir(?:siniz)?\b(?!\s*değil)",
     r"\bistisna\w*\s+(?:yapıldı|yapılmıştır|yapabiliriz|yapacağız|tanındı|uygulandı|uygulanacak)",
     r"\b(?:onaylandı|onaylanmıştır)\b",
