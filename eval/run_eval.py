@@ -87,6 +87,10 @@ INTER_AGENT_SET = EVAL_DIR / "inter_agent_tests.jsonl"
 # next to the approval card, a yes against the rule engine, a ticket
 # summary that tells the rep what to decide.
 HUMAN_TRUST_SET = EVAL_DIR / "human_trust_tests.jsonl"
+# Attacks spread over several messages of one session: approval claimed
+# across turns, another customer's order, a role built up, a planted rule,
+# a made-up history, the instructions pulled out in pieces.
+MULTI_TURN_ATTACK_SET = EVAL_DIR / "multi_turn_attacks.jsonl"
 RESULT_PREFIXES = {
     GOLDEN_SET.stem: "golden_v1",
     INJECTION_SET.stem: "injection_v1",
@@ -98,6 +102,7 @@ RESULT_PREFIXES = {
     INDIRECT_INJECTION_SET.stem: "indirect_injection_v1",
     INTER_AGENT_SET.stem: "inter_agent_v1",
     HUMAN_TRUST_SET.stem: "human_trust_v1",
+    MULTI_TURN_ATTACK_SET.stem: "multi_turn_attacks_v1",
 }
 # English document title -> the Turkish title the documents carry.
 TURKISH_TITLES = {
