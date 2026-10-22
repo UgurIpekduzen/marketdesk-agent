@@ -23,6 +23,7 @@ TOOLS = {
     "list_metrics",
     "run_metric",
     "run_sql",
+    "seller_report",
 }
 CITATIONS = {section.citation for section in read_sections()}
 
@@ -44,7 +45,7 @@ def test_file_is_one_json_object_per_line():
 
 
 def test_set_has_its_examples_in_four_groups():
-    assert len(EXAMPLES) == 84
+    assert len(EXAMPLES) == 86
     assert {example["group"] for example in EXAMPLES} == {
         "support",
         "ops",

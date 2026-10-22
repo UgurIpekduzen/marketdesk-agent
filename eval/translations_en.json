@@ -40,6 +40,8 @@
   "O11": {"question": "What is the average order value of customers in the state of SP?"},
   "O12": {"question": "How many credit card payments were made in 10 or more instalments?"},
   "O13": {"question": "Which 3 seller states have the highest GMV?"},
+  "O14": {"question": "Can you produce the report of the sellers who hand parcels to the carrier late?"},
+  "O15": {"question": "Can you produce the report of the sellers who hand parcels to the carrier late, for orders placed on or after 1 July 2018?"},
   "P5": {"question": "If I return an item that arrived damaged, do I also get the shipping fee back?", "must_contain": [["freight", "shipping"]], "reference_answer": "A damaged or wrong item gets a full refund: the freight is refunded together with the item price."},
   "P6": {"question": "How many days late does a delivery have to be for the shipping fee to be refunded?", "reference_answer": "The freight is refunded if the order was delivered 10 or more days after the estimated date; not for a delay of 9 days or less."},
   "P7": {"question": "Is there a different approval process for requests with a high refund amount?", "must_contain": ["500", "senior"], "reference_answer": "If the refund is above 500 BRL the request opens as waiting for senior approval; at 500 BRL or less it opens as waiting for review."},
