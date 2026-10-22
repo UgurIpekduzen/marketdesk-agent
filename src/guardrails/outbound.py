@@ -172,8 +172,14 @@ class Redactor:
         return value
 
 
+def findings_summary(found: Counter) -> str:
+    """What was replaced, as kinds and counts: "email=1 phone=2"."""
+    return " ".join(f"{kind}={count}" for kind, count in sorted(found.items()))
+
+
 def log_findings(found: Counter) -> None:
     """Log what was replaced: kinds and counts, never the values."""
     if found:
-        summary = " ".join(f"{kind}={count}" for kind, count in sorted(found.items()))
-        logger.warning("outbound guard replaced personal data: %s", summary)
+        logger.warning(
+            "outbound guard replaced personal data: %s", findings_summary(found)
+        )

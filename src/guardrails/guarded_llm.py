@@ -26,7 +26,8 @@ from llama_index.core.llms.function_calling import FunctionCallingLLM
 from pydantic import ConfigDict, Field
 
 import config
-from src.guardrails.outbound import Redactor, log_findings
+from src import tracing
+from src.guardrails.outbound import Redactor, findings_summary, log_findings
 
 API_KEY_VARIABLES = {"gemini": "GEMINI_API_KEY_FREE", "groq": "GROQ_API_KEY"}
 
@@ -51,7 +52,7 @@ class GuardedLLM(FunctionCallingLLM):
 
     def _clean_text(self, text: str) -> str:
         cleaned, found = self.redactor.redact(text)
-        log_findings(found)
+        self._report(found)
         return cleaned
 
     def _clean_messages(self, messages: Sequence[ChatMessage]) -> list[ChatMessage]:
@@ -63,8 +64,15 @@ class GuardedLLM(FunctionCallingLLM):
             )
             for message in messages
         ]
-        log_findings(found)
+        self._report(found)
         return cleaned
+
+    @staticmethod
+    def _report(found: Counter) -> None:
+        """Log what was replaced and put it on the trace: kinds and counts."""
+        log_findings(found)
+        if found:
+            tracing.mark(masked=findings_summary(found))
 
     # --- Chat: the calls an agent makes ----------------------------------
 

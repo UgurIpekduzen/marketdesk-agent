@@ -55,6 +55,18 @@ class RunLog:
     input_tokens: int = 0
     output_tokens: int = 0
     stopped_at_step_limit: bool = False
+    # Tools the model asked for that the agent was not given.
+    unknown_tools: list[str] = field(default_factory=list)
+
+    @property
+    def errors(self) -> list[str]:
+        """The error codes the tools answered, and UNKNOWN_TOOL, in order."""
+        codes = [
+            result["error"]
+            for _, result in self.tool_results
+            if isinstance(result, dict) and isinstance(result.get("error"), str)
+        ]
+        return codes + ["UNKNOWN_TOOL"] * len(self.unknown_tools)
 
     @property
     def steps(self) -> int:
@@ -83,13 +95,14 @@ class RunLog:
         """Log the run as one line."""
         logger.info(
             "run agent=%s customer=%s steps=%d llm_calls=%d tool_calls=%d "
-            "tools=%s input_tokens=%d output_tokens=%d step_limit=%s",
+            "tools=%s errors=%s input_tokens=%d output_tokens=%d step_limit=%s",
             agent,
             hash_id(customer_unique_id) if customer_unique_id else "-",
             self.steps,
             self.llm_calls,
             len(self.tool_calls),
             ",".join(self.tool_calls) or "-",
+            ",".join(self.errors) or "-",
             self.input_tokens,
             self.output_tokens,
             self.stopped_at_step_limit,

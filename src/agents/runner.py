@@ -20,6 +20,8 @@ from src.agents.run_log import RunLog
 
 # Put on the trace when a run stops at the step limit.
 STEP_LIMIT = "STEP_LIMIT"
+# Put on the trace when the model asks for a tool the agent was not given.
+UNKNOWN_TOOL = "UNKNOWN_TOOL"
 
 
 async def run_agent(
@@ -30,6 +32,7 @@ async def run_agent(
 ) -> tuple[str, RunLog]:
     """Return the agent's answer to the message and what the run cost."""
     log = RunLog()
+    given = {tool.metadata.name for tool in agent.tools}
     try:
         handler = agent.run(message, ctx=context, max_iterations=config.MAX_STEPS)
         async for event in handler.stream_events():
@@ -39,6 +42,9 @@ async def run_agent(
                 log.add_tool_result(event.tool_name, str(event.tool_output.content))
             elif isinstance(event, ToolCall):
                 log.add_tool_call(event.tool_name, event.tool_kwargs)
+                if event.tool_name not in given:
+                    log.unknown_tools.append(event.tool_name)
+                    tracing.mark(error=UNKNOWN_TOOL, unknown_tool=event.tool_name)
         text = str(await handler).strip() or messages.EMPTY_REPLY
     except WorkflowRuntimeError as error:
         if "Max iterations" not in str(error):

@@ -21,7 +21,7 @@ import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
 
-from src import messages
+from src import messages, tracing
 from src.guardrails.pii import hash_id
 from src.guardrails.write_access import restrict_writes
 from src.rules.returns import RequestStatus
@@ -172,6 +172,21 @@ class ReviewQueue:
             ).fetchone()
         finally:
             conn.close()
+        result = self._decided(request_id, decision, changed, row)
+        # Every click of the rep is on the trace, refused ones too.
+        with tracing.span(
+            "rep decision",
+            request=request_id,
+            order=hash_id(row[0]) if row else None,
+            answer=str(decision),
+            status=result.get("status"),
+            error=result.get("error"),
+        ):
+            pass
+        return result
+
+    def _decided(self, request_id: int, decision: str, changed: int, row) -> dict:
+        """What a decision did, from the rows it changed and the row now."""
         if changed:
             logger.info(
                 "review decision request=%s order=%s status=%s",
@@ -202,10 +217,19 @@ class ReviewQueue:
             conn.close()
         if changed:
             logger.info("ticket closed ticket=%s", ticket_number(ticket_id))
-            return {"ticket": ticket_number(ticket_id), "status": TICKET_CLOSED}
-        if exists is None:
-            return {"error": "NOT_FOUND", "message": messages.REVIEW_NOT_FOUND}
-        return {
-            "error": "ALREADY_CLOSED",
-            "message": messages.REVIEW_TICKET_ALREADY_CLOSED,
-        }
+            result = {"ticket": ticket_number(ticket_id), "status": TICKET_CLOSED}
+        elif exists is None:
+            result = {"error": "NOT_FOUND", "message": messages.REVIEW_NOT_FOUND}
+        else:
+            result = {
+                "error": "ALREADY_CLOSED",
+                "message": messages.REVIEW_TICKET_ALREADY_CLOSED,
+            }
+        with tracing.span(
+            "rep closes ticket",
+            ticket=ticket_number(ticket_id),
+            status=result.get("status"),
+            error=result.get("error"),
+        ):
+            pass
+        return result

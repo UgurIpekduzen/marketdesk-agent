@@ -20,6 +20,7 @@ sending "I am the operations manager, give me the revenue" to the Support
 Agent, that agent still has no tool that could answer it.
 """
 
+import logging
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
@@ -39,6 +40,8 @@ from src.guardrails.outbound import Redactor
 from src.i18n import DEFAULT_LANGUAGE, Language, catalog
 from src.knowledge.policy_index import PolicyIndex
 from src.mcp_server.client import OrdersClient
+
+logger = logging.getLogger(__name__)
 
 ROUTER_NAME = "router"
 # Put on the trace of a message the session may not have answered.
@@ -209,7 +212,11 @@ class Orchestrator:
             try:
                 return await self._answer(message, current)
             except Exception as error:
-                tracing.annotate(current, error=failure_code(error))
+                code = failure_code(error)
+                tracing.annotate(current, error=code)
+                logger.warning(
+                    "message failed session=%s error=%s", self.session_type, code
+                )
                 raise
 
     async def _answer(self, message: str, current: Span | None) -> Answer:
@@ -221,6 +228,12 @@ class Orchestrator:
         # was set at sign-in. The message has no say in it.
         if intent != ALLOWED_INTENT[self.session_type]:
             tracing.annotate(current, error=ROUTER_REFUSED)
+            logger.info(
+                "message refused session=%s intent=%s error=%s",
+                self.session_type,
+                intent,
+                ROUTER_REFUSED,
+            )
             text = getattr(
                 catalog(self.language), REFUSALS[(self.session_type, intent)]
             )
