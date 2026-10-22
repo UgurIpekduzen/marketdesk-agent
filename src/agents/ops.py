@@ -30,11 +30,18 @@ from src.agents.loop_guard import LoopGuard
 from src.agents.run_log import RunLog
 from src.agents.runner import run_agent
 from src.agents.sql_correction import LIMIT_REACHED, SqlCorrectionLimit
-from src.formatting import readable_table, table_text, worth_a_table
+from src.formatting import (
+    readable_table,
+    report_computation,
+    seller_report_table,
+    table_text,
+    worth_a_table,
+)
 from src.guardrails.guarded_llm import GuardedLLM, build_provider_llm
 from src.guardrails.outbound import Redactor
 from src.i18n import DEFAULT_LANGUAGE, LANGUAGE_NAMES, Language, catalog
 from src.knowledge.safe_views import ALLOWED_VIEWS
+from src.knowledge.seller_report import build_seller_report
 from src.knowledge.semantic_layer import list_metrics, load_semantic_layer, run_metric
 from src.knowledge.sql_runner import connect_read_only, run_sql
 
@@ -57,7 +64,10 @@ How to answer a question about numbers:
    answer "the top five among groups with at least 100 orders", pass
    group_by with min_count=100, order="value_desc" and top=5: the tool
    ranks the groups. Never sort or filter a result table yourself, and do
-   not rewrite a metric in SQL.
+   not rewrite a metric in SQL. For an overview of the sellers who ship
+   late (several figures per seller), call seller_report once instead: it
+   returns the ranked table with a caveat for every metric in it. Sellers
+   are shown by pseudonym (S-0001); use them as they are.
 3. Only if no metric fits, write one SELECT and call run_sql. It may read
    the views listed below and nothing else.
 4. If run_sql fails, read the error, correct the query and try again. You
@@ -207,6 +217,18 @@ def view_schema(db_path: Path | str) -> str:
         conn.close()
 
 
+SELLER_REPORT_DESCRIPTION = """\
+Build the seller report: the sellers who hand parcels to the carrier late,
+highest late-shipping rate first, among the sellers with enough items. Each
+row holds the seller's pseudonym, items, late rate (%), orders, GMV and
+average review score. purchase_from and purchase_to (YYYY-MM-DD) limit the
+purchase day; give none for the whole period.
+
+The result holds the table and the caveat of every metric in it. Repeat the
+caveats when reporting, and never present a figure as the cause of another.
+"""
+
+
 def cut_rows(result: dict) -> dict:
     """Shorten a long result table for the model and say how much was left out."""
     rows = result.get("rows")
@@ -286,6 +308,27 @@ class OpsAgent:
             self._answered_after_limit = self._sql_limit.exhausted
         return result
 
+    def _seller_report(self, period: dict) -> dict:
+        """The seller report, for the model as its table, and for the page
+        as the table, the SQL, the caveats and how each number was computed."""
+        report = build_seller_report(self._conn, period=period, language=self._language)
+        if "error" in report:
+            return report
+        table = seller_report_table(report, self._language)
+        self._table = {"columns": table["columns"], "rows": table["rows"]}
+        self._queries.extend(source["sql"] for source in report["sources"])
+        for item in report["caveats"]:
+            if item["caveat"] not in self._caveats:
+                self._caveats.append(item["caveat"])
+        self._computations.extend(report_computation(s) for s in report["sources"])
+        self._answered_after_limit = self._sql_limit.exhausted
+        return {
+            "min_items": report["min_items"],
+            "columns": table["columns"],
+            "rows": table["rows"],
+            "caveats": [item["caveat"] for item in report["caveats"]],
+        }
+
     def _run_sql(self, query: str) -> dict:
         if self._sql_limit.exhausted:
             return dict(LIMIT_REACHED)
@@ -324,6 +367,7 @@ class OpsAgent:
             product_category_en: list[str] | None = None,
             purchase_month: list[str] | None = None,
             seller_state: list[str] | None = None,
+            seller_key: list[str] | None = None,
             purchase_from: str | None = None,
             purchase_to: str | None = None,
             min_count: int | None = None,
@@ -337,6 +381,7 @@ class OpsAgent:
                 "product_category_en": product_category_en,
                 "purchase_month": purchase_month,
                 "seller_state": seller_state,
+                "seller_key": seller_key,
                 "purchase_from": purchase_from,
                 "purchase_to": purchase_to,
             }
@@ -353,6 +398,21 @@ class OpsAgent:
                 lambda: self._run_metric(metric_name, filters, group_by or [], ranking),
             )
 
+        async def seller_report_tool(
+            purchase_from: str | None = None, purchase_to: str | None = None
+        ) -> str:
+            period = {
+                name: value
+                for name, value in (
+                    ("purchase_from", purchase_from),
+                    ("purchase_to", purchase_to),
+                )
+                if value
+            }
+            return self._answer(
+                "seller_report", period, lambda: self._seller_report(period)
+            )
+
         async def run_sql_tool(query: str) -> str:
             return self._answer(
                 "run_sql", {"query": query}, lambda: self._run_sql(query)
@@ -361,17 +421,23 @@ class OpsAgent:
         wrapped = (
             (list_metrics_tool, list_metrics),
             (run_metric_tool, run_metric),
+            (seller_report_tool, build_seller_report),
             (run_sql_tool, run_sql),
         )
         # run_metric's own docstring describes a filters dict; the model
-        # gets one argument per filter instead, so it gets its own text.
-        descriptions = {"run_metric": RUN_METRIC_DESCRIPTION}
+        # gets one argument per filter instead, so it gets its own text. So
+        # does the report, whose function is not the tool's name.
+        descriptions = {
+            "run_metric": RUN_METRIC_DESCRIPTION,
+            "seller_report": SELLER_REPORT_DESCRIPTION,
+        }
         return [
             FunctionTool.from_defaults(
                 async_fn=wrapper,
-                name=function.__name__,
+                name=wrapper.__name__.removesuffix("_tool"),
                 description=descriptions.get(
-                    function.__name__, inspect.cleandoc(function.__doc__)
+                    wrapper.__name__.removesuffix("_tool"),
+                    inspect.cleandoc(function.__doc__),
                 ),
             )
             for wrapper, function in wrapped

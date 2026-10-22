@@ -13,6 +13,7 @@ import re
 
 import pytest
 
+import config
 from src import messages
 from src.agents.ops import (
     MAX_ROWS_FOR_MODEL,
@@ -67,12 +68,13 @@ def file_hash(path):
 # --- Tools and prompt -----------------------------------------------------
 
 
-def test_the_agent_has_three_read_only_tools(agent):
+def test_the_agent_has_four_read_only_tools(agent):
     tools = agent._agent.tools
 
     assert [tool.metadata.name for tool in tools] == [
         "list_metrics",
         "run_metric",
+        "seller_report",
         "run_sql",
     ]
     for tool in tools:
@@ -569,3 +571,78 @@ def test_run_stops_at_the_step_limit(agent, fake):
 
     assert reply.text == messages.STEP_LIMIT_REACHED
     assert reply.log.stopped_at_step_limit is True
+
+
+# --- The seller report -----------------------------------------------------
+
+
+@pytest.fixture
+def small_threshold(monkeypatch):
+    # The synthetic database has one seller of 24 items.
+    monkeypatch.setattr(config, "SELLER_REPORT_MIN_ITEMS", 1)
+
+
+def test_the_seller_report_tool_takes_a_period_and_nothing_else(agent):
+    tool = next(t for t in agent._agent.tools if t.metadata.name == "seller_report")
+
+    assert set(tool.metadata.get_parameters_dict()["properties"]) == {
+        "purchase_from",
+        "purchase_to",
+    }
+
+
+def test_the_seller_report_answer_carries_its_table_sql_and_caveats(
+    agent, fake, small_threshold
+):
+    fake.script = [[("seller_report", {})], "S-0001 en çok geç kargolayan."]
+
+    reply = ask(agent, "Hangi satıcılar kargoyu geç veriyor?")
+
+    metrics = load_semantic_layer().metrics
+    assert reply.table["columns"][0] == "Satıcı"
+    assert reply.table["rows"][0][0] == "S-0001"
+    assert len(reply.queries) == 4
+    assert reply.caveats == [
+        metrics[name].caveat
+        for name in (
+            "seller_late_shipping_rate",
+            "order_count",
+            "gmv",
+            "avg_review_score",
+        )
+    ]
+    assert len(reply.computations) == 4
+    assert [how_computed(c) for c in reply.computations][1].endswith(
+        messages.COMPUTED_REPORT_SELLERS
+    )
+    (result,) = tool_results(fake)
+    assert result["columns"] == reply.table["columns"]
+    assert result["rows"] == reply.table["rows"]
+    assert result["caveats"] == reply.caveats
+    # No real seller id, nowhere in what the model or the page gets.
+    assert "s_main" not in json.dumps(result) + str(reply.table) + str(reply.queries)
+
+
+def test_the_seller_report_passes_the_period_on(agent, fake, small_threshold):
+    fake.script = [
+        [("seller_report", {"purchase_from": "2018-07-01"})],
+        "Temmuz ve sonrası.",
+    ]
+
+    reply = ask(agent, "Temmuz'dan beri hangi satıcılar geç veriyor?")
+
+    assert reply.computations[0]["filters"] == {"purchase_from": "2018-07-01"}
+
+
+def test_a_bad_period_is_an_error_answer_and_shows_no_table(agent, fake):
+    fake.script = [[("seller_report", {"purchase_from": "dün"})], "Tarih geçersiz."]
+
+    reply = ask(agent, "Dünden beri hangi satıcılar?")
+
+    assert tool_results(fake)[0]["error"] == "INVALID_FILTER"
+    assert reply.table is None
+    assert reply.queries == []
+
+
+def test_the_prompt_sends_seller_overviews_to_the_report(synthetic_db_path):
+    assert "call seller_report once" in system_prompt(synthetic_db_path)

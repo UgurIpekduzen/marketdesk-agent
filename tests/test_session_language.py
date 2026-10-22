@@ -29,7 +29,9 @@ from tests.synthetic_data import ALICE
 TURKISH_SUPPORT_PROMPT = (
     "a82a9c2ddb1fc5268020264a8fc76015ef93c4123e4fe72c61a95bc03ad7ccc2"
 )
-TURKISH_OPS_PROMPT = "a3702682c098a10f4d2666f671f1fc2440f7e266dd4b9295517ef1599496bf2d"
+# Changed on purpose when the seller report tool was added (one sentence in
+# step 2); the ops answers in the evaluation's cache were emptied with it.
+TURKISH_OPS_PROMPT = "6eb07b00c82e627bcac0445edb32a06801ec736c10ea92faeea1b927ed8a966f"
 
 
 def sha(text: str) -> str:

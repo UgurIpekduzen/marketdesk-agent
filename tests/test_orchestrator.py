@@ -24,7 +24,13 @@ from tests.agent_harness import asking, request_count, with_customer_router
 from tests.fakes import FakeLLM
 
 RAW_ID = "0a1b2c3d4e5f60718293a4b5c6d7e8f9"
-OPS_TOOLS = {"run_sql", "run_metric", "list_metrics", "summarize_reviews"}
+OPS_TOOLS = {
+    "run_sql",
+    "run_metric",
+    "list_metrics",
+    "seller_report",
+    "summarize_reviews",
+}
 
 
 @pytest.fixture
@@ -233,7 +239,12 @@ def test_ops_session_is_never_offered_customer_tools(ops_router, fake):
 
     ask(ops_router, "Merhaba")
 
-    assert tools_offered(fake.requests[1]) == {"list_metrics", "run_metric", "run_sql"}
+    assert tools_offered(fake.requests[1]) == {
+        "list_metrics",
+        "run_metric",
+        "seller_report",
+        "run_sql",
+    }
 
 
 # --- The session type cannot be changed by a message -------------------------
