@@ -22,9 +22,13 @@ from src.formatting import (
     format_number,
     readable_sql,
     readable_table,
+    seller_report_sources,
+    seller_report_table,
     worth_a_table,
 )
 from src.i18n import Language, catalog, from_locale
+from src.knowledge.seller_report import build_seller_report
+from src.knowledge.sql_runner import connect_read_only
 from src.rules.returns import RequestStatus
 from src.tools.review_queue import REP_IDENTITY, ReviewQueue
 from src.ui import examples, resources
@@ -154,6 +158,16 @@ def database(path: Path) -> Path:
 @st.cache_data
 def demo_customers(path: str):
     return resources.load_demo_customers(path)
+
+
+@st.cache_data(show_spinner=False)
+def seller_report(path: str, language: Language) -> dict:
+    """The seller report: the data does not change while the page runs."""
+    conn = connect_read_only(path)
+    try:
+        return build_seller_report(conn, language=language)
+    finally:
+        conn.close()
 
 
 def close_session() -> None:
@@ -345,6 +359,52 @@ def draw_review(queue: ReviewQueue) -> None:
     st.rerun()
 
 
+def draw_table(table: dict, language: Language) -> None:
+    """A readable table, its numbers written the page language's way."""
+    frame = pd.DataFrame(table["rows"], columns=table["columns"])
+    # Written the page language's way whatever the browser's settings; only
+    # the display changes, so a column still sorts as numbers.
+    st.dataframe(
+        frame.style.format(
+            {
+                header: partial(format_number, whole=whole, language=language)
+                for header, whole in table["numbers"].items()
+            },
+            na_rep="",
+        ),
+        hide_index=True,
+    )
+
+
+def draw_seller_report(path: Path) -> None:
+    """The seller report of the operations page, built when it is asked for."""
+    language = page_language()
+    texts = catalog(language)
+    with st.expander(texts.UI_SELLER_REPORT):
+        if not st.toggle(texts.UI_SELLER_REPORT_SHOW, key="seller_report_on"):
+            return
+        report = seller_report(str(path), language)
+        if "error" in report:
+            st.error(report["message"])
+            return
+        st.caption(
+            texts.UI_SELLER_REPORT_INTRO.format(
+                items=report["min_items"], rows=config.SELLER_REPORT_ROWS
+            )
+        )
+        if not report["rows"]:
+            st.info(texts.UI_SELLER_REPORT_EMPTY)
+            return
+        draw_table(seller_report_table(report, language), language)
+        for item in report["caveats"]:
+            st.info(item["caveat"])
+        st.caption(texts.UI_SELLER_REPORT_SOURCES)
+        # Not an expander each: an expander cannot sit inside one.
+        for words, sql in seller_report_sources(report, language):
+            st.markdown(f"**{words}**")
+            st.code(readable_sql(sql), language="sql", wrap_lines=True)
+
+
 def draw_answer(view: AnswerView) -> None:
     language = page_language()
     texts = catalog(language)
@@ -353,20 +413,8 @@ def draw_answer(view: AnswerView) -> None:
         st.caption(f"{texts.UI_SOURCES}: {'; '.join(view.sources)}")
     table = readable_table(view.table, language) if view.table else None
     if table and table["rows"] and worth_a_table(table):
-        frame = pd.DataFrame(table["rows"], columns=table["columns"])
         st.caption(texts.UI_RESULT_TABLE)
-        # Written the page language's way whatever the browser's settings;
-        # only the display changes, so a column still sorts as numbers.
-        st.dataframe(
-            frame.style.format(
-                {
-                    header: partial(format_number, whole=whole, language=language)
-                    for header, whole in table["numbers"].items()
-                },
-                na_rep="",
-            ),
-            hide_index=True,
-        )
+        draw_table(table, language)
     for line in view.computed:
         st.caption(f"{texts.COMPUTED_HEADING}: {line}")
     for caveat in view.caveats:
@@ -550,6 +598,8 @@ def main() -> None:
         st.caption(texts.UI_DATA_NOTE)
 
     st.caption(texts.UI_CAPTION_CUSTOMER if is_customer else texts.UI_CAPTION_OPS)
+    if not is_customer:
+        draw_seller_report(path)
     customer_id = customer.customer_unique_id if is_customer else None
     # A new identity has no conversation yet.
     if restart or "turns" not in st.session_state:

@@ -564,7 +564,7 @@ def test_ops_answer_shows_table_sql_and_caveat(open_page):
     assert messages.UI_AGENT_OPS in sidebar_text(page)
     # The SQL opens from the sidebar in its own window; the steps are in a
     # closed sidebar section; the conversation holds the answer and its table.
-    assert not page.main.expander
+    assert [e.label for e in page.main.expander] == [messages.UI_SELLER_REPORT]
     (details,) = page.sidebar.expander
     assert details.label == messages.UI_DEVELOPER_DETAILS
     assert not page.code
@@ -1238,3 +1238,65 @@ def test_the_rep_console_in_english(open_page):
 
     assert not page.exception
     assert page.subheader[0].value == messages_en.UI_REVIEW_HEADING
+
+
+# --- The seller report on the operations page ---------------------------
+
+
+def seller_report_text(page) -> str:
+    return " ".join(
+        [*(item.value for item in page.caption), *(item.value for item in page.info)]
+    )
+
+
+def test_the_ops_page_offers_the_seller_report_closed(open_page):
+    page = open_page(role=messages.UI_START_OPS)
+
+    assert [expander.label for expander in page.expander][:1] == [
+        messages.UI_SELLER_REPORT
+    ]
+    assert not page.toggle[0].value
+    assert not page.dataframe
+
+
+def test_a_customer_page_has_no_seller_report(open_page):
+    page = open_page()
+
+    assert messages.UI_SELLER_REPORT not in [e.label for e in page.expander]
+    assert not page.toggle
+
+
+def test_the_report_shows_its_table_caveats_and_sources(open_page, monkeypatch):
+    monkeypatch.setattr(config, "SELLER_REPORT_MIN_ITEMS", 1)
+    page = open_page(role=messages.UI_START_OPS)
+
+    page = page.toggle[0].set_value(True).run()
+
+    assert not page.exception
+    (table,) = page.dataframe
+    assert list(table.value.columns) == list(messages.SELLER_REPORT_COLUMNS.values())
+    assert table.value["Satıcı"].tolist() == ["S-0001"]
+    # The caveat of every metric used, and the SQL behind each number.
+    assert len(page.info) == 4
+    assert len(page.code) == 4
+    assert all(code.value.lstrip().upper().startswith("SELECT") for code in page.code)
+    assert "s_main" not in str(page)
+
+
+def test_a_report_nobody_reaches_says_so(open_page):
+    page = open_page(role=messages.UI_START_OPS)
+
+    page = page.toggle[0].set_value(True).run()
+
+    assert messages.UI_SELLER_REPORT_EMPTY in seller_report_text(page)
+    assert not page.dataframe
+
+
+def test_the_report_is_written_in_the_page_language(open_page, monkeypatch):
+    monkeypatch.setattr(config, "SELLER_REPORT_MIN_ITEMS", 1)
+    page = open_page(role=messages.UI_START_OPS)
+    page = page.radio[0].set_value(Language.EN).run()
+    page = page.toggle[0].set_value(True).run()
+
+    (table,) = page.dataframe
+    assert list(table.value.columns) == list(messages_en.SELLER_REPORT_COLUMNS.values())
