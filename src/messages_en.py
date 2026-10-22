@@ -150,6 +150,7 @@ UI_TABLE_DIMENSIONS = {
     "purchase_month": "Month",
     "customer_state": "Customer state",
     "seller_state": "Seller state",
+    "seller_key": "Seller",
     "product_category_en": "Category",
 }
 UI_COLUMN_NUMERATOR = "Numerator"
@@ -158,6 +159,25 @@ UI_COLUMN_VALUE = "Value"
 # Under a result written as text, when rows were left out.
 TABLE_ROWS_LEFT_OUT = "... and {count} more rows"
 UI_SOURCES = "Source"
+
+# The seller report on the operations page.
+UI_SELLER_REPORT = "Seller report"
+UI_SELLER_REPORT_SHOW = "Build the report"
+UI_SELLER_REPORT_INTRO = (
+    "Sellers who hand parcels to the carrier late, highest rate first. Sellers with "
+    "at least {items} items are ranked; the first {rows} are shown. Sellers are "
+    "shown by a pseudonym; the real seller id appears nowhere."
+)
+UI_SELLER_REPORT_EMPTY = "No seller reaches the threshold under these conditions."
+UI_SELLER_REPORT_SOURCES = "Where each number comes from"
+SELLER_REPORT_COLUMNS = {
+    "seller": "Seller",
+    "items": "Items",
+    "late_rate": "Late shipping rate (%)",
+    "orders": "Orders",
+    "gmv": "GMV (BRL)",
+    "avg_review_score": "Avg. review score",
+}
 UI_APPROVAL_HEADING = "Your approval is needed"
 UI_APPROVAL_ORDER = "Order"
 UI_APPROVAL_REASON = "Reason"
@@ -331,6 +351,7 @@ COMPUTED_ORDER = {
     "value_asc": "by value, ascending",
 }
 COMPUTED_TOP = "top {top}"
+COMPUTED_REPORT_SELLERS = "for the sellers of the report only"
 COMPUTED_SCOPE = "orders placed on or before {today}"
 
 # The SQL of the newest answer, opened from the sidebar in a wide window.

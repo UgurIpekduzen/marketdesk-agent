@@ -30,6 +30,10 @@ dimensions:
     description: "Satıcının eyaleti (iki harfli kod)"
     level: item
     expression: "s.seller_state"
+  seller_key:
+    description: "Satıcının takma adı (S-0001 gibi); gerçek satıcı kimliği değildir, yalnızca bu veritabanında bir anlam taşır"
+    level: item
+    expression: "'S-' || printf('%04d', s.rowid)"
 
 metrics:
   order_count:
@@ -39,7 +43,7 @@ metrics:
     base_filter: "1 = 1"
     numerator: "COUNT(*)"
     denominator: null
-    dimensions: [customer_state, product_category_en, purchase_month, seller_state]
+    dimensions: [customer_state, product_category_en, purchase_month, seller_state, seller_key]
     caveat: "Her durumdaki sipariş sayılır, iptal edilenler dahil. Kategori ya da satıcı eyaletine göre kırılımda birden fazla gruba giren sipariş her grupta bir kez sayılır; grupların toplamı sipariş sayısını aşabilir."
     caveat_en: "Orders in every status are counted, cancelled ones included. When grouped by category or seller state, an order that falls into more than one group is counted once in each; the groups can add up to more than the number of orders."
 
@@ -50,7 +54,7 @@ metrics:
     base_filter: "o.order_status NOT IN ('canceled', 'unavailable')"
     numerator: "SUM(i.price)"
     denominator: null
-    dimensions: [customer_state, product_category_en, purchase_month, seller_state]
+    dimensions: [customer_state, product_category_en, purchase_month, seller_state, seller_key]
     caveat: "GMV ciro hacmidir; gelir, katkı ya da net kâr değildir. Kargo bedeli dahil değildir; iptal edilmiş ve temin edilememiş siparişler hariçtir."
     caveat_en: "GMV is sales volume; it is not revenue, contribution or net profit. Freight is not included; cancelled and unavailable orders are left out."
 
@@ -107,7 +111,7 @@ metrics:
     base_filter: "r.review_score IS NOT NULL"
     numerator: "SUM(r.review_score)"
     denominator: "COUNT(*)"
-    dimensions: [customer_state, product_category_en, purchase_month, seller_state]
+    dimensions: [customer_state, product_category_en, purchase_month, seller_state, seller_key]
     caveat: "Gözlemsel ortalama; nedensellik değildir. Birden fazla yorumu olan siparişte yorumların ortalaması alınır. Yorumu olmayan siparişler ve bugünden sonra yazılmış yorumlar dışarıda kalır."
     caveat_en: "An observed average, not a cause. An order with more than one review gets the average of its reviews. Orders without a review and reviews written after today are left out."
 
@@ -118,6 +122,6 @@ metrics:
     base_filter: "o.order_delivered_carrier_date IS NOT NULL AND DATE(o.order_delivered_carrier_date) <= DATE(:simulated_today)"
     numerator: "SUM(CASE WHEN DATE(o.order_delivered_carrier_date) > DATE(i.shipping_limit_date) THEN 1 ELSE 0 END)"
     denominator: "COUNT(*)"
-    dimensions: [customer_state, product_category_en, purchase_month, seller_state]
+    dimensions: [customer_state, product_category_en, purchase_month, seller_state, seller_key]
     caveat: "Gözlemsel oran; nedensellik değildir. Kalem düzeyinde sayılır ve takvim günü düzeyinde karşılaştırılır; son tarihle aynı gün kargoya verilen kalem geç sayılmaz. Kargoya verilmemiş kalemler dışarıda kalır."
     caveat_en: "An observed rate, not a cause. Counted per item and compared by calendar day; an item handed over on the limit day is not late. Items not yet handed to the carrier are left out."

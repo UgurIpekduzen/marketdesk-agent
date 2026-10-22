@@ -211,4 +211,61 @@ def how_computed(computation: dict, language: Language = DEFAULT_LANGUAGE) -> st
     parts.append(
         messages.COMPUTED_SCOPE.format(today=config.SIMULATED_TODAY.isoformat())
     )
+    if computation.get("for_report_sellers"):
+        parts.append(messages.COMPUTED_REPORT_SELLERS)
     return " · ".join(parts)
+
+
+# The report's fields in table order, as the readable table's columns.
+SELLER_REPORT_FIELDS = (
+    "seller", "items", "late_rate", "orders", "gmv", "avg_review_score",
+)  # fmt: skip
+
+
+def seller_report_table(report: dict, language: Language = DEFAULT_LANGUAGE) -> dict:
+    """The seller report's rows as a readable table (same shape as
+    readable_table's): headers in the language, the late rate as a percentage."""
+    headers = catalog(language).SELLER_REPORT_COLUMNS
+    rows = [
+        [
+            None
+            if row[field] is None
+            else row[field] * 100
+            if field == "late_rate"
+            else row[field]
+            for field in SELLER_REPORT_FIELDS
+        ]
+        for row in report["rows"]
+    ]
+    return {
+        "columns": [headers[field] for field in SELLER_REPORT_FIELDS],
+        "rows": rows,
+        "numbers": {
+            headers[field]: field in ("items", "orders")
+            for field in SELLER_REPORT_FIELDS[1:]
+        },
+    }
+
+
+def report_computation(source: dict) -> dict:
+    """One metric call of the report as how_computed reads it: the sellers
+    of the table are not listed, the line says they are the filter."""
+    return {
+        "metric": source["metric"],
+        "filters": {k: v for k, v in source["filters"].items() if k != "seller_key"},
+        "group_by": source["group_by"],
+        "ranking": source["ranking"],
+        "for_report_sellers": "seller_key" in source["filters"],
+    }
+
+
+def seller_report_sources(
+    report: dict, language: Language = DEFAULT_LANGUAGE
+) -> list[tuple[str, str]]:
+    """For each metric behind the report: how it was computed, in words, and
+    the SQL that ran."""
+    lines = []
+    for source in report["sources"]:
+        words = how_computed(report_computation(source), language)
+        lines.append((words, source["sql"]))
+    return lines

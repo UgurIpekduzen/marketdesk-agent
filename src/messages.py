@@ -242,6 +242,7 @@ UI_TABLE_DIMENSIONS = {
     "purchase_month": "Ay",
     "customer_state": "Müşteri eyaleti",
     "seller_state": "Satıcı eyaleti",
+    "seller_key": "Satıcı",
     "product_category_en": "Kategori",
 }
 UI_COLUMN_NUMERATOR = "Pay"
@@ -250,6 +251,25 @@ UI_COLUMN_VALUE = "Değer"
 # Under a result written as text, when rows were left out.
 TABLE_ROWS_LEFT_OUT = "... ve {count} satır daha"
 UI_SOURCES = "Kaynak"
+
+# The seller report on the operations page.
+UI_SELLER_REPORT = "Satıcı raporu"
+UI_SELLER_REPORT_SHOW = "Raporu hazırla"
+UI_SELLER_REPORT_INTRO = (
+    "Kargoya geç veren satıcılar, en yüksek orandan başlayarak. En az {items} kalemi "
+    "olan satıcılar sıralanır; ilk {rows} satıcı gösterilir. Satıcılar takma adla "
+    "gösterilir, gerçek satıcı kimliği hiçbir yerde yer almaz."
+)
+UI_SELLER_REPORT_EMPTY = "Bu koşullarda eşiği geçen satıcı yok."
+UI_SELLER_REPORT_SOURCES = "Her sayının kaynağı"
+SELLER_REPORT_COLUMNS = {
+    "seller": "Satıcı",
+    "items": "Kalem",
+    "late_rate": "Geç kargo oranı (%)",
+    "orders": "Sipariş",
+    "gmv": "GMV (BRL)",
+    "avg_review_score": "Ort. yorum puanı",
+}
 UI_APPROVAL_HEADING = "Onayınız gerekiyor"
 UI_APPROVAL_ORDER = "Sipariş"
 UI_APPROVAL_REASON = "İade nedeni"
@@ -415,6 +435,7 @@ COMPUTED_MIN_COUNT = "en az {count} {unit}"
 COMPUTED_UNITS = {"order": "sipariş", "item": "kalem"}
 COMPUTED_ORDER = {"value_desc": "değere göre azalan", "value_asc": "değere göre artan"}
 COMPUTED_TOP = "ilk {top}"
+COMPUTED_REPORT_SELLERS = "yalnızca rapordaki satıcılar için"
 COMPUTED_SCOPE = "{today} ve öncesinde verilen siparişler"
 
 # The SQL of the newest answer, opened from the sidebar in a wide window.

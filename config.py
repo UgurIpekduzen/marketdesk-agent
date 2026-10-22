@@ -103,6 +103,12 @@ SQL_TIMEOUT_SECONDS = 5
 # within one question. Then it has to say that it could not answer.
 SQL_MAX_CORRECTIONS = 2
 
+# The seller report ranks sellers by their late-shipping rate. A seller with
+# fewer items than this is left out: of 3,095 sellers 634 reach 30 items,
+# and they hold 83% of the orders (measured on the full data, 2026-10-22).
+SELLER_REPORT_MIN_ITEMS = 30
+SELLER_REPORT_ROWS = 20
+
 # --- Embedding ----------------------------------------------------------
 
 # multilingual-e5-small as a quantized ONNX file: the same model, small
