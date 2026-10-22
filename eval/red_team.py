@@ -265,7 +265,10 @@ class Target:
         customer: str | None = None,
         report=print,
         bar: LiveBar | None = None,
+        multi_turn: bool = False,
     ) -> None:
+        """multi_turn counts conversations: each attack sends several
+        messages, the first of them with no earlier one."""
         self.session = session
         self.db_path = db_path
         self.llm = llm
@@ -282,6 +285,11 @@ class Target:
         self.answered = 0
         self.expected = 0
         self.started = time.monotonic()
+        self.multi_turn = multi_turn
+        # Conversations begun, and whether every message of the one going on
+        # passed its code checks (None before the first).
+        self.conversations = 0
+        self.conversation_ok: bool | None = None
 
     def _requests(self) -> int:
         conn = sqlite3.connect(self.db_path)
@@ -333,26 +341,46 @@ class Target:
         checks = code_checks(answer, before, self._requests())
         self.checks[input] = checks
         self.answered += 1
+        passed = all(checks.values())
+        if self.multi_turn:
+            if not earlier:
+                # A new conversation: the one before it has ended.
+                self.end_conversation()
+                self.conversations += 1
+                self.conversation_ok = True
+            self.conversation_ok = self.conversation_ok and passed
         self.report(self.progress_line(checks, self.llm.live_calls - live_before))
-        if self.bar is not None:
+        if self.bar is not None and not self.multi_turn:
             # Passed means the code checks held; the judge scores later.
-            self.bar.finish(all(checks.values()), self.llm.live_calls)
+            self.bar.finish(passed, self.llm.live_calls)
         return RTTurn(role="assistant", content=answer)
+
+    def end_conversation(self) -> None:
+        """Move the bar past the conversation going on, if there is one."""
+        if self.conversation_ok is None:
+            return
+        if self.bar is not None:
+            self.bar.finish(self.conversation_ok, self.llm.live_calls)
+        self.conversation_ok = None
 
     def progress_line(self, checks: dict, live: int) -> str:
         """One line per answered attack: where the scan is and what it spent."""
         failed = [name for name, ok in checks.items() if not ok]
         minutes, seconds = divmod(int(time.monotonic() - self.started), 60)
-        total = max(self.expected, self.answered)
+        # Attacks are counted: one message each, or one conversation each.
+        done = self.conversations if self.multi_turn else self.answered
+        total = max(self.expected, done)
         counter = (
-            count(self.answered, total)
+            count(done, total)
             if self.bar is not None and self.bar.active
-            else progress(self.answered, total)
+            else progress(done, total)
         )
+        messages = f"  msg {self.answered}" if self.multi_turn else ""
         return (
             f"{counter}  "
             f"{self.session:<8}  {'FAIL ' + ', '.join(failed) if failed else 'ok'}"
-            f"   live +{live} (system {self.llm.live_calls})   {minutes}:{seconds:02d}"
+            f"{messages}   live +{live} (system {self.llm.live_calls})"
+            f"   {minutes}:{seconds:02d}"
         )
 
 
@@ -419,6 +447,7 @@ def scan(
         ],
         **SCAN_SETTINGS,
     )
+    target.end_conversation()
     return [
         row(case, target.session, target.checks.get(case.input))
         for case in assessment.test_cases
@@ -535,7 +564,14 @@ def main() -> int:
             conn.close()
         bar = LiveBar(0)
         customer_target = Target(
-            "customer", db_copy, llm, index, customer, bar.report, bar
+            "customer",
+            db_copy,
+            llm,
+            index,
+            customer,
+            bar.report,
+            bar,
+            multi_turn=args.multi_turn,
         )
         ops_target = Target("ops", db_copy, llm, report=bar.report, bar=bar)
         try:

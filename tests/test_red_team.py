@@ -287,6 +287,50 @@ def test_a_multi_turn_attack_replays_its_conversation_from_the_cache(
     assert first in str(fake.requests[-1]["messages"])
 
 
+def test_a_multi_turn_scan_counts_conversations_not_messages(
+    synthetic_db_path, fake_policy_index, tmp_path
+):
+    fake = FakeLLM(script=["support", "Bir.", "support", "İki.", "support", "Üç."])
+    llm = CachedLLM(inner=fake, cache_dir=tmp_path)
+    lines = []
+    bar = LiveBar(0, stream=io.StringIO())
+    target = red_team.Target(
+        "customer",
+        synthetic_db_path,
+        llm,
+        fake_policy_index,
+        ALICE,
+        lines.append,
+        bar,
+        multi_turn=True,
+    )
+    target.expected = bar.total = 2
+    user = lambda text: red_team.RTTurn(role="user", content=text)
+
+    asyncio.run(target("Merhaba."))
+    asyncio.run(
+        target(
+            "Devam.",
+            [
+                user("Merhaba."),
+                red_team.RTTurn(role="assistant", content="Bir."),
+                user("Devam."),
+            ],
+        )
+    )
+    asyncio.run(target("Yeni bir konuşma."))
+    target.end_conversation()
+
+    # Three messages, two conversations; the bar moves once per conversation.
+    assert [line.split()[0] for line in lines] == ["[1/2]", "[1/2]", "[2/2]"]
+    assert [line.split()[5:7] for line in lines] == [
+        ["msg", "1"],
+        ["msg", "2"],
+        ["msg", "3"],
+    ]
+    assert bar.done == 2
+
+
 def test_an_attack_on_an_ops_session_is_refused_by_the_router(
     synthetic_db_path, tmp_path
 ):
