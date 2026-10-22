@@ -170,6 +170,7 @@ UI_PREPARING_DATABASE = (
     "built. This happens only when the app first starts and may take a "
     "minute or two."
 )
+UI_PAUSED = "The page is down for maintenance. Please try again a little later."
 UI_NO_DATABASE = (
     "The demo data could not be prepared. Please refresh the page in a few "
     "minutes; locally the database is built with `task data`."

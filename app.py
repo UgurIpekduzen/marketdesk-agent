@@ -8,6 +8,7 @@ Turkish and English, live in src/; nothing is decided here.
 """
 
 import logging
+import os
 import random
 from functools import partial
 from pathlib import Path
@@ -491,6 +492,10 @@ def main() -> None:
     st.logo(str(LOGO), size="large", icon_image=str(ICON))
     start_tracing()
     st.title(texts.UI_TITLE)
+    if os.environ.get(config.PAUSE_VARIABLE) == "1":
+        # Before the database, the sessions and the model: nothing runs.
+        st.info(texts.UI_PAUSED)
+        st.stop()
 
     try:
         path = database(resources.db_path())

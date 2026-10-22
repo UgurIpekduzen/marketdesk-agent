@@ -136,6 +136,11 @@ MAX_TOOL_CALLS_PER_MESSAGE = 12
 # says otherwise: the deployed page sets it among its secrets, so local runs
 # and the evaluation stay off.
 TRACING_TARGET = os.environ.get("TRACING_TARGET", "off")
+
+# Stops the page at once: set to 1 among the deploy platform's secrets (or in
+# the environment), and every page run shows a notice and nothing else, so
+# no model is called and no session takes a message. Read at every page run.
+PAUSE_VARIABLE = "MARKETDESK_PAUSED"
 # "phoenix" is the service name inside the Compose network.
 TRACING_PHOENIX_ENDPOINT = "http://phoenix:6006/v1/traces"
 TRACING_LANGFUSE_ENDPOINT = "https://cloud.langfuse.com/api/public/otel/v1/traces"

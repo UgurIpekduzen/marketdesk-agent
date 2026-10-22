@@ -252,6 +252,27 @@ def test_a_missing_database_is_built_once(open_page, monkeypatch, tmp_path):
     assert messages.UI_DATA_NOTE in [caption.value for caption in page.caption]
 
 
+def test_a_paused_page_shows_a_notice_and_nothing_else(open_page, monkeypatch):
+    monkeypatch.setenv(config.PAUSE_VARIABLE, "1")
+
+    page = open_page(role=None)
+
+    assert [notice.value for notice in page.info] == [messages.UI_PAUSED]
+    assert not page.chat_input
+    assert not page.button
+    # It stops before the sessions: none is started, so no model either.
+    assert "session" not in page.session_state
+
+
+def test_the_page_runs_again_once_the_pause_is_taken_back(open_page, monkeypatch):
+    monkeypatch.setenv(config.PAUSE_VARIABLE, "0")
+
+    page = open_page()
+
+    assert messages.UI_PAUSED not in [notice.value for notice in page.info]
+    assert page.chat_input
+
+
 def test_a_database_that_cannot_be_built_is_said_plainly(open_page, monkeypatch):
     open_page()
     attempts = []

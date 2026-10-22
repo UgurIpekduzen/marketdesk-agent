@@ -261,6 +261,7 @@ UI_PREPARING_DATABASE = (
     "Demo verisi hazırlanıyor: veri seti indirilip veritabanı kuruluyor. "
     "Bu yalnızca uygulamanın ilk açılışında olur ve bir iki dakika sürebilir."
 )
+UI_PAUSED = "Sayfa şu anda bakımda. Lütfen biraz sonra tekrar deneyin."
 UI_NO_DATABASE = (
     "Demo verisi hazırlanamadı. Lütfen sayfayı birkaç dakika sonra yenileyin; "
     "yerelde veritabanı `task data` komutuyla hazırlanır."
