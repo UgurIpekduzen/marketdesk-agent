@@ -13,6 +13,7 @@ far (written: count, and the status, amount and reason of the row). The
 example succeeds only if every turn does.
 """
 
+import contextlib
 import sqlite3
 from pathlib import Path
 
@@ -71,6 +72,25 @@ def quiet_row(name: str, text: str, checks: dict) -> dict:
     }
 
 
+@contextlib.asynccontextmanager
+async def session(
+    example: dict, prepared: dict, db_path: Path, index: PolicyIndex, llm: CachedLLM
+):
+    """The router of one session of the example's type, open for its turns."""
+    language = run_eval.language_of(example)
+    if example.get("session") == "ops":
+        router = Orchestrator.for_ops(db_path, llm, language)
+        try:
+            yield router
+        finally:
+            router.close()
+        return
+    async with OrdersClient(db_path, prepared["customer"], language) as orders:
+        yield await Orchestrator.for_customer(
+            orders, prepared["customer"], index, llm, language
+        )
+
+
 async def converse(
     example: dict,
     prepared: dict,
@@ -79,15 +99,15 @@ async def converse(
     llm: CachedLLM,
     conn: sqlite3.Connection,
 ) -> dict:
-    """Play the turns of an example in one customer session and score them."""
+    """Play the turns of an example in one session and score them.
+
+    A customer session has the order server and may click; an operations
+    session only talks.
+    """
     order_id = prepared["order_id"]
     start_id = last_request_id(conn)
     turns = []
-    language = run_eval.language_of(example)
-    async with OrdersClient(db_path, prepared["customer"], language) as orders:
-        router = await Orchestrator.for_customer(
-            orders, prepared["customer"], index, llm, language
-        )
+    async with session(example, prepared, db_path, index, llm) as router:
         pending = None
         # Tool results of the turns so far: a later turn is held to the
         # decision an earlier one got.
@@ -97,7 +117,9 @@ async def converse(
             written = written_rows(conn, order_id, start_id)
             if "say" in turn:
                 before = run_eval.request_count(conn)
-                answer = await router.ask(turn["say"].replace("{order}", order_id))
+                answer = await router.ask(
+                    turn["say"].replace("{order}", order_id or "")
+                )
                 pending = answer.awaiting_approval
                 message = {**example, "question": turn["say"], "expected": expected}
                 row = run_eval.score(

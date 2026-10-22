@@ -217,6 +217,36 @@ def test_a_later_turn_is_held_to_the_decision_of_an_earlier_one(run):
     assert rows[0]["checks"]["freight_stated_right"] is False
 
 
+def test_an_operations_flow_talks_in_one_operations_session(run):
+    flow = {
+        "id": "OX-dev",
+        "group": "multi",
+        "split": "dev",
+        "flow": "OX",
+        "session": "ops",
+        "note": "a metric, then a question that builds on it",
+        "turns": [
+            {"say": "Kaç sipariş var?", "expected": {"intent": "ops_metric"}},
+            {
+                "say": "Bir önceki sayıyı tekrar yazar mısın?",
+                "expected": {"intent": "ops_metric", "tools": []},
+            },
+        ],
+    }
+    script = [
+        "ops_metric",
+        [("run_metric", {"metric_name": "order_count"})],
+        "Toplam 29 sipariş var.",
+        "ops_metric",
+        "Az önce 29 dedim.",
+    ]
+
+    rows, _ = run([flow], script)
+
+    assert rows[0]["success"] is True
+    assert [turn["tools_called"] for turn in rows[0]["turns"]] == [["run_metric"], []]
+
+
 def test_single_messages_in_the_same_set_belong_to_no_flow():
     rows = [
         {"split": "dev", "flow": "M1", "success": True, "checks": {"written": True}},
