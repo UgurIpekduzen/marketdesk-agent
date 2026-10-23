@@ -58,6 +58,27 @@ CARD_CANDIDATE = re.compile(
 CARD_MASK = "[card]"
 
 
+# Brazilian numbers, in the free text of customer reviews. A CPF (a person's
+# tax number) has 11 digits, written 529.982.247-25, and a CNPJ (a company's)
+# 14, written 11.222.333/0001-81; both are taken only when their two check
+# digits hold.
+CPF_CANDIDATE = re.compile(
+    rf"{NOT_IN_A_NUMBER_BEFORE}\d{{3}}\.?\d{{3}}\.?\d{{3}}-?\d{{2}}{NOT_IN_A_NUMBER_AFTER}"
+)
+CPF_MASK = "[cpf]"
+CNPJ_CANDIDATE = re.compile(
+    rf"{NOT_IN_A_NUMBER_BEFORE}\d{{2}}\.?\d{{3}}\.?\d{{3}}/?\d{{4}}-?\d{{2}}"
+    rf"{NOT_IN_A_NUMBER_AFTER}"
+)
+CNPJ_MASK = "[cnpj]"
+# An address on the web: a review can carry a shop's or a person's page.
+# The punctuation that ends a sentence or a bracket is not part of it.
+URL_PATTERN = re.compile(
+    r"(?:https?://|www\.)[^\s<>\"']*[^\s<>\"'.,;:!?)\]}]", re.IGNORECASE
+)
+URL_MASK = "[url]"
+
+
 def digits_of(text: str) -> str:
     """The digits of a candidate; none when it holds a date, which is never one."""
     if DATE_PATTERN.search(text):
@@ -72,6 +93,32 @@ def is_tckn(candidate: str) -> bool:
         return False
     tenth = (sum(digits[0:9:2]) * 7 - sum(digits[1:8:2])) % 10
     return digits[9] == tenth and digits[10] == sum(digits[:10]) % 10
+
+
+def is_cpf(candidate: str) -> bool:
+    """The check of a Brazilian CPF: two check digits, and not one digit repeated."""
+    digits = [int(digit) for digit in digits_of(candidate)]
+    if len(digits) != 11 or len(set(digits)) == 1:
+        return False
+    first = sum(digit * weight for digit, weight in zip(digits, range(10, 1, -1))) * 10
+    second = sum(digit * weight for digit, weight in zip(digits, range(11, 1, -1))) * 10
+    return digits[9] == first % 11 % 10 and digits[10] == second % 11 % 10
+
+
+def is_cnpj(candidate: str) -> bool:
+    """The check of a Brazilian CNPJ: two check digits, and not one digit repeated."""
+    digits = [int(digit) for digit in digits_of(candidate)]
+    if len(digits) != 14 or len(set(digits)) == 1:
+        return False
+    weights = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+
+    def check_digit(count: int, used: list[int]) -> int:
+        remainder = sum(d * w for d, w in zip(digits[:count], used)) % 11
+        return 0 if remainder < 2 else 11 - remainder
+
+    return digits[12] == check_digit(12, weights) and digits[13] == check_digit(
+        13, [6, *weights]
+    )
 
 
 def is_iban(candidate: str) -> bool:

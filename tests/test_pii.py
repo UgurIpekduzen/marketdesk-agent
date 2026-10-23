@@ -99,3 +99,27 @@ def test_a_card_number_is_known_by_its_luhn_check():
 def test_a_date_is_never_a_number_with_check_digits():
     assert not is_card("2018-07-01 2018-07-31")
     assert not is_tckn("2018-07-01 1")
+
+
+# --- Brazilian tax numbers, for the free text of reviews -------------------------
+
+
+def test_a_cpf_is_known_by_its_two_check_digits():
+    from src.guardrails.pii import is_cpf
+
+    assert is_cpf("529.982.247-25")
+    assert is_cpf("52998224725")
+    assert not is_cpf("529.982.247-26")
+    # One digit repeated is never one, though its check digits hold.
+    assert not is_cpf("111.111.111-11")
+    assert not is_cpf("1234567890")
+
+
+def test_a_cnpj_is_known_by_its_two_check_digits():
+    from src.guardrails.pii import is_cnpj
+
+    assert is_cnpj("11.222.333/0001-81")
+    assert is_cnpj("11222333000181")
+    assert not is_cnpj("11.222.333/0001-82")
+    assert not is_cnpj("00.000.000/0000-00")
+    assert not is_cnpj("1122233300018")

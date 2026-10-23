@@ -301,3 +301,51 @@ def test_an_e_mail_address_with_its_at_hidden_is_masked(address):
 )
 def test_text_that_only_looks_like_an_address_is_left_alone(text):
     assert Redactor().redact(text)[0] == text
+
+
+# --- What a review can hold ------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("text", "kind", "masked"),
+    [
+        ("Meu CPF é 529.982.247-25, por favor.", "cpf", "[cpf]"),
+        ("CPF 52998224725 no cadastro", "cpf", "[cpf]"),
+        ("A empresa 11.222.333/0001-81 não entregou", "cnpj", "[cnpj]"),
+        (
+            "Veja em https://loja.example.com/produto?id=3 e www.exemplo.com.br",
+            "url",
+            "[url]",
+        ),
+    ],
+)
+def test_brazilian_tax_numbers_and_web_addresses_are_masked(text, kind, masked):
+    cleaned, found = Redactor().redact(text)
+
+    assert masked in cleaned
+    assert found[kind] >= 1
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Chegou em 12 dias, nota 10, 529982247 unidades.",
+        "Paguei 52998224726 centavos",
+        "Pedido atrasou 3.5 dias; custou 1.234.567,89 reais",
+        "Cód. 11.222.333/0001-82 inválido",
+        "Mande para a loja física, www sem ponto.",
+    ],
+)
+def test_numbers_and_words_that_only_look_like_them_are_left_alone(text):
+    cleaned, found = Redactor().redact(text)
+
+    assert not found
+    assert cleaned == text
+
+
+def test_the_punctuation_after_a_web_address_stays_outside_the_mask():
+    cleaned, _ = Redactor().redact(
+        "Veja (www.exemplo.com.br), ou https://loja.example.com/p?id=3."
+    )
+
+    assert cleaned == "Veja ([url]), ou [url]."

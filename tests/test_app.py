@@ -843,7 +843,11 @@ def test_a_ticket_summary_is_plain_text_and_the_ticket_can_be_closed(
     page = open_page(role=messages.UI_START_REP)
 
     # Drawn as text, not markdown: the image is never fetched.
-    assert [element.value for element in page.text] == [summary]
+    # The guard that cleans a summary masks the web address; what is left is
+    # still drawn as text.
+    assert [element.value for element in page.text] == [
+        "Müşteri temsilci istiyor ![x]([url])"
+    ]
     assert summary not in [element.value for element in page.markdown]
 
     page = page.button(key="close_1").click().run()

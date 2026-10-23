@@ -8,8 +8,9 @@ leave it out; this module is the net underneath them. It looks for:
   replaced by the session's alias for it, so the model can still refer to
   the order and the tools can still resolve it; elsewhere it becomes [id];
 - e-mail addresses and phone numbers, by their shape;
-- Turkish id numbers, IBANs and card numbers, by their shape and their
-  check digits;
+- Turkish id numbers, IBANs and card numbers, and the Brazilian CPF and
+  CNPJ numbers of the reviews, by their shape and their check digits;
+- addresses on the web (http, https or www);
 - values known to be personal in this session: the customer's city and
   zip code prefix.
 
@@ -21,7 +22,7 @@ letters, Turkish ones included.
 
 Limits, stated plainly: text is matched by shape and against known values
 only. A name, an address or another city typed into a message is not
-recognised, and neither is personal detail inside review texts. The
+recognised, and neither is a name written inside a review text. The
 privacy fuzzing in the security review lists the forms still missed.
 """
 
@@ -34,6 +35,10 @@ from collections.abc import Callable, Mapping
 from src.guardrails.pii import (
     CARD_CANDIDATE,
     CARD_MASK,
+    CNPJ_CANDIDATE,
+    CNPJ_MASK,
+    CPF_CANDIDATE,
+    CPF_MASK,
     EMAIL_MASK,
     EMAIL_PATTERN,
     IBAN_CANDIDATE,
@@ -44,7 +49,11 @@ from src.guardrails.pii import (
     RAW_ID_PATTERN,
     TCKN_CANDIDATE,
     TCKN_MASK,
+    URL_MASK,
+    URL_PATTERN,
     is_card,
+    is_cnpj,
+    is_cpf,
     is_iban,
     is_tckn,
     looks_like_phone,
@@ -127,6 +136,10 @@ class Redactor:
 
             return replace
 
+        def replace_url(match: re.Match) -> str:
+            found["url"] += 1
+            return URL_MASK
+
         def replace_phone(match: re.Match) -> str:
             if not looks_like_phone(match.group()):
                 return match.group()
@@ -134,10 +147,14 @@ class Redactor:
             return PHONE_MASK
 
         text = normalised(text)
+        text = URL_PATTERN.sub(replace_url, text)
         text = RAW_ID_PATTERN.sub(replace_id, text)
         text = EMAIL_PATTERN.sub(replace_email, text)
         # Before phone numbers, which would take a grouped number first.
         text = IBAN_CANDIDATE.sub(checked("iban", IBAN_MASK, is_iban), text)
+        # Brazilian tax numbers, before the card number that a CNPJ could pass for.
+        text = CNPJ_CANDIDATE.sub(checked("cnpj", CNPJ_MASK, is_cnpj), text)
+        text = CPF_CANDIDATE.sub(checked("cpf", CPF_MASK, is_cpf), text)
         text = CARD_CANDIDATE.sub(checked("card", CARD_MASK, is_card), text)
         text = TCKN_CANDIDATE.sub(checked("tckn", TCKN_MASK, is_tckn), text)
         text = PHONE_CANDIDATE.sub(replace_phone, text)
