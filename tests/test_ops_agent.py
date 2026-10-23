@@ -118,7 +118,9 @@ def test_system_prompt_holds_the_rules_the_agent_must_follow(synthetic_db_path):
         "Write numbers the Turkish way",
         "Money has two decimals",
         "Never join items and payments in one\nquery",
-        "add up its items per\norder first",
+        "add up its items per order first",
+        "Wrong: FROM v_order_items AS i JOIN v_order_payments",
+        "Right: filter by payment with i.order_key IN (SELECT order_key FROM",
     ):
         assert rule in system_prompt(synthetic_db_path), rule
 
@@ -353,6 +355,35 @@ def test_query_corrected_on_the_second_try_gives_a_normal_answer(agent, fake):
     assert reply.text == "SP."
     # Only the query that worked is shown as the source.
     assert reply.queries == ["SELECT customer_state FROM v_orders LIMIT 1"]
+
+
+def test_a_join_of_items_and_payments_is_refused_and_corrected(agent, fake):
+    joined = (
+        "SELECT AVG(f) FROM (SELECT SUM(i.freight_value) AS f FROM v_order_items "
+        "AS i JOIN v_order_payments AS p USING (order_key) GROUP BY i.order_key)"
+    )
+    right = (
+        "SELECT AVG(f) FROM (SELECT SUM(freight_value) AS f FROM v_order_items "
+        "WHERE order_key IN (SELECT order_key FROM v_order_payments) "
+        "GROUP BY order_key)"
+    )
+    fake.script = [
+        [("run_sql", {"query": joined})],
+        [("run_sql", {"query": right})],
+        "Ortalama kargo ücreti yukarıdaki gibidir.",
+    ]
+
+    reply = ask(agent, "Kartla ödenen siparişlerin ortalama kargosu?")
+
+    results = tool_results(fake)
+    assert results[0]["error"] == "SQL_REJECTED"
+    assert results[0]["reason"] == "JOIN_FANS_OUT"
+    assert results[0]["corrections_left"] == 2
+    assert "rows" in results[1]
+    assert reply.gave_up is False
+    # Only the query that worked is shown as the source.
+    assert len(reply.queries) == 1
+    assert reply.queries[0].startswith(right)
 
 
 def test_wrong_column_three_times_ends_in_could_not_answer(agent, fake):

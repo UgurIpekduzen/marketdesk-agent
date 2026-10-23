@@ -31,7 +31,7 @@ TURKISH_SUPPORT_PROMPT = (
 )
 # Changed on purpose when the seller report tool was added (one sentence in
 # step 2); the ops answers in the evaluation's cache were emptied with it.
-TURKISH_OPS_PROMPT = "6eb07b00c82e627bcac0445edb32a06801ec736c10ea92faeea1b927ed8a966f"
+TURKISH_OPS_PROMPT = "e5408f233b0f9e469f366879fbf46dafb74b8f7cf441cc7bb182fbdcf25877fe"
 
 
 def sha(text: str) -> str:

@@ -287,3 +287,75 @@ def test_rejection_names_what_was_wrong():
 
     assert caught.value.code == "TABLE_NOT_ALLOWED"
     assert caught.value.detail == "customers"
+
+
+# --- Items and payments together -------------------------------------------
+
+ITEMS_WITH_PAYMENTS = (
+    "SELECT AVG(f) FROM (SELECT i.order_key, SUM(i.freight_value) AS f "
+    "FROM v_order_items AS i JOIN v_order_payments AS p ON p.order_key = i.order_key "
+    "WHERE p.payment_type = 'credit_card' GROUP BY i.order_key)"
+)
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        ITEMS_WITH_PAYMENTS,
+        (
+            "SELECT 1 FROM v_order_items AS i, v_order_payments AS p "
+            "WHERE i.order_key = p.order_key"
+        ),
+        "SELECT 1 FROM v_order_items CROSS JOIN v_order_payments",
+        "SELECT 1 FROM v_order_payments LEFT JOIN v_order_items USING (order_key)",
+        (
+            "WITH both AS (SELECT * FROM v_order_items JOIN v_order_payments "
+            "USING (order_key)) SELECT COUNT(*) FROM both"
+        ),
+        (
+            "SELECT 1 FROM v_orders WHERE order_key IN (SELECT i.order_key "
+            "FROM v_order_items AS i JOIN v_order_payments AS p USING (order_key))"
+        ),
+        "SELECT 1 FROM v_order_items JOIN V_ORDER_PAYMENTS USING (order_key)",
+    ],
+)
+def test_items_and_payments_in_one_place_are_refused(query):
+    assert rejection(query) == "JOIN_FANS_OUT"
+
+
+def test_the_refusal_names_the_two_views():
+    with pytest.raises(SqlRejected) as caught:
+        check(ITEMS_WITH_PAYMENTS)
+
+    assert caught.value.detail == "v_order_items and v_order_payments"
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        # Filtering by payment in a subquery: the right form.
+        (
+            "SELECT AVG(f) FROM (SELECT SUM(freight_value) AS f FROM v_order_items "
+            "WHERE order_key IN (SELECT order_key FROM v_order_payments "
+            "WHERE payment_type = 'credit_card') GROUP BY order_key)"
+        ),
+        # Each summed per order in a subquery of its own, then joined.
+        (
+            "SELECT a.order_key FROM (SELECT order_key, SUM(price) AS p "
+            "FROM v_order_items GROUP BY order_key) AS a JOIN (SELECT order_key, "
+            "SUM(payment_value) AS v FROM v_order_payments GROUP BY order_key) AS b "
+            "ON a.order_key = b.order_key"
+        ),
+        # Items with the other views.
+        "SELECT 1 FROM v_order_items AS i JOIN v_orders AS o USING (order_key)",
+        "SELECT 1 FROM v_order_items AS i JOIN v_order_reviews AS r USING (order_key)",
+        "SELECT 1 FROM v_order_payments AS p JOIN v_orders AS o USING (order_key)",
+        # Two parts of a UNION, one view each.
+        (
+            "SELECT order_key FROM v_order_items UNION "
+            "SELECT order_key FROM v_order_payments"
+        ),
+    ],
+)
+def test_items_and_payments_kept_apart_pass(query):
+    assert check(query)

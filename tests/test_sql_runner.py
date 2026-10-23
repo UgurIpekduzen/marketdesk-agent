@@ -271,3 +271,17 @@ def test_raw_tables_are_readable_only_when_asked_for(synthetic_db_path):
     assert run_sql(synthetic_db_path, query)["error"] == "SQL_REJECTED"
     answer = run_sql(synthetic_db_path, query, allowed_tables=("orders",))
     assert answer["rows"][0][0] > 0
+
+
+def test_items_joined_with_payments_are_refused_with_the_right_form(
+    synthetic_db_path,
+):
+    answer = run_sql(
+        synthetic_db_path,
+        "SELECT SUM(i.freight_value) FROM v_order_items AS i "
+        "JOIN v_order_payments AS p USING (order_key)",
+    )
+
+    assert answer["error"] == "SQL_REJECTED"
+    assert answer["reason"] == "JOIN_FANS_OUT"
+    assert "order_key IN (SELECT order_key FROM v_order_payments" in answer["message"]

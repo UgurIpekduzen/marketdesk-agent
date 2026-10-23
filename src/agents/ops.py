@@ -107,10 +107,13 @@ Rules:
 {number_rule}
 In SQL: an order has one row in v_orders but may have several rows in
 v_order_items and in v_order_payments. Never join items and payments in one
-query, since each payment row repeats the items: filter by payment with
-order_key IN (SELECT order_key FROM v_order_payments WHERE ...). For a
-value per order, such as the freight of an order, add up its items per
-order first and then take the average.
+query, since each payment row repeats the items and a sum counts them twice
+(the query is refused). Wrong: FROM v_order_items AS i JOIN v_order_payments
+AS p ON p.order_key = i.order_key WHERE p.payment_type = 'credit_card'.
+Right: filter by payment with i.order_key IN (SELECT order_key FROM
+v_order_payments WHERE payment_type = 'credit_card'). For a value per order,
+such as the freight of an order, add up its items per order first and then
+take the average.
 Amounts are in BRL. Dates are text: compare calendar days with DATE(),
 never the raw timestamps. An order is delivered late when
 DATE(order_delivered_customer_date) > DATE(order_estimated_delivery_date).

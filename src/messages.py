@@ -62,6 +62,12 @@ SQL_REJECTED = {
         "Sorgu izin verilmeyen bir tabloya erişiyor. İzinli görünümler: {allowed}."
     ),
     "FUNCTION_NOT_ALLOWED": "Sorgu izin verilmeyen bir fonksiyon çağırıyor.",
+    "JOIN_FANS_OUT": (
+        "v_order_items ve v_order_payments aynı sorguda birleştirilemez: her ödeme "
+        "satırı kalemleri tekrar eder ve toplamlar şişer. Ödemeye göre süzmek için "
+        "order_key IN (SELECT order_key FROM v_order_payments WHERE ...) kullanın; "
+        "sipariş başına değer için önce kalemleri sipariş başına toplayın."
+    ),
 }
 SQL_ERROR = "Sorgu çalıştırılamadı."
 SQL_TIMEOUT = "Sorgu {seconds} saniyede tamamlanmadığı için durduruldu."

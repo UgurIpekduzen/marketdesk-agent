@@ -11,7 +11,10 @@ A query passes only if it is:
 3. free of anything that writes, changes the schema, or is not understood
    (INSERT, UPDATE, DELETE, DROP, ALTER, ATTACH, PRAGMA, ...),
 4. reading only from the allowed views, or from CTEs it defines itself,
-5. calling no function outside the parser's known ones and a short list.
+5. calling no function outside the parser's known ones and a short list,
+6. not reading items and payments together in one place: an order has one
+   row in the first and may have several in the second, so each payment
+   row repeats the items and any sum over them counts some twice.
 
 The SQL that is run is written out again from the checked tree, with the
 row limit set, so what runs is exactly what was checked.
@@ -19,6 +22,7 @@ row limit set, so what runs is exactly what was checked.
 
 import sqlglot
 from sqlglot import errors, exp
+from sqlglot.optimizer.scope import traverse_scope
 
 import config
 from src.knowledge.safe_views import ALLOWED_VIEWS
@@ -49,6 +53,10 @@ FORBIDDEN_NODES = (
     exp.Copy,
     exp.Analyze,
 )
+
+# Views that may not be read together in one place: the rows of the second
+# repeat the rows of the first.
+FAN_OUT_PAIR = ("v_order_items", "v_order_payments")
 
 # Functions the parser has no class for are refused, except these: SQLite's
 # date and time functions and TOTAL.
@@ -121,6 +129,21 @@ def check_tree(
     for function in tree.find_all(exp.Anonymous):
         if function.name.lower() not in ALLOWED_EXTRA_FUNCTIONS:
             raise SqlRejected("FUNCTION_NOT_ALLOWED", function.name)
+
+    check_no_fan_out(tree)
+
+
+def check_no_fan_out(tree: exp.Expression) -> None:
+    """Refuse a query that reads items and payments in the same place.
+
+    Each part of a query (the main query, a subquery, a CTE) is looked at on
+    its own: items and payments may both appear in a query when they are
+    kept apart, each in a subquery of its own or one in an IN (SELECT ...).
+    """
+    for scope in traverse_scope(tree):
+        names = {table.name.lower() for table in scope.tables}
+        if all(view in names for view in FAN_OUT_PAIR):
+            raise SqlRejected("JOIN_FANS_OUT", " and ".join(FAN_OUT_PAIR))
 
 
 def with_row_limit(tree: exp.Expression, max_rows: int) -> exp.Expression:
