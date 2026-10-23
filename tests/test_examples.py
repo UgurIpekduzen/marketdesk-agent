@@ -23,11 +23,11 @@ CUSTOMER_POOL = [
 ]
 
 
-def test_the_pool_holds_the_27_verified_questions_once_each():
+def test_the_pool_holds_the_30_verified_questions_once_each():
     pool = [*CUSTOMER_POOL, *messages.EXAMPLE_QUESTIONS_OPS]
 
-    assert len(pool) == 27
-    assert len(set(pool)) == 27
+    assert len(pool) == 30
+    assert len(set(pool)) == 30
 
 
 def test_every_demo_situation_has_its_own_questions():

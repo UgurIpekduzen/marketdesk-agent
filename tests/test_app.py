@@ -1,6 +1,7 @@
 """Tests for the chat page, run without a browser: the real page script on
 the synthetic database, with a stand-in model."""
 
+import json
 import shutil
 import sqlite3
 import tomllib
@@ -1304,3 +1305,68 @@ def test_the_report_is_written_in_the_page_language(open_page, monkeypatch):
 
     (table,) = page.dataframe
     assert list(table.value.columns) == list(messages_en.SELLER_REPORT_COLUMNS.values())
+
+
+# --- The Review Insight Agent on the page -----------------------------------------
+
+
+def add_reviews(path):
+    conn = sqlite3.connect(path)
+    with conn:
+        conn.execute("DELETE FROM order_reviews")
+        conn.executemany(
+            "INSERT INTO order_reviews (review_id, order_id, review_score, "
+            "review_comment_message, review_creation_date) VALUES (?, ?, ?, ?, ?)",
+            [
+                ("r1", "o_day14", 5, "Chegou rápido e bem embalado.", "2018-08-19"),
+                (
+                    "r2",
+                    "o_late_10",
+                    2,
+                    "Demorou muito, atraso de dez dias.",
+                    "2018-08-26",
+                ),
+                ("r3", "o_day15", 1, "Atrasou e ninguém respondeu.", "2018-08-20"),
+            ],
+        )
+    conn.close()
+
+
+def test_a_review_answer_shows_the_themes_the_note_and_the_agent(
+    open_page, synthetic_db_path
+):
+    add_reviews(synthetic_db_path)
+    themes = [
+        {
+            "name": "Atraso na entrega",
+            "keywords": ["atras", "demor"],
+            "quotes": [
+                {
+                    "review_id": "R-000002",
+                    "text": "atraso de dez dias",
+                    "translation": "on gün gecikme",
+                }
+            ],
+        }
+    ]
+    page = open_page(
+        [
+            "review_insight",
+            [("summarize_reviews", {})],
+            [("report_themes", {"themes_json": json.dumps(themes)})],
+            "Örneklemin 3 yorumundan 2'sinde gecikme geçiyor.",
+        ]
+    )
+    page = as_ops(page)
+
+    page = ask(page, "Müşteriler neden şikâyet ediyor?")
+
+    assert not page.exception
+    (table,) = page.dataframe
+    assert list(table.value.columns) == list(messages.REVIEW_TABLE_COLUMNS.values())
+    assert table.value["Tema"].tolist() == ["Atraso na entrega"]
+    assert table.value["Yorum"].tolist() == [2]
+    assert messages.UI_AGENT_REVIEWS in sidebar_text(page)
+    assert messages.REVIEW_CAVEAT.format(matching=3, sampled=3) in [
+        element.value for element in page.info
+    ]

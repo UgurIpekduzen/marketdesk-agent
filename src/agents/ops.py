@@ -27,7 +27,7 @@ from llama_index.core.tools import FunctionTool
 from llama_index.core.workflow import Context
 
 import config
-from src import messages, tracing
+from src import messages
 from src.agents import critic
 from src.agents.loop_guard import LoopGuard
 from src.agents.run_log import RunLog
@@ -477,7 +477,9 @@ class OpsAgent:
             and not log.stopped_at_step_limit
             and text != messages.EMPTY_REPLY
         ):
-            text, status = await self._review(message, text, log)
+            text, status = await critic.review(
+                self._agent, self._context, message, text, log, self._language
+            )
 
         if self._sql_limit.exhausted and not self._answered_after_limit:
             # Decided here, not by the model: the corrections are used up.
@@ -498,28 +500,3 @@ class OpsAgent:
             language=self._language,
             critic=status,
         )
-
-    async def _review(self, question: str, text: str, log: RunLog) -> tuple[str, str]:
-        """The critic: check the numbers of the answer, ask for a correction
-        a limited number of times, and note what could not be traced.
-
-        Returns the text to show and the status. The cost of a correction is
-        added to the run's log.
-        """
-        numbers = critic.unsupported(text, log.tool_results, question)
-        status = critic.OK
-        for _ in range(config.CRITIC_MAX_CORRECTIONS if numbers else 0):
-            asked = critic.correction_request(numbers)
-            text, correction = await run_agent(self._agent, self._context, asked)
-            log.absorb(correction)
-            numbers = critic.unsupported(text, log.tool_results, question)
-            status = critic.CORRECTED
-            if not numbers:
-                break
-        if numbers:
-            status = critic.FLAGGED
-            text = f"{text}\n\n{catalog(self._language).CRITIC_NOTE}"
-        # Counts and a code only: the numbers themselves stay in the answer.
-        logger.info("critic status=%s unsupported=%d", status, len(numbers))
-        tracing.mark(critic=status)
-        return text, status

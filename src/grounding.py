@@ -48,9 +48,9 @@ SCALES = {
 ISO_DATE = re.compile(r"\b(\d{4})-(\d{2})-(\d{2})\b")
 DOTTED_DATE = re.compile(r"\b(\d{1,2})[./](\d{1,2})[./](\d{4})\b")
 YEAR = re.compile(r"\b(19\d{2}|20\d{2})\b")
-# A seller's pseudonym in an operations answer (S-1286): its digits are a
-# name, not a figure.
-PSEUDONYM = re.compile(r"\bS-\d{4}\b")
+# A seller's (S-1286) or a review's (R-000123) pseudonym in an operations
+# answer: its digits are a name, not a figure.
+PSEUDONYM = re.compile(r"\b[SR]-\d{4,6}\b")
 # The number of an item in a list ("1. SP"), not a figure.
 LIST_MARKER = re.compile(r"^\s*\d+[.)]\s", re.MULTILINE)
 

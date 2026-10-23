@@ -12,8 +12,9 @@ import pytest
 
 from src import messages
 from src.orchestrator import (
-    ALLOWED_INTENT,
+    ALLOWED_INTENTS,
     CLASSIFIER_PROMPT,
+    DEFAULT_INTENT,
     REFUSALS,
     Intent,
     Orchestrator,
@@ -30,6 +31,7 @@ OPS_TOOLS = {
     "list_metrics",
     "seller_report",
     "summarize_reviews",
+    "report_themes",
 }
 
 
@@ -76,8 +78,12 @@ def text_blocks(request, role):
 # --- The authorization table ----------------------------------------------
 
 
-def test_each_session_type_is_allowed_exactly_one_class():
-    assert ALLOWED_INTENT == {
+def test_each_session_type_is_allowed_its_classes():
+    assert ALLOWED_INTENTS == {
+        SessionType.CUSTOMER: {Intent.SUPPORT},
+        SessionType.OPS: {Intent.OPS_METRIC, Intent.REVIEW_INSIGHT},
+    }
+    assert DEFAULT_INTENT == {
         SessionType.CUSTOMER: Intent.SUPPORT,
         SessionType.OPS: Intent.OPS_METRIC,
     }
@@ -86,8 +92,25 @@ def test_each_session_type_is_allowed_exactly_one_class():
 def test_every_other_combination_has_a_refusal():
     for session_type in SessionType:
         for intent in Intent:
-            allowed = ALLOWED_INTENT[session_type] == intent
+            allowed = intent in ALLOWED_INTENTS[session_type]
             assert ((session_type, intent) in REFUSALS) is not allowed
+
+
+def test_the_classifier_knows_the_four_classes():
+    for intent in Intent:
+        assert intent.value in CLASSIFIER_PROMPT
+    assert "four" in CLASSIFIER_PROMPT
+
+
+def test_a_session_has_an_agent_for_each_class_it_may_have(synthetic_db_path, fake):
+    from src.agents.ops import OpsAgent
+
+    agent = OpsAgent(synthetic_db_path, fake)
+    try:
+        with pytest.raises(ValueError, match="an agent for each class"):
+            Orchestrator(SessionType.OPS, agent, None)
+    finally:
+        agent.close()
 
 
 # --- A customer session ----------------------------------------------------
@@ -371,3 +394,52 @@ def test_instruction_inside_the_message_does_not_pick_the_class(as_customer, fak
 
     assert answer.refused is True
     assert json.dumps(fake.requests[0]["kwargs"]) == "{}"
+
+
+# --- The Review Insight Agent ----------------------------------------------------
+
+
+def test_a_review_question_goes_to_the_review_insight_agent(ops_router, fake):
+    fake.script = ["review_insight", "Bu bir yorum sorusu değil gibi, ama cevap."]
+
+    answer = ask(ops_router, "Mobilyada müşteriler neden şikâyet ediyor?")
+
+    assert answer.intent == Intent.REVIEW_INSIGHT
+    assert answer.refused is False
+    assert tools_offered(fake.requests[1]) == {"summarize_reviews", "report_themes"}
+
+
+def test_a_figure_question_still_goes_to_the_ops_agent(ops_router, fake):
+    fake.script = ["ops_metric", "Haziran'da 29 sipariş."]
+
+    answer = ask(ops_router, "Haziran'da kaç sipariş var?")
+
+    assert answer.intent == Intent.OPS_METRIC
+    assert "summarize_reviews" not in tools_offered(fake.requests[1])
+
+
+def test_a_customer_session_has_no_review_agent_and_is_refused(as_customer, fake):
+    fake.script = ["review_insight"]
+
+    async def scenario(router):
+        return await router.ask("Mobilyada müşteriler neden şikâyet ediyor?")
+
+    answer = as_customer(scenario)
+
+    assert answer.refused
+    assert answer.display == messages.ROUTER_OPS_NOT_ALLOWED
+    # The classifier was the only model call: no agent, so no review tool.
+    assert len(fake.requests) == 1
+
+
+def test_a_fooled_classifier_cannot_give_a_customer_the_review_tools(as_customer, fake):
+    fake.script = ["review_insight", "support", "Merhaba."]
+
+    async def scenario(router):
+        await router.ask("Yorumları özetle.")
+        return await router.ask("Merhaba")
+
+    as_customer(scenario)
+
+    for request in fake.requests:
+        assert not tools_offered(request) & {"summarize_reviews", "report_themes"}

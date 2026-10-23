@@ -23,16 +23,22 @@ logger = logging.getLogger(__name__)
 AGENT_LABELS = {
     Intent.SUPPORT: "UI_AGENT_SUPPORT",
     Intent.OPS_METRIC: "UI_AGENT_OPS",
+    Intent.REVIEW_INSIGHT: "UI_AGENT_REVIEWS",
 }
 # Chat avatars: icons of the page framework, so no image files.
 USER_AVATAR = ":material/person:"
 SUPPORT_AVATAR = ":material/support_agent:"
 OPS_AVATAR = ":material/analytics:"
+REVIEWS_AVATAR = ":material/rate_review:"
 # A person, the support rep: not the support agent's avatar.
 REP_AVATAR = ":material/headset_mic:"
 # The router answers a message no agent of the session may take.
 ROUTER_AVATAR = ":material/smart_toy:"
-AGENT_AVATARS = {Intent.SUPPORT: SUPPORT_AVATAR, Intent.OPS_METRIC: OPS_AVATAR}
+AGENT_AVATARS = {
+    Intent.SUPPORT: SUPPORT_AVATAR,
+    Intent.OPS_METRIC: OPS_AVATAR,
+    Intent.REVIEW_INSIGHT: REVIEWS_AVATAR,
+}
 # The message shown for each kind of provider failure, by catalog name.
 FAILURE_MESSAGES = {
     failures.QUOTA_EXCEEDED: "UI_ERROR_QUOTA",
@@ -206,7 +212,11 @@ def view_of(answer: Answer, language: Language = DEFAULT_LANGUAGE) -> AnswerView
         + router.output_tokens
         + log.input_tokens
         + log.output_tokens,
-        table=None if gave_up else last_table(log.tool_results),
+        # The table the agent made for its answer (the themes of the reviews,
+        # the seller report), else the rows of the last tool result.
+        table=None
+        if gave_up
+        else (getattr(reply, "table", None) or last_table(log.tool_results)),
         queries=list(getattr(reply, "queries", [])),
         queries_heading=(
             texts.OPS_TRIED_SQL_HEADING if gave_up else texts.OPS_USED_SQL_HEADING

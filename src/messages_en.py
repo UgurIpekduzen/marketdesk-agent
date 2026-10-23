@@ -77,6 +77,27 @@ SQL_GAVE_UP = (
 OPS_USED_SQL_HEADING = "SQL used:"
 OPS_TRIED_SQL_HEADING = "SQL tried:"
 OPS_CAVEAT_HEADING = "Note:"
+
+# --- Review Insight Agent -----------------------------------------------
+
+REVIEW_TABLE_COLUMNS = {
+    "theme": "Theme",
+    "reviews": "Reviews",
+    "share": "Share (%)",
+    "quote": "Example quote",
+}
+REVIEW_CAVEAT = (
+    "This is a sample: {sampled} of the {matching} reviews that match were "
+    "read. A theme's count is the number of reviews with at least one of its "
+    "words; it is observational, not a cause."
+)
+REVIEW_LEFT_OUT = (
+    "{count} reviews with a personal data pattern were left out of the sample."
+)
+REVIEW_NOT_VERIFIED = (
+    "I could not draw verified themes from the reviews, so I give no number "
+    "or quote. You can try again with a narrower category, score or period."
+)
 CHAT_BANNER_OPS = (
     "MarketDesk operations data. Type 'exit' to leave.\nWrite your question:"
 )
@@ -148,6 +169,7 @@ UI_STEPS_NO_TOOLS = "none"
 UI_STEPS_COUNTS = "{steps} steps, {tokens} tokens"
 UI_AGENT_SUPPORT = "Support agent"
 UI_AGENT_OPS = "Ops data agent"
+UI_AGENT_REVIEWS = "Review insight agent"
 UI_AGENT_ROUTER = "Router (the request was not answered in this session)"
 UI_RESULT_TABLE = "Result"
 # Column headers of a result table, for the dimensions of the semantic
@@ -303,6 +325,9 @@ EXAMPLE_QUESTIONS_OPS = [
     "Among states with at least 500 orders, which 3 have the highest cancellation rate?",
     "In how many different orders was each payment type used?",
     "What are the order counts by month in 2018 in the states of SP and RJ?",
+    "What do customers who give 1 or 2 points in the furniture category complain about most in their reviews?",
+    "What do customers who give 5 points praise most in their reviews?",
+    "What do customers write about delivery in the health and beauty category?",
 ]
 
 # The support rep's review queue. Decisions on return requests and closing

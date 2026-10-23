@@ -185,6 +185,26 @@ SQL_GAVE_UP = (
 OPS_USED_SQL_HEADING = "Kullanılan SQL:"
 OPS_TRIED_SQL_HEADING = "Denenen SQL:"
 OPS_CAVEAT_HEADING = "Not:"
+
+# --- Review Insight Agent -----------------------------------------------
+
+REVIEW_TABLE_COLUMNS = {
+    "theme": "Tema",
+    "reviews": "Yorum",
+    "share": "Pay (%)",
+    "quote": "Örnek alıntı",
+}
+REVIEW_CAVEAT = (
+    "Bu bir örneklemdir: eşleşen {matching} yorumdan {sampled} tanesi okundu. "
+    "Bir temanın sayısı, sözcüklerinden en az birini içeren yorumların "
+    "sayısıdır; gözlemsel bir sayıdır, neden-sonuç değildir."
+)
+REVIEW_LEFT_OUT = "Kişisel veri kalıbı taşıyan {count} yorum örnekleme alınmadı."
+REVIEW_NOT_VERIFIED = (
+    "Yorumlardan doğrulanmış temalar çıkaramadım, bu yüzden bir sayı ya da "
+    "alıntı vermiyorum. Soruyu kategori, puan ya da dönemle daraltarak "
+    "yeniden deneyebilirsiniz."
+)
 CHAT_BANNER_OPS = (
     "MarketDesk operasyon verileri. Çıkmak için 'çık' yazın.\nSorunuzu yazın:"
 )
@@ -258,6 +278,7 @@ UI_STEPS_NO_TOOLS = "yok"
 UI_STEPS_COUNTS = "{steps} adım, {tokens} token"
 UI_AGENT_SUPPORT = "Destek ajanı"
 UI_AGENT_OPS = "Operasyon veri ajanı"
+UI_AGENT_REVIEWS = "Yorum içgörü ajanı"
 UI_AGENT_ROUTER = "Yönlendirici (istek bu oturumda yanıtlanmadı)"
 UI_RESULT_TABLE = "Sonuç"
 # Column headers of a result table, for the dimensions of the semantic
@@ -411,6 +432,9 @@ EXAMPLE_QUESTIONS_OPS = [
     "En az 500 siparişi olan eyaletler arasında iptal oranı en yüksek 3 eyalet hangisi?",
     "Her ödeme türü kaç farklı siparişte kullanılmış?",
     "2018 yılında SP ve RJ eyaletlerinde aylara göre sipariş sayıları nedir?",
+    "Mobilya kategorisinde 1 ve 2 puan veren müşteriler yorumlarında en çok neden şikâyet ediyor?",
+    "5 puan veren müşteriler yorumlarında en çok neyi övüyor?",
+    "Sağlık ve güzellik kategorisinde müşteriler teslimat hakkında ne yazıyor?",
 ]
 
 # The support rep's review queue. Decisions on return requests and closing

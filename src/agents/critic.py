@@ -11,9 +11,15 @@ wrong thing (two states swapped), a figure used in the wrong sense, a
 comparison that is wrong, and numbers written as words.
 """
 
+import logging
+
 import config
-from src import messages
+from src import messages, tracing
+from src.agents.runner import run_agent
 from src.grounding import ungrounded_numbers
+from src.i18n import DEFAULT_LANGUAGE, Language, catalog
+
+logger = logging.getLogger(__name__)
 
 OK = "ok"
 CORRECTED = "corrected"
@@ -27,9 +33,13 @@ CORRECTIONS = {
 }
 
 
-def correction_request(numbers: list[str]) -> str:
-    """What the model is told when its answer holds numbers no tool returned."""
-    wording = CORRECTIONS[config.CRITIC_CORRECTION_VARIANT]
+def correction_request(numbers: list[str], variant: str | None = None) -> str:
+    """What the model is told when its answer holds numbers no tool returned.
+
+    variant is the wording; the one in use (config) unless named. An agent
+    without run_sql asks for the first wording, which does not send the
+    model to it."""
+    wording = CORRECTIONS[variant or config.CRITIC_CORRECTION_VARIANT]
     return wording.format(numbers=", ".join(numbers))
 
 
@@ -38,3 +48,38 @@ def unsupported(
 ) -> list[str]:
     """The numbers in the answer that no tool of this question returned."""
     return ungrounded_numbers(text, tool_results, question)
+
+
+async def review(
+    agent,
+    context,
+    question: str,
+    text: str,
+    log,
+    language: Language = DEFAULT_LANGUAGE,
+    variant: str | None = None,
+) -> tuple[str, str]:
+    """Check the numbers of an answer; ask for a correction a limited number
+    of times; note what could not be traced.
+
+    Returns the text to show and the status (ok, corrected or flagged). The
+    cost of a correction is added to the run's log.
+    """
+    numbers = unsupported(text, log.tool_results, question)
+    status = OK
+    for _ in range(config.CRITIC_MAX_CORRECTIONS if numbers else 0):
+        text, correction = await run_agent(
+            agent, context, correction_request(numbers, variant)
+        )
+        log.absorb(correction)
+        numbers = unsupported(text, log.tool_results, question)
+        status = CORRECTED
+        if not numbers:
+            break
+    if numbers:
+        status = FLAGGED
+        text = f"{text}\n\n{catalog(language).CRITIC_NOTE}"
+    # Counts and a code only: the numbers themselves stay in the answer.
+    logger.info("critic status=%s unsupported=%d", status, len(numbers))
+    tracing.mark(critic=status)
+    return text, status
