@@ -1,7 +1,7 @@
 {
   "golden_set": "client_layer_tests.jsonl",
   "language": "tr",
-  "paid_live_calls": 0,
+  "paid_live_calls": 4,
   "provider": "gemini",
   "model": "gemini-3.5-flash-lite",
   "temperature": 0,
@@ -22,11 +22,11 @@
         "writes_without_approval": 0,
         "extra_tool_calls": 3,
         "steps_mean": 2.125,
-        "tokens_mean": 2212.25,
-        "input_tokens_mean": 2185.25,
-        "output_tokens_mean": 27.0,
+        "tokens_mean": 2369.125,
+        "input_tokens_mean": 2332.25,
+        "output_tokens_mean": 36.875,
         "seconds_p50": 1.147,
-        "seconds_p95": 4.479
+        "seconds_p95": 4.673
       },
       "all": {
         "examples": 8,
@@ -42,11 +42,11 @@
         "writes_without_approval": 0,
         "extra_tool_calls": 3,
         "steps_mean": 2.125,
-        "tokens_mean": 2212.25,
-        "input_tokens_mean": 2185.25,
-        "output_tokens_mean": 27.0,
+        "tokens_mean": 2369.125,
+        "input_tokens_mean": 2332.25,
+        "output_tokens_mean": 36.875,
         "seconds_p50": 1.147,
-        "seconds_p95": 4.479
+        "seconds_p95": 4.673
       }
     }
   },
@@ -81,11 +81,11 @@
       "writes_without_approval": 0,
       "extra_tool_calls": 3,
       "steps_mean": 2.125,
-      "tokens_mean": 2212.25,
-      "input_tokens_mean": 2185.25,
-      "output_tokens_mean": 27.0,
+      "tokens_mean": 2369.125,
+      "input_tokens_mean": 2332.25,
+      "output_tokens_mean": 36.875,
       "seconds_p50": 1.147,
-      "seconds_p95": 4.479
+      "seconds_p95": 4.673
     },
     "all": {
       "examples": 8,
@@ -101,11 +101,11 @@
       "writes_without_approval": 0,
       "extra_tool_calls": 3,
       "steps_mean": 2.125,
-      "tokens_mean": 2212.25,
-      "input_tokens_mean": 2185.25,
-      "output_tokens_mean": 27.0,
+      "tokens_mean": 2369.125,
+      "input_tokens_mean": 2332.25,
+      "output_tokens_mean": 36.875,
       "seconds_p50": 1.147,
-      "seconds_p95": 4.479
+      "seconds_p95": 4.673
     }
   },
   "examples": [
@@ -277,13 +277,13 @@
       "tools_extra": 0,
       "tools_called": [],
       "intent": "ops_metric",
-      "answer": "Kişisel veriler, şehirler ve posta kodları veriler arasında bulunmamaktadır.",
+      "answer": "Bu operasyonel veri seti müşteri veya teslimat adresi için şehir ve posta kodu gibi kişisel veriler içermez, ancak eyalet bazında müşteri sayısı ve sipariş dağılımı gibi bilgiler bulunmaktadır. İstediğiniz harita bağlantılarıyla birlikte eyalet bazında sipariş sayıları aşağıda yer almaktadır. \n\nNot: Bu rapordaki sayılar sipariş sayılarıdır.\n\n| Eyalet | Harita Bağlantısı |\n|---|---|",
       "llm_calls": 2,
       "tool_calls": 0,
-      "input_tokens": 2214,
-      "output_tokens": 22,
-      "seconds": 2.03,
-      "live_calls": 0
+      "input_tokens": 2479,
+      "output_tokens": 102,
+      "seconds": 2.44,
+      "live_calls": 1
     },
     {
       "id": "C7",
@@ -309,13 +309,13 @@
         "run_metric"
       ],
       "intent": "ops_metric",
-      "answer": "2018 Temmuz ayındaki sipariş sayısı 6.292'dir. Her durumdaki sipariş sayılır, iptal edilenler dahil. Kategori ya da satıcı eyaletine göre kırılımda birden fazla gruba giren sipariş her grupta bir kez sayılır; grupların toplamı sipariş sayısını aşabilir.\n\nNot:\n- Her durumdaki sipariş sayılır, iptal edilenler dahil. Kategori ya da satıcı eyaletine göre kırılımda birden fazla gruba giren sipariş her grupta bir kez sayılır; grupların toplamı sipariş sayısını aşabilir.\n\nKullanılan SQL:\nSELECT numerator, numerator AS value FROM (SELECT COUNT(*) AS numerator FROM (SELECT DISTINCT o.order_id FROM orde",
+      "answer": "2018 Temmuz ayında 6.292 sipariş verilmiştir. Her durumdaki sipariş sayılır, iptal edilenler dahil. Kategori ya da satıcı eyaletine göre kırılımda birden fazla gruba giren sipariş her grupta bir kez sayılır; grupların toplamı sipariş sayısını aşabilir.\n\nNot:\n- Her durumdaki sipariş sayılır, iptal edilenler dahil. Kategori ya da satıcı eyaletine göre kırılımda birden fazla gruba giren sipariş her grupta bir kez sayılır; grupların toplamı sipariş sayısını aşabilir.\n\nKullanılan SQL:\nSELECT numerator, numerator AS value FROM (SELECT COUNT(*) AS numerator FROM (SELECT DISTINCT o.order_id FROM order",
       "llm_calls": 4,
       "tool_calls": 2,
-      "input_tokens": 8340,
-      "output_tokens": 123,
-      "seconds": 4.459,
-      "live_calls": 0
+      "input_tokens": 9251,
+      "output_tokens": 122,
+      "seconds": 4.673,
+      "live_calls": 3
     },
     {
       "id": "C8",

@@ -44,17 +44,17 @@
       "seconds_p95": 1.057
     },
     "B2 · ops": {
-      "examples": 19,
-      "task_success": 0.3684210526315789,
-      "execution_accuracy": 0.3684210526315789,
+      "examples": 21,
+      "task_success": 0.3333333333333333,
+      "execution_accuracy": 0.3333333333333333,
       "source_accuracy": null,
       "made_up_rate": null,
       "faithfulness": null,
       "helpfulness": null,
       "steps_mean": 1.0,
-      "tokens_mean": 684.1052631578947,
+      "tokens_mean": 689.5714285714286,
       "seconds_p50": 0.889,
-      "seconds_p95": 1.402
+      "seconds_p95": 1.401
     },
     "Final · support": {
       "made_up_rate": null,
@@ -81,7 +81,7 @@
       "made_up_rate": null,
       "faithfulness": null,
       "helpfulness": null,
-      "examples": 21,
+      "examples": 23,
       "task_success": 1.0,
       "tool_call_accuracy": null,
       "decision_accuracy": null,
@@ -91,12 +91,12 @@
       "no_causal_claim": 1.0,
       "writes_without_approval": 0,
       "extra_tool_calls": 42,
-      "steps_mean": 6.0,
-      "tokens_mean": 8572.190476190477,
-      "input_tokens_mean": 8414.714285714286,
-      "output_tokens_mean": 157.47619047619048,
-      "seconds_p50": 3.15,
-      "seconds_p95": 6.665
+      "steps_mean": 5.6521739130434785,
+      "tokens_mean": 8847.260869565218,
+      "input_tokens_mean": 8676.08695652174,
+      "output_tokens_mean": 171.17391304347825,
+      "seconds_p50": 3.493,
+      "seconds_p95": 4.578
     },
     "Final · policy": {
       "made_up_rate": null,
@@ -134,9 +134,9 @@
       "writes_without_approval": 0,
       "extra_tool_calls": 3,
       "steps_mean": 2.0,
-      "tokens_mean": 2090.3076923076924,
-      "input_tokens_mean": 2067.230769230769,
-      "output_tokens_mean": 23.076923076923077,
+      "tokens_mean": 2111.846153846154,
+      "input_tokens_mean": 2087.6153846153848,
+      "output_tokens_mean": 24.23076923076923,
       "seconds_p50": 0.762,
       "seconds_p95": 17.698
     }
@@ -667,6 +667,36 @@
       "sql": "SELECT \n    strftime('%Y-%m', o.order_purchase_timestamp) AS ay,\n    c.customer_state,\n    COUNT(DISTINCT o.order_id) AS siparis_sayisi\nFROM orders o\nJOIN customers c ON o.customer_id = c.customer_id\nWHERE c.customer_state IN ('SP', 'RJ')\n  AND o.order_purchase_timestamp >= '2018-01-01'\n  AND o.order_purchase_timestamp < '2019-01-01'\nGROUP BY ay, c.customer_state\nORDER BY ay, c.customer_state",
       "failure": null,
       "seconds": 0.997
+    },
+    {
+      "baseline": "B2",
+      "id": "O14",
+      "group": "ops",
+      "split": "dev",
+      "answer": "```sql\nSELECT \n    s.seller_id,\n    s.seller_city,\n    s.seller_state,\n    COUNT(DISTINCT oi.order_id) AS late_shipping_order_count\nFROM sellers s\nJOIN order_items oi ON s.seller_id = oi.seller_id\nJOIN orders o ON oi.order_id = o.order_id\nWHERE o.order_delivered_carrier_date IS NOT NULL\n  AND oi.shipping_limit_date IS NOT NULL\n  AND o.order_delivered_carrier_date > oi.shipping_limit_date\nGROUP BY s.seller_id, s.seller_city, s.seller_state\nORDER BY late_shipping_order_count DESC;\n```",
+      "tokens": 740,
+      "checks": {
+        "execution": false
+      },
+      "success": false,
+      "sql": "SELECT \n    s.seller_id,\n    s.seller_city,\n    s.seller_state,\n    COUNT(DISTINCT oi.order_id) AS late_shipping_order_count\nFROM sellers s\nJOIN order_items oi ON s.seller_id = oi.seller_id\nJOIN orders o ON oi.order_id = o.order_id\nWHERE o.order_delivered_carrier_date IS NOT NULL\n  AND oi.shipping_limit_date IS NOT NULL\n  AND o.order_delivered_carrier_date > oi.shipping_limit_date\nGROUP BY s.seller_id, s.seller_city, s.seller_state\nORDER BY late_shipping_order_count DESC",
+      "failure": "DIFFERENT_ROWS",
+      "seconds": 1.084
+    },
+    {
+      "baseline": "B2",
+      "id": "O15",
+      "group": "ops",
+      "split": "dev",
+      "answer": "```sql\nSELECT \n    oi.seller_id,\n    COUNT(DISTINCT oi.order_id) AS late_shipping_order_count\nFROM orders o\nJOIN order_items oi ON o.order_id = oi.order_id\nWHERE o.order_purchase_timestamp >= '2018-07-01 00:00:00'\n  AND o.order_delivered_carrier_date IS NOT NULL\n  AND oi.shipping_limit_date IS NOT NULL\n  AND o.order_delivered_carrier_date > oi.shipping_limit_date\nGROUP BY oi.seller_id\nORDER BY late_shipping_order_count DESC;\n```",
+      "tokens": 743,
+      "checks": {
+        "execution": false
+      },
+      "success": false,
+      "sql": "SELECT \n    oi.seller_id,\n    COUNT(DISTINCT oi.order_id) AS late_shipping_order_count\nFROM orders o\nJOIN order_items oi ON o.order_id = oi.order_id\nWHERE o.order_purchase_timestamp >= '2018-07-01 00:00:00'\n  AND o.order_delivered_carrier_date IS NOT NULL\n  AND oi.shipping_limit_date IS NOT NULL\n  AND o.order_delivered_carrier_date > oi.shipping_limit_date\nGROUP BY oi.seller_id\nORDER BY late_shipping_order_count DESC",
+      "failure": "DIFFERENT_ROWS",
+      "seconds": 1.401
     },
     {
       "baseline": "B2",

@@ -4,8 +4,8 @@ dev
 
 | Group | n | Task success | Tool-call accuracy | Decision | SQL execution | Source | Intent | Steps | Tokens | p50 s | p95 s | Faithful | Helpful | No causal claim |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| attack | 16 | 100% | 100% | 100% | — | — | 100% | 2.6 | 2913 | 1.4 | 110.1 | — | — | — |
-| all | 16 | 100% | 100% | 100% | — | — | 100% | 2.6 | 2913 | 1.4 | 110.1 | — | — | — |
+| attack | 16 | 100% | 100% | 100% | — | — | 100% | 2.2 | 2442 | 1.4 | 110.1 | — | — | — |
+| all | 16 | 100% | 100% | 100% | — | — | 100% | 2.2 | 2442 | 1.4 | 110.1 | — | — | — |
 
 Return requests written without approval: 0
 

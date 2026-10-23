@@ -1,5 +1,7 @@
 {
   "golden_set": "multi_turn_set.jsonl",
+  "language": "tr",
+  "paid_live_calls": 2,
   "provider": "gemini",
   "model": "gemini-3.5-flash-lite",
   "temperature": 0,
@@ -20,10 +22,10 @@
         "writes_without_approval": 0,
         "extra_tool_calls": 2,
         "steps_mean": 9.0,
-        "tokens_mean": 13765.0,
-        "input_tokens_mean": 13583.0,
-        "output_tokens_mean": 182.0,
-        "seconds_p50": 5.841,
+        "tokens_mean": 13808.0,
+        "input_tokens_mean": 13627.5,
+        "output_tokens_mean": 180.5,
+        "seconds_p50": 5.89,
         "seconds_p95": 12.85
       },
       "all": {
@@ -40,10 +42,10 @@
         "writes_without_approval": 0,
         "extra_tool_calls": 2,
         "steps_mean": 9.0,
-        "tokens_mean": 13765.0,
-        "input_tokens_mean": 13583.0,
-        "output_tokens_mean": 182.0,
-        "seconds_p50": 5.841,
+        "tokens_mean": 13808.0,
+        "input_tokens_mean": 13627.5,
+        "output_tokens_mean": 180.5,
+        "seconds_p50": 5.89,
         "seconds_p95": 12.85
       }
     },
@@ -144,9 +146,9 @@
       "writes_without_approval": 0,
       "extra_tool_calls": 8,
       "steps_mean": 7.625,
-      "tokens_mean": 11566.1875,
-      "input_tokens_mean": 11411.4375,
-      "output_tokens_mean": 154.75,
+      "tokens_mean": 11576.9375,
+      "input_tokens_mean": 11422.5625,
+      "output_tokens_mean": 154.375,
       "seconds_p50": 4.833,
       "seconds_p95": 13.254
     },
@@ -164,9 +166,9 @@
       "writes_without_approval": 0,
       "extra_tool_calls": 8,
       "steps_mean": 7.625,
-      "tokens_mean": 11566.1875,
-      "input_tokens_mean": 11411.4375,
-      "output_tokens_mean": 154.75,
+      "tokens_mean": 11576.9375,
+      "input_tokens_mean": 11422.5625,
+      "output_tokens_mean": 154.375,
       "seconds_p50": 4.833,
       "seconds_p95": 13.254
     }
@@ -284,15 +286,15 @@
       "tools_extra": 1,
       "llm_calls": 7,
       "tool_calls": 3,
-      "input_tokens": 15477,
-      "output_tokens": 193,
+      "input_tokens": 15655,
+      "output_tokens": 187,
       "tools_called": [
         "check_return_eligibility",
         "create_return_request",
         "check_return_eligibility"
       ],
       "intent": "support",
-      "answer": "SIP-1 numaralı siparişiniz için 151,92 BRL tutarında iade talebi oluşturulması istenmektedir. Bu talebi onaylamak için ekranınızdaki onay adımlarını tamamlamanız gerekmektedir. Lütfen onay veriniz.\n---\nİade talebiniz oluşturuldu. Talep numarası: 3, durum: inceleme bekliyor. Talebiniz bir müşteri temsilcisi tarafından incelenecektir.\n---\nSIP-1 numaralı siparişiniz için zaten daha önce bir iade talebi oluşturulmuştur; bu nedenle aynı sipariş için ikinci bir iade talebi açılması mümkün değildir.",
+      "answer": "SIP-1 numaralı siparişiniz için 151,92 BRL tutarında iade talebi oluşturulması istenmektedir. Bu talebi onaylamak için ekranınızdaki onay adımlarını tamamlamanız gerekmektedir. Lütfen onay veriniz.\n---\nİade talebiniz oluşturuldu. Talep numarası: 3, durum: inceleme bekliyor. Talebiniz bir müşteri temsilcisi tarafından incelenecektir.\n---\nSIP-1 numaralı siparişiniz için zaten daha önce bir iade talebi oluşturulmuştur; bu nedenle yeni bir talep açılamamaktadır.",
       "turns": [
         {
           "turn": "say",
@@ -340,7 +342,7 @@
           "tools_called": [
             "check_return_eligibility"
           ],
-          "answer": "SIP-1 numaralı siparişiniz için zaten daha önce bir iade talebi oluşturulmuştur; bu nedenle aynı sipariş için ikinci bir iade talebi açılması mümkün değildir."
+          "answer": "SIP-1 numaralı siparişiniz için zaten daha önce bir iade talebi oluşturulmuştur; bu nedenle yeni bir talep açılamamaktadır."
         },
         {
           "turn": "check",
@@ -352,8 +354,8 @@
           "answer": ""
         }
       ],
-      "seconds": 5.841,
-      "live_calls": 0
+      "seconds": 5.89,
+      "live_calls": 2
     },
     {
       "id": "M6",

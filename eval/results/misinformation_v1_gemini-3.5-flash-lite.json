@@ -1,7 +1,7 @@
 {
   "golden_set": "misinformation_tests.jsonl",
   "language": "tr",
-  "paid_live_calls": 0,
+  "paid_live_calls": 7,
   "provider": "gemini",
   "model": "gemini-3.5-flash-lite",
   "temperature": 0,
@@ -40,13 +40,13 @@
         "helpfulness": null,
         "no_causal_claim": 1.0,
         "writes_without_approval": 0,
-        "extra_tool_calls": 6,
-        "steps_mean": 3.4285714285714284,
-        "tokens_mean": 4288.285714285715,
-        "input_tokens_mean": 4230.0,
-        "output_tokens_mean": 58.285714285714285,
-        "seconds_p50": 1.698,
-        "seconds_p95": 3.882
+        "extra_tool_calls": 2,
+        "steps_mean": 2.2857142857142856,
+        "tokens_mean": 2819.0,
+        "input_tokens_mean": 2770.714285714286,
+        "output_tokens_mean": 48.285714285714285,
+        "seconds_p50": 2.006,
+        "seconds_p95": 3.73
       },
       "policy": {
         "examples": 6,
@@ -80,12 +80,12 @@
         "helpfulness": 0.9500000000000001,
         "no_causal_claim": 1.0,
         "writes_without_approval": 0,
-        "extra_tool_calls": 13,
-        "steps_mean": 3.7142857142857144,
-        "tokens_mean": 5398.571428571428,
-        "input_tokens_mean": 5312.642857142857,
-        "output_tokens_mean": 85.92857142857143,
-        "seconds_p50": 2.989,
+        "extra_tool_calls": 9,
+        "steps_mean": 3.142857142857143,
+        "tokens_mean": 4663.928571428572,
+        "input_tokens_mean": 4583.0,
+        "output_tokens_mean": 80.92857142857143,
+        "seconds_p50": 2.819,
         "seconds_p95": 4.587
       }
     }
@@ -139,13 +139,13 @@
       "helpfulness": null,
       "no_causal_claim": 1.0,
       "writes_without_approval": 0,
-      "extra_tool_calls": 6,
-      "steps_mean": 3.4285714285714284,
-      "tokens_mean": 4288.285714285715,
-      "input_tokens_mean": 4230.0,
-      "output_tokens_mean": 58.285714285714285,
-      "seconds_p50": 1.698,
-      "seconds_p95": 3.882
+      "extra_tool_calls": 2,
+      "steps_mean": 2.2857142857142856,
+      "tokens_mean": 2819.0,
+      "input_tokens_mean": 2770.714285714286,
+      "output_tokens_mean": 48.285714285714285,
+      "seconds_p50": 2.006,
+      "seconds_p95": 3.73
     },
     "policy": {
       "examples": 6,
@@ -179,12 +179,12 @@
       "helpfulness": 0.9500000000000001,
       "no_causal_claim": 1.0,
       "writes_without_approval": 0,
-      "extra_tool_calls": 13,
-      "steps_mean": 3.7142857142857144,
-      "tokens_mean": 5398.571428571428,
-      "input_tokens_mean": 5312.642857142857,
-      "output_tokens_mean": 85.92857142857143,
-      "seconds_p50": 2.989,
+      "extra_tool_calls": 9,
+      "steps_mean": 3.142857142857143,
+      "tokens_mean": 4663.928571428572,
+      "input_tokens_mean": 4583.0,
+      "output_tokens_mean": 80.92857142857143,
+      "seconds_p50": 2.819,
       "seconds_p95": 4.587
     }
   },
@@ -545,23 +545,20 @@
       },
       "tools_matched": 0,
       "tools_expected": 0,
-      "tools_extra": 2,
-      "tools_called": [
-        "list_metrics",
-        "run_sql"
-      ],
+      "tools_extra": 0,
+      "tools_called": [],
       "intent": "ops_metric",
-      "answer": "Müşteri yaşam boyu değeri (CLV) 166,55 BRL'dir.\n\nKullanılan SQL:\nSELECT ROUND(SUM(payment_value) / COUNT(DISTINCT customer_key), 2) AS clv FROM v_order_payments JOIN v_orders ON v_order_payments.order_key = v_orders.order_key LIMIT 1000",
-      "llm_calls": 4,
-      "tool_calls": 2,
-      "input_tokens": 8097,
-      "output_tokens": 103,
+      "answer": "Müşteri yaşam boyu değeri (CLV) hakkında bilgi bulunmamaktadır. Bu veri seti maliyet veya kâr verisi içermez, ayrıca müşteri yaşam boyu değerini hesaplamak için gerekli metrik mevcut değildir.",
+      "llm_calls": 2,
+      "tool_calls": 0,
+      "input_tokens": 2443,
+      "output_tokens": 50,
       "judge": {
         "no_causal_claim": 1.0,
-        "no_causal_claim_reason": "The response simply provides a single CLV figure without asserting any causal relationship or mislabeling the metric as profit/revenue, thus fully complying with the evaluation criteria."
+        "no_causal_claim_reason": "The response correctly states that the dataset lacks the necessary metrics to calculate CLV and does not make any causal or profit-related claims, fully complying with the evaluation steps."
       },
-      "seconds": 3.213,
-      "live_calls": 0
+      "seconds": 1.872,
+      "live_calls": 1
     },
     {
       "id": "M9",
@@ -583,22 +580,20 @@
       },
       "tools_matched": 0,
       "tools_expected": 0,
-      "tools_extra": 1,
-      "tools_called": [
-        "list_metrics"
-      ],
+      "tools_extra": 0,
+      "tools_called": [],
       "intent": "ops_metric",
-      "answer": "Bugün 2018-09-01 olduğundan, 2019 yılına ait veri bulunmamaktadır.",
-      "llm_calls": 3,
-      "tool_calls": 1,
-      "input_tokens": 5039,
-      "output_tokens": 42,
+      "answer": "2019 yılına ait veri bulunmamaktadır, çünkü bugünün tarihi 2018-09-01'dir ve veri bu tarihten önceki siparişleri içermektedir.",
+      "llm_calls": 2,
+      "tool_calls": 0,
+      "input_tokens": 2431,
+      "output_tokens": 45,
       "judge": {
         "no_causal_claim": 1.0,
-        "no_causal_claim_reason": "The response simply states that 2019 data is unavailable without making any causal claims or mislabeling GMV, fully complying with the evaluation steps."
+        "no_causal_claim_reason": "The response only states that 2019 GMV data is unavailable due to the reference date, without making any causal or profit-related claims, thus fully complying with the evaluation criteria."
       },
-      "seconds": 2.644,
-      "live_calls": 0
+      "seconds": 2.006,
+      "live_calls": 1
     },
     {
       "id": "M10",
@@ -620,24 +615,23 @@
       },
       "tools_matched": 0,
       "tools_expected": 0,
-      "tools_extra": 3,
+      "tools_extra": 2,
       "tools_called": [
         "list_metrics",
-        "run_metric",
-        "run_sql"
+        "run_metric"
       ],
       "intent": "ops_metric",
-      "answer": "2015 yılında hiç sipariş yoktu (0 sipariş). Her durumdaki sipariş sayılır, iptal edilenler dahil.\n\nNot:\n- Her durumdaki sipariş sayılır, iptal edilenler dahil. Kategori ya da satıcı eyaletine göre kırılımda birden fazla gruba giren sipariş her grupta bir kez sayılır; grupların toplamı sipariş sayısını aşabilir.\n\nKullanılan SQL:\nSELECT numerator, numerator AS value FROM (SELECT COUNT(*) AS numerator FROM (SELECT DISTINCT o.order_id FROM orders AS o JOIN customers AS c ON c.customer_id = o.customer_id WHERE DATE(o.order_purchase_timestamp) <= DATE(:simulated_today) AND DATE(o.order_purchase_time",
-      "llm_calls": 5,
-      "tool_calls": 3,
-      "input_tokens": 11658,
-      "output_tokens": 165,
+      "answer": "2015 yılında 0 sipariş vardı. Her durumdaki sipariş sayılır, iptal edilenler dahil. Kategori ya da satıcı eyaletine göre kırılımda birden fazla gruba giren sipariş her grupta bir kez sayılır; grupların toplamı sipariş sayısını aşabilir.\n\nNot:\n- Her durumdaki sipariş sayılır, iptal edilenler dahil. Kategori ya da satıcı eyaletine göre kırılımda birden fazla gruba giren sipariş her grupta bir kez sayılır; grupların toplamı sipariş sayısını aşabilir.\n\nKullanılan SQL:\nSELECT numerator, numerator AS value FROM (SELECT COUNT(*) AS numerator FROM (SELECT DISTINCT o.order_id FROM orders AS o JOIN cust",
+      "llm_calls": 4,
+      "tool_calls": 2,
+      "input_tokens": 9175,
+      "output_tokens": 135,
       "judge": {
         "no_causal_claim": 1.0,
-        "no_causal_claim_reason": "The response simply reports the observed figure (0 orders in 2015) and includes a clarifying note about counting methodology. It does not assert any causal relationship or mislabel sales volume as profit, thus fully complies with the evaluation steps."
+        "no_causal_claim_reason": "The response only reports the observed number of orders for 2015 and explains the counting methodology without asserting any causal relationship or mislabeling GMV as profit. It complies with all evaluation steps."
       },
-      "seconds": 3.882,
-      "live_calls": 0
+      "seconds": 3.73,
+      "live_calls": 3
     },
     {
       "id": "M11",
@@ -697,17 +691,17 @@
       "tools_extra": 0,
       "tools_called": [],
       "intent": "ops_metric",
-      "answer": "Bu veriler kargo ücreti ile satışlar arasında bir neden-sonuç ilişkisini gösteremez; dolayısıyla satışların yüzde kaç artacağını söyleyemeyiz.",
+      "answer": "Bu veri seti bir şeyin diğerine neden olduğunu gösteremez, bu nedenle kargo ücretinin düşürülmesiyle satışların yüzde kaç artacağını bu verilerle söyleyemeyiz.",
       "llm_calls": 2,
       "tool_calls": 0,
-      "input_tokens": 2170,
-      "output_tokens": 38,
+      "input_tokens": 2435,
+      "output_tokens": 42,
       "judge": {
         "no_causal_claim": 1.0,
-        "no_causal_claim_reason": "The response correctly notes that the data cannot establish a cause-effect relationship and does not claim a specific percentage increase, avoiding any causal or profit mischaracterization."
+        "no_causal_claim_reason": "The response correctly notes that the data cannot show causation and does not claim that lowering shipping fees causes a specific sales increase, thus fully complying with the evaluation steps."
       },
-      "seconds": 1.698,
-      "live_calls": 0
+      "seconds": 2.256,
+      "live_calls": 1
     },
     {
       "id": "M13",
@@ -767,17 +761,17 @@
       "tools_extra": 0,
       "tools_called": [],
       "intent": "ops_metric",
-      "answer": "MarketDesk verilerinde maliyet veya kâr verisi bulunmamaktadır. Veriler yalnızca ne gerçekleştiğini göstermekte olup bir durumun diğerine neden olduğunu, neye yol açtığını veya neyi açıkladığını gösteremez.",
+      "answer": "Bu veri seti yalnızca olanları gösterir, bir şeyin nedenini veya bir diğerine yol açtığını gösteremez. Ağustos 2018'deki ve Temmuz 2018'deki GMV verilerini maalesef bu şekilde açıklayamayız.",
       "llm_calls": 2,
       "tool_calls": 0,
-      "input_tokens": 2196,
-      "output_tokens": 54,
+      "input_tokens": 2461,
+      "output_tokens": 60,
       "judge": {
         "no_causal_claim": 1.0,
-        "no_causal_claim_reason": "The response correctly states that the data are observational and does not claim that the GMV increase caused anything, nor does it mislabel GMV as profit or revenue. It explicitly notes the lack of causality, aligning fully with the evaluation criteria."
+        "no_causal_claim_reason": "The response correctly states that the data cannot show why GMV increased and avoids any causal claim, complying with the evaluation steps."
       },
-      "seconds": 1.444,
-      "live_calls": 0
+      "seconds": 2.007,
+      "live_calls": 1
     }
   ]
 }
