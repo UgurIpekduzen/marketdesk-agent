@@ -1,0 +1,11 @@
+example,review_id,portuguese,translation,judge,judge_reason,agree
+R1,R-056548,Não recebi o produto até o momento. Já extrapolaramse todos os prazos e estimativas.,Ürünü henüz almadım. Tüm süreler ve tahminler aşıldı.,faithful,Translation matches the meaning.,yes
+R2,R-003390,O produto chegou super rápido e veio tudo certo!,Ürün süper hızlı geldi ve her şey yolundaydı!,faithful,Accurately conveys speed and correctness.,yes
+R3,R-008584,"Produto de péssima qualidade, nada haver com a foto.","Çok kötü kalitede ürün, fotoğrafla hiç alakası yok.",faithful,Translation matches meaning exactly.,yes
+R4,R-086517,Chegou com duas semanas de antecedência,İki hafta önceden geldi.,faithful,Accurately conveys arriving two weeks early.,yes
+R5,R-067187,Esse produto veio com defeito,Bu ürün kusurlu geldi,faithful,The Turkish translation conveys the same meaning as the Portuguese sentence.,yes
+R1,R-061561,Porém a bandeja na cor branca não foi entregue,Ancak beyaz tepsi teslim edilmedi,faithful,Translation matches the meaning.,yes
+R2,R-086517,Chegou com duas semanas de antecedência,İki hafta önceden geldi,faithful,Correctly states the product arrived two weeks early.,yes
+R3,R-042662,"As toalhas sao muito finas, nao enxugam!!!","Havlular çok ince, kurulamıyorlar!!!",faithful,Both convey that towels are very thin and do not dry.,yes
+R4,R-017960,Entrega rápida,Hızlı teslimat.,faithful,Matches the meaning of fast delivery.,yes
+R1,R-072778,Entregaram só 1 lustre e ficou faltando o outro,Sadece 1 avize teslim ettiler ve diğeri eksikti,faithful,Translation matches the meaning.,yes
