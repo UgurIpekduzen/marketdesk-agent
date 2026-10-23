@@ -239,7 +239,7 @@ tasks:
       - "{{.RUN}} uv run python eval/run_eval.py {{.CLI_ARGS}}"
 
   eval:redteam:
-    desc: Run the automated red team scan with DeepTeam; attacker and judge on Groq (uses Groq and LLM quota); `-- --pilot` for one vulnerability, `-- --multi-turn` for attacks over several messages, `-- --paid` for the paid Gemini key
+    desc: Run the automated red team scan with DeepTeam; attacker and judge on Groq (uses Groq and LLM quota); `-- --pilot` for one vulnerability, `-- --multi-turn` for attacks over several messages (with a shorter crescendo prompt), `-- --ops-only` for the operations session alone, `-- --seed N` to repeat the random choice of attacks, `-- --paid` for the paid Gemini key
     cmds:
       - "{{.RUN}} uv run python eval/red_team.py {{.CLI_ARGS}}"
 

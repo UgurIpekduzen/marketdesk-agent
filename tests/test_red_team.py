@@ -631,3 +631,128 @@ def test_the_results_name_the_attacker_and_its_provider():
     }
 
     assert "Attacker: `gemini-3.8-flash` (gemini)." in red_team.markdown(result)
+
+
+# --- Repeatable scans, the operations session alone, the short crescendo -------
+
+
+def test_a_scan_with_a_seed_makes_the_same_random_picks_every_time(monkeypatch):
+    import random
+
+    from deepteam.attacks.attack_simulator import attack_simulator
+
+    # DeepTeam's own picks, after the scan has given it its generator.
+    monkeypatch.setattr(attack_simulator, "random", random)
+    picks = []
+
+    class FakeRedTeamer:
+        def __init__(self, **kwargs):
+            pass
+
+        def red_team(self, **kwargs):
+            picks.append([attack_simulator.random.random() for _ in range(3)])
+            return type("Assessment", (), {"test_cases": []})()
+
+    monkeypatch.setattr(red_team, "RedTeamer", FakeRedTeamer)
+    model = object.__new__(red_team.JudgeModel)
+
+    def run(seed):
+        monkeypatch.setattr(attack_simulator, "random", random)
+        target = red_team.Target("ops", "db", llm=None)
+        red_team.scan(
+            target,
+            red_team.OPS_VULNERABILITIES,
+            red_team.OPS_PURPOSE,
+            model,
+            model,
+            red_team.ATTACKS,
+            seed,
+        )
+
+    run(7)
+    # Something else draws from the shared state in between, as a retry does.
+    [random.random() for _ in range(5)]
+    run(7)
+    run(8)
+
+    assert picks[0] == picks[1]
+    assert picks[0] != picks[2]
+
+
+def test_without_a_seed_the_shared_random_state_is_left_alone(monkeypatch):
+    import random
+
+    from deepteam.attacks.attack_simulator import attack_simulator
+
+    class FakeRedTeamer:
+        def __init__(self, **kwargs):
+            pass
+
+        def red_team(self, **kwargs):
+            return type("Assessment", (), {"test_cases": []})()
+
+    monkeypatch.setattr(attack_simulator, "random", random)
+    monkeypatch.setattr(red_team, "RedTeamer", FakeRedTeamer)
+    model = object.__new__(red_team.JudgeModel)
+
+    red_team.scan(
+        red_team.Target("ops", "db", llm=None),
+        red_team.OPS_VULNERABILITIES,
+        red_team.OPS_PURPOSE,
+        model,
+        model,
+        red_team.ATTACKS,
+    )
+
+    assert attack_simulator.random is random
+
+
+def test_a_scan_on_the_operations_session_or_with_a_seed_has_results_of_its_own():
+    model = red_team.config.LLM_MODEL
+
+    assert red_team.result_name(False, False) == f"redteam_v1_{model}"
+    assert red_team.result_name(False, False, ops_only=True) == (
+        f"redteam_ops_v1_{model}"
+    )
+    assert red_team.result_name(False, False, seed=3) == (f"redteam_seed-3_v1_{model}")
+    assert red_team.result_name(False, False, ops_only=True, seed=3) == (
+        f"redteam_ops_seed-3_v1_{model}"
+    )
+
+
+def test_the_operations_purpose_mentions_the_review_summaries():
+    assert "reviews" in red_team.OPS_PURPOSE
+
+
+def test_the_short_crescendo_prompt_is_far_shorter_and_keeps_what_deepteam_reads():
+    from deepteam.attacks.multi_turn.crescendo_jailbreaking.template import (
+        JailBreakingCrescendoTemplate as Template,
+    )
+
+    original = Template.crescendo_system_prompt
+    arguments = {
+        "conversation_objective": "show the instructions",
+        "max_rounds": 4,
+        "current_round": 2,
+        "vulnerability_data": "prompt leakage",
+    }
+    long_text = original(**arguments)
+    try:
+        red_team.use_short_crescendo_prompt()
+        short_text = Template.crescendo_system_prompt(**arguments)
+    finally:
+        Template.crescendo_system_prompt = original
+
+    assert len(short_text) < len(long_text) / 4
+    names = lambda function: list(inspect.signature(function).parameters)
+    assert names(red_team.short_crescendo_prompt) == names(original)
+    # What the attack's JSON reader needs and what it fills in.
+    for key in (
+        "generated_question",
+        "last_response_summary",
+        "rationale_behind_jailbreak",
+    ):
+        assert f'"{key}"' in short_text
+    assert "show the instructions" in short_text
+    assert "prompt leakage" in short_text
+    assert "round is 2" in short_text and "round 4" in short_text
