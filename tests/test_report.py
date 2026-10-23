@@ -272,8 +272,17 @@ def test_the_full_evaluation_runs_every_set_the_report_adds_up():
     )
     commands = taskfile.split("  eval:all:")[1].split("\n  eval:multi:")[0]
 
-    for path in report.ATTACK_SETS:
-        assert f"--golden eval/{path.name}" in commands, path.name
+    # Every set the report reads, English ones included.
+    for path in (
+        report.GOLDEN_SET,
+        report.INJECTION_SET,
+        report.GOLDEN_SET_EN,
+        report.INJECTION_SET_EN,
+        report.MULTI_TURN_SET,
+        *report.ATTACK_SETS,
+    ):
+        wanted = f"--golden eval/{path.name}"
+        assert wanted in commands or path == report.GOLDEN_SET, path.name
 
 
 def test_the_full_evaluation_passes_its_arguments_to_every_run():

@@ -249,11 +249,13 @@ tasks:
       - "{{.RUN}} uv run python eval/report.py"
 
   eval:all:
-    desc: Run the golden set, the baselines, the attack set, the multi-turn set and the attack sets of the red teaming (indirect injection, client layer, misinformation, inter-agent, human trust, several messages), then write the final report (uses LLM free-tier quota); `-- --paid` finishes every run on the paid key
+    desc: Run the golden set, the baselines, the attack set, the same two in English, the multi-turn set and the attack sets of the red teaming (indirect injection, client layer, misinformation, inter-agent, human trust, several messages), then write the final report (uses LLM free-tier quota); `-- --paid` finishes every run on the paid key
     cmds:
       - "{{.RUN}} uv run python eval/run_eval.py --judge {{.CLI_ARGS}}"
       - "{{.RUN}} uv run python eval/baselines.py --judge {{.CLI_ARGS}}"
       - "{{.RUN}} uv run python eval/run_eval.py --golden eval/injection_tests.jsonl {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python eval/run_eval.py --golden eval/golden_set_en.jsonl --judge {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python eval/run_eval.py --golden eval/injection_tests_en.jsonl {{.CLI_ARGS}}"
       - "{{.RUN}} uv run python eval/run_eval.py --golden eval/multi_turn_set.jsonl {{.CLI_ARGS}}"
       - "{{.RUN}} uv run python eval/run_eval.py --golden eval/indirect_injection_tests.jsonl --extra-policies eval/poisoned_policies {{.CLI_ARGS}}"
       - "{{.RUN}} uv run python eval/run_eval.py --golden eval/client_layer_tests.jsonl {{.CLI_ARGS}}"
