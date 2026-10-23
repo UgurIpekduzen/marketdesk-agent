@@ -122,6 +122,14 @@ EMBEDDING_DIMENSIONS = 384
 # Longer texts are cut to this many tokens, the model's limit.
 EMBEDDING_MAX_TOKENS = 512
 
+# --- Review Insight Agent ----------------------------------------------
+
+# The most review texts one call of summarize_reviews hands to the model, and
+# the longest text kept of one review (longer ones are cut). The agent works
+# on a sample: the call says how many reviews matched the filters.
+REVIEW_MAX = 50
+REVIEW_MAX_CHARS = 600
+
 # --- Critic -------------------------------------------------------------
 
 # The operations agent's answer is checked in code before it is shown: every
