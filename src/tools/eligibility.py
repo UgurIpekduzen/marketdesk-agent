@@ -10,7 +10,12 @@ from datetime import date
 import config
 from src import messages
 from src.formatting import format_money
-from src.rules.returns import DecisionCode, ReturnReason, check_return
+from src.rules.returns import (
+    FREIGHT_INCLUDED_REASONS,
+    DecisionCode,
+    ReturnReason,
+    check_return,
+)
 from src.tools.orders import NOT_FOUND
 from src.tools.session import Session
 
@@ -36,9 +41,11 @@ def check_return_eligibility(
     ALREADY_CLOSED, NEEDS_HUMAN, DUPLICATE_REQUEST, ELIGIBLE or
     NOT_ELIGIBLE_WINDOW; rule is the rule that decided. refund_amount (BRL)
     is what a request would refund; "0.00" means nothing can be refunded.
-    freight_refund is true when the freight is refunded because the delivery
-    was late. freight_only_claim is true when the items can no longer be
-    returned but the freight can still be claimed. An unknown order answers
+    freight_included is true when the freight is part of refund_amount, for
+    any reason. freight_refund is true only for a late-delivery refund;
+    false does not mean no freight.
+    freight_only_claim is true when the items can no longer be returned but
+    the freight can still be claimed. An unknown order answers
     {"error": "NOT_FOUND", "message": ...}.
     """
     if reason is None:
@@ -71,6 +78,10 @@ def check_return_eligibility(
         # The rule engine flags every late delivery. Here the flag is shown
         # only while it still earns money, so it cannot be read as a promise.
         "freight_refund": decision.freight_refund and has_refund,
+        # What the freight is in the refund, whatever the reason: the rule
+        # engine adds it for a damaged or wrong item and for a late delivery.
+        "freight_included": has_refund
+        and (reason in FREIGHT_INCLUDED_REASONS or decision.freight_refund),
         "freight_only_claim": (
             decision.code == DecisionCode.NOT_ELIGIBLE_WINDOW and has_refund
         ),

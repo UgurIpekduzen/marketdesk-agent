@@ -4,6 +4,7 @@ The rules themselves are tested in test_returns.py; these tests cover what
 the function adds: the session, the alias and the shape of the output.
 """
 
+import inspect
 import json
 import re
 
@@ -34,6 +35,7 @@ def test_eligible_order(synthetic_db, alice):
         "refund_amount": "200.00",
         "refund_amount_text": "200,00 BRL",
         "freight_refund": False,
+        "freight_included": True,
         "freight_only_claim": False,
         "request_status": "PENDING_REVIEW",
         "voucher_refund": "50.00",
@@ -54,6 +56,7 @@ def test_order_that_cannot_be_returned_yet(synthetic_db, alice):
         "refund_amount": "0.00",
         "refund_amount_text": "0,00 BRL",
         "freight_refund": False,
+        "freight_included": False,
         "freight_only_claim": False,
         "request_status": None,
         "voucher_refund": "0.00",
@@ -62,6 +65,43 @@ def test_order_that_cannot_be_returned_yet(synthetic_db, alice):
         "original_method_refund_text": "0,00 BRL",
         "seller_delay": False,
     }
+
+
+@pytest.mark.parametrize(
+    ("order", "reason", "freight_included", "freight_refund"),
+    [
+        # Damaged or wrong item: the freight is in the refund, though
+        # freight_refund (the late-delivery refund) is false.
+        ("o_day14", "damaged", True, False),
+        ("o_day14", "wrong_item", True, False),
+        # Late delivery inside the window.
+        ("o_late_10", "late", True, True),
+        ("o_late_10", "changed_mind", True, True),
+        # Changed mind on an order that was on time: items only.
+        ("o_day14", "changed_mind", False, False),
+        # Only the freight can be claimed.
+        ("o_late_freight_only", "changed_mind", True, True),
+        # Nothing refunded, nothing included.
+        ("o_late_day31", "late", False, False),
+        ("o_shipped", "damaged", False, False),
+    ],
+)
+def test_freight_included_tells_whether_the_freight_is_in_the_refund(
+    synthetic_db, alice, order, reason, freight_included, freight_refund
+):
+    answer = check_return_eligibility(alice, synthetic_db, order, reason)
+
+    assert answer["freight_included"] is freight_included
+    assert answer["freight_refund"] is freight_refund
+
+
+def test_the_description_tells_what_the_two_freight_fields_mean():
+    doc = inspect.cleandoc(check_return_eligibility.__doc__)
+
+    assert "freight_included is true when the freight is part of" in doc
+    # The limit of the tool framework for a description.
+    assert len(doc) <= 1024
+    assert "freight_refund is true only for a late-delivery refund" in doc
 
 
 def test_late_delivery_inside_the_window_refunds_the_freight_too(synthetic_db, alice):
