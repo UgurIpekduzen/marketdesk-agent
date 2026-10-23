@@ -333,6 +333,43 @@ def future_dates(text: str, today: date, question: str = "") -> list[str]:
     return [item for item in found if item not in question]
 
 
+# --- Reviews ---------------------------------------------------------------
+
+REVIEW_ID = re.compile(r"\bR-\d{6}\b")
+
+
+def sample_ids(tool_results: list[tuple[str, object]]) -> set[str]:
+    """The review ids summarize_reviews handed out in a run."""
+    found = set()
+    for name, result in tool_results:
+        if name == "summarize_reviews" and isinstance(result, dict):
+            found |= {
+                item["review_id"] for item in result.get("reviews_quoted_data", [])
+            }
+    return found
+
+
+def unknown_review_ids(text: str, tool_results: list[tuple[str, object]]) -> list[str]:
+    """Review ids the answer cites that were not in the sample."""
+    return sorted(set(REVIEW_ID.findall(text)) - sample_ids(tool_results))
+
+
+def verified_themes(tool_results: list[tuple[str, object]]) -> dict | None:
+    """The last answer of report_themes that was not an error, if any."""
+    for name, result in reversed(tool_results):
+        if name == "report_themes" and isinstance(result, dict) and "themes" in result:
+            return result
+    return None
+
+
+def quotes_of(tool_results: list[tuple[str, object]]) -> list[dict]:
+    """The quotes of the checked themes: review id, Portuguese text, translation."""
+    verified = verified_themes(tool_results)
+    if verified is None:
+        return []
+    return [quote for theme in verified["themes"] for quote in theme["quotes"]]
+
+
 # --- Summary numbers --------------------------------------------------------
 
 

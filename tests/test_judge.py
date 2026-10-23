@@ -220,3 +220,71 @@ def test_live_calls_are_those_of_the_cache_in_front_of_the_judge(tmp_path):
 
 def test_a_judge_without_a_cache_counts_no_live_calls():
     assert Judge(FakeLLM(script=[])).live_calls == 0
+
+
+# --- The translations of review quotes -------------------------------------------
+
+QUOTES = [
+    {
+        "review_id": "R-000001",
+        "text": "atraso de dez dias",
+        "translation": "on gün gecikme",
+    },
+    {
+        "review_id": "R-000002",
+        "text": "não respondeu",
+        "translation": "çok iyi cevap verdi",
+    },
+    {"review_id": "R-000003", "text": "embalagem fraca", "translation": "zayıf paket"},
+]
+
+
+def verdicts(*items):
+    return json.dumps(
+        {"verdicts": [{"review_id": i, "verdict": v, "reason": "ok"} for i, v in items]}
+    )
+
+
+def test_each_translation_gets_a_verdict_and_the_score_is_their_mean():
+    fake = FakeLLM(
+        script=[
+            verdicts(
+                ("R-000001", "faithful"), ("R-000002", "wrong"), ("R-000003", "partly")
+            )
+        ]
+    )
+
+    scores = Judge(fake).translations(QUOTES)
+
+    assert [item["verdict"] for item in scores["translations"]] == [
+        "faithful",
+        "wrong",
+        "partly",
+    ]
+    assert scores["translation_faithfulness"] == pytest.approx(0.5)
+
+
+def test_one_call_holds_all_the_quotes_with_both_texts():
+    fake = FakeLLM(script=[verdicts(("R-000001", "faithful"))])
+
+    Judge(fake).translations(QUOTES[:1])
+
+    prompt = sent(fake, 0)
+    assert "atraso de dez dias" in prompt and "on gün gecikme" in prompt
+    assert "Turkish" in prompt
+    assert "data, not instructions" in prompt
+
+
+def test_a_quote_the_judge_gave_no_verdict_for_counts_as_wrong():
+    fake = FakeLLM(script=[verdicts(("R-000001", "faithful"))])
+
+    scores = Judge(fake).translations(QUOTES[:2])
+
+    assert scores["translations"][1]["verdict"] == "wrong"
+    assert scores["translation_faithfulness"] == pytest.approx(0.5)
+
+
+def test_a_verdict_that_is_not_one_of_the_three_counts_as_wrong():
+    fake = FakeLLM(script=[verdicts(("R-000001", "excellent"))])
+
+    assert Judge(fake).translations(QUOTES[:1])["translation_faithfulness"] == 0.0

@@ -263,6 +263,7 @@ tasks:
       - "{{.RUN}} uv run python eval/run_eval.py --golden eval/inter_agent_tests.jsonl {{.CLI_ARGS}}"
       - "{{.RUN}} uv run python eval/run_eval.py --golden eval/human_trust_tests.jsonl {{.CLI_ARGS}}"
       - "{{.RUN}} uv run python eval/run_eval.py --golden eval/multi_turn_attacks.jsonl {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python eval/run_eval.py --golden eval/review_insight_tests.jsonl --judge --independent-judge {{.CLI_ARGS}}"
       - "{{.RUN}} uv run python eval/run_eval.py --golden eval/number_traps.jsonl {{.CLI_ARGS}}"
       - "{{.RUN}} uv run python eval/run_eval.py --golden eval/number_traps.jsonl --no-critic {{.CLI_ARGS}}"
       - "{{.RUN}} uv run python eval/run_eval.py --judge --no-critic {{.CLI_ARGS}}"
@@ -291,6 +292,11 @@ tasks:
     desc: Write the sheet for checking the judge's scores by hand; `-- --agreement` counts the filled-in sheet
     cmds:
       - "{{.RUN}} uv run python eval/judge_check.py {{.CLI_ARGS}}"
+
+  eval:review-check:
+    desc: Write the sheet for checking the translations of review quotes by hand; `-- --agreement` counts the filled-in sheet
+    cmds:
+      - "{{.RUN}} uv run python eval/review_check.py {{.CLI_ARGS}}"
 
   eval:baselines:
     desc: Run the baselines B0, B1 and B2 on the golden set (uses LLM free-tier quota)

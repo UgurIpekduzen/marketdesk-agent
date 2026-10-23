@@ -630,9 +630,9 @@ def test_judge_scores_are_averaged_in_the_summary_and_shown_in_the_table(
     assert summary["ops"]["no_causal_claim"] == 1.0
     assert summary["support"]["faithfulness"] is None
     table = run_eval.markdown_table(summary).splitlines()
-    assert table[0].endswith("| Faithful | Helpful | No causal claim |")
-    assert table[2].endswith("| — | — | — |")
-    assert table[4].endswith("| 0.50 | 1.00 | — |")
+    assert table[0].endswith("| Faithful | Helpful | No causal claim | Translation |")
+    assert table[2].endswith("| — | — | — | — |")
+    assert table[4].endswith("| 0.50 | 1.00 | — | — |")
 
 
 def test_run_without_a_judge_has_dashes_in_the_judge_columns(run):

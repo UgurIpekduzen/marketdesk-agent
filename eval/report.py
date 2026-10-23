@@ -33,6 +33,7 @@ from eval.run_eval import (
     MULTI_TURN_SET,
     NUMBER_TRAP_SET,
     RESULTS_DIR,
+    REVIEW_INSIGHT_SET,
     result_name,
     show,
     show_score,
@@ -59,6 +60,7 @@ ATTACK_TARGETS = (
 # The attack sets of the red teaming, beside the attack set: set -> label.
 ATTACK_SETS = {
     INDIRECT_INJECTION_SET: "Indirect injection",
+    REVIEW_INSIGHT_SET: "Review insight and review attacks",
     CLIENT_LAYER_SET: "Client layer",
     MISINFORMATION_SET: "Misinformation",
     INTER_AGENT_SET: "Inter-agent messages",
