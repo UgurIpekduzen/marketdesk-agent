@@ -1,5 +1,7 @@
 """Tests for the final report, on small hand-made results."""
 
+from pathlib import Path
+
 import pytest
 
 import config
@@ -192,3 +194,95 @@ def test_english_results_are_shown_next_to_the_turkish_ones():
 
 def test_report_has_no_english_section_without_its_results():
     assert "## English" not in report.build_report(GOLDEN, BASELINES, INJECTION)
+
+
+# --- The attack sets of the red teaming ----------------------------------------
+
+ATTACK_SET_RESULTS = {
+    "Indirect injection": {
+        "summary_all_splits": {
+            "all": numbers(examples=8, task_success=1.0, writes_without_approval=0)
+        }
+    },
+    "Inter-agent messages": {
+        "summary_all_splits": {
+            "all": numbers(examples=8, task_success=0.875, writes_without_approval=0)
+        }
+    },
+}
+
+
+def test_the_security_line_adds_up_the_sets_of_the_red_teaming():
+    text = report.build_report(
+        GOLDEN, BASELINES, INJECTION, attack_sets=ATTACK_SET_RESULTS
+    )
+
+    # The attack set's own line is unchanged, the other sets follow it.
+    assert "Security tests: 35 of 36 attack checks held (97%)." in text
+    assert (
+        "2 more sets of the red teaming: 15 of 16 examples passed, "
+        "0 return requests written without approval."
+    ) in text
+
+
+def test_the_report_lists_each_attack_set_and_the_total():
+    text = report.build_report(
+        GOLDEN, BASELINES, INJECTION, attack_sets=ATTACK_SET_RESULTS
+    )
+
+    section = text[text.index("## Attack sets") :]
+    assert "| Indirect injection | 8 | 8 | 0 |" in section
+    assert "| Inter-agent messages | 8 | 7 | 0 |" in section
+    assert "| **All** | 16 | 15 | 0 |" in section
+
+
+def test_a_set_that_was_not_run_is_left_out_of_the_report():
+    text = report.build_report(GOLDEN, BASELINES, INJECTION, attack_sets={})
+
+    assert "## Attack sets" not in text
+    assert "more sets of the red teaming" not in text
+
+
+def test_a_set_that_wrote_a_request_shows_it_in_the_total():
+    text = report.build_report(
+        GOLDEN,
+        BASELINES,
+        INJECTION,
+        attack_sets={
+            "Inter-agent messages": {
+                "summary_all_splits": {
+                    "all": numbers(
+                        examples=8, task_success=1.0, writes_without_approval=1
+                    )
+                }
+            }
+        },
+    )
+
+    assert (
+        "1 more set of the red teaming: 8 of 8 examples passed, 1 return request "
+        "written without approval."
+    ) in text
+    assert "| **All** | 8 | 8 | 1 |" in text
+
+
+def test_the_full_evaluation_runs_every_set_the_report_adds_up():
+    taskfile = (Path(__file__).resolve().parent.parent / "Taskfile.yml").read_text(
+        encoding="utf-8"
+    )
+    commands = taskfile.split("  eval:all:")[1].split("\n  eval:multi:")[0]
+
+    for path in report.ATTACK_SETS:
+        assert f"--golden eval/{path.name}" in commands, path.name
+
+
+def test_the_full_evaluation_passes_its_arguments_to_every_run():
+    taskfile = (Path(__file__).resolve().parent.parent / "Taskfile.yml").read_text(
+        encoding="utf-8"
+    )
+    commands = taskfile.split("  eval:all:")[1].split("\n  eval:multi:")[0]
+
+    runs = [line for line in commands.splitlines() if "uv run python eval/" in line]
+    # Every run takes `-- --paid`; the report calls no model and takes nothing.
+    for line in runs:
+        assert ("report.py" in line) or ("{{.CLI_ARGS}}" in line), line
