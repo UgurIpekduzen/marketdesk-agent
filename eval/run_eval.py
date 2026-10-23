@@ -91,6 +91,10 @@ HUMAN_TRUST_SET = EVAL_DIR / "human_trust_tests.jsonl"
 # across turns, another customer's order, a role built up, a planted rule,
 # a made-up history, the instructions pulled out in pieces.
 MULTI_TURN_ATTACK_SET = EVAL_DIR / "multi_turn_attacks.jsonl"
+# Operations questions that tempt the model to state a number of its own: a
+# sum, a difference, a growth in percent, a double. They show what the critic
+# of the operations agent catches; run with and without it (--no-critic).
+NUMBER_TRAP_SET = EVAL_DIR / "number_traps.jsonl"
 RESULT_PREFIXES = {
     GOLDEN_SET.stem: "golden_v1",
     INJECTION_SET.stem: "injection_v1",
@@ -103,6 +107,7 @@ RESULT_PREFIXES = {
     INTER_AGENT_SET.stem: "inter_agent_v1",
     HUMAN_TRUST_SET.stem: "human_trust_v1",
     MULTI_TURN_ATTACK_SET.stem: "multi_turn_attacks_v1",
+    NUMBER_TRAP_SET.stem: "number_traps_v1",
 }
 # English document title -> the Turkish title the documents carry.
 TURKISH_TITLES = {
@@ -313,6 +318,19 @@ def score(
         "output_tokens": router_log.output_tokens + (log.output_tokens if log else 0),
         # What a grounding check found: invented sections, numbers, dates.
         **({"grounding": grounding} if any(grounding.values()) else {}),
+        # For an operations answer: the numbers of the model's own words that
+        # no tool returned (after the critic, if it ran), and what the critic
+        # did (ok, corrected, flagged; None when it was off).
+        **(
+            {
+                "ungrounded_numbers": scoring.ungrounded_numbers(
+                    getattr(answer.reply, "text", text), results, example["question"]
+                ),
+                "critic": getattr(answer.reply, "critic", None),
+            }
+            if answer.intent.value == "ops_metric"
+            else {}
+        ),
     }
 
 
@@ -394,6 +412,12 @@ def judge_mean(rows: list[dict], name: str) -> float | None:
     return sum(scores) / len(scores) if scores else None
 
 
+def count_where(rows: list[dict], key: str, test) -> int | None:
+    """How many rows that have the key pass the test; None when none has it."""
+    held = [row[key] for row in rows if key in row]
+    return sum(bool(test(value)) for value in held) if held else None
+
+
 def summarise(rows: list[dict]) -> dict:
     """The numbers of the result table, for one group or for all."""
 
@@ -420,6 +444,13 @@ def summarise(rows: list[dict]) -> dict:
         "helpfulness": judge_mean(rows, "helpfulness"),
         "no_causal_claim": judge_mean(rows, "no_causal_claim"),
         "writes_without_approval": sum(not row["checks"]["no_write"] for row in rows),
+        # Operations answers with a number no tool returned, of the answers
+        # that were looked at; what the critic did with them.
+        "ungrounded_answers": count_where(rows, "ungrounded_numbers", bool),
+        "critic_corrected": count_where(
+            rows, "critic", lambda value: value == "corrected"
+        ),
+        "critic_flagged": count_where(rows, "critic", lambda value: value == "flagged"),
         "extra_tool_calls": sum(row["tools_extra"] for row in rows),
         "steps_mean": sum(row["llm_calls"] + row["tool_calls"] for row in rows)
         / len(rows),
@@ -556,9 +587,20 @@ def exit_code(rows: list[dict], unchanged: bool, strict: bool) -> int:
     return 0
 
 
-def result_name(golden: Path, model: str) -> str:
-    """The name of the results files of a set, for example golden_v1_<model>."""
-    return f"{RESULT_PREFIXES.get(golden.stem, golden.stem)}_{model.replace('/', '_')}"
+def result_name(
+    golden: Path, model: str, critic: bool = True, variant: str | None = None
+) -> str:
+    """The name of the results files of a set, for example golden_v1_<model>.
+
+    A run without the critic of the operations agent has its own, and so has
+    one that asks for corrections in the wording that is not the one in use
+    (variant)."""
+    name = f"{RESULT_PREFIXES.get(golden.stem, golden.stem)}_{model.replace('/', '_')}"
+    if not critic:
+        return f"{name}_no-critic"
+    if variant and variant != config.CRITIC_DEFAULT_VARIANT:
+        return f"{name}_critic-{variant}"
+    return name
 
 
 def show(value: float | None, percent: bool = True) -> str:
@@ -783,6 +825,19 @@ def main() -> int:
         help="print the outcome of each test example (they then belong in dev)",
     )
     parser.add_argument(
+        "--no-critic",
+        action="store_true",
+        help="run the operations agent without its critic, to measure what the "
+        "critic does; the results get their own file name",
+    )
+    parser.add_argument(
+        "--critic-variant",
+        choices=("plain", "compute"),
+        help="ask the critic's corrections in this wording instead of the one in "
+        "use (config.CRITIC_DEFAULT_VARIANT); the results of the other wording "
+        "get their own file name",
+    )
+    parser.add_argument(
         "--strict",
         action="store_true",
         help="exit with 1 when an example fails, for a workflow",
@@ -813,6 +868,10 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    if args.no_critic:
+        config.CRITIC_ENABLED = False
+    if args.critic_variant:
+        config.CRITIC_CORRECTION_VARIANT = args.critic_variant
     examples = load_golden(args.golden)
     if args.only:
         wanted = set(args.only.split(","))
@@ -889,8 +948,14 @@ def main() -> int:
 
     if not args.only:
         RESULTS_DIR.mkdir(exist_ok=True)
-        name = result_name(args.golden, model)
+        name = result_name(
+            args.golden, model, critic=not args.no_critic, variant=args.critic_variant
+        )
         result = {
+            "critic": not args.no_critic,
+            "critic_variant": None
+            if args.no_critic
+            else config.CRITIC_CORRECTION_VARIANT,
             "golden_set": args.golden.name,
             "language": language.value,
             # Live calls of this run made on the paid key, for the cost record.

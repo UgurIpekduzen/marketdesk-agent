@@ -283,6 +283,17 @@ def test_the_full_evaluation_runs_every_set_the_report_adds_up():
     ):
         wanted = f"--golden eval/{path.name}"
         assert wanted in commands or path == report.GOLDEN_SET, path.name
+    # Each set of the critic comparison also runs without the critic and with
+    # the second wording of the correction.
+    for path in report.CRITIC_SETS:
+        for option in ("--no-critic", "--critic-variant plain"):
+            lines = [
+                line
+                for line in commands.splitlines()
+                if option in line
+                and (f"--golden eval/{path.name}" in line or path == report.GOLDEN_SET)
+            ]
+            assert lines, (path.name, option)
 
 
 def test_the_full_evaluation_passes_its_arguments_to_every_run():
@@ -295,3 +306,50 @@ def test_the_full_evaluation_passes_its_arguments_to_every_run():
     # Every run takes `-- --paid`; the report calls no model and takes nothing.
     for line in runs:
         assert ("report.py" in line) or ("{{.CLI_ARGS}}" in line), line
+
+
+# --- The critic of the operations agent -----------------------------------------
+
+
+def critic_result(**changes):
+    counts = {
+        "examples": 6,
+        "task_success": 0.5,
+        "ungrounded_answers": 3,
+        "critic_corrected": 0,
+        "critic_flagged": 0,
+        **changes,
+    }
+    return {"summary_all_splits": {"ops": numbers(**counts)}}
+
+
+def test_the_critic_is_shown_with_and_without_for_each_set():
+    runs = {
+        "Number traps": [
+            (
+                "on",
+                critic_result(
+                    ungrounded_answers=1, critic_corrected=2, critic_flagged=1
+                ),
+            ),
+            ("on, plain", critic_result(ungrounded_answers=0, critic_corrected=3)),
+            ("off", critic_result()),
+        ]
+    }
+
+    text = report.build_report(GOLDEN, BASELINES, INJECTION, critic_runs=runs)
+
+    section = text[text.index("## The critic of the operations agent") :]
+    assert "| Number traps | on | 6 | 50% | 1 | 2 | 1 |" in section
+    assert "| Number traps | on, plain | 6 | 50% | 0 | 3 | 0 |" in section
+    assert "| Number traps | off | 6 | 50% | 3 | 0 | 0 |" in section
+    assert "wrong thing are not seen by it" in section
+
+
+def test_no_critic_section_without_both_runs():
+    assert "The critic of the operations agent" not in report.build_report(
+        GOLDEN, BASELINES, INJECTION
+    )
+    assert "The critic of the operations agent" not in report.build_report(
+        GOLDEN, BASELINES, INJECTION, critic_runs={}
+    )

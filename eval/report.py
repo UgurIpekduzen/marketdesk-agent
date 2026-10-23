@@ -31,6 +31,7 @@ from eval.run_eval import (
     MISINFORMATION_SET,
     MULTI_TURN_ATTACK_SET,
     MULTI_TURN_SET,
+    NUMBER_TRAP_SET,
     RESULTS_DIR,
     result_name,
     show,
@@ -63,6 +64,15 @@ ATTACK_SETS = {
     INTER_AGENT_SET: "Inter-agent messages",
     HUMAN_TRUST_SET: "Human-agent trust",
     MULTI_TURN_ATTACK_SET: "Attacks over several messages",
+}
+
+
+# The sets run with and without the critic of the operations agent:
+# set -> label. Only their operations answers count.
+CRITIC_SETS = {
+    NUMBER_TRAP_SET: "Number traps",
+    GOLDEN_SET: "Golden set",
+    MISINFORMATION_SET: "Misinformation",
 }
 
 
@@ -143,6 +153,41 @@ def attack_set_numbers(result: dict) -> tuple[int, int, int]:
     rate = overall.get("task_success")
     passed = 0 if rate is None else round(rate * examples)
     return examples, passed, overall.get("writes_without_approval", 0)
+
+
+def tokens(value: float | None) -> str:
+    """Tokens of a task as a whole number; a dash when there is none."""
+    return "—" if value is None else f"{value:.0f}"
+
+
+def critic_section(runs: dict[str, list[tuple[str, dict]]]) -> str:
+    """The operations answers with and without the critic, set by set.
+
+    runs maps a label to its runs: (what the critic did in the run, its
+    results), for example ("on", ...), ("on, plain", ...) and ("off", ...).
+    """
+    lines = [
+        (
+            "| Set | Critic | Examples | Task success | Answers with a number no "
+            "tool returned | Corrected | Flagged | Steps | Tokens | p50 s | p95 s |"
+        ),
+        "|---|---|---|---|---|---|---|---|---|---|---|",
+    ]
+    for label, set_runs in runs.items():
+        for name, result in set_runs:
+            ops = result.get("summary_all_splits", {}).get("ops", {})
+            lines.append(
+                f"| {label} | {name} | {ops.get('examples', '—')} "
+                f"| {show(ops.get('task_success'))} "
+                f"| {ops.get('ungrounded_answers', '—')} "
+                f"| {ops.get('critic_corrected', '—')} "
+                f"| {ops.get('critic_flagged', '—')} "
+                f"| {show(ops.get('steps_mean'), percent=False)} "
+                f"| {tokens(ops.get('tokens_mean'))} "
+                f"| {show(ops.get('seconds_p50'), percent=False)} "
+                f"| {show(ops.get('seconds_p95'), percent=False)} |"
+            )
+    return "\n".join(lines)
 
 
 def attack_sets_section(attack_sets: dict[str, dict]) -> str:
@@ -342,6 +387,7 @@ def build_report(
     golden_en: dict | None = None,
     injection_en: dict | None = None,
     attack_sets: dict[str, dict] | None = None,
+    critic_runs: dict[str, list[tuple[str, dict]]] | None = None,
 ) -> str:
     overall = golden.get("summary_all_splits", {}).get("all", {})
     gain = semantic_layer_gain(golden, baselines)
@@ -377,6 +423,19 @@ def build_report(
     ]
     if attack_sets:
         parts.append("## Attack sets\n\n" + attack_sets_section(attack_sets))
+    if critic_runs:
+        parts.append(
+            "## The critic of the operations agent\n\n"
+            + critic_section(critic_runs)
+            + "\n\nThe critic checks in code that every number in an answer is one "
+            "a tool returned; on a miss the model is asked once more, and an answer "
+            'that still holds one is shown with a note. "on" asks for the '
+            "correction in the wording in use, which also tells the model to "
+            'compute a derived value with a query; "on, plain" is the first '
+            "wording, which only asks for the tools' numbers. Only operations "
+            "answers are counted. Numbers in the right amount on the wrong "
+            "thing are not seen by it."
+        )
     if multi:
         parts.append("## Multi-turn conversations\n\n" + multi_turn_section(multi))
     if golden_en:
@@ -431,8 +490,30 @@ def main() -> int:
         for path, label in ATTACK_SETS.items()
         if (result := load(RESULTS_DIR / f"{result_name(path, model)}.json"))
     }
+    critic_runs = {}
+    for path, label in CRITIC_SETS.items():
+        found = [
+            (name, load(RESULTS_DIR / f"{result_name(path, model, **options)}.json"))
+            for name, options in (
+                ("on", {}),
+                ("on, plain", {"variant": "plain"}),
+                ("off", {"critic": False}),
+            )
+        ]
+        found = [(name, result) for name, result in found if result]
+        # A comparison needs the critic on and off.
+        if {"on", "off"} <= {name for name, _ in found}:
+            critic_runs[label] = found
     report = build_report(
-        golden, baselines, injection, check, multi, golden_en, injection_en, attack_sets
+        golden,
+        baselines,
+        injection,
+        check,
+        multi,
+        golden_en,
+        injection_en,
+        attack_sets,
+        critic_runs,
     )
     path = RESULTS_DIR / f"final_report_{name}.md"
     path.write_text(report, encoding="utf-8")
