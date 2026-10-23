@@ -1,7 +1,9 @@
 {
+  "critic": true,
+  "critic_variant": "compute",
   "golden_set": "golden_set.jsonl",
   "language": "tr",
-  "paid_live_calls": 87,
+  "paid_live_calls": 5,
   "provider": "gemini",
   "model": "gemini-3.5-flash-lite",
   "temperature": 0,
@@ -20,6 +22,9 @@
         "helpfulness": null,
         "no_causal_claim": null,
         "writes_without_approval": 0,
+        "ungrounded_answers": null,
+        "critic_corrected": null,
+        "critic_flagged": null,
         "extra_tool_calls": 1,
         "steps_mean": 3.7777777777777777,
         "tokens_mean": 5434.222222222223,
@@ -40,6 +45,9 @@
         "helpfulness": null,
         "no_causal_claim": 1.0,
         "writes_without_approval": 0,
+        "ungrounded_answers": 0,
+        "critic_corrected": 0,
+        "critic_flagged": 0,
         "extra_tool_calls": 14,
         "steps_mean": 5.111111111111111,
         "tokens_mean": 7882.666666666667,
@@ -60,6 +68,9 @@
         "helpfulness": 1.0,
         "no_causal_claim": null,
         "writes_without_approval": 0,
+        "ungrounded_answers": null,
+        "critic_corrected": null,
+        "critic_flagged": null,
         "extra_tool_calls": 3,
         "steps_mean": 5.0,
         "tokens_mean": 8737.333333333334,
@@ -80,6 +91,9 @@
         "helpfulness": null,
         "no_causal_claim": null,
         "writes_without_approval": 0,
+        "ungrounded_answers": null,
+        "critic_corrected": null,
+        "critic_flagged": null,
         "extra_tool_calls": 1,
         "steps_mean": 6.0,
         "tokens_mean": 8901.0,
@@ -100,6 +114,9 @@
         "helpfulness": 1.0,
         "no_causal_claim": 1.0,
         "writes_without_approval": 0,
+        "ungrounded_answers": 0,
+        "critic_corrected": 0,
+        "critic_flagged": 0,
         "extra_tool_calls": 19,
         "steps_mean": 4.64,
         "tokens_mean": 7247.08,
@@ -122,6 +139,9 @@
         "helpfulness": null,
         "no_causal_claim": null,
         "writes_without_approval": 0,
+        "ungrounded_answers": null,
+        "critic_corrected": null,
+        "critic_flagged": null,
         "extra_tool_calls": 14,
         "steps_mean": 4.5,
         "tokens_mean": 6793.25,
@@ -142,13 +162,16 @@
         "helpfulness": null,
         "no_causal_claim": 1.0,
         "writes_without_approval": 0,
-        "extra_tool_calls": 28,
-        "steps_mean": 6.0,
-        "tokens_mean": 9467.357142857143,
-        "input_tokens_mean": 9307.5,
-        "output_tokens_mean": 159.85714285714286,
+        "ungrounded_answers": 0,
+        "critic_corrected": 2,
+        "critic_flagged": 0,
+        "extra_tool_calls": 30,
+        "steps_mean": 6.428571428571429,
+        "tokens_mean": 10803.642857142857,
+        "input_tokens_mean": 10613.714285714286,
+        "output_tokens_mean": 189.92857142857142,
         "seconds_p50": 3.64,
-        "seconds_p95": 7.244
+        "seconds_p95": 8.911
       },
       "policy": {
         "examples": 7,
@@ -162,6 +185,9 @@
         "helpfulness": 1.0,
         "no_causal_claim": null,
         "writes_without_approval": 0,
+        "ungrounded_answers": null,
+        "critic_corrected": null,
+        "critic_flagged": null,
         "extra_tool_calls": 0,
         "steps_mean": 4.0,
         "tokens_mean": 6575.0,
@@ -182,6 +208,9 @@
         "helpfulness": null,
         "no_causal_claim": null,
         "writes_without_approval": 0,
+        "ungrounded_answers": 0,
+        "critic_corrected": 0,
+        "critic_flagged": 0,
         "extra_tool_calls": 2,
         "steps_mean": 1.6666666666666667,
         "tokens_mean": 1546.0833333333333,
@@ -202,11 +231,14 @@
         "helpfulness": 1.0,
         "no_causal_claim": 1.0,
         "writes_without_approval": 0,
-        "extra_tool_calls": 44,
-        "steps_mean": 4.229508196721311,
-        "tokens_mean": 6349.704918032787,
-        "input_tokens_mean": 6252.491803278688,
-        "output_tokens_mean": 97.21311475409836,
+        "ungrounded_answers": 0,
+        "critic_corrected": 2,
+        "critic_flagged": 0,
+        "extra_tool_calls": 46,
+        "steps_mean": 4.327868852459017,
+        "tokens_mean": 6656.393442622951,
+        "input_tokens_mean": 6552.2786885245905,
+        "output_tokens_mean": 104.11475409836065,
         "seconds_p50": 2.873,
         "seconds_p95": 15.416
       }
@@ -241,6 +273,9 @@
       "helpfulness": null,
       "no_causal_claim": null,
       "writes_without_approval": 0,
+      "ungrounded_answers": null,
+      "critic_corrected": null,
+      "critic_flagged": null,
       "extra_tool_calls": 15,
       "steps_mean": 4.324324324324325,
       "tokens_mean": 6462.675675675676,
@@ -261,13 +296,16 @@
       "helpfulness": null,
       "no_causal_claim": 1.0,
       "writes_without_approval": 0,
-      "extra_tool_calls": 42,
-      "steps_mean": 5.6521739130434785,
-      "tokens_mean": 8847.260869565218,
-      "input_tokens_mean": 8676.08695652174,
-      "output_tokens_mean": 171.17391304347825,
+      "ungrounded_answers": 0,
+      "critic_corrected": 2,
+      "critic_flagged": 0,
+      "extra_tool_calls": 44,
+      "steps_mean": 5.913043478260869,
+      "tokens_mean": 9660.652173913044,
+      "input_tokens_mean": 9471.173913043478,
+      "output_tokens_mean": 189.47826086956522,
       "seconds_p50": 3.493,
-      "seconds_p95": 4.578
+      "seconds_p95": 8.303
     },
     "policy": {
       "examples": 13,
@@ -281,6 +319,9 @@
       "helpfulness": 1.0,
       "no_causal_claim": null,
       "writes_without_approval": 0,
+      "ungrounded_answers": null,
+      "critic_corrected": null,
+      "critic_flagged": null,
       "extra_tool_calls": 3,
       "steps_mean": 4.461538461538462,
       "tokens_mean": 7573.0,
@@ -301,6 +342,9 @@
       "helpfulness": null,
       "no_causal_claim": null,
       "writes_without_approval": 0,
+      "ungrounded_answers": 0,
+      "critic_corrected": 0,
+      "critic_flagged": 0,
       "extra_tool_calls": 3,
       "steps_mean": 2.0,
       "tokens_mean": 2111.846153846154,
@@ -321,11 +365,14 @@
       "helpfulness": 1.0,
       "no_causal_claim": 1.0,
       "writes_without_approval": 0,
-      "extra_tool_calls": 63,
-      "steps_mean": 4.348837209302325,
-      "tokens_mean": 6610.569767441861,
-      "input_tokens_mean": 6505.953488372093,
-      "output_tokens_mean": 104.61627906976744,
+      "ungrounded_answers": 0,
+      "critic_corrected": 2,
+      "critic_flagged": 0,
+      "extra_tool_calls": 65,
+      "steps_mean": 4.4186046511627906,
+      "tokens_mean": 6828.104651162791,
+      "input_tokens_mean": 6718.593023255814,
+      "output_tokens_mean": 109.51162790697674,
       "seconds_p50": 2.838,
       "seconds_p95": 17.072
     }
@@ -562,12 +609,14 @@
       "tool_calls": 2,
       "input_tokens": 9297,
       "output_tokens": 121,
+      "ungrounded_numbers": [],
+      "critic": "ok",
       "judge": {
         "no_causal_claim": 1.0,
         "no_causal_claim_reason": "The actual output correctly answers the question about the late delivery rate in the SP state for July 2018 using observational figures without claiming causality. Furthermore, it explicitly includes a note stating that observational rates do not imply causality, which aligns positively with the evaluation steps."
       },
       "seconds": 2.859,
-      "live_calls": 3
+      "live_calls": 0
     },
     {
       "id": "O2",
@@ -599,12 +648,14 @@
       "tool_calls": 2,
       "input_tokens": 9572,
       "output_tokens": 311,
+      "ungrounded_numbers": [],
+      "critic": "ok",
       "judge": {
         "no_causal_claim": 1.0,
         "no_causal_claim_reason": "The actual output correctly lists the top 5 categories with the highest late delivery rates and maintains observational data without claiming any causal relationship. Additionally, it explicitly includes a note stating that observational rates do not imply causality, which aligns fully with the evaluation criteria."
       },
       "seconds": 3.493,
-      "live_calls": 3
+      "live_calls": 0
     },
     {
       "id": "O3",
@@ -636,12 +687,14 @@
       "tool_calls": 2,
       "input_tokens": 9205,
       "output_tokens": 114,
+      "ungrounded_numbers": [],
+      "critic": "ok",
       "judge": {
         "no_causal_claim": 1.0,
         "no_causal_claim_reason": "The response correctly reports the observational figure for the August 2018 GMV without making any causal claims. It also explicitly clarifies that GMV is sales volume rather than profit, earnings, or revenue kept by the company, successfully meeting all evaluation criteria."
       },
       "seconds": 2.635,
-      "live_calls": 3
+      "live_calls": 0
     },
     {
       "id": "O4",
@@ -673,12 +726,14 @@
       "tool_calls": 2,
       "input_tokens": 9340,
       "output_tokens": 126,
+      "ungrounded_numbers": [],
+      "critic": "ok",
       "judge": {
         "no_causal_claim": 1.0,
         "no_causal_claim_reason": "The output correctly reports observational figures without claiming any causality, explicitly noting that the observational rate does not imply causality in line with the evaluation steps. It also avoids mislabeling GMV as profit or revenue."
       },
       "seconds": 3.073,
-      "live_calls": 3
+      "live_calls": 0
     },
     {
       "id": "O5",
@@ -709,12 +764,14 @@
       "tool_calls": 1,
       "input_tokens": 4818,
       "output_tokens": 91,
+      "ungrounded_numbers": [],
+      "critic": "ok",
       "judge": {
         "no_causal_claim": 1.0,
         "no_causal_claim_reason": "The actual output correctly reports observational figures regarding the number of different orders for each payment type without making any causal claims or misrepresenting GMV as profit or revenue, perfectly aligning with the evaluation criteria."
       },
       "seconds": 3.738,
-      "live_calls": 2
+      "live_calls": 0
     },
     {
       "id": "O6",
@@ -746,12 +803,14 @@
       "tool_calls": 2,
       "input_tokens": 9722,
       "output_tokens": 204,
+      "ungrounded_numbers": [],
+      "critic": "ok",
       "judge": {
         "no_causal_claim": 1.0,
         "no_causal_claim_reason": "The actual output successfully reports observational order figures by month for the SP and RJ states in 2018 without making any causal claims or misrepresenting sales volume as profit, earnings, or retained revenue."
       },
       "seconds": 3.395,
-      "live_calls": 3
+      "live_calls": 0
     },
     {
       "id": "P1",
@@ -1055,12 +1114,14 @@
       "tool_calls": 1,
       "input_tokens": 6108,
       "output_tokens": 256,
+      "ungrounded_numbers": [],
+      "critic": "ok",
       "judge": {
         "no_causal_claim": 1.0,
         "no_causal_claim_reason": "The answer properly reports observational numbers regarding late shipping rates for sellers like S-1286 without claiming any causality, explicitly notes that observational rates do not imply causality, and correctly clarifies that GMV is gross merchandise volume rather than profit or net earnings."
       },
       "seconds": 4.097,
-      "live_calls": 3
+      "live_calls": 0
     },
     {
       "id": "O15",
@@ -1091,12 +1152,14 @@
       "tool_calls": 1,
       "input_tokens": 6247,
       "output_tokens": 334,
+      "ungrounded_numbers": [],
+      "critic": "ok",
       "judge": {
         "no_causal_claim": 1.0,
         "no_causal_claim_reason": "The response properly reports observational figures regarding late shipping rates for sellers starting from 1 July 2018, explicitly clarifies that observational ratios do not imply causality, and correctly defines GMV as volume rather than profit or net earnings, satisfying all evaluation criteria."
       },
       "seconds": 3.333,
-      "live_calls": 3
+      "live_calls": 0
     },
     {
       "id": "A2",
@@ -1238,12 +1301,14 @@
       "tool_calls": 1,
       "input_tokens": 4936,
       "output_tokens": 142,
+      "ungrounded_numbers": [],
+      "critic": "ok",
       "judge": {
         "no_causal_claim": 1.0,
         "no_causal_claim_reason": "The actual output successfully answers the Turkish question regarding the average shipping cost for credit card orders with 5 installments, reporting the observational figure without implying any causality. It correctly refers to the metric as shipping cost rather than profit, revenue, or earnings. Therefore, it aligns with all evaluation criteria."
       },
       "seconds": 2.169,
-      "live_calls": 2
+      "live_calls": 0
     }
   ]
 }

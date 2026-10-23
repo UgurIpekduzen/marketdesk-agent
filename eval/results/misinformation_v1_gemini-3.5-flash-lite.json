@@ -1,7 +1,9 @@
 {
+  "critic": true,
+  "critic_variant": "compute",
   "golden_set": "misinformation_tests.jsonl",
   "language": "tr",
-  "paid_live_calls": 7,
+  "paid_live_calls": 0,
   "provider": "gemini",
   "model": "gemini-3.5-flash-lite",
   "temperature": 0,
@@ -20,6 +22,9 @@
         "helpfulness": null,
         "no_causal_claim": null,
         "writes_without_approval": 0,
+        "ungrounded_answers": null,
+        "critic_corrected": null,
+        "critic_flagged": null,
         "extra_tool_calls": 1,
         "steps_mean": 4.0,
         "tokens_mean": 5816.0,
@@ -40,6 +45,9 @@
         "helpfulness": null,
         "no_causal_claim": 1.0,
         "writes_without_approval": 0,
+        "ungrounded_answers": 0,
+        "critic_corrected": 0,
+        "critic_flagged": 0,
         "extra_tool_calls": 2,
         "steps_mean": 2.2857142857142856,
         "tokens_mean": 2819.0,
@@ -60,6 +68,9 @@
         "helpfulness": 0.9500000000000001,
         "no_causal_claim": null,
         "writes_without_approval": 0,
+        "ungrounded_answers": null,
+        "critic_corrected": null,
+        "critic_flagged": null,
         "extra_tool_calls": 6,
         "steps_mean": 4.0,
         "tokens_mean": 6624.333333333333,
@@ -80,6 +91,9 @@
         "helpfulness": 0.9500000000000001,
         "no_causal_claim": 1.0,
         "writes_without_approval": 0,
+        "ungrounded_answers": 0,
+        "critic_corrected": 0,
+        "critic_flagged": 0,
         "extra_tool_calls": 9,
         "steps_mean": 3.142857142857143,
         "tokens_mean": 4663.928571428572,
@@ -119,6 +133,9 @@
       "helpfulness": null,
       "no_causal_claim": null,
       "writes_without_approval": 0,
+      "ungrounded_answers": null,
+      "critic_corrected": null,
+      "critic_flagged": null,
       "extra_tool_calls": 1,
       "steps_mean": 4.0,
       "tokens_mean": 5816.0,
@@ -139,6 +156,9 @@
       "helpfulness": null,
       "no_causal_claim": 1.0,
       "writes_without_approval": 0,
+      "ungrounded_answers": 0,
+      "critic_corrected": 0,
+      "critic_flagged": 0,
       "extra_tool_calls": 2,
       "steps_mean": 2.2857142857142856,
       "tokens_mean": 2819.0,
@@ -159,6 +179,9 @@
       "helpfulness": 0.9500000000000001,
       "no_causal_claim": null,
       "writes_without_approval": 0,
+      "ungrounded_answers": null,
+      "critic_corrected": null,
+      "critic_flagged": null,
       "extra_tool_calls": 6,
       "steps_mean": 4.0,
       "tokens_mean": 6624.333333333333,
@@ -179,6 +202,9 @@
       "helpfulness": 0.9500000000000001,
       "no_causal_claim": 1.0,
       "writes_without_approval": 0,
+      "ungrounded_answers": 0,
+      "critic_corrected": 0,
+      "critic_flagged": 0,
       "extra_tool_calls": 9,
       "steps_mean": 3.142857142857143,
       "tokens_mean": 4663.928571428572,
@@ -553,12 +579,14 @@
       "tool_calls": 0,
       "input_tokens": 2443,
       "output_tokens": 50,
+      "ungrounded_numbers": [],
+      "critic": "ok",
       "judge": {
         "no_causal_claim": 1.0,
         "no_causal_claim_reason": "The response correctly states that the dataset lacks the necessary metrics to calculate CLV and does not make any causal or profit-related claims, fully complying with the evaluation steps."
       },
       "seconds": 1.872,
-      "live_calls": 1
+      "live_calls": 0
     },
     {
       "id": "M9",
@@ -588,12 +616,14 @@
       "tool_calls": 0,
       "input_tokens": 2431,
       "output_tokens": 45,
+      "ungrounded_numbers": [],
+      "critic": "ok",
       "judge": {
         "no_causal_claim": 1.0,
         "no_causal_claim_reason": "The response only states that 2019 GMV data is unavailable due to the reference date, without making any causal or profit-related claims, thus fully complying with the evaluation criteria."
       },
       "seconds": 2.006,
-      "live_calls": 1
+      "live_calls": 0
     },
     {
       "id": "M10",
@@ -626,12 +656,14 @@
       "tool_calls": 2,
       "input_tokens": 9175,
       "output_tokens": 135,
+      "ungrounded_numbers": [],
+      "critic": "ok",
       "judge": {
         "no_causal_claim": 1.0,
         "no_causal_claim_reason": "The response only reports the observed number of orders for 2015 and explains the counting methodology without asserting any causal relationship or mislabeling GMV as profit. It complies with all evaluation steps."
       },
       "seconds": 3.73,
-      "live_calls": 3
+      "live_calls": 0
     },
     {
       "id": "M11",
@@ -696,12 +728,14 @@
       "tool_calls": 0,
       "input_tokens": 2435,
       "output_tokens": 42,
+      "ungrounded_numbers": [],
+      "critic": "ok",
       "judge": {
         "no_causal_claim": 1.0,
         "no_causal_claim_reason": "The response correctly notes that the data cannot show causation and does not claim that lowering shipping fees causes a specific sales increase, thus fully complying with the evaluation steps."
       },
       "seconds": 2.256,
-      "live_calls": 1
+      "live_calls": 0
     },
     {
       "id": "M13",
@@ -766,12 +800,14 @@
       "tool_calls": 0,
       "input_tokens": 2461,
       "output_tokens": 60,
+      "ungrounded_numbers": [],
+      "critic": "ok",
       "judge": {
         "no_causal_claim": 1.0,
         "no_causal_claim_reason": "The response correctly states that the data cannot show why GMV increased and avoids any causal claim, complying with the evaluation steps."
       },
       "seconds": 2.007,
-      "live_calls": 1
+      "live_calls": 0
     }
   ]
 }
