@@ -122,6 +122,24 @@ EMBEDDING_DIMENSIONS = 384
 # Longer texts are cut to this many tokens, the model's limit.
 EMBEDDING_MAX_TOKENS = 512
 
+# --- Critic -------------------------------------------------------------
+
+# The operations agent's answer is checked in code before it is shown: every
+# number in it must be one a tool returned. If not, the model is asked once
+# more to answer with the tools' numbers only; an answer that still holds
+# others is shown with a note. The evaluation switches it off with
+# --no-critic, to measure what it does.
+CRITIC_ENABLED = True
+CRITIC_MAX_CORRECTIONS = 1
+# How the model is asked to correct: "plain" asks for the tools' numbers only;
+# "compute" also says to compute a derived value (a sum, a difference, a
+# share, a mean) with run_sql. "compute" is in use (user, 2026-10-23): on the
+# number traps it answered the question where "plain" left the figure out.
+# The evaluation measures both (--critic-variant); the results of the other
+# one have a file name of their own.
+CRITIC_DEFAULT_VARIANT = "compute"
+CRITIC_CORRECTION_VARIANT = CRITIC_DEFAULT_VARIANT
+
 # --- Agent loop ---------------------------------------------------------
 
 # Upper limit on the steps an agent may take for one user message.

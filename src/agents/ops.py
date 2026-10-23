@@ -16,6 +16,7 @@ is decided in code:
 
 import inspect
 import json
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -26,6 +27,8 @@ from llama_index.core.tools import FunctionTool
 from llama_index.core.workflow import Context
 
 import config
+from src import messages, tracing
+from src.agents import critic
 from src.agents.loop_guard import LoopGuard
 from src.agents.run_log import RunLog
 from src.agents.runner import run_agent
@@ -44,6 +47,8 @@ from src.knowledge.safe_views import ALLOWED_VIEWS
 from src.knowledge.seller_report import build_seller_report
 from src.knowledge.semantic_layer import list_metrics, load_semantic_layer, run_metric
 from src.knowledge.sql_runner import connect_read_only, run_sql
+
+logger = logging.getLogger(__name__)
 
 AGENT_NAME = "ops"
 
@@ -179,6 +184,9 @@ class Reply:
     computations: list[dict] = field(default_factory=list)
     # The session's language: how the sources under the answer are written.
     language: Language = DEFAULT_LANGUAGE
+    # What the critic made of the numbers: ok, corrected or flagged; None when
+    # it did not look.
+    critic: str | None = None
 
     @property
     def display(self) -> str:
@@ -247,9 +255,12 @@ class OpsAgent:
         db_path: Path | str,
         provider_llm: FunctionCallingLLM | None = None,
         language: Language = DEFAULT_LANGUAGE,
+        use_critic: bool | None = None,
     ) -> None:
         self._db_path = db_path
         self._language = Language(language)
+        # The setting is read here, so a run can switch the critic off.
+        self._use_critic = config.CRITIC_ENABLED if use_critic is None else use_critic
         # Read-only: this agent cannot write, whatever the model asks for.
         self._conn = connect_read_only(db_path)
         self._guard = LoopGuard()
@@ -458,6 +469,16 @@ class OpsAgent:
 
         text, log = await run_agent(self._agent, self._context, message)
 
+        status = None
+        gave_up = self._sql_limit.exhausted and not self._answered_after_limit
+        if (
+            self._use_critic
+            and not gave_up
+            and not log.stopped_at_step_limit
+            and text != messages.EMPTY_REPLY
+        ):
+            text, status = await self._review(message, text, log)
+
         if self._sql_limit.exhausted and not self._answered_after_limit:
             # Decided here, not by the model: the corrections are used up.
             return Reply(
@@ -475,4 +496,30 @@ class OpsAgent:
             table=self._table,
             computations=list(self._computations),
             language=self._language,
+            critic=status,
         )
+
+    async def _review(self, question: str, text: str, log: RunLog) -> tuple[str, str]:
+        """The critic: check the numbers of the answer, ask for a correction
+        a limited number of times, and note what could not be traced.
+
+        Returns the text to show and the status. The cost of a correction is
+        added to the run's log.
+        """
+        numbers = critic.unsupported(text, log.tool_results, question)
+        status = critic.OK
+        for _ in range(config.CRITIC_MAX_CORRECTIONS if numbers else 0):
+            asked = critic.correction_request(numbers)
+            text, correction = await run_agent(self._agent, self._context, asked)
+            log.absorb(correction)
+            numbers = critic.unsupported(text, log.tool_results, question)
+            status = critic.CORRECTED
+            if not numbers:
+                break
+        if numbers:
+            status = critic.FLAGGED
+            text = f"{text}\n\n{catalog(self._language).CRITIC_NOTE}"
+        # Counts and a code only: the numbers themselves stay in the answer.
+        logger.info("critic status=%s unsupported=%d", status, len(numbers))
+        tracing.mark(critic=status)
+        return text, status

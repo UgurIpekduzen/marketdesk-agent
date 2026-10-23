@@ -97,6 +97,8 @@ MODEL_ONLY = frozenset(
         "SQL_ERROR",
         "SQL_TIMEOUT",
         "EMPTY_POLICY_QUERY",
+        "CRITIC_CORRECTION",
+        "CRITIC_CORRECTION_COMPUTE",
     }
 )
 
@@ -113,6 +115,29 @@ STEP_LIMIT_REACHED = (
     "ya da konunun bir müşteri temsilcisine aktarılmasını isteyebilirsiniz."
 )
 EMPTY_REPLY = "Şu anda bir cevap oluşturamadım. Lütfen sorunuzu yeniden yazın."
+
+# The critic of the operations agent. The correction request goes to the
+# model, so it is model-only; the note is shown under an answer whose
+# numbers could not all be traced to a tool's output.
+CRITIC_CORRECTION = (
+    "Cevabındaki şu sayılar araçların sonuçlarında yok: {numbers}. Cevabı "
+    "yeniden yaz ve yalnızca araçların döndürdüğü sayıları kullan. Gerekli bir "
+    "değer sonuçlarda yoksa onu bir araçla getir; getiremiyorsan sayıyı "
+    "yazma, bunu söyle."
+)
+# The wording in use (config.CRITIC_DEFAULT_VARIANT): a derived value is to
+# be computed with a query instead of left out. CRITIC_CORRECTION above is the
+# first wording, kept to measure against.
+CRITIC_CORRECTION_COMPUTE = (
+    "Cevabındaki şu sayılar araçların sonuçlarında yok: {numbers}. Cevabı "
+    "yeniden yaz ve yalnızca araçların döndürdüğü sayıları kullan. Toplam, "
+    "fark, oran ya da ortalama gibi hesaplanmış bir değer gerekiyorsa onu "
+    "run_sql ile hesapla; hesaplayamıyorsan sayıyı yazma, bunu söyle."
+)
+CRITIC_NOTE = (
+    "Not: cevaptaki bazı sayılar bu sorgunun sonuçlarında bulunamadı. "
+    "Kullanmadan önce kontrol edin."
+)
 
 RETURN_REASON_LABELS = {
     "changed_mind": "vazgeçme",

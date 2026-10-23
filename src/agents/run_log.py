@@ -91,6 +91,17 @@ class RunLog:
             result = content
         self.tool_results.append((tool_name, result))
 
+    def absorb(self, other: "RunLog") -> None:
+        """Add the cost of a second run made for the same message."""
+        self.llm_calls += other.llm_calls
+        self.tool_calls += other.tool_calls
+        self.tool_arguments += other.tool_arguments
+        self.tool_results += other.tool_results
+        self.input_tokens += other.input_tokens
+        self.output_tokens += other.output_tokens
+        self.stopped_at_step_limit |= other.stopped_at_step_limit
+        self.unknown_tools += other.unknown_tools
+
     def write(self, agent: str, customer_unique_id: str | None) -> None:
         """Log the run as one line."""
         logger.info(

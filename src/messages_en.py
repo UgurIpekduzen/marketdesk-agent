@@ -24,6 +24,13 @@ STEP_LIMIT_REACHED = (
 )
 EMPTY_REPLY = "I could not write an answer just now. Please write your question again."
 
+# Shown under an answer of the operations agent whose numbers could not all
+# be traced to a tool's output (the critic).
+CRITIC_NOTE = (
+    "Note: some numbers in the answer were not found in the results of this "
+    "query. Check them before you use them."
+)
+
 RETURN_REASON_LABELS = {
     "changed_mind": "changed my mind",
     "late": "late delivery",
