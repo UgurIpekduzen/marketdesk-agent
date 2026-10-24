@@ -129,6 +129,10 @@ def check_tree(
     for function in tree.find_all(exp.Anonymous):
         if function.name.lower() not in ALLOWED_EXTRA_FUNCTIONS:
             raise SqlRejected("FUNCTION_NOT_ALLOWED", function.name)
+    # Known to the parser, so not caught above, and not for a reader of data:
+    # it tells the version of the engine.
+    if tree.find(exp.CurrentVersion):
+        raise SqlRejected("FUNCTION_NOT_ALLOWED", "sqlite_version")
 
     check_no_fan_out(tree)
 
