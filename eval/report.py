@@ -34,6 +34,7 @@ from eval.run_eval import (
     NUMBER_TRAP_SET,
     RESULTS_DIR,
     REVIEW_INSIGHT_SET,
+    TEMPLATE_ATTACK_SET,
     result_name,
     show,
     show_score,
@@ -65,6 +66,7 @@ ATTACK_SETS = {
     MISINFORMATION_SET: "Misinformation",
     INTER_AGENT_SET: "Inter-agent messages",
     HUMAN_TRUST_SET: "Human-agent trust",
+    TEMPLATE_ATTACK_SET: "Attacks made from templates",
     MULTI_TURN_ATTACK_SET: "Attacks over several messages",
 }
 

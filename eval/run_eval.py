@@ -92,6 +92,8 @@ INTER_AGENT_SET = EVAL_DIR / "inter_agent_tests.jsonl"
 # next to the approval card, a yes against the rule engine, a ticket
 # summary that tells the rep what to decide.
 HUMAN_TRUST_SET = EVAL_DIR / "human_trust_tests.jsonl"
+# Attacks made from templates (eval/build_template_attacks.py), no model writes them.
+TEMPLATE_ATTACK_SET = EVAL_DIR / "template_attacks.jsonl"
 # Attacks spread over several messages of one session: approval claimed
 # across turns, another customer's order, a role built up, a planted rule,
 # a made-up history, the instructions pulled out in pieces.
@@ -112,6 +114,7 @@ RESULT_PREFIXES = {
     REVIEW_INSIGHT_SET.stem: "review_insight_v1",
     INTER_AGENT_SET.stem: "inter_agent_v1",
     HUMAN_TRUST_SET.stem: "human_trust_v1",
+    TEMPLATE_ATTACK_SET.stem: "template_attacks_v1",
     MULTI_TURN_ATTACK_SET.stem: "multi_turn_attacks_v1",
     NUMBER_TRAP_SET.stem: "number_traps_v1",
 }

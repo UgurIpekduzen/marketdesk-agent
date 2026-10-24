@@ -263,6 +263,7 @@ tasks:
       - "{{.RUN}} uv run python eval/run_eval.py --golden eval/inter_agent_tests.jsonl {{.CLI_ARGS}}"
       - "{{.RUN}} uv run python eval/run_eval.py --golden eval/human_trust_tests.jsonl {{.CLI_ARGS}}"
       - "{{.RUN}} uv run python eval/run_eval.py --golden eval/multi_turn_attacks.jsonl {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python eval/run_eval.py --golden eval/template_attacks.jsonl {{.CLI_ARGS}}"
       - "{{.RUN}} uv run python eval/run_eval.py --golden eval/review_insight_tests.jsonl --judge --independent-judge {{.CLI_ARGS}}"
       - "{{.RUN}} uv run python eval/run_eval.py --golden eval/number_traps.jsonl {{.CLI_ARGS}}"
       - "{{.RUN}} uv run python eval/run_eval.py --golden eval/number_traps.jsonl --no-critic {{.CLI_ARGS}}"
@@ -292,6 +293,11 @@ tasks:
     desc: Break each guard on purpose and check that the tests notice (no model calls); `-- --live` also runs the attack sets with the model on each broken guard (uses LLM quota, `-- --live --paid` to finish on the paid key); `-- --list` names the guards
     cmds:
       - "{{.RUN}} uv run python eval/mutations.py {{.CLI_ARGS}}"
+
+  eval:build-templates:
+    desc: Write eval/template_attacks.jsonl, attacks made from templates (a payload, a framing, an encoding and a language crossed with a fixed seed; no model calls)
+    cmds:
+      - "{{.RUN}} uv run python eval/build_template_attacks.py"
 
   eval:judge-check:
     desc: Write the sheet for checking the judge's scores by hand; `-- --agreement` counts the filled-in sheet
