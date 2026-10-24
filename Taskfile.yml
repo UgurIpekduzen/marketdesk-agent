@@ -288,6 +288,11 @@ tasks:
     cmds:
       - "{{.RUN}} uv run python eval/build_english_sets.py"
 
+  eval:mutations:
+    desc: Break each guard on purpose and check that the tests notice (no model calls); `-- --live` also runs the attack sets with the model on each broken guard (uses LLM quota, `-- --live --paid` to finish on the paid key); `-- --list` names the guards
+    cmds:
+      - "{{.RUN}} uv run python eval/mutations.py {{.CLI_ARGS}}"
+
   eval:judge-check:
     desc: Write the sheet for checking the judge's scores by hand; `-- --agreement` counts the filled-in sheet
     cmds:
