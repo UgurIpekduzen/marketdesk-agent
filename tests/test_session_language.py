@@ -25,9 +25,11 @@ from tests.synthetic_data import ALICE
 
 # sha256 of the Turkish prompts as they were before the language was added.
 # A change here changes every request to the model and empties the
-# evaluation's cache.
+# evaluation's cache. Changed on purpose to try three sentences (a request
+# asked with a question is opened, an uncovered topic ends with the offer of a
+# human, a section's executor is named).
 TURKISH_SUPPORT_PROMPT = (
-    "a82a9c2ddb1fc5268020264a8fc76015ef93c4123e4fe72c61a95bc03ad7ccc2"
+    "fdd8db15b1a51f5a829d8e0e890843e94d3a25d04c76ace57b07379f752f99ca"
 )
 # Changed on purpose when the seller report tool was added (one sentence in
 # step 2); the ops answers in the evaluation's cache were emptied with it.
