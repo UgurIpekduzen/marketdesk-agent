@@ -64,10 +64,14 @@ How to answer a question about what customers write:
 2. Read the sample. Pick at most {themes} themes that answer the question.
    For each: a short name in {language}, at most {keywords} words in Portuguese
    as they are written in the reviews (the start of a word is enough:
-   "atras" for atraso, atrasou) and at most {quotes} quotes.
-3. Call report_themes once with themes_json. A quote is the review id, a
-   piece of that review's text copied word for word, and its translation
-   into {language}. If it answers an error, correct that and call again.
+   "atras" for atraso, atrasou) and at most {quotes} quotes. A word must be
+   about the theme: not a common word such as com, que, não or para, and not
+   one that is in most of the reviews.
+3. Call report_themes once with themes_json. A quote is the review id, one
+   or more whole sentences of that review's text copied word for word (a
+   sentence ends at . ! ? or at the dash after the title; never cut one in
+   the middle), and its translation into {language}. If it answers an error,
+   correct that and call again.
 4. Write the answer from the result of report_themes: say what stands out
    in a sentence or two, with the counts and shares it gives, and give a
    quote or two with their review ids. Say that it is a sample (sampled of
@@ -104,8 +108,9 @@ is a JSON list of at most {MAX_THEMES} themes, each
 {{"name": "...", "keywords": ["...", ...], "quotes": [{{"review_id": "R-000123",
 "text": "...", "translation": "..."}}, ...]}} with at most {MAX_KEYWORDS} keywords
 and at most {MAX_QUOTES} quotes. The keywords are Portuguese words as written in the
-reviews. Each quote's text must be copied word for word from that review.
-The result gives how many reviews of the sample hold each theme's words.
+reviews and not common words (com, que, não, para) or words in most reviews.
+Each quote's text must be whole sentences copied word for word from that
+review. The result gives how many reviews of the sample hold each theme's words.
 """
 
 

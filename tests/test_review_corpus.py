@@ -25,7 +25,7 @@ REVIEWS = [
         "o_late_10",
         2,
         "",
-        "Demorou muito para chegar, atraso de dez dias.",
+        "Demorou muito para chegar. Atraso de dez dias.",
         "2018-08-26 00:00:00",
     ),
     (

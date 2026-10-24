@@ -1323,7 +1323,7 @@ def add_reviews(path):
                     "r2",
                     "o_late_10",
                     2,
-                    "Demorou muito, atraso de dez dias.",
+                    "Demorou muito. Atraso de dez dias.",
                     "2018-08-26",
                 ),
                 ("r3", "o_day15", 1, "Atrasou e ninguém respondeu.", "2018-08-20"),
