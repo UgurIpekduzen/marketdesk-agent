@@ -89,6 +89,24 @@ def test_the_turkish_and_the_english_way_of_writing_a_number_are_both_read(text)
     assert critic.unsupported(text, results, "GMV?") == []
 
 
+def test_the_number_of_rows_a_result_holds_is_a_number_the_tool_returned():
+    rows = [[f"S-{n:04d}", 500 + n] for n in range(1, 21)]
+    results = [("seller_report", {"rows": rows})]
+
+    assert (
+        critic.unsupported("The lowest of the top 20 shown is 501.", results, "") == []
+    )
+    # A different count is not supported: only 20 rows came back.
+    assert critic.unsupported("The top 25 are shown.", results, "") == ["25"]
+    assert critic.unsupported("The top 19 are shown.", results, "") == ["19"]
+
+
+def test_a_result_without_rows_adds_no_count():
+    results = [("run_metric", {"caveat": "Not.", "value": 7})]
+
+    assert critic.unsupported("There are 3 rows.", results, "") == ["3"]
+
+
 def test_a_sellers_pseudonym_is_a_name_not_a_number():
     results = [("seller_report", {"rows": [["S-1286", 34, 82.35]]})]
     text = "S-1286 en yüksek orana sahip (%82,35, 34 kalem); S-1397 en düşük."

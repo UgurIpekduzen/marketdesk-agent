@@ -2,7 +2,7 @@
 
 A check in code, no model: every number the answer states must be a number
 some tool returned for this question (rounded as written, or a share
-written as a percentage), apart from dates, years, citations and numbers
+written as a percentage, or the number of rows a result holds), apart from dates, years, citations and numbers
 the question itself holds. The check is `src.grounding.ungrounded_numbers`,
 the one the evaluation scores answers with.
 

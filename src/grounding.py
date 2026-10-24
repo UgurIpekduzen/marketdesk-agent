@@ -88,7 +88,11 @@ def number_readings(token: str) -> set[tuple[float, int, float]]:
 
 
 def tool_numbers(tool_results: list[tuple[str, object]]) -> list[float]:
-    """Every number in the tool results, at any depth, also in strings."""
+    """Every number in the tool results, at any depth, also in strings.
+
+    The number of rows a result holds counts too: "the top 20" of a table of
+    20 rows states what the tool returned, though no field says 20.
+    """
     found: list[float] = []
 
     def walk(value: object) -> None:
@@ -99,6 +103,8 @@ def tool_numbers(tool_results: list[tuple[str, object]]) -> list[float]:
         elif isinstance(value, str):
             found.extend(float(x) for x in re.findall(r"-?\d+(?:\.\d+)?", value))
         elif isinstance(value, dict):
+            if isinstance(value.get("rows"), list):
+                found.append(float(len(value["rows"])))
             for item in value.values():
                 walk(item)
         elif isinstance(value, list | tuple):
