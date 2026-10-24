@@ -17,7 +17,7 @@ import hashlib
 import json
 import logging
 import time
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -114,6 +114,10 @@ class CachedLLM(FunctionCallingLLM):
     # Live calls this cache may make; None for no limit. Set for a run on
     # the paid key, so that nothing can run up the bill.
     max_live_calls: int | None = None
+    # Decides from the text of an answer whether it is kept for next time.
+    # An answer it refuses is returned but not stored, so asking again asks the
+    # provider again (a refusal kept would be the answer for ever).
+    keep: Callable[[str], bool] | None = Field(default=None, exclude=True)
 
     @classmethod
     def class_name(cls) -> str:
@@ -177,7 +181,8 @@ class CachedLLM(FunctionCallingLLM):
                 "output_tokens": output_tokens,
                 "seconds": round(time.perf_counter() - started, 3),
             }
-            self._store(key, entry)
+            if self.keep is None or self.keep(response.message.content or ""):
+                self._store(key, entry)
             self.live_calls += 1
         else:
             self.hits += 1

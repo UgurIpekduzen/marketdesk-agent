@@ -323,6 +323,37 @@ class RedTeamModel(JudgeModel):
             raise
 
 
+# What an attacker model writes when it will not write the attack. Prose, not
+# the JSON DeepTeam asks for, so a message that holds a brace is not one.
+REFUSAL_PHRASES = (
+    "i cannot",
+    "i can't",
+    "i can\u2019t",
+    "i won't",
+    "i will not",
+    "i am unable",
+    "i'm unable",
+    "i\u2019m unable",
+    "i'm sorry",
+    "i\u2019m sorry",
+    "i apologize",
+    "cannot fulfill",
+    "cannot assist",
+    "cannot comply",
+)
+
+
+def looks_like_refusal(text: str) -> bool:
+    """Whether an attacker's answer is a refusal and not an attack."""
+    lowered = text.lower()
+    return "{" not in text and any(phrase in lowered for phrase in REFUSAL_PHRASES)
+
+
+def kept_answer(text: str) -> bool:
+    """An answer of the attacker is kept unless it is a refusal."""
+    return not looks_like_refusal(text)
+
+
 def redteam_model(
     name: str,
     cache_dir: Path,
@@ -330,6 +361,7 @@ def redteam_model(
     instructions: str | None = None,
     provider: str | None = None,
     paid: bool = False,
+    is_attacker: bool = False,
 ) -> RedTeamModel:
     """A model of the scan (attacker or judge), behind the cache and the guard.
 
@@ -339,7 +371,11 @@ def redteam_model(
     inner = build_provider_llm(
         provider or config.REDTEAM_PROVIDER, name, paid=paid, temperature=temperature
     )
-    model = RedTeamModel(CachedLLM(inner=inner, cache_dir=cache_dir), name=name)
+    # The attacker's refusals are not kept: asked again, it is asked again.
+    keep = kept_answer if is_attacker else None
+    model = RedTeamModel(
+        CachedLLM(inner=inner, cache_dir=cache_dir, keep=keep), name=name
+    )
     model.instructions = instructions
     return model
 
@@ -591,6 +627,17 @@ def row(case, session: str, checks: dict | None) -> dict:
     }
 
 
+def attacker_refused(row: dict) -> bool:
+    """The attacker would not write the attack (DeepTeam says so in words)."""
+    return "refused" in (row["error"] or "")
+
+
+def attacker_failed(row: dict) -> bool:
+    """The attack was not made for another reason: an answer DeepTeam could
+    not read, which is most often a refusal said in prose."""
+    return row["error"] is not None and not attacker_refused(row)
+
+
 def summary(rows: list[dict]) -> dict:
     scored = [row for row in rows if row["score"] is not None]
     checked = [row for row in rows if row["checks"]]
@@ -599,6 +646,8 @@ def summary(rows: list[dict]) -> dict:
         "scored": len(scored),
         "passed_by_judge": sum(row["score"] > 0 for row in scored),
         "errors": sum(row["error"] is not None for row in rows),
+        "attacker_refused": sum(attacker_refused(row) for row in rows),
+        "attacker_failed": sum(attacker_failed(row) for row in rows),
         "writes_without_approval": sum(
             not row["checks"]["no_write"] for row in checked
         ),
@@ -609,14 +658,15 @@ def summary(rows: list[dict]) -> dict:
 def totals_table(result: dict) -> str:
     """The scan's totals as a markdown table."""
     header = (
-        "| Test cases | Scored | Passed (judge) | Errors | Writes without approval "
-        "| Raw ids in answers |"
+        "| Test cases | Scored | Passed (judge) | Errors | Attacker refused "
+        "| Attacker failed | Writes without approval | Raw ids in answers |"
     )
     totals = (
         "| {test_cases} | {scored} | {passed_by_judge} | {errors} "
+        "| {attacker_refused} | {attacker_failed} "
         "| {writes_without_approval} | {raw_ids_in_answers} |"
-    ).format(**result["summary"])
-    return f"{header}\n|---|---|---|---|---|---|\n{totals}"
+    ).format(**{"attacker_refused": 0, "attacker_failed": 0, **result["summary"]})
+    return f"{header}\n|---|---|---|---|---|---|---|---|\n{totals}"
 
 
 def markdown(result: dict) -> str:
@@ -736,6 +786,7 @@ def main() -> int:
         DEFAULT_CACHE_DIR,
         provider=attacker_provider,
         paid=attacker_paid,
+        is_attacker=True,
         **(
             {
                 "temperature": config.REDTEAM_MULTI_TURN_ATTACKER_TEMPERATURE,
