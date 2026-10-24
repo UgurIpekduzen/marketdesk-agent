@@ -3,6 +3,7 @@
 import hashlib
 import logging
 import sqlite3
+import threading
 
 import pytest
 
@@ -254,3 +255,74 @@ def test_the_console_connection_may_change_only_the_status(
     conn.close()
 
     assert hashlib.sha256(synthetic_db_path.read_bytes()).hexdigest() == before
+
+
+# --- Several reps at once --------------------------------------------------------
+
+
+def decide_all_at_once(queue, request_id, decisions):
+    """Every decision made at the same moment, each on a thread of its own."""
+    start = threading.Barrier(len(decisions))
+    answers = [None] * len(decisions)
+
+    def decide(index, decision):
+        start.wait()
+        answers[index] = queue.decide(request_id, decision)
+
+    threads = [
+        threading.Thread(target=decide, args=(index, decision))
+        for index, decision in enumerate(decisions)
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=30)
+    return answers
+
+
+def test_a_request_decided_by_many_reps_at_once_is_decided_exactly_once(
+    queue, synthetic_db_path
+):
+    request_id = add_request(synthetic_db_path)
+    decisions = [RequestStatus.APPROVED, RequestStatus.REJECTED] * 6
+
+    answers = decide_all_at_once(queue, request_id, decisions)
+
+    won = [a for a in answers if "error" not in a]
+    lost = [a for a in answers if "error" in a]
+    assert len(won) == 1
+    assert {a["error"] for a in lost} == {"ALREADY_DECIDED"}
+    # The row holds the decision of the one that won, not a mix.
+    assert status_of(synthetic_db_path, request_id) == won[0]["status"]
+
+
+def test_a_senior_request_stays_untouched_under_many_clicks(queue, synthetic_db_path):
+    request_id = add_request(synthetic_db_path, status=SENIOR, amount=900.0)
+
+    answers = decide_all_at_once(
+        queue, request_id, [RequestStatus.APPROVED, RequestStatus.REJECTED] * 4
+    )
+
+    assert {a["error"] for a in answers} == {"SENIOR_ONLY"}
+    assert status_of(synthetic_db_path, request_id) == SENIOR
+
+
+def test_a_ticket_closed_by_many_reps_at_once_is_closed_exactly_once(
+    queue, synthetic_db_path
+):
+    ticket = add_ticket(synthetic_db_path)
+    ticket_id = int(str(ticket).split("-")[-1])
+    start = threading.Barrier(8)
+    answers = [None] * 8
+
+    def close(index):
+        start.wait()
+        answers[index] = queue.close_ticket(ticket_id)
+
+    threads = [threading.Thread(target=close, args=(i,)) for i in range(8)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=30)
+
+    assert sum("error" not in a for a in answers) == 1

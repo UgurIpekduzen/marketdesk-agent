@@ -311,3 +311,28 @@ def test_the_first_wording_only_asks_for_the_tools_numbers(
     assert "run_sql ile hesapla" not in str(fake.requests[-1])
     assert "777" in str(fake.requests[-1])
     assert set(critic.CORRECTIONS) == {"plain", "compute"}
+
+
+# --- What it does not see, said as tests --------------------------------------
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Toplam yirmi üç sipariş var.",
+        "There are twenty-three orders.",
+    ],
+)
+def test_a_number_written_in_words_is_not_seen(text):
+    # A known limit (the module says so): the check reads digits. Were it ever
+    # to read words, this test is the one to change.
+    results = [("run_metric", {"rows": [[29]]})]
+
+    assert critic.unsupported(text, results, "") == []
+
+
+@pytest.mark.parametrize("text", ["Toplam ٢٣ sipariş var.", "Toplam ２３ sipariş var."])
+def test_digits_of_other_scripts_are_read_as_numbers(text):
+    results = [("run_metric", {"rows": [[29]]})]
+
+    assert critic.unsupported(text, results, "") != []
