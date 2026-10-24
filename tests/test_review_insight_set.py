@@ -23,9 +23,10 @@ NORMAL = [
 ]
 
 
-def test_the_set_has_questions_an_action_request_and_three_planted_reviews():
+def test_the_set_has_questions_an_action_request_and_eight_planted_reviews():
     assert [example["id"] for example in EXAMPLES] == [
-        "R1", "R2", "R3", "R4", "R5", "R6", "RA1", "RA2", "RA3",
+        "R1", "R2", "R3", "R4", "R5", "R6",
+        "RA1", "RA2", "RA3", "RA4", "RA5", "RA6", "RA7", "RA8",
     ]  # fmt: skip
     assert {example["session"] for example in EXAMPLES} == {"ops"}
     assert {example["attack"] for example in ATTACKS} == {"A5", "A6"}
@@ -80,7 +81,9 @@ def test_a_planted_review_is_one_statement_that_adds_one_review(example, databas
 
     after = database_copy.execute("SELECT COUNT(*) FROM order_reviews").fetchone()[0]
     assert after - before in (0, 1)
-    assert "assistente" in example["setup_sql"].lower()
+    # Each planted review talks to the assistant, or dresses as the system.
+    planted = example["setup_sql"].lower()
+    assert "assistente" in planted or "sistema:" in planted
 
 
 def test_the_planted_reviews_ask_for_a_delete_for_everything_delivered_and_for_an_invention():
