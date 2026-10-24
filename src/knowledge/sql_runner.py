@@ -8,8 +8,10 @@ write on its own:
 3. the attach limit set to zero, because a read-only connection could
    otherwise still ATTACH, and so create, another database file.
 
-A query is also stopped when it runs too long and never returns more rows
-than the limit.
+A query is also stopped when it runs too long, never returns more rows
+than the limit, and cannot build a value or an answer beyond the limits of
+the engine: the timeout counts steps, and one call of a function that makes
+a huge string is one step.
 
 The agents always run with the safe views. Only the raw-schema baseline of
 the evaluation passes another list of tables, and it never sends the rows
@@ -33,7 +35,19 @@ def connect_read_only(db_path: Path | str) -> sqlite3.Connection:
     """Open the database so that nothing can be written or attached."""
     conn = sqlite3.connect(f"file:{Path(db_path).as_posix()}?mode=ro", uri=True)
     conn.setlimit(sqlite3.SQLITE_LIMIT_ATTACHED, 0)
+    # No value longer than this can be made, by a function or otherwise.
+    conn.setlimit(sqlite3.SQLITE_LIMIT_LENGTH, config.SQL_MAX_VALUE_BYTES)
+    # The backstop for the memory of the engine. The setting is for the whole
+    # process, not only this connection.
+    conn.execute(f"PRAGMA hard_heap_limit = {config.SQL_HEAP_LIMIT_BYTES}")
     return conn
+
+
+def result_bytes(rows: list[list]) -> int:
+    """How many characters of text and bytes of blobs the rows hold."""
+    return sum(
+        len(value) for row in rows for value in row if isinstance(value, str | bytes)
+    )
 
 
 def existing_names(conn: sqlite3.Connection) -> tuple[str, ...]:
@@ -93,6 +107,13 @@ def run_sql(
             cursor = conn.execute(sql)
             columns = [column[0] for column in cursor.description]
             rows = [list(row) for row in cursor.fetchmany(max_rows)]
+            if result_bytes(rows) > config.SQL_MAX_RESULT_BYTES:
+                return {
+                    "error": "SQL_ERROR",
+                    "detail": "RESULT_TOO_LARGE",
+                    "message": messages.SQL_RESULT_TOO_LARGE,
+                    "sql": sql,
+                }
         except sqlite3.Error as failure:
             if timed_out:
                 return {

@@ -70,6 +70,9 @@ SQL_REJECTED = {
     ),
 }
 SQL_ERROR = "Sorgu çalıştırılamadı."
+SQL_RESULT_TOO_LARGE = (
+    "Sorgunun sonucu çok büyük; yalnızca gereken sütunları ve daha az satırı isteyin."
+)
 SQL_TIMEOUT = "Sorgu {seconds} saniyede tamamlanmadığı için durduruldu."
 
 # The strings named here reach only the model, inside a tool result; the
@@ -101,6 +104,7 @@ MODEL_ONLY = frozenset(
         "INVALID_RANKING",
         "SQL_REJECTED",
         "SQL_ERROR",
+        "SQL_RESULT_TOO_LARGE",
         "SQL_TIMEOUT",
         "EMPTY_POLICY_QUERY",
         "CRITIC_CORRECTION",

@@ -99,6 +99,17 @@ SQL_MAX_ROWS = 1000
 # A free SQL query that runs longer than this many seconds is stopped.
 SQL_TIMEOUT_SECONDS = 5
 
+# What one free SQL query may build, whatever the function it calls. The
+# timeout counts steps of the engine and one function call is one step, so
+# `format('%.*c', 900000000, 'x')` made 900 MB in a fraction of a second.
+# The longest value (text or blob) the engine may build:
+SQL_MAX_VALUE_BYTES = 100_000
+# The most characters of text and blobs all the rows of one answer may hold:
+SQL_MAX_RESULT_BYTES = 2_000_000
+# A backstop for the memory of the engine in this process (SQLite holds one
+# limit for all its connections). Far above what the data needs.
+SQL_HEAP_LIMIT_BYTES = 512 * 1024 * 1024
+
 # After a free SQL query fails, the agent may correct it this many times
 # within one question. Then it has to say that it could not answer.
 SQL_MAX_CORRECTIONS = 2
