@@ -386,11 +386,24 @@ def test_a_yes_is_fine_when_the_rule_engine_said_yes():
     assert overruled_decision("Siparişiniz iade için uygundur.", ELIGIBLE) == []
 
 
-def test_an_amount_the_answer_rejects_is_not_claimed():
-    text = "Alacağınız tutar 1.000 BRL değil, 261,29 BRL'dir."
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Alacağınız tutar 1.000 BRL değil, 261,29 BRL'dir.",
+        "Alacağınız tutar 261,29 BRL'dir (1.000 BRL değildir).",
+        "İade 1.000 BRL'dir değil, 261,29 BRL'dir.",
+    ],
+)
+def test_an_amount_the_answer_rejects_is_not_claimed(text):
     card = {"order": "SIP-1", "refund_amount": "261.29"}
 
     assert unbacked_amounts(text, [], card) == []
+
+
+def test_an_amount_followed_by_another_word_that_starts_with_degil_is_claimed():
+    card = {"order": "SIP-1", "refund_amount": "261.29"}
+
+    assert unbacked_amounts("Alırsınız 1.000 BRL değilse de.", [], card) == ["1.000"]
 
 
 @pytest.mark.parametrize(

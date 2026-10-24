@@ -242,7 +242,7 @@ REFUSED_BEFORE = re.compile(
     r"\b(?:cannot|can't|can not)\s+(?:say|write|confirm)\b", re.IGNORECASE
 )
 # An amount the answer rejects: "1.000 BRL değil, 261,29 BRL".
-REJECTED_AMOUNT = re.compile(r"\s*(?:['’]\w+)?\s*değil\b", re.IGNORECASE)
+REJECTED_AMOUNT = re.compile(r"\s*(?:['’]\w+)?\s*değil(?:dir)?\b", re.IGNORECASE)
 # Saying the freight is not refunded, in Turkish and English.
 FREIGHT_DENIED = [
     r"\bkargo[^.]{0,40}(?:dahil değil|kapsamına (?:dahil )?(?:değil|girmez)|iade edilmez|iade edilmeyecek|karşılanmaz|ödenmez)",
