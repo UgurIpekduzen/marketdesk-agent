@@ -13,7 +13,7 @@ from src.formatting import format_money, how_computed
 from src.i18n import DEFAULT_LANGUAGE, Language, catalog
 from src.orchestrator import Answer, Intent
 from src.tools.review_queue import RequestRow, TicketRow
-from src.ui.chat_session import MessageTooLong
+from src.ui.chat_session import ApprovalWaiting, MessageTooLong
 from src.ui.question_limit import QuestionLimitReached
 from src.ui.session_pool import SessionLimitReached
 
@@ -269,6 +269,8 @@ def friendly_error(
         return texts.UI_ERROR_TOO_LONG.format(limit=config.MAX_MESSAGE_CHARS)
     if isinstance(failure, QuestionLimitReached):
         return texts.UI_ERROR_QUESTION_LIMIT
+    if isinstance(failure, ApprovalWaiting):
+        return texts.UI_ERROR_APPROVAL_WAITING
     if isinstance(failure, TimeoutError):
         return texts.UI_ERROR_TIMEOUT
     return getattr(texts, FAILURE_MESSAGES[failures.failure_code(failure)])

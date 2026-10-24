@@ -280,8 +280,13 @@ class Orchestrator:
     def approval_summary(self, pending: dict) -> str:
         return self._agent.approval_summary(pending)
 
-    async def approve(self) -> str:
-        return await self._agent.approve()
+    async def approval_waiting(self) -> bool:
+        """Whether a return request waits for the person's answer."""
+        waiting = getattr(self._agent, "has_pending_approval", None)
+        return waiting is not None and await waiting()
+
+    async def approve(self, card: dict | None = None) -> str:
+        return await self._agent.approve(card)
 
     async def decline(self) -> str:
         return await self._agent.decline()

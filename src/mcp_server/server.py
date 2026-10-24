@@ -224,12 +224,29 @@ async def pending_approval() -> dict:
 
 
 @server.tool()
-async def approve_pending() -> dict:
-    """The person said yes: write the pending return request."""
+async def approve_pending(
+    order: str = "", reason: str = "", refund_amount: str = ""
+) -> dict:
+    """The person said yes to the card they saw: write the pending request.
+
+    The card is the order alias, reason and amount the person was shown. The
+    request is written only if it is the one waiting now; if another one
+    waits, the click was on a card that is no longer the current one, so the
+    waiting request is dropped and nothing is written.
+    """
     current = state()
     action = current.session.approvals.awaiting
     if action is None:
         return {"error": "NOTHING_PENDING", "message": messages.NOTHING_PENDING}
+    shown = (order, reason, refund_amount)
+    waiting = (
+        current.session.alias_for(action.order_id),
+        action.reason,
+        str(action.amount),
+    )
+    if shown != waiting:
+        current.session.approvals.reject()
+        return {"error": "STALE_CARD", "message": messages.STALE_CARD}
     # The token is created, used and gone within this function.
     token = current.session.approvals.approve()
     return create_return_request(

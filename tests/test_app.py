@@ -486,10 +486,10 @@ def test_the_card_is_gone_before_the_choice_is_sent(open_page):
     approve = session.approve
     waiting_when_sent = []
 
-    def approve_and_look():
+    def approve_and_look(*card):
         # Runs inside the page run, as the real click does.
         waiting_when_sent.append(st.session_state.pending)
-        return approve()
+        return approve(*card)
 
     session.approve = approve_and_look
 

@@ -58,6 +58,10 @@ RETURN_REQUEST_CREATED_DETAIL = (
     "status: {status}. A support representative will review it."
 )
 RETURN_REQUEST_NOT_CREATED = "The return request was not created: {reason}"
+STALE_CARD = (
+    "The request on the screen is no longer the one that waits; no return request "
+    "was created. Please write your request again."
+)
 NOTHING_PENDING = "There is no return request waiting for approval."
 APPROVAL_DECLINED = "You did not approve; no return request was created."
 
@@ -244,6 +248,7 @@ UI_ERROR_FULL = (
     'minutes with the "New chat" button.'
 )
 UI_ERROR_TOO_LONG = "Your message is too long; please write at most {limit} characters."
+UI_ERROR_APPROVAL_WAITING = "Approve or decline the return request on the screen first; then you can write a new message."
 UI_ERROR_QUESTION_LIMIT = (
     "The demo is very busy right now: the question limit for this hour has "
     "been reached. Please try again a little later."

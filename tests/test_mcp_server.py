@@ -97,8 +97,13 @@ def test_no_order_tool_takes_identity_or_an_approval_token(synthetic_db_path):
     assert parameters["list_customer_orders"] == {"limit", "status"}
     assert parameters["check_return_eligibility"] == {"order_ref", "reason"}
     assert parameters["create_return_request"] == {"order_ref", "reason", "amount"}
-    for name in CONTROL_TOOLS - {"alias_order_reference"}:
+    # Control tools take nothing from the caller, except the card that was
+    # clicked (what the person saw) and the order the page typed.
+    card = {"order", "reason", "refund_amount"}
+    for name in CONTROL_TOOLS - {"alias_order_reference", "approve_pending"}:
         assert parameters[name] == set()
+    assert parameters["approve_pending"] == card
+    assert not any("token" in key for key in parameters["approve_pending"])
 
 
 def test_server_runs_in_another_process(synthetic_db_path):
@@ -300,8 +305,13 @@ def test_pending_request_is_described_with_an_alias(synthetic_db_path):
 def test_approval_writes_exactly_one_row(synthetic_db_path):
     async def scenario(orders):
         await orders.call("create_return_request", RETURN)
-        created = await orders.approve_pending()
-        return created, await orders.pending_approval(), await orders.approve_pending()
+        card = await orders.pending_approval()
+        created = await orders.approve_pending(card)
+        return (
+            created,
+            await orders.pending_approval(),
+            await orders.approve_pending(card),
+        )
 
     created, pending_after, second_approval = with_server(synthetic_db_path, scenario)
 
@@ -315,8 +325,9 @@ def test_approval_writes_exactly_one_row(synthetic_db_path):
 def test_declining_writes_nothing(synthetic_db_path):
     async def scenario(orders):
         await orders.call("create_return_request", RETURN)
+        card = await orders.pending_approval()
         declined = await orders.decline_pending()
-        return declined, await orders.approve_pending()
+        return declined, await orders.approve_pending(card)
 
     declined, approval_after = with_server(synthetic_db_path, scenario)
 
@@ -326,7 +337,7 @@ def test_declining_writes_nothing(synthetic_db_path):
 
 
 def test_approving_with_nothing_pending_writes_nothing(synthetic_db_path):
-    answer = with_server(synthetic_db_path, lambda orders: orders.approve_pending())
+    answer = with_server(synthetic_db_path, lambda orders: orders.approve_pending(None))
 
     assert answer == NOTHING_PENDING
     assert request_count(synthetic_db_path) == 2
@@ -336,7 +347,7 @@ def test_no_answer_ever_holds_the_approval_token(synthetic_db_path):
     async def scenario(orders):
         asked = await orders.call("create_return_request", RETURN)
         pending = await orders.pending_approval()
-        created = await orders.approve_pending()
+        created = await orders.approve_pending(pending)
         return [asked, pending, created]
 
     answers = with_server(synthetic_db_path, scenario)
@@ -389,7 +400,7 @@ def test_the_server_connection_writes_nothing_but_new_requests_and_tickets(
 def test_the_server_connection_still_writes_a_request_and_a_ticket(synthetic_db_path):
     async def scenario(orders):
         await orders.call("create_return_request", RETURN)
-        written = await orders.approve_pending()
+        written = await orders.approve_pending(await orders.pending_approval())
         ticket = await orders.call(
             "escalate_to_human", {"summary": "Müşteri bir temsilci istiyor."}
         )
@@ -417,3 +428,64 @@ def test_a_failing_tool_tells_the_caller_no_detail(tmp_path):
     text = str(failure.value)
     assert "Error executing tool get_order_status" in text
     assert "no such table" not in text and str(empty) not in text
+
+
+# --- The click is bound to the card the person saw --------------------------
+
+
+OTHER_RETURN = {"order_ref": "o_late_10", "reason": "late", "amount": "115.00"}
+
+
+def test_a_click_on_a_card_that_is_no_longer_the_waiting_one_writes_nothing(
+    synthetic_db_path,
+):
+    async def scenario(orders):
+        await orders.call("create_return_request", RETURN)
+        shown = await orders.pending_approval()
+        # While the person looks at that card, another request is made.
+        await orders.call("create_return_request", OTHER_RETURN)
+        waiting = await orders.pending_approval()
+        answer = await orders.approve_pending(shown)
+        return shown, waiting, answer, await orders.pending_approval()
+
+    shown, waiting, answer, after = with_server(synthetic_db_path, scenario)
+
+    assert shown["order"] != waiting["order"] or shown["reason"] != waiting["reason"]
+    assert answer["error"] == "STALE_CARD"
+    # Nothing was written and nothing waits any more: the person asks again.
+    assert request_count(synthetic_db_path) == 2
+    assert after is None
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"order": "SIP-9"},
+        {"reason": "changed_mind"},
+        {"refund_amount": "999.00"},
+        {"order": ""},
+    ],
+)
+def test_a_card_that_differs_in_any_part_is_not_the_waiting_one(
+    synthetic_db_path, change
+):
+    async def scenario(orders):
+        await orders.call("create_return_request", RETURN)
+        card = {**await orders.pending_approval(), **change}
+        return await orders.approve_pending(card)
+
+    answer = with_server(synthetic_db_path, scenario)
+
+    assert answer["error"] == "STALE_CARD"
+    assert request_count(synthetic_db_path) == 2
+
+
+def test_a_click_with_no_card_writes_nothing(synthetic_db_path):
+    async def scenario(orders):
+        await orders.call("create_return_request", RETURN)
+        return await orders.approve_pending(None)
+
+    answer = with_server(synthetic_db_path, scenario)
+
+    assert answer["error"] == "STALE_CARD"
+    assert request_count(synthetic_db_path) == 2

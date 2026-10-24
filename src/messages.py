@@ -176,6 +176,10 @@ RETURN_REQUEST_CREATED_DETAIL = (
     "Talebiniz bir müşteri temsilcisi tarafından incelenecektir."
 )
 RETURN_REQUEST_NOT_CREATED = "İade talebi oluşturulmadı: {reason}"
+STALE_CARD = (
+    "Ekrandaki talep artık bekleyen talep değil; hiçbir iade talebi oluşturulmadı. "
+    "Lütfen isteğinizi yeniden yazın."
+)
 NOTHING_PENDING = "Onay bekleyen bir iade talebi yok."
 APPROVAL_DECLINED = "Onay vermediniz; iade talebi oluşturulmadı."
 
@@ -362,6 +366,7 @@ UI_ERROR_FULL = (
     'sonra "Yeni sohbet" düğmesiyle tekrar deneyin.'
 )
 UI_ERROR_TOO_LONG = "Mesajınız çok uzun; lütfen en fazla {limit} karakterle yazın."
+UI_ERROR_APPROVAL_WAITING = "Önce ekrandaki iade talebini onaylayın ya da reddedin; sonra yeni mesaj yazabilirsiniz."
 UI_ERROR_QUESTION_LIMIT = (
     "Demo şu an çok yoğun: bu saat için soru sınırına ulaşıldı. Lütfen biraz "
     "sonra tekrar deneyin."

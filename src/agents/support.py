@@ -450,10 +450,18 @@ class SupportAgent:
         ):
             pass
 
-    async def approve(self) -> str:
-        """The person said yes: have the server write the request."""
-        shown = self._shown_request or {}
-        result = await self._orders.approve_pending()
+    async def has_pending_approval(self) -> bool:
+        """Whether a return request waits for the person's answer."""
+        return await self._orders.pending_approval() is not None
+
+    async def approve(self, card: dict | None = None) -> str:
+        """The person said yes to a card: have the server write that request.
+
+        The card is the one the page showed; without it, the last one this
+        agent handed out. The server writes only if it is the one waiting.
+        """
+        shown = card or self._shown_request or {}
+        result = await self._orders.approve_pending(shown)
         self._shown_request = None
         self._trace_approval("approved", result)
         if "error" in result:
@@ -497,4 +505,6 @@ class SupportAgent:
             return result.get("message", result["error"])
         if result["error"] == "NOTHING_PENDING":
             return self._texts.NOTHING_PENDING
+        if result["error"] == "STALE_CARD":
+            return self._texts.STALE_CARD
         return result["error"]

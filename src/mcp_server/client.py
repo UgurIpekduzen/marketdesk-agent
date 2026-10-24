@@ -114,8 +114,17 @@ class OrdersClient:
         answer = await self.call("pending_approval")
         return answer if answer["pending"] else None
 
-    async def approve_pending(self) -> dict:
-        return await self.call("approve_pending")
+    async def approve_pending(self, card: dict | None) -> dict:
+        """Approve the card the person saw (order, reason, refund_amount)."""
+        card = card or {}
+        return await self.call(
+            "approve_pending",
+            {
+                "order": card.get("order", ""),
+                "reason": card.get("reason", ""),
+                "refund_amount": card.get("refund_amount", ""),
+            },
+        )
 
     async def decline_pending(self) -> dict:
         return await self.call("decline_pending")

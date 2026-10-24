@@ -14,7 +14,12 @@ import config
 from src import messages
 from src.orchestrator import Intent, SessionType
 from src.ui.call_budget import CallBudget, CallBudgetReached
-from src.ui.chat_session import ChatSession, MessageTooLong, SessionClosed
+from src.ui.chat_session import (
+    ApprovalWaiting,
+    ChatSession,
+    MessageTooLong,
+    SessionClosed,
+)
 from src.ui.question_limit import QuestionLimit, QuestionLimitReached
 from src.ui.view import friendly_error
 from tests.agent_harness import request_count
@@ -95,6 +100,63 @@ def test_request_is_written_only_after_approve(open_session, synthetic_db_path):
     assert after_asking == at_start
     assert request_count(synthetic_db_path) == at_start + 1
     assert "oluşturuldu" in message
+
+
+def test_a_message_is_refused_on_the_server_while_a_card_waits(
+    open_session, synthetic_db_path
+):
+    session = open_session(
+        ["support", [("create_return_request", RETURN)], "Onayınız istenecek."]
+    )
+    session.ask("o_day14 hasarlı geldi, iade istiyorum")
+    model_calls_before = len(session._provider_llm.requests)
+
+    with pytest.raises(ApprovalWaiting):
+        session.ask("Bir de başka bir siparişim var, onu da iade edin.")
+
+    # The model was not asked, and the card still waits for its answer.
+    assert len(session._provider_llm.requests) == model_calls_before
+    assert "oluşturuldu" in session.approve()
+    assert request_count(synthetic_db_path) == 3
+
+
+def test_after_the_answer_to_the_card_messages_are_taken_again(open_session):
+    session = open_session(
+        [
+            "support",
+            [("create_return_request", RETURN)],
+            "Onayınız istenecek.",
+            "support",
+            "Buyurun.",
+        ]
+    )
+    session.ask("o_day14 hasarlı geldi, iade istiyorum")
+    session.decline()
+
+    assert session.ask("Başka bir sorum var.").display == "Buyurun."
+
+
+def test_the_refusal_while_a_card_waits_has_its_own_text():
+    from src.i18n import Language
+
+    for language in Language:
+        text = friendly_error(ApprovalWaiting("x"), language)
+        assert text
+        assert text != friendly_error(MessageTooLong("x"), language)
+
+
+def test_a_click_on_an_old_card_writes_nothing(open_session, synthetic_db_path):
+    session = open_session(
+        ["support", [("create_return_request", RETURN)], "Onayınız istenecek."]
+    )
+    answer = session.ask("o_day14 hasarlı geldi, iade istiyorum")
+    old = dict(answer.awaiting_approval, refund_amount="999.00")
+    at_start = request_count(synthetic_db_path)
+
+    message = session.approve(old)
+
+    assert request_count(synthetic_db_path) == at_start
+    assert messages.STALE_CARD in message
 
 
 def test_decline_writes_nothing(open_session, synthetic_db_path):

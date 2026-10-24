@@ -7,6 +7,7 @@ it may ask, the rules, the approval of a return request and every text, in
 Turkish and English, live in src/; nothing is decided here.
 """
 
+import functools
 import logging
 import os
 import random
@@ -487,7 +488,9 @@ def draw_approval(session: ChatSession) -> None:
         # checked in code, on the order server.
         choice = None
         if approve.button(texts.UI_APPROVE, type="primary", use_container_width=True):
-            choice = session.approve
+            # The card goes with the click: the server writes the request
+            # only if it is still the one that waits.
+            choice = functools.partial(session.approve, pending)
         if decline.button(texts.UI_DECLINE, use_container_width=True):
             choice = session.decline
     if choice is not None:

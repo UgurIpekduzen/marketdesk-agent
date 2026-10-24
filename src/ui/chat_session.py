@@ -46,6 +46,10 @@ class SessionClosed(RuntimeError):
     """The session was closed and can take no more work."""
 
 
+class ApprovalWaiting(RuntimeError):
+    """A message came while a return request waits for the person's answer."""
+
+
 class MessageTooLong(ValueError):
     """The message is longer than the limit; it never reaches the model."""
 
@@ -196,11 +200,19 @@ class ChatSession:
             self._call_budget.check()
         if self._question_limit is not None and not self._closed:
             self._question_limit.take()
-        return self._do(lambda router: router.ask(message))
 
-    def approve(self) -> str:
-        """The person pressed approve: have the request written."""
-        return self._do(lambda router: router.approve())
+        async def job(router):
+            # The page locks its input while a card waits; this is the same
+            # rule on the server, since a page can be made to send anything.
+            if await router.approval_waiting():
+                raise ApprovalWaiting("a return request waits for the person")
+            return await router.ask(message)
+
+        return self._do(job)
+
+    def approve(self, card: dict | None = None) -> str:
+        """The person pressed approve on this card: have that request written."""
+        return self._do(lambda router: router.approve(card))
 
     def decline(self) -> str:
         return self._do(lambda router: router.decline())
