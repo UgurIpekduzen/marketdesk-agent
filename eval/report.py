@@ -35,6 +35,7 @@ from eval.run_eval import (
     RESULTS_DIR,
     REVIEW_INSIGHT_SET,
     TEMPLATE_ATTACK_SET,
+    TEMPLATE_ATTACK_SET_EN,
     result_name,
     show,
     show_score,
@@ -67,6 +68,7 @@ ATTACK_SETS = {
     INTER_AGENT_SET: "Inter-agent messages",
     HUMAN_TRUST_SET: "Human-agent trust",
     TEMPLATE_ATTACK_SET: "Attacks made from templates",
+    TEMPLATE_ATTACK_SET_EN: "Attacks made from templates, in English",
     MULTI_TURN_ATTACK_SET: "Attacks over several messages",
 }
 

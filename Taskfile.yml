@@ -264,6 +264,7 @@ tasks:
       - "{{.RUN}} uv run python eval/run_eval.py --golden eval/human_trust_tests.jsonl {{.CLI_ARGS}}"
       - "{{.RUN}} uv run python eval/run_eval.py --golden eval/multi_turn_attacks.jsonl {{.CLI_ARGS}}"
       - "{{.RUN}} uv run python eval/run_eval.py --golden eval/template_attacks.jsonl {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python eval/run_eval.py --golden eval/template_attacks_en.jsonl {{.CLI_ARGS}}"
       - "{{.RUN}} uv run python eval/run_eval.py --golden eval/review_insight_tests.jsonl --judge --independent-judge {{.CLI_ARGS}}"
       - "{{.RUN}} uv run python eval/run_eval.py --golden eval/number_traps.jsonl {{.CLI_ARGS}}"
       - "{{.RUN}} uv run python eval/run_eval.py --golden eval/number_traps.jsonl --no-critic {{.CLI_ARGS}}"
@@ -295,7 +296,7 @@ tasks:
       - "{{.RUN}} uv run python eval/mutations.py {{.CLI_ARGS}}"
 
   eval:build-templates:
-    desc: Write eval/template_attacks.jsonl, attacks made from templates (a payload, a framing, an encoding and a language crossed with a fixed seed; no model calls)
+    desc: Write eval/template_attacks.jsonl and eval/template_attacks_en.jsonl, attacks made from templates (a payload, a framing, an encoding and a language crossed with a fixed seed; no model calls)
     cmds:
       - "{{.RUN}} uv run python eval/build_template_attacks.py"
 
