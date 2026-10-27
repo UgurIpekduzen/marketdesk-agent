@@ -141,8 +141,20 @@ class AnyIntent(frozenset):
         return True
 
 
+class Fallback(dict):
+    """The agents of a session; an agent it does not have is its first one."""
+
+    def __init__(self, agents: dict, default) -> None:
+        super().__init__(agents)
+        self._default = default
+
+    def __missing__(self, key):
+        return self._default
+
+
 def router_roles_off(stack: ExitStack) -> None:
-    """A session may be routed to any agent."""
+    """A session may be routed to any agent, and one it does not have is
+    answered by the agent it has."""
     from src import orchestrator
 
     everything = {
@@ -150,6 +162,14 @@ def router_roles_off(stack: ExitStack) -> None:
         for session_type, intents in orchestrator.ALLOWED_INTENTS.items()
     }
     patch_attr(stack, orchestrator, "ALLOWED_INTENTS", everything)
+
+    original = orchestrator.Orchestrator.__init__
+
+    def init(self, *arguments, **keywords):
+        original(self, *arguments, **keywords)
+        self._agents = Fallback(self._agents, self._agent)
+
+    patch_attr(stack, orchestrator.Orchestrator, "__init__", init)
 
 
 def critic_off(stack: ExitStack) -> None:
@@ -385,7 +405,7 @@ def eval_rows(name: str, golden: str, ids: str, paid: bool) -> list[dict]:
             "0",
             *(["--paid"] if paid else []),
         ]
-        subprocess.run(
+        done = subprocess.run(
             command,
             cwd=PROJECT_ROOT,
             env={**os.environ, "MARKETDESK_MUTATION_ROWS": str(rows_file)},
@@ -395,7 +415,8 @@ def eval_rows(name: str, golden: str, ids: str, paid: bool) -> list[dict]:
             check=False,
         )
         if not rows_file.exists():
-            raise RuntimeError(f"{name} on {golden}: the run wrote no rows")
+            tail = "\n".join((done.stderr or done.stdout).splitlines()[-12:])
+            raise RuntimeError(f"{name} on {golden}: the run wrote no rows\n{tail}")
         return json.loads(rows_file.read_text(encoding="utf-8"))
 
 
@@ -413,7 +434,25 @@ def live_run(mutation: Mutation, paid: bool) -> dict:
     for golden, ids in mutation.live:
         wanted = ",".join(ids) if ids else dev_ids(golden)
         base = {r["id"]: r for r in eval_rows(CONTROL, golden, wanted, paid)}
-        broken = {r["id"]: r for r in eval_rows(mutation.name, golden, wanted, paid)}
+        try:
+            broken = {
+                r["id"]: r for r in eval_rows(mutation.name, golden, wanted, paid)
+            }
+        except RuntimeError as crash:
+            # The system stopped with an error rather than go on without the
+            # guard; that is a way of noticing, and it is said as such.
+            return {
+                "killed": True,
+                "failed": [
+                    {
+                        "set": Path(golden).name,
+                        "example": "(the run stopped)",
+                        "checks": [],
+                    }
+                ],
+                "sets": sets + [Path(golden).name],
+                "crashed": str(crash).splitlines()[-1] if str(crash) else "",
+            }
         sets.append(Path(golden).name)
         for example, row in broken.items():
             if base[example]["success"] and not row["success"]:
