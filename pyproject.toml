@@ -50,10 +50,13 @@ testpaths = ["tests"]
 # network once. They are left out by default; run them with `task test:model`.
 markers = ["model: needs the real embedding model"]
 # deepeval registers a pytest plugin that would load the library, and with
-# it .env, into every test run. The tests do not use it. -n auto runs the
-# tests on one worker per CPU (pytest-xdist): each test that starts an order
-# server or the page takes a second or two, and they add up.
-addopts = "-m 'not model' -p no:deepeval -n auto"
+# it .env, into every test run. The tests do not use it. -n 4 runs the tests
+# on four workers (pytest-xdist): each test that starts an order server or the
+# page takes a second or two, and they add up. The number is fixed, not one
+# for each CPU: after a restart the machine showed twenty CPUs, twenty workers
+# are twenty processes with their order servers, and the memory of a laptop
+# is not for that. Give -n 0 on the command line to run in one process.
+addopts = "-m 'not model' -p no:deepeval -n 4"
 # The agent framework inspects model objects in a way pydantic has
 # deprecated; an agent run raises hundreds of these, none from this project.
 filterwarnings = [
