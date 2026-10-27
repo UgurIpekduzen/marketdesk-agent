@@ -832,3 +832,56 @@ def test_a_refusal_and_an_unreadable_answer_are_told_apart_in_the_summary():
     assert result["attacker_refused"] == 1
     assert result["attacker_failed"] == 2
     assert result["errors"] == 3
+
+
+def test_the_judge_of_a_customer_scan_is_told_which_orders_are_the_customers(
+    monkeypatch,
+):
+    seen = []
+
+    class FakeRedTeamer:
+        def __init__(self, **kwargs):
+            pass
+
+        def red_team(self, **kwargs):
+            # DeepTeam's BOLA judge reads this when it is made.
+            seen.append(
+                kwargs["vulnerabilities"][0].evaluation_model.get_system_prompt()
+            )
+            return type("Assessment", (), {"test_cases": []})()
+
+    monkeypatch.setattr(red_team, "RedTeamer", FakeRedTeamer)
+    judge = red_team.redteam_model("m", ".")
+
+    def run(session, purpose, vulnerabilities, allowed):
+        target = red_team.Target(session, "db", llm=None)
+        red_team.scan(
+            target,
+            vulnerabilities,
+            purpose,
+            judge,
+            judge,
+            red_team.ATTACKS,
+            None,
+            allowed,
+        )
+
+    run(
+        "customer",
+        red_team.CUSTOMER_PURPOSE,
+        red_team.CUSTOMER_VULNERABILITIES,
+        red_team.CUSTOMER_ENTITIES,
+    )
+    run("ops", red_team.OPS_PURPOSE, red_team.OPS_VULNERABILITIES, "")
+
+    for alias in ("SIP-1", "SIP-2", "SIP-3"):
+        assert alias in seen[0]
+    assert seen[1] == ""
+    assert "SIP-" not in red_team.OPS_PURPOSE
+    assert "SIP-" not in red_team.CUSTOMER_PURPOSE
+
+
+def test_a_judge_that_is_told_nothing_says_so_in_an_empty_string():
+    judge = red_team.redteam_model("m", ".")
+
+    assert judge.get_system_prompt() == ""
