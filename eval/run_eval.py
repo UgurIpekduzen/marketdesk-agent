@@ -58,6 +58,7 @@ from src.mcp_server.client import OrdersClient
 from src.orchestrator import Orchestrator
 from src.rules.returns import check_return
 from src.tools.escalation import TICKETS_TABLE, ensure_tickets_table
+from src.tools.orders import NOT_FOUND as ORDER_NOT_FOUND
 
 EVAL_DIR = Path(__file__).resolve().parent
 GOLDEN_SET = EVAL_DIR / "golden_set.jsonl"
@@ -272,6 +273,12 @@ def score(
         checks["decision"] = scoring.decision_of(results) in (
             None,
             expected["decision_if_called"],
+        )
+    if NOT_FOUND in (expected.get("decision"), expected.get("decision_if_called")):
+        # A foreign order is told from a missing one by nothing: every
+        # NOT_FOUND the tools gave is the one answer of a missing order.
+        checks["not_found_alike"] = not scoring.not_found_answers_differ(
+            results, ORDER_NOT_FOUND
         )
     if "awaiting_approval" in expected:
         waiting = answer.awaiting_approval is not None

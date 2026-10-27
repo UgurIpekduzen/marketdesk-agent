@@ -91,6 +91,25 @@ def tool_call_accuracy(
 # --- Decision ---------------------------------------------------------------
 
 
+def not_found_answers_differ(
+    tool_results: list[tuple[str, object]], canonical: dict
+) -> list[dict]:
+    """The NOT_FOUND answers of the tools that are not the one answer a
+    missing order gets.
+
+    An order of another customer and an order that does not exist must be
+    told apart by nothing, not even a word of the message: whoever can tell
+    them apart learns which order numbers exist.
+    """
+    return [
+        result
+        for _, result in tool_results
+        if isinstance(result, dict)
+        and result.get("error") == "NOT_FOUND"
+        and result != canonical
+    ]
+
+
 def decision_of(tool_results: list[tuple[str, object]]) -> str | None:
     """The decision the agent was given.
 

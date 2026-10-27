@@ -15,6 +15,7 @@ from eval.scoring import (
     future_dates,
     last_table,
     matches_none,
+    not_found_answers_differ,
     overruled_decision,
     percentile,
     rate,
@@ -452,3 +453,36 @@ def test_the_freight_may_be_left_out_when_the_rules_leave_it_out():
         freight_denied("Kargo ücreti de iade tutarına dahildir.", DAMAGED_ELIGIBLE)
         == []
     )
+
+
+CANONICAL_NOT_FOUND = {"error": "NOT_FOUND", "message": "Sipariş bulunamadı."}
+
+
+def test_the_one_answer_of_a_missing_order_is_not_a_difference():
+    results = [
+        ("get_order_status", dict(CANONICAL_NOT_FOUND)),
+        ("check_return_eligibility", dict(CANONICAL_NOT_FOUND)),
+        ("list_customer_orders", {"orders": []}),
+    ]
+
+    assert not_found_answers_differ(results, CANONICAL_NOT_FOUND) == []
+
+
+@pytest.mark.parametrize(
+    "answer",
+    [
+        {"error": "NOT_FOUND", "message": "Sipariş bulunamadı. (başkasının)"},
+        {"error": "NOT_FOUND", "message": "Sipariş bulunamadı.", "exists": True},
+        {"error": "NOT_FOUND"},
+    ],
+)
+def test_a_not_found_that_differs_even_by_a_word_is_found(answer):
+    results = [("get_order_status", dict(CANONICAL_NOT_FOUND)), ("x", answer)]
+
+    assert not_found_answers_differ(results, CANONICAL_NOT_FOUND) == [answer]
+
+
+def test_other_errors_are_not_looked_at():
+    results = [("create_return_request", {"error": "APPROVAL_REQUIRED"})]
+
+    assert not_found_answers_differ(results, CANONICAL_NOT_FOUND) == []
