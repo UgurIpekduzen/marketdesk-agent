@@ -148,6 +148,7 @@ def build_provider_llm(
     paid: bool = False,
     reasoning_effort: str | None = None,
     temperature: float | None = None,
+    max_tokens: int | None = None,
 ) -> FunctionCallingLLM:
     """Create a provider's model: by default the one config.py names.
 
@@ -155,7 +156,8 @@ def build_provider_llm(
     instead of the free one; only evaluation runs started with --paid pass
     it, never the page or the agents. reasoning_effort sets how much a
     reasoning model on Groq thinks before it answers. temperature, when
-    given, replaces config.LLM_TEMPERATURE.
+    given, replaces config.LLM_TEMPERATURE. max_tokens, when given, limits
+    the length of an answer; without it the provider decides.
     """
     if provider is None or model is None:
         provider, model = configured_model()
@@ -171,17 +173,23 @@ def build_provider_llm(
     if temperature is None:
         temperature = config.LLM_TEMPERATURE
 
+    # Only named when asked, so a model built without a limit is as it was.
+    length = {} if max_tokens is None else {"max_tokens": max_tokens}
+
     # Imported here: this is the only place that knows the providers.
     if provider == "gemini":
         from llama_index.llms.google_genai import GoogleGenAI
 
-        return GoogleGenAI(model=model, api_key=api_key, temperature=temperature)
+        return GoogleGenAI(
+            model=model, api_key=api_key, temperature=temperature, **length
+        )
     from llama_index.llms.groq import Groq
 
     return Groq(
         model=model,
         api_key=api_key,
         temperature=temperature,
+        **length,
         additional_kwargs=(
             {"reasoning_effort": reasoning_effort} if reasoning_effort else {}
         ),

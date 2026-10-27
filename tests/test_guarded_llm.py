@@ -311,6 +311,22 @@ def test_a_model_can_be_given_its_own_temperature(monkeypatch):
     ]
 
 
+def test_a_model_is_given_a_limit_on_its_answers_only_when_asked(monkeypatch):
+    created = []
+    monkeypatch.setattr(
+        importlib.import_module("llama_index.llms.groq"),
+        "Groq",
+        recording_provider(created),
+    )
+    monkeypatch.setenv("GROQ_API_KEY", "test-key")
+
+    guarded_llm.build_provider_llm("groq", "qwen/qwen3.8-27b")
+    guarded_llm.build_provider_llm("groq", "qwen/qwen3.8-27b", max_tokens=800)
+
+    assert "max_tokens" not in created[0]
+    assert created[1]["max_tokens"] == 800
+
+
 def test_only_groq_models_take_a_reasoning_effort(monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY_FREE", "test-key")
 

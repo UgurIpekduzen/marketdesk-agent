@@ -44,6 +44,10 @@ REDTEAM_MAX_LIVE_CALLS = 150
 # with its answers cached, an attack it once refused to write is refused
 # again on every run (2 of 6 conversations on 2026-10-22).
 REDTEAM_MULTI_TURN_ATTACKER_TEMPERATURE = 0.7
+# The most the attacker may write in one answer. Without it Groq counts 1,200
+# output tokens for a request, over Qwen's 1,000 a minute, and refuses the
+# request before the model sees it (8 refusals in one scan on 2026-10-27).
+REDTEAM_ATTACKER_MAX_TOKENS = 800
 # The judge for sets about what the system's own model gets wrong, such as
 # misinformation, when a run asks for it: a model of another provider, so
 # the system's model does not grade its own answers. The scan's judge.

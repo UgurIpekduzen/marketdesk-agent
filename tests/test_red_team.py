@@ -574,6 +574,29 @@ def test_the_first_fuse_that_blew_stops_the_scan():
     assert red_team.first_stop((fine, blown)) is blown.stopped
 
 
+def test_only_the_attacker_is_limited_in_the_length_of_its_answers(
+    monkeypatch, tmp_path
+):
+    asked = []
+
+    def fake_provider(provider=None, model=None, paid=False, temperature=None, **kw):
+        asked.append(kw)
+        return FakeLLM()
+
+    monkeypatch.setattr(red_team, "build_provider_llm", fake_provider)
+
+    red_team.redteam_model("attacker", tmp_path, is_attacker=True)
+    red_team.redteam_model("judge", tmp_path)
+
+    assert asked == [
+        {"max_tokens": red_team.config.REDTEAM_ATTACKER_MAX_TOKENS},
+        {},
+    ]
+    # Groq counts 1,200 output tokens for a request without a limit, over
+    # Qwen's 1,000 a minute.
+    assert red_team.config.REDTEAM_ATTACKER_MAX_TOKENS < 1000
+
+
 # --- Another attacker, to compare ------------------------------------------------
 
 

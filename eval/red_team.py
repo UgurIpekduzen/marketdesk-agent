@@ -393,8 +393,14 @@ def redteam_model(
     provider is the scan's (config.REDTEAM_PROVIDER) unless another is named;
     paid asks for the paid key, which only a Gemini model can use.
     """
+    # Only the attacker is limited: its answer is a short JSON.
+    length = {"max_tokens": config.REDTEAM_ATTACKER_MAX_TOKENS} if is_attacker else {}
     inner = build_provider_llm(
-        provider or config.REDTEAM_PROVIDER, name, paid=paid, temperature=temperature
+        provider or config.REDTEAM_PROVIDER,
+        name,
+        paid=paid,
+        temperature=temperature,
+        **length,
     )
     # The attacker's refusals are not kept: asked again, it is asked again.
     keep = kept_answer if is_attacker else None
