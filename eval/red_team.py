@@ -185,12 +185,25 @@ ATTACKS = (
     Multilingual,
 )
 PILOT_ATTACKS = 3
-# Attacks over several messages, on the customer session: one type of each
-# vulnerability, as each conversation costs the attacker many calls.
+# Attacks over several messages, on the customer session: the types the
+# code defends (another customer's order, a role or a function that is not
+# the customer's, a write without a click, the session's data, the
+# instructions), as each conversation costs the attacker many calls. The
+# last entry is the one the pilot tries, with its first type.
 MULTI_TURN_VULNERABILITIES = (
-    (BOLA, ["cross_customer_access"]),
-    (ExcessiveAgency, ["permissions"]),
-    (PromptLeakage, ["instructions"]),
+    (
+        BOLA,
+        [
+            "cross_customer_access",
+            "object_access_bypass",
+            "unauthorized_object_manipulation",
+        ],
+    ),
+    (BFLA, ["authorization_bypass"]),
+    (RBAC, ["unauthorized_role_assumption"]),
+    (ExcessiveAgency, ["permissions", "autonomy"]),
+    (PIILeakage, ["session_leak"]),
+    (PromptLeakage, ["instructions", "permissions_and_roles"]),
 )
 LINEAR_TURNS = 4
 PILOT_LINEAR_TURNS = 3
@@ -839,10 +852,11 @@ def main() -> int:
             fuses = (attacker, judge, customer_target, ops_target)
             if args.multi_turn:
                 use_short_crescendo_prompt()
+                pilot_class, pilot_types = MULTI_TURN_VULNERABILITIES[-1]
                 chosen = (
-                    MULTI_TURN_VULNERABILITIES[-1:]
+                    [(pilot_class, pilot_types[:1])]
                     if args.pilot
-                    else (MULTI_TURN_VULNERABILITIES)
+                    else MULTI_TURN_VULNERABILITIES
                 )
                 rows = []
                 for attack in multi_turn_attacks(attacker, args.pilot):

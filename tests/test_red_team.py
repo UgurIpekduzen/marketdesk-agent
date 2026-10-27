@@ -107,7 +107,7 @@ def test_a_scan_uploads_nothing_and_runs_one_attack_at_a_time(monkeypatch):
     assert seen["setup"]["evaluation_model"] is judge
 
 
-def test_multi_turn_attacks_are_written_by_our_attacker_on_one_type_each():
+def test_multi_turn_attacks_are_written_by_our_attacker_on_the_chosen_types():
     attacker = object.__new__(red_team.JudgeModel)
     judge = object.__new__(red_team.JudgeModel)
 
@@ -127,7 +127,8 @@ def test_multi_turn_attacks_are_written_by_our_attacker_on_one_type_each():
     assert attacks[1].max_backtracks == red_team.CRESCENDO_BACKTRACKS
     assert [type(attack).__name__ for attack in pilot] == ["LinearJailbreaking"]
     assert pilot[0].num_turns == red_team.PILOT_LINEAR_TURNS
-    assert [len(vulnerability.types) for vulnerability in found] == [1, 1, 1]
+    assert [len(vulnerability.types) for vulnerability in found] == [3, 1, 1, 2, 1, 2]
+    assert sum(len(vulnerability.types) for vulnerability in found) == 10
 
 
 def test_a_set_up_attack_is_handed_over_as_it_is(monkeypatch):
