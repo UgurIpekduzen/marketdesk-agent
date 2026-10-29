@@ -43,7 +43,7 @@ def clock_calls(source: str) -> list[int]:
     return lines
 
 
-def test_simulated_today_is_the_first_of_september_2018():
+def test_simulated_today_is_2018_09_01():
     assert config.SIMULATED_TODAY == date(2018, 9, 1)
 
 
@@ -90,7 +90,7 @@ def test_no_code_reads_the_machine_clock():
     assert offenders == [], "use config.SIMULATED_TODAY instead of the clock"
 
 
-def test_the_page_shows_no_error_details_and_keeps_its_protections():
+def test_page_hides_errors_keeps_protections():
     settings = tomllib.loads(
         (PROJECT_ROOT / ".streamlit" / "config.toml").read_text(encoding="utf-8")
     )
@@ -108,7 +108,7 @@ def test_the_page_sends_no_usage_statistics():
     assert settings["browser"]["gatherUsageStats"] is False
 
 
-def test_the_page_hides_the_developer_options_and_has_its_own_colours():
+def test_page_hides_dev_options_sets_colours():
     settings = tomllib.loads(
         (PROJECT_ROOT / ".streamlit" / "config.toml").read_text(encoding="utf-8")
     )

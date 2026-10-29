@@ -59,7 +59,7 @@ INJECTION = {
 }
 
 
-def test_table_has_the_baselines_and_the_system_by_group():
+def test_table_has_baselines_and_system():
     lines = report.comparison_table(GOLDEN, BASELINES).splitlines()
 
     assert [line.split("|")[1].strip() for line in lines[2:]] == [
@@ -75,7 +75,7 @@ def test_table_has_the_baselines_and_the_system_by_group():
     assert "| B2 · ops | 10 | 90% | 95% | 100% | 37% |" in lines[3]
 
 
-def test_semantic_layer_gain_is_final_minus_the_raw_schema_baseline():
+def test_semantic_gain_is_final_minus_raw():
     assert report.semantic_layer_gain(GOLDEN, BASELINES) == pytest.approx(0.58)
     assert report.semantic_layer_gain(GOLDEN, {}) is None
 
@@ -119,7 +119,7 @@ def test_cost_needs_a_list_price(monkeypatch):
     assert "0.00194 USD at the list price of 2026-10-14" in report.cost_text(overall)
 
 
-def test_report_holds_the_three_numbers_and_how_to_read_them():
+def test_report_has_three_numbers_and_notes():
     text = report.build_report(GOLDEN, BASELINES, INJECTION)
 
     assert text.startswith("# Final evaluation: gemini `some-model`, temperature 0")
@@ -131,14 +131,14 @@ def test_report_holds_the_three_numbers_and_how_to_read_them():
     assert "Database copy unchanged by the attack run: yes" in text
 
 
-def test_report_can_be_built_before_the_other_runs_exist():
+def test_report_builds_before_other_runs():
     text = report.build_report(GOLDEN, {}, {})
 
     assert "the semantic layer adds — of SQL execution accuracy" in text
     assert "Security tests: 0 of 0 attack checks held." in text
 
 
-def test_report_says_how_far_the_hand_check_agreed_with_the_judge():
+def test_report_states_hand_check_agreement():
     check = {"lines": 30, "checked": 12, "agreed": 11, "rate": 11 / 12}
 
     text = report.build_report(GOLDEN, BASELINES, INJECTION, check)
@@ -146,13 +146,13 @@ def test_report_says_how_far_the_hand_check_agreed_with_the_judge():
     assert "checked 12 of the judge's scores by hand and agreed with 11 (92%)" in text
 
 
-def test_report_says_when_the_judge_was_not_checked_by_hand():
+def test_report_says_judge_is_unchecked():
     text = report.build_report(GOLDEN, BASELINES, INJECTION)
 
     assert "have not been checked by hand yet" in text
 
 
-def test_missing_results_file_loads_as_nothing(tmp_path):
+def test_missing_results_load_as_nothing(tmp_path):
     assert report.load(tmp_path / "missing.json") == {}
 
 
@@ -175,7 +175,7 @@ INJECTION_EN = {
 }
 
 
-def test_english_results_are_shown_next_to_the_turkish_ones():
+def test_english_results_follow_turkish():
     text = report.build_report(
         GOLDEN, BASELINES, INJECTION, golden_en=GOLDEN_EN, injection_en=INJECTION_EN
     )
@@ -192,7 +192,7 @@ def test_english_results_are_shown_next_to_the_turkish_ones():
     assert "| ops |" not in section
 
 
-def test_report_has_no_english_section_without_its_results():
+def test_no_english_section_without_results():
     assert "## English" not in report.build_report(GOLDEN, BASELINES, INJECTION)
 
 
@@ -212,7 +212,7 @@ ATTACK_SET_RESULTS = {
 }
 
 
-def test_the_security_line_adds_up_the_sets_of_the_red_teaming():
+def test_security_line_adds_up_the_sets():
     text = report.build_report(
         GOLDEN, BASELINES, INJECTION, attack_sets=ATTACK_SET_RESULTS
     )
@@ -225,7 +225,7 @@ def test_the_security_line_adds_up_the_sets_of_the_red_teaming():
     ) in text
 
 
-def test_the_report_lists_each_attack_set_and_the_total():
+def test_report_lists_each_attack_set():
     text = report.build_report(
         GOLDEN, BASELINES, INJECTION, attack_sets=ATTACK_SET_RESULTS
     )
@@ -236,14 +236,14 @@ def test_the_report_lists_each_attack_set_and_the_total():
     assert "| **All** | 16 | 15 | 0 |" in section
 
 
-def test_a_set_that_was_not_run_is_left_out_of_the_report():
+def test_unrun_set_is_left_out():
     text = report.build_report(GOLDEN, BASELINES, INJECTION, attack_sets={})
 
     assert "## Attack sets" not in text
     assert "more sets of the red teaming" not in text
 
 
-def test_a_set_that_wrote_a_request_shows_it_in_the_total():
+def test_set_with_a_write_shows_in_total():
     text = report.build_report(
         GOLDEN,
         BASELINES,
@@ -266,7 +266,7 @@ def test_a_set_that_wrote_a_request_shows_it_in_the_total():
     assert "| **All** | 8 | 8 | 1 |" in text
 
 
-def test_the_full_evaluation_runs_every_set_the_report_adds_up():
+def test_full_eval_runs_every_reported_set():
     taskfile = (Path(__file__).resolve().parent.parent / "Taskfile.yml").read_text(
         encoding="utf-8"
     )
@@ -296,7 +296,7 @@ def test_the_full_evaluation_runs_every_set_the_report_adds_up():
             assert lines, (path.name, option)
 
 
-def test_the_full_evaluation_passes_its_arguments_to_every_run():
+def test_full_eval_passes_args_to_runs():
     taskfile = (Path(__file__).resolve().parent.parent / "Taskfile.yml").read_text(
         encoding="utf-8"
     )
@@ -323,7 +323,7 @@ def critic_result(**changes):
     return {"summary_all_splits": {"ops": numbers(**counts)}}
 
 
-def test_the_critic_is_shown_with_and_without_for_each_set():
+def test_critic_shown_with_and_without():
     runs = {
         "Number traps": [
             (

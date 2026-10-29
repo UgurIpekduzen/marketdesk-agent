@@ -40,7 +40,7 @@ def test_raw_id_becomes_the_session_alias():
     assert session.order_id_for("SIP-1") == RAW_ID
 
 
-def test_the_same_id_gets_the_same_alias_and_another_id_another():
+def test_same_id_same_alias():
     session = Session("u_alice")
 
     text, _ = clean(
@@ -65,7 +65,7 @@ def test_id_inside_json_is_replaced():
         "g" * 32,  # not hexadecimal
     ],
 )
-def test_text_that_is_not_a_raw_id_is_left_alone(harmless):
+def test_non_id_text_is_left_alone(harmless):
     assert clean(harmless) == (harmless, Counter())
 
 
@@ -116,7 +116,7 @@ def test_phone_number_is_masked(number):
         "0.0672 (6481 / 96417)",
     ],
 )
-def test_dates_amounts_and_counts_are_not_phone_numbers(not_a_phone):
+def test_dates_amounts_are_not_phones(not_a_phone):
     assert clean(not_a_phone) == (not_a_phone, Counter())
 
 
@@ -141,7 +141,7 @@ def test_known_city_and_zip_code_are_masked():
     assert found == {"city": 1, "zip": 1}
 
 
-def test_known_value_is_matched_as_a_whole_word():
+def test_known_value_matches_whole_word():
     known = {"sao paulo": "[city]", "01310": "[zip]", "sp": "[state]"}
 
     text, _ = clean("sao paulos, 013100, 201310, spor", known_values=known)
@@ -149,7 +149,7 @@ def test_known_value_is_matched_as_a_whole_word():
     assert text == "sao paulos, 013100, 201310, spor"
 
 
-def test_longer_known_value_wins_over_a_shorter_one_inside_it():
+def test_longer_known_value_wins():
     known = {"rio": "[city]", "rio de janeiro": "[city]"}
 
     text, found = clean("Rio de Janeiro ve Rio", known_values=known)
@@ -199,7 +199,7 @@ def test_nested_values_are_cleaned():
 # --- Logging ------------------------------------------------------------
 
 
-def test_findings_are_logged_as_kinds_and_counts_only(caplog):
+def test_findings_logged_as_kinds_counts(caplog):
     _, found = clean(f"{RAW_ID} ayse@example.com")
 
     with caplog.at_level(logging.WARNING, logger="src.guardrails.outbound"):
@@ -223,7 +223,7 @@ def test_nothing_found_logs_nothing(caplog):
 # --- Normalising before matching -------------------------------------------------
 
 
-def test_full_width_digits_and_zero_width_marks_hide_nothing():
+def test_unicode_tricks_hide_nothing():
     text = "Numaram ０５３２\u200b１２３４５６７, e-postam ayse\u200b@ornek.com"
 
     cleaned, found = Redactor().redact(text)
@@ -232,13 +232,13 @@ def test_full_width_digits_and_zero_width_marks_hide_nothing():
     assert found == Counter(phone=1, email=1)
 
 
-def test_turkish_letters_are_sent_as_they_are():
+def test_turkish_letters_stay_as_they_are():
     text = "Şikâyetim: ürün ığdırlı satıcıdan geldi, çok üzgünüm."
 
     assert Redactor().redact(text)[0] == text
 
 
-def test_a_known_value_is_found_with_or_without_accents():
+def test_known_value_found_with_accents():
     redactor = Redactor(known_values={"sao paulo": "[city]"})
 
     cleaned, found = redactor.redact("São Paulo'dan, yani SAO PAULO'dan geliyor.")
@@ -247,13 +247,13 @@ def test_a_known_value_is_found_with_or_without_accents():
     assert found == Counter(city=2)
 
 
-def test_accents_elsewhere_in_the_text_are_kept():
+def test_other_accents_are_kept():
     redactor = Redactor(known_values={"sao paulo": "[city]"})
 
     assert redactor.redact("Müşteri São Paulo'da.")[0] == "Müşteri [city]'da."
 
 
-def test_turkish_id_iban_and_card_numbers_are_masked():
+def test_tckn_iban_card_numbers_masked():
     text = (
         "TCKN 10000000146, IBAN TR33 0006 1005 1978 6457 8413 26, "
         "kart 4111 1111 1111 1111."
@@ -276,7 +276,7 @@ def test_turkish_id_iban_and_card_numbers_are_masked():
         "Oran 0,03580657069029162 ya da 1.4111111111111111",
     ],
 )
-def test_numbers_whose_check_fails_are_left_alone(text):
+def test_failed_checksums_are_left_alone(text):
     assert Redactor().redact(text)[0] == text
 
 
@@ -289,7 +289,7 @@ def test_numbers_whose_check_fails_are_left_alone(text):
         "ayse @ ornek.com",
     ],
 )
-def test_an_e_mail_address_with_its_at_hidden_is_masked(address):
+def test_obfuscated_email_is_masked(address):
     assert (
         Redactor().redact(f"Adresim {address}, yazın.")[0] == "Adresim [email], yazın."
     )
@@ -299,7 +299,7 @@ def test_an_e_mail_address_with_its_at_hidden_is_masked(address):
     "text",
     ["Fiyat @ 100.50 BRL", "Teslim at home dot com sayfasında yazıyor", "@ işareti"],
 )
-def test_text_that_only_looks_like_an_address_is_left_alone(text):
+def test_address_lookalike_is_left_alone(text):
     assert Redactor().redact(text)[0] == text
 
 
@@ -319,7 +319,7 @@ def test_text_that_only_looks_like_an_address_is_left_alone(text):
         ),
     ],
 )
-def test_brazilian_tax_numbers_and_web_addresses_are_masked(text, kind, masked):
+def test_cpf_cnpj_and_urls_are_masked(text, kind, masked):
     cleaned, found = Redactor().redact(text)
 
     assert masked in cleaned
@@ -336,14 +336,14 @@ def test_brazilian_tax_numbers_and_web_addresses_are_masked(text, kind, masked):
         "Mande para a loja física, www sem ponto.",
     ],
 )
-def test_numbers_and_words_that_only_look_like_them_are_left_alone(text):
+def test_lookalikes_are_left_alone(text):
     cleaned, found = Redactor().redact(text)
 
     assert not found
     assert cleaned == text
 
 
-def test_the_punctuation_after_a_web_address_stays_outside_the_mask():
+def test_url_punctuation_stays_outside():
     cleaned, _ = Redactor().redact(
         "Veja (www.exemplo.com.br), ou https://loja.example.com/p?id=3."
     )

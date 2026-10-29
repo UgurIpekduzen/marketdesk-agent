@@ -95,7 +95,7 @@ def varied_db(synthetic_db):
 # --- The definitions ----------------------------------------------------
 
 
-def test_the_eight_required_metrics_are_defined():
+def test_eight_required_metrics_exist():
     assert set(load_semantic_layer().metrics) == REQUIRED_METRICS
 
 
@@ -109,7 +109,7 @@ def test_every_metric_has_all_its_fields():
         assert metric.caveat
 
 
-def test_every_metric_has_an_english_description_and_caveat():
+def test_metrics_have_english_text():
     for metric in load_semantic_layer().metrics.values():
         assert metric.description_in(Language.EN) == metric.description_en
         assert metric.caveat_in(Language.EN) == metric.caveat_en
@@ -126,7 +126,7 @@ def test_english_caveats_say_the_same_limits():
         assert "not a cause" in metrics[name].caveat_en
 
 
-def test_a_metric_without_its_english_caveat_is_refused():
+def test_missing_english_caveat_is_refused():
     text = METRICS_PATH.read_text(encoding="utf-8")
     broken = text.replace(
         text[
@@ -143,20 +143,20 @@ def test_a_metric_without_its_english_caveat_is_refused():
         parse_semantic_layer(broken)
 
 
-def test_gmv_caveat_says_it_is_not_revenue_or_profit():
+def test_gmv_caveat_denies_revenue_profit():
     caveat = load_semantic_layer().metrics["gmv"].caveat
 
     assert "gelir" in caveat
     assert "kâr" in caveat
 
 
-def test_rates_and_averages_say_they_are_observational():
+def test_rates_are_called_observational():
     metrics = load_semantic_layer().metrics
     for name in REQUIRED_METRICS - {"order_count", "gmv", "avg_order_value"}:
         assert "nedensellik değildir" in metrics[name].caveat
 
 
-def test_no_dimension_exposes_city_or_zip_code():
+def test_no_dimension_exposes_city_or_zip():
     text = METRICS_PATH.read_text(encoding="utf-8")
 
     assert "city" not in text
@@ -164,7 +164,7 @@ def test_no_dimension_exposes_city_or_zip_code():
     assert "customer_unique_id" not in text
 
 
-def test_list_metrics_gives_name_description_and_dimensions():
+def test_list_metrics_gives_names_dimensions():
     listed = list_metrics()
 
     assert {metric["name"] for metric in listed["metrics"]} == REQUIRED_METRICS
@@ -184,7 +184,7 @@ def test_list_metrics_gives_name_description_and_dimensions():
         ('    numerator: "COUNT(*)"\n', "", "numerator"),
     ],
 )
-def test_faulty_definitions_are_refused_when_read(old, new, fault):
+def test_faulty_definitions_are_refused(old, new, fault):
     text = METRICS_PATH.read_text(encoding="utf-8")
     assert old in text
 
@@ -199,7 +199,7 @@ def test_order_count(synthetic_db):
     assert single(synthetic_db, "order_count")["value"] == len(ORDERS) == 29
 
 
-def test_gmv_leaves_out_closed_orders_and_freight(synthetic_db):
+def test_gmv_skips_closed_orders_and_freight(synthetic_db):
     expected = sum(
         float(price)
         for order in ORDERS
@@ -211,7 +211,7 @@ def test_gmv_leaves_out_closed_orders_and_freight(synthetic_db):
     assert expected == pytest.approx(3670.01)
 
 
-def test_avg_order_value_is_gmv_over_order_count(synthetic_db):
+def test_avg_order_value_is_gmv_per_order(synthetic_db):
     row = single(synthetic_db, "avg_order_value")
 
     assert row["numerator"] == pytest.approx(single(synthetic_db, "gmv")["value"])
@@ -219,7 +219,7 @@ def test_avg_order_value_is_gmv_over_order_count(synthetic_db):
     assert row["value"] == pytest.approx(3670.01 / 29)
 
 
-def test_cancel_rate_counts_canceled_but_not_unavailable(synthetic_db):
+def test_cancel_rate_skips_unavailable(synthetic_db):
     row = single(synthetic_db, "cancel_rate")
 
     assert (row["numerator"], row["denominator"]) == (1, 29)
@@ -237,7 +237,7 @@ def test_late_delivery_rate(synthetic_db):
     assert row["value"] == pytest.approx(0.25)
 
 
-def test_avg_delivery_days_counts_the_time_of_day(synthetic_db):
+def test_avg_delivery_days_uses_time_of_day(synthetic_db):
     purchased = datetime.fromisoformat(synthetic_data.PURCHASED)
     durations = [
         (datetime.fromisoformat(order["delivered"]) - purchased).total_seconds() / 86400
@@ -251,7 +251,7 @@ def test_avg_delivery_days_counts_the_time_of_day(synthetic_db):
     assert row["value"] == pytest.approx(sum(durations) / len(durations))
 
 
-def test_delivery_metrics_leave_out_an_order_delivered_after_today(synthetic_db):
+def test_delivery_metrics_skip_future_orders(synthetic_db):
     # With o_delivered_future counted there would be 21 delivered orders.
     one_week_later = date(2018, 9, 8)
 
@@ -269,7 +269,7 @@ def test_avg_review_score(synthetic_db):
     assert row["value"] == pytest.approx(3.5)
 
 
-def test_avg_review_score_counts_an_order_once(synthetic_db):
+def test_avg_review_score_counts_order_once(synthetic_db):
     # A second review for o_day14: its two scores (5 and 1) average to 3.
     synthetic_db.execute(
         "INSERT INTO order_reviews (review_id, order_id, review_score, "
@@ -282,7 +282,7 @@ def test_avg_review_score_counts_an_order_once(synthetic_db):
     assert row["value"] == pytest.approx((3 + 2) / 2)
 
 
-def test_avg_review_score_leaves_out_a_review_written_after_today(synthetic_db):
+def test_avg_score_skips_future_reviews(synthetic_db):
     synthetic_db.execute(
         "INSERT INTO order_reviews (review_id, order_id, review_score, "
         "review_creation_date) VALUES ('r_later', 'o_day0', 1, '2018-09-03 00:00:00')"
@@ -291,7 +291,7 @@ def test_avg_review_score_leaves_out_a_review_written_after_today(synthetic_db):
     assert single(synthetic_db, "avg_review_score")["denominator"] == 2
 
 
-def test_seller_late_shipping_rate_counts_items(synthetic_db):
+def test_seller_late_rate_counts_items(synthetic_db):
     handed_over = sum(
         len(items_of(order))
         for order in ORDERS
@@ -324,14 +324,14 @@ def test_grouping_by_purchase_month(varied_db):
     assert groups["2018-07"]["value"] == pytest.approx(0.5)
 
 
-def test_order_with_two_categories_is_counted_once_in_each(varied_db):
+def test_two_categories_count_once_each(varied_db):
     groups = grouped(varied_db, "order_count", ["product_category_en"])
 
     assert groups["lighting"]["value"] == 1
     assert groups["furniture_decor"]["value"] == 29
 
 
-def test_order_with_two_items_of_one_category_is_counted_once(synthetic_db):
+def test_two_items_one_category_count_once(synthetic_db):
     # o_two_items and o_seller_late_one_item each have two items of one category.
     groups = grouped(synthetic_db, "order_count", ["product_category_en"])
 
@@ -344,14 +344,14 @@ def test_order_with_two_items_of_one_category_is_counted_once(synthetic_db):
     }
 
 
-def test_late_delivery_rate_by_category_uses_distinct_pairs(varied_db):
+def test_late_rate_by_category_is_distinct(varied_db):
     groups = grouped(varied_db, "late_delivery_rate", ["product_category_en"])
 
     assert groups["furniture_decor"]["denominator"] == 20
     assert groups["lighting"]["denominator"] == 1
 
 
-def test_gmv_by_category_splits_an_order_by_its_items(varied_db):
+def test_gmv_by_category_splits_by_item(varied_db):
     groups = grouped(varied_db, "gmv", ["product_category_en"])
 
     assert groups["lighting"]["value"] == pytest.approx(50.00)
@@ -396,7 +396,7 @@ def test_filter_by_a_list_of_values(varied_db):
     assert row["value"] == 29
 
 
-def test_filter_by_an_item_dimension_counts_each_order_once(varied_db):
+def test_item_filter_counts_order_once(varied_db):
     row = single(
         varied_db, "order_count", filters={"product_category_en": "furniture_decor"}
     )
@@ -425,7 +425,7 @@ def test_filter_and_grouping_together(varied_db):
     }
 
 
-def test_filter_value_is_bound_not_written_into_the_sql(synthetic_db):
+def test_filter_value_is_bound(synthetic_db):
     attack = "SP' OR '1'='1"
 
     answer = run_metric(synthetic_db, "order_count", filters={"customer_state": attack})
@@ -438,7 +438,7 @@ def test_filter_value_is_bound_not_written_into_the_sql(synthetic_db):
 # --- Ranking groups -----------------------------------------------------
 
 
-def test_groups_can_be_ordered_by_value_and_cut(varied_db):
+def test_groups_can_be_ranked_and_cut(varied_db):
     answer = run_metric(
         varied_db,
         "order_count",
@@ -459,7 +459,7 @@ def test_ascending_order(varied_db):
     assert [row[0] for row in answer["rows"]] == ["lighting", "furniture_decor"]
 
 
-def test_min_count_keeps_groups_of_that_size_by_the_denominator(varied_db):
+def test_min_count_uses_the_denominator(varied_db):
     # late_delivery_rate by category: furniture_decor has 20 delivered orders,
     # lighting has 1.
     answer = run_metric(
@@ -471,7 +471,7 @@ def test_min_count_keeps_groups_of_that_size_by_the_denominator(varied_db):
     assert answer["params"]["min_count"] == 2
 
 
-def test_min_count_uses_the_numerator_for_a_plain_total(varied_db):
+def test_min_count_uses_numerator_for_totals(varied_db):
     answer = run_metric(
         varied_db, "order_count", group_by=["customer_state"], min_count=2
     )
@@ -480,7 +480,7 @@ def test_min_count_uses_the_numerator_for_a_plain_total(varied_db):
     assert "WHERE numerator >= :min_count" in answer["sql"]
 
 
-def test_equal_values_come_back_in_a_fixed_order(varied_db):
+def test_ties_come_in_a_fixed_order(varied_db):
     answer = run_metric(
         varied_db, "cancel_rate", group_by=["customer_state"], order="value_desc"
     )
@@ -518,7 +518,7 @@ def test_invalid_ranking_is_refused(synthetic_db, ranking):
 # --- What comes back ----------------------------------------------------
 
 
-def test_answer_holds_the_sql_the_caveat_and_the_bound_today(synthetic_db):
+def test_answer_has_sql_caveat_and_today(synthetic_db):
     answer = run_metric(synthetic_db, "late_delivery_rate")
 
     assert answer["metric"] == "late_delivery_rate"
@@ -531,7 +531,7 @@ def test_answer_holds_the_sql_the_caveat_and_the_bound_today(synthetic_db):
 
 
 @pytest.mark.parametrize("metric_name", sorted(REQUIRED_METRICS))
-def test_every_metric_binds_the_simulated_today(synthetic_db, metric_name):
+def test_every_metric_binds_today(synthetic_db, metric_name):
     answer = run_metric(synthetic_db, metric_name)
 
     assert ":simulated_today" in answer["sql"]
@@ -539,7 +539,7 @@ def test_every_metric_binds_the_simulated_today(synthetic_db, metric_name):
 
 
 @pytest.mark.parametrize("metric_name", sorted(REQUIRED_METRICS))
-def test_every_metric_runs_with_each_of_its_dimensions(synthetic_db, metric_name):
+def test_metric_runs_with_each_dimension(synthetic_db, metric_name):
     for dimension in load_semantic_layer().metrics[metric_name].dimensions:
         answer = run_metric(synthetic_db, metric_name, group_by=[dimension])
 
@@ -555,7 +555,7 @@ def test_the_generated_sql_is_one_select(synthetic_db):
     assert sql.endswith("LIMIT 1000")
 
 
-def test_metric_runs_on_a_read_only_connection(synthetic_db_path):
+def test_metric_runs_read_only(synthetic_db_path):
     conn = sqlite3.connect(f"file:{synthetic_db_path}?mode=ro", uri=True)
     try:
         assert single(conn, "order_count")["value"] == 29
@@ -573,7 +573,7 @@ def test_running_a_metric_writes_nothing(synthetic_db):
 # --- Refusals -----------------------------------------------------------
 
 
-def test_unknown_metric_is_refused_with_the_defined_ones(synthetic_db):
+def test_unknown_metric_lists_defined_ones(synthetic_db):
     answer = run_metric(synthetic_db, "revenue")
 
     assert answer["error"] == "UNKNOWN_METRIC"
@@ -590,9 +590,7 @@ def test_unknown_metric_is_refused_with_the_defined_ones(synthetic_db):
         ("avg_order_value", "product_category_en"),
     ],
 )
-def test_dimension_the_metric_does_not_allow_is_refused(
-    synthetic_db, metric_name, dimension
-):
+def test_disallowed_dimension_is_refused(synthetic_db, metric_name, dimension):
     answer = run_metric(synthetic_db, metric_name, group_by=[dimension])
 
     assert answer["error"] == "INVALID_DIMENSION"
@@ -600,7 +598,7 @@ def test_dimension_the_metric_does_not_allow_is_refused(
     assert "sql" not in answer
 
 
-def test_more_than_two_dimensions_are_refused(synthetic_db):
+def test_three_dimensions_are_refused(synthetic_db):
     answer = run_metric(
         synthetic_db,
         "gmv",
@@ -618,7 +616,7 @@ def test_the_same_dimension_twice_is_refused(synthetic_db):
     assert answer["error"] == "INVALID_DIMENSION"
 
 
-def test_two_item_dimensions_are_refused_for_an_order_metric(synthetic_db):
+def test_two_item_dimensions_are_refused(synthetic_db):
     both = ["product_category_en", "seller_state"]
 
     assert run_metric(synthetic_db, "order_count", group_by=both)["error"] == (
@@ -636,9 +634,7 @@ def test_two_item_dimensions_are_refused_for_an_order_metric(synthetic_db):
         {"customer_state = 'SP' OR 1": "1"},
     ],
 )
-def test_filter_on_something_else_than_an_allowed_dimension_is_refused(
-    synthetic_db, filters
-):
+def test_filter_on_disallowed_dimension(synthetic_db, filters):
     answer = run_metric(synthetic_db, "order_count", filters=filters)
 
     assert answer["error"] == "INVALID_FILTER"
@@ -646,14 +642,14 @@ def test_filter_on_something_else_than_an_allowed_dimension_is_refused(
 
 
 @pytest.mark.parametrize("value", [5, None, [], ["SP", 5], {"a": "b"}])
-def test_filter_value_that_is_not_text_is_refused(synthetic_db, value):
+def test_non_text_filter_value_is_refused(synthetic_db, value):
     answer = run_metric(synthetic_db, "order_count", filters={"customer_state": value})
 
     assert answer["error"] == "INVALID_FILTER"
 
 
 @pytest.mark.parametrize("value", ["yesterday", "2018-13-01", "01/07/2018", 20180701])
-def test_period_filter_that_is_not_a_date_is_refused(synthetic_db, value):
+def test_non_date_period_is_refused(synthetic_db, value):
     answer = run_metric(synthetic_db, "order_count", filters={"purchase_from": value})
 
     assert answer["error"] == "INVALID_FILTER"

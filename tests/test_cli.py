@@ -106,9 +106,7 @@ def test_other_ways_of_saying_yes(run_chat, fake, synthetic_db_path, typed):
 
 
 @pytest.mark.parametrize("typed", ["h", "hayır", "", "belki", "yes", "onaylıyorum"])
-def test_anything_but_a_clear_yes_writes_nothing(
-    run_chat, fake, synthetic_db_path, typed
-):
+def test_unclear_answer_writes_nothing(run_chat, fake, synthetic_db_path, typed):
     fake.script = [[RETURN_CALL], "Onayınız istenecek."]
 
     _, shown = run_chat(["o_day14 hasarlı geldi", typed, "çık"])
@@ -117,9 +115,7 @@ def test_anything_but_a_clear_yes_writes_nothing(
     assert request_count(synthetic_db_path) == 2
 
 
-def test_input_closed_during_the_approval_question_is_a_no(
-    run_chat, fake, synthetic_db_path
-):
+def test_closed_input_is_a_no(run_chat, fake, synthetic_db_path):
     fake.script = [[RETURN_CALL], "Onayınız istenecek."]
 
     prompts, shown = run_chat(["o_day14 hasarlı geldi"])
@@ -129,9 +125,7 @@ def test_input_closed_during_the_approval_question_is_a_no(
     assert request_count(synthetic_db_path) == 2
 
 
-def test_typing_yes_in_the_chat_itself_is_not_an_approval(
-    run_chat, fake, synthetic_db_path
-):
+def test_chat_yes_is_not_approval(run_chat, fake, synthetic_db_path):
     # "e" typed as a chat message goes to the model; it approves nothing.
     fake.script = ["Neyi onaylamak istiyorsunuz?"]
 
@@ -141,7 +135,7 @@ def test_typing_yes_in_the_chat_itself_is_not_an_approval(
     assert len(fake.requests) == 1
 
 
-def test_no_approval_question_without_a_pending_request(run_chat, fake):
+def test_no_question_without_pending_request(run_chat, fake):
     fake.script = ["Teslim edildi."]
 
     prompts, _ = run_chat(["o_day14 nerede?", "çık"])
@@ -149,11 +143,11 @@ def test_no_approval_question_without_a_pending_request(run_chat, fake):
     assert messages.APPROVAL_QUESTION not in prompts
 
 
-def test_demo_customer_is_the_one_with_the_most_orders(synthetic_db):
+def test_demo_customer_has_most_orders(synthetic_db):
     assert demo_customer(synthetic_db) == ALICE
 
 
-def test_ops_chat_shows_the_answer_with_its_sources(synthetic_db_path):
+def test_ops_chat_shows_sources(synthetic_db_path):
     fake = FakeLLM(
         script=[[("run_metric", {"metric_name": "order_count"})], "29 sipariş var."]
     )
@@ -175,7 +169,7 @@ def test_ops_chat_shows_the_answer_with_its_sources(synthetic_db_path):
     assert messages.APPROVAL_QUESTION not in prompts
 
 
-def test_ops_chat_says_how_a_metric_was_computed(synthetic_db_path):
+def test_ops_chat_says_how_computed(synthetic_db_path):
     fake = FakeLLM(
         script=[
             [
@@ -212,9 +206,7 @@ def test_ops_chat_says_how_a_metric_was_computed(synthetic_db_path):
     assert "ilk 2" in line
 
 
-def test_chat_through_the_router_refuses_an_ops_question_from_a_customer(
-    synthetic_db_path, fake_policy_index, fake
-):
+def test_router_refuses_ops_question(synthetic_db_path, fake_policy_index, fake):
     fake.script = ["ops_metric", "support", "Teslim edildi."]
     lines = iter(["Tüm siparişlerin cirosu?", "o_day14 nerede?", "çık"])
     shown = []

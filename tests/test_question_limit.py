@@ -15,7 +15,7 @@ class Clock:
         return self.seconds
 
 
-def test_questions_up_to_the_limit_pass_and_the_next_is_refused():
+def test_limit_passes_then_refuses():
     limit = QuestionLimit(per_hour=3, clock=Clock())
 
     for _ in range(3):
@@ -25,7 +25,7 @@ def test_questions_up_to_the_limit_pass_and_the_next_is_refused():
         limit.take()
 
 
-def test_a_question_older_than_an_hour_no_longer_counts():
+def test_old_questions_stop_counting():
     clock = Clock()
     limit = QuestionLimit(per_hour=2, clock=clock)
     limit.take()
@@ -52,7 +52,7 @@ def test_a_refused_question_takes_no_place():
     limit.take()
 
 
-def test_visitors_asking_at_once_do_not_pass_the_limit_together():
+def test_parallel_visitors_respect_the_limit():
     limit = QuestionLimit(per_hour=50)
     passed = []
 

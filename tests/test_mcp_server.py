@@ -57,7 +57,7 @@ def request_count(db_path):
 # --- What the server offers ----------------------------------------------
 
 
-def test_server_offers_the_model_tools_and_the_control_tools(synthetic_db_path):
+def test_server_offers_model_control_tools(synthetic_db_path):
     tools = with_server(synthetic_db_path, lambda orders: orders.tools())
 
     assert set(tools) == set(MODEL_TOOLS) | CONTROL_TOOLS
@@ -70,7 +70,7 @@ def test_server_offers_the_model_tools_and_the_control_tools(synthetic_db_path):
     )
 
 
-def test_descriptions_are_the_docstrings_of_the_wrapped_functions(synthetic_db_path):
+def test_descriptions_are_the_docstrings(synthetic_db_path):
     tools = with_server(synthetic_db_path, lambda orders: orders.tools())
 
     for function in (
@@ -84,7 +84,7 @@ def test_descriptions_are_the_docstrings_of_the_wrapped_functions(synthetic_db_p
         assert len(tools[function.__name__]) <= 1024
 
 
-def test_no_order_tool_takes_identity_or_an_approval_token(synthetic_db_path):
+def test_no_tool_takes_identity_or_token(synthetic_db_path):
     async def schemas(orders):
         listed = await orders._session.list_tools()
         return {
@@ -147,7 +147,7 @@ def test_own_order_is_found(synthetic_db_path):
     assert answer["items_total"] == "165.00"
 
 
-def test_ten_foreign_orders_are_all_not_found(synthetic_db_path):
+def test_ten_foreign_orders_not_found(synthetic_db_path):
     conn = sqlite3.connect(synthetic_db_path)
     alice_orders = [
         row[0]
@@ -172,7 +172,7 @@ def test_ten_foreign_orders_are_all_not_found(synthetic_db_path):
     assert answers == [NOT_FOUND] * 10
 
 
-def test_foreign_missing_and_unknown_alias_give_the_same_answer(synthetic_db_path):
+def test_foreign_missing_unknown_same_answer(synthetic_db_path):
     async def scenario(orders):
         return [
             await orders.call("get_order_status", {"order_ref": order_ref})
@@ -182,7 +182,7 @@ def test_foreign_missing_and_unknown_alias_give_the_same_answer(synthetic_db_pat
     assert with_server(synthetic_db_path, scenario) == [NOT_FOUND] * 3
 
 
-def test_list_holds_only_the_customers_own_orders(synthetic_db_path):
+def test_list_has_only_own_orders(synthetic_db_path):
     async def scenario(orders):
         return await orders.call("list_customer_orders", {"limit": 20})
 
@@ -191,7 +191,7 @@ def test_list_holds_only_the_customers_own_orders(synthetic_db_path):
     assert len(listed["orders"]) == 1
 
 
-def test_eligibility_comes_from_the_rule_engine(synthetic_db_path):
+def test_eligibility_comes_from_rule_engine(synthetic_db_path):
     async def scenario(orders):
         return await orders.call(
             "check_return_eligibility",
@@ -203,14 +203,14 @@ def test_eligibility_comes_from_the_rule_engine(synthetic_db_path):
     assert (answer["decision"], answer["rule"]) == ("NOT_ELIGIBLE_WINDOW", "R6")
 
 
-def test_eligibility_without_a_reason_asks_for_one(synthetic_db_path):
+def test_eligibility_asks_for_a_reason(synthetic_db_path):
     async def scenario(orders):
         return await orders.call("check_return_eligibility", {"order_ref": "o_day14"})
 
     assert with_server(synthetic_db_path, scenario)["error"] == "REASON_REQUIRED"
 
 
-def test_session_info_gives_a_hash_and_the_personal_values(synthetic_db_path):
+def test_session_info_has_hash_and_values(synthetic_db_path):
     info = with_server(synthetic_db_path, lambda orders: orders.session_info())
 
     assert info["personal_values"] == {"sao paulo": "[city]", "01310": "[zip]"}
@@ -223,7 +223,7 @@ def test_session_info_gives_a_hash_and_the_personal_values(synthetic_db_path):
 # --- The session is kept for the life of the connection -------------------
 
 
-def test_alias_from_one_call_works_in_the_next(synthetic_db_path):
+def test_alias_works_in_the_next_call(synthetic_db_path):
     async def scenario(orders):
         first = await orders.call("get_order_status", {"order_ref": "o_day14"})
         again = await orders.call("get_order_status", {"order_ref": first["order"]})
@@ -235,7 +235,7 @@ def test_alias_from_one_call_works_in_the_next(synthetic_db_path):
     assert again == first
 
 
-def test_typed_order_number_gets_an_alias_the_tools_resolve(synthetic_db_path):
+def test_typed_number_gets_a_working_alias(synthetic_db_path):
     async def scenario(orders):
         alias = await orders.alias_order_reference("  O_DAY14 ")
         return alias, await orders.call("get_order_status", {"order_ref": alias})
@@ -247,7 +247,7 @@ def test_typed_order_number_gets_an_alias_the_tools_resolve(synthetic_db_path):
     assert answer["delivered_on"] == "2018-08-18"
 
 
-def test_alias_of_a_foreign_order_still_ends_in_not_found(synthetic_db_path):
+def test_foreign_alias_ends_in_not_found(synthetic_db_path):
     async def scenario(orders):
         alias = await orders.alias_order_reference("o_other_customer")
         return await orders.call("get_order_status", {"order_ref": alias})
@@ -278,7 +278,7 @@ def test_two_servers_are_two_sessions(synthetic_db_path):
 # --- Approval is checked on the server ------------------------------------
 
 
-def test_write_without_approval_is_refused_and_writes_nothing(synthetic_db_path):
+def test_unapproved_write_is_refused(synthetic_db_path):
     async def scenario(orders):
         return [await orders.call("create_return_request", RETURN) for _ in range(3)]
 
@@ -288,7 +288,7 @@ def test_write_without_approval_is_refused_and_writes_nothing(synthetic_db_path)
     assert request_count(synthetic_db_path) == 2
 
 
-def test_pending_request_is_described_with_an_alias(synthetic_db_path):
+def test_pending_request_uses_an_alias(synthetic_db_path):
     async def scenario(orders):
         await orders.call("create_return_request", RETURN)
         return await orders.pending_approval()
@@ -336,14 +336,14 @@ def test_declining_writes_nothing(synthetic_db_path):
     assert request_count(synthetic_db_path) == 2
 
 
-def test_approving_with_nothing_pending_writes_nothing(synthetic_db_path):
+def test_approve_without_pending_writes_none(synthetic_db_path):
     answer = with_server(synthetic_db_path, lambda orders: orders.approve_pending(None))
 
     assert answer == NOTHING_PENDING
     assert request_count(synthetic_db_path) == 2
 
 
-def test_no_answer_ever_holds_the_approval_token(synthetic_db_path):
+def test_no_answer_holds_the_token(synthetic_db_path):
     async def scenario(orders):
         asked = await orders.call("create_return_request", RETURN)
         pending = await orders.pending_approval()
@@ -384,9 +384,7 @@ def test_foreign_order_cannot_be_returned(synthetic_db_path):
         "PRAGMA table_info(orders)",
     ],
 )
-def test_the_server_connection_writes_nothing_but_new_requests_and_tickets(
-    synthetic_db_path, sql
-):
+def test_connection_writes_only_new_rows(synthetic_db_path, sql):
     before = hashlib.sha256(synthetic_db_path.read_bytes()).hexdigest()
     conn = server_module.connect_for_order_server(str(synthetic_db_path))
 
@@ -397,7 +395,7 @@ def test_the_server_connection_writes_nothing_but_new_requests_and_tickets(
     assert hashlib.sha256(synthetic_db_path.read_bytes()).hexdigest() == before
 
 
-def test_the_server_connection_still_writes_a_request_and_a_ticket(synthetic_db_path):
+def test_connection_still_writes_rows(synthetic_db_path):
     async def scenario(orders):
         await orders.call("create_return_request", RETURN)
         written = await orders.approve_pending(await orders.pending_approval())
@@ -413,7 +411,7 @@ def test_the_server_connection_still_writes_a_request_and_a_ticket(synthetic_db_
     assert request_count(synthetic_db_path) == before + 1
 
 
-def test_a_failing_tool_tells_the_caller_no_detail(tmp_path):
+def test_failing_tool_gives_no_detail(tmp_path):
     """The SDK keeps the error and its traceback in the server process; the
     agent, and so the model, only learns that the tool failed."""
     empty = tmp_path / "empty.db"
@@ -436,7 +434,7 @@ def test_a_failing_tool_tells_the_caller_no_detail(tmp_path):
 OTHER_RETURN = {"order_ref": "o_late_10", "reason": "late", "amount": "115.00"}
 
 
-def test_a_click_on_a_card_that_is_no_longer_the_waiting_one_writes_nothing(
+def test_stale_card_click_writes_nothing(
     synthetic_db_path,
 ):
     async def scenario(orders):
@@ -466,9 +464,7 @@ def test_a_click_on_a_card_that_is_no_longer_the_waiting_one_writes_nothing(
         {"order": ""},
     ],
 )
-def test_a_card_that_differs_in_any_part_is_not_the_waiting_one(
-    synthetic_db_path, change
-):
+def test_any_card_difference_is_stale(synthetic_db_path, change):
     async def scenario(orders):
         await orders.call("create_return_request", RETURN)
         card = {**await orders.pending_approval(), **change}

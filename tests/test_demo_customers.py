@@ -15,7 +15,7 @@ def test_every_situation_has_a_turkish_label():
     assert set(SITUATIONS) == set(messages.DEMO_CUSTOMER_LABELS)
 
 
-def test_customers_come_with_the_label_of_their_situation(synthetic_db):
+def test_customers_carry_situation_label(synthetic_db):
     found = demo_customers(synthetic_db)
 
     assert found
@@ -28,7 +28,7 @@ def test_selection_is_the_same_every_time(synthetic_db):
     assert demo_customers(synthetic_db) == demo_customers(synthetic_db)
 
 
-def test_recent_delivery_customer_has_an_order_that_can_be_returned(synthetic_db):
+def test_recent_customer_can_return(synthetic_db):
     customer = by_situation(synthetic_db)["recent_delivery"]
     session = open_session(synthetic_db, customer.customer_unique_id)
     orders = list_customer_orders(session, synthetic_db, limit=50)["orders"]
@@ -46,7 +46,7 @@ def test_recent_delivery_customer_has_an_order_that_can_be_returned(synthetic_db
     assert DecisionCode.ELIGIBLE in decisions
 
 
-def test_in_transit_customer_has_a_shipped_order(synthetic_db):
+def test_in_transit_customer_order_shipped(synthetic_db):
     customer = by_situation(synthetic_db)["in_transit"]
 
     statuses = {

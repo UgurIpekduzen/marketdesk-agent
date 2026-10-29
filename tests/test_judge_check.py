@@ -57,7 +57,7 @@ def test_sheet_has_one_line_per_judge_score():
     assert lines[0]["question"] == QUESTIONS["P1"]
 
 
-def test_faithfulness_line_shows_each_claim_with_its_verdict():
+def test_faithfulness_line_shows_verdicts():
     reason = sheet_rows(FINAL, QUESTIONS)[0]["reason"]
 
     assert "[yes] Süre 14 gündür." in reason
@@ -65,7 +65,7 @@ def test_faithfulness_line_shows_each_claim_with_its_verdict():
     assert reason.endswith("Bir iddia desteklenmiyor.")
 
 
-def test_baseline_answers_are_named_after_their_baseline():
+def test_baseline_answers_are_named():
     (line,) = sheet_rows(BASELINES, QUESTIONS)
 
     assert line["system"] == "B0"
@@ -80,7 +80,7 @@ def filled(tmp_path, marks):
     return path
 
 
-def test_sheet_is_a_csv_with_the_columns_in_order(tmp_path):
+def test_sheet_is_csv_with_ordered_columns(tmp_path):
     path = filled(tmp_path, ["", "", "", ""])
 
     with path.open(encoding="utf-8", newline="") as sheet:
@@ -89,7 +89,7 @@ def test_sheet_is_a_csv_with_the_columns_in_order(tmp_path):
     assert tuple(header) == COLUMNS
 
 
-def test_agreement_counts_only_the_marked_lines(tmp_path):
+def test_agreement_counts_marked_lines_only(tmp_path):
     result = agreement(filled(tmp_path, ["yes", "No", "", " YES "]))
 
     assert result == {
@@ -104,6 +104,6 @@ def test_no_rate_before_anything_is_marked(tmp_path):
     assert agreement(filled(tmp_path, ["", "", "", ""]))["rate"] is None
 
 
-def test_mark_other_than_yes_or_no_is_refused(tmp_path):
+def test_mark_must_be_yes_or_no(tmp_path):
     with pytest.raises(ValueError, match="evet"):
         agreement(filled(tmp_path, ["yes", "evet", "", ""]))

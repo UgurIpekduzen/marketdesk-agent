@@ -81,7 +81,7 @@ def test_order_status_of_an_own_order(synthetic_db, alice):
     }
 
 
-def test_order_not_handed_over_has_no_carrier_or_delivery_day(synthetic_db, alice):
+def test_unshipped_order_has_no_carrier_day(synthetic_db, alice):
     order = get_order_status(alice, synthetic_db, "o_processing")
 
     assert order["status"] == "processing"
@@ -89,7 +89,7 @@ def test_order_not_handed_over_has_no_carrier_or_delivery_day(synthetic_db, alic
     assert order["delivered_on"] is None
 
 
-def test_order_delivered_after_today_is_shown_as_shipped(synthetic_db, alice):
+def test_future_delivery_shows_as_shipped(synthetic_db, alice):
     order = get_order_status(alice, synthetic_db, "o_delivered_future")
 
     assert order["status"] == "shipped"
@@ -103,7 +103,7 @@ def test_order_is_found_again_by_its_alias(synthetic_db, alice):
     assert get_order_status(alice, synthetic_db, first["order"]) == first
 
 
-def test_ten_foreign_orders_are_all_not_found(synthetic_db, bob):
+def test_ten_foreign_orders_not_found(synthetic_db, bob):
     alice_orders = [
         row[0]
         for row in synthetic_db.execute(
@@ -120,7 +120,7 @@ def test_ten_foreign_orders_are_all_not_found(synthetic_db, bob):
     assert answers == [NOT_FOUND] * 10
 
 
-def test_foreign_missing_and_unknown_alias_give_the_same_answer(synthetic_db, alice):
+def test_foreign_missing_unknown_same_answer(synthetic_db, alice):
     foreign = get_order_status(alice, synthetic_db, "o_other_customer")
     missing = get_order_status(alice, synthetic_db, "o_does_not_exist")
     unknown_alias = get_order_status(alice, synthetic_db, "SIP-7")
@@ -129,7 +129,7 @@ def test_foreign_missing_and_unknown_alias_give_the_same_answer(synthetic_db, al
     assert foreign == missing == unknown_alias == left_out_at_load == NOT_FOUND
 
 
-def test_alias_of_another_session_is_not_found(synthetic_db, alice, bob):
+def test_other_session_alias_not_found(synthetic_db, alice, bob):
     alias = get_order_status(alice, synthetic_db, "o_day14")["order"]
 
     assert get_order_status(bob, synthetic_db, alias) == NOT_FOUND
@@ -144,7 +144,7 @@ def test_a_failed_lookup_hands_out_no_alias(synthetic_db, alice):
 # --- list_customer_orders -----------------------------------------------
 
 
-def test_list_holds_only_the_customers_own_orders(synthetic_db, bob):
+def test_list_has_only_own_orders(synthetic_db, bob):
     listed = list_customer_orders(bob, synthetic_db)
 
     assert len(listed["orders"]) == 1
@@ -202,7 +202,7 @@ def test_status_filter_uses_the_shown_status(synthetic_db, alice):
     assert "2018-09-05" not in [order["delivered_on"] for order in delivered]
 
 
-def test_unknown_status_is_refused_with_the_allowed_values(synthetic_db, alice):
+def test_unknown_status_lists_allowed(synthetic_db, alice):
     answer = list_customer_orders(alice, synthetic_db, status="lost")
 
     assert answer["error"] == "INVALID_STATUS"
@@ -224,7 +224,7 @@ def test_listed_alias_opens_the_same_order(synthetic_db, alice):
 # --- What the outputs may contain ---------------------------------------
 
 
-def test_outputs_hold_only_the_allowed_fields(synthetic_db, alice):
+def test_outputs_have_only_allowed_fields(synthetic_db, alice):
     order = get_order_status(alice, synthetic_db, "o_two_items")
     listed = list_customer_orders(alice, synthetic_db, limit=20)["orders"]
 
@@ -233,7 +233,7 @@ def test_outputs_hold_only_the_allowed_fields(synthetic_db, alice):
     assert all(set(entry) == LISTED_ORDER_FIELDS for entry in listed)
 
 
-def test_outputs_hold_no_raw_id_city_or_zip_code(synthetic_db, alice):
+def test_outputs_have_no_raw_id_city_zip(synthetic_db, alice):
     # Give one of Alice's orders an id shaped like the real ones.
     for table in ("orders", "order_items", "order_payments"):
         synthetic_db.execute(

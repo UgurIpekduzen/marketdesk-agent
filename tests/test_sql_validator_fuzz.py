@@ -217,7 +217,7 @@ def passed(query: str, names: tuple[str, ...]) -> str | None:
 # --- The hand-picked cases ------------------------------------------------
 
 
-def test_nothing_the_validator_passes_reaches_what_the_oracle_forbids(engine):
+def test_passed_queries_satisfy_the_oracle(engine):
     conn, names = engine
     problems = {}
     for query in HAND_CASES:
@@ -253,7 +253,7 @@ def test_the_clearly_forbidden_are_refused(engine, query):
     assert passed(query, names) is None
 
 
-def test_the_list_holds_cases_the_validator_refuses_and_cases_it_lets_through(engine):
+def test_list_has_refused_and_passed_cases(engine):
     _, names = engine
     refused = [q for q in HAND_CASES if passed(q, names) is None]
     let_through = [q for q in HAND_CASES if passed(q, names) is not None]
@@ -297,7 +297,7 @@ def rewrite(query: str, rng: random.Random) -> str:
     return text
 
 
-def test_the_same_queries_written_differently_do_not_get_past_the_oracle(engine):
+def test_rewritten_queries_satisfy_oracle(engine):
     conn, names = engine
     rng = random.Random(20261024)
     problems = {}
@@ -333,7 +333,7 @@ def test_the_same_queries_written_differently_do_not_get_past_the_oracle(engine)
         "SELECT length(replace(hex(zeroblob(50000000)), '0', 'ab'))",
     ],
 )
-def test_a_heavy_query_ends_by_the_timeout_and_not_by_hanging(synthetic_db_path, query):
+def test_heavy_query_ends_by_timeout(synthetic_db_path, query):
     started = time.monotonic()
     answer = run_sql(synthetic_db_path, query, timeout_seconds=2.0)
     spent = time.monotonic() - started
@@ -345,7 +345,7 @@ def test_a_heavy_query_ends_by_the_timeout_and_not_by_hanging(synthetic_db_path,
 # --- Holes this file found, and their fixes ---------------------------------
 
 
-def test_one_query_cannot_make_the_engine_build_hundreds_of_megabytes(
+def test_one_query_cannot_build_huge_values(
     synthetic_db_path,
 ):
     answer = run_sql(synthetic_db_path, "SELECT length(format('%.*c', 400000000, 'x'))")
@@ -356,7 +356,7 @@ def test_one_query_cannot_make_the_engine_build_hundreds_of_megabytes(
     assert answer.get("rows") is not None or "too big" in answer["detail"]
 
 
-def test_nesting_functions_does_not_get_past_the_limit_on_a_value(synthetic_db_path):
+def test_nesting_respects_the_value_limit(synthetic_db_path):
     answer = run_sql(
         synthetic_db_path,
         "SELECT length(replace(replace(format('%.*c', 90000, 'x'), 'x', 'yy'), "
@@ -367,7 +367,7 @@ def test_nesting_functions_does_not_get_past_the_limit_on_a_value(synthetic_db_p
     assert answer.get("error") in (None, "SQL_ERROR")
 
 
-def test_many_values_under_the_limit_cannot_add_up_to_a_huge_answer(
+def test_small_values_cannot_sum_to_huge(
     synthetic_db_path,
 ):
     # 1,000 rows of 90,000 characters: each value passes, the answer is 90 MB.
@@ -382,7 +382,7 @@ def test_many_values_under_the_limit_cannot_add_up_to_a_huge_answer(
     assert "rows" not in answer
 
 
-def test_an_ordinary_answer_is_not_touched_by_the_limits(synthetic_db_path):
+def test_ordinary_answer_ignores_the_limits(synthetic_db_path):
     answer = run_sql(
         synthetic_db_path,
         "SELECT order_status, count(*) AS orders FROM v_orders GROUP BY order_status",

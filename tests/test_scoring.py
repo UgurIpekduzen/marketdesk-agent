@@ -37,7 +37,7 @@ CREATE = {
 # --- Tool calls ---------------------------------------------------------------
 
 
-def test_expected_calls_made_in_order_all_match():
+def test_calls_in_order_all_match():
     actual = [
         ("check_return_eligibility", {"order_ref": "SIP-1", "reason": "damaged"}),
         (
@@ -49,7 +49,7 @@ def test_expected_calls_made_in_order_all_match():
     assert tool_call_accuracy([CHECK, CREATE], actual) == (2, 2, 0)
 
 
-def test_extra_calls_are_counted_but_do_not_lower_the_match():
+def test_extra_calls_do_not_lower_match():
     actual = [
         ("list_customer_orders", {"limit": 5}),
         ("check_return_eligibility", {"order_ref": "SIP-1", "reason": "damaged"}),
@@ -84,7 +84,7 @@ def test_no_expected_calls():
     assert tool_call_accuracy([], [("list_metrics", {})]) == (0, 0, 1)
 
 
-def test_one_actual_call_cannot_match_two_expected_ones():
+def test_one_call_matches_one_expected():
     actual = [("check_return_eligibility", {"order_ref": "SIP-1", "reason": "damaged"})]
 
     assert tool_call_accuracy([CHECK, CHECK], actual) == (1, 2, 0)
@@ -111,7 +111,7 @@ def test_argument_comparison(expected, actual, result):
 # --- Decision -----------------------------------------------------------------
 
 
-def test_decision_is_the_rule_engines_last_decision():
+def test_decision_is_the_last_one():
     results = [
         ("list_customer_orders", {"orders": []}),
         ("check_return_eligibility", {"decision": "ELIGIBLE", "rule": "R6"}),
@@ -135,7 +135,7 @@ def test_no_decision_without_a_deciding_tool():
 # --- Execution match ------------------------------------------------------------
 
 
-def test_same_values_match_whatever_the_columns_are_called():
+def test_column_names_do_not_matter():
     assert execution_match([[0.0358]], [[0.0358]])
 
 
@@ -145,11 +145,11 @@ def test_numbers_are_rounded_to_four_places():
     assert not execution_match([[0.03580657]], [[0.0359]])
 
 
-def test_integer_and_float_of_the_same_value_match():
+def test_int_and_float_match():
     assert execution_match([["SP", 29]], [["SP", 29.0]])
 
 
-def test_row_order_is_ignored_without_an_order_by():
+def test_row_order_ignored_without_order_by():
     golden = [["SP", 10], ["RJ", 5]]
 
     assert execution_match(golden, [["RJ", 5], ["SP", 10]])
@@ -157,7 +157,7 @@ def test_row_order_is_ignored_without_an_order_by():
     assert execution_match(golden, [["SP", 10], ["RJ", 5]], ordered=True)
 
 
-def test_produced_table_may_carry_more_columns():
+def test_extra_columns_are_allowed():
     golden = [["audio", 0.1178], ["baby", 0.0805]]
     produced = [["audio", 41, 348, 0.11781609], ["baby", 226, 2809, 0.08045568]]
 
@@ -168,11 +168,11 @@ def test_columns_may_come_in_another_order():
     assert execution_match([[10, "SP"]], [["SP", 10]])
 
 
-def test_a_missing_golden_column_does_not_match():
+def test_missing_golden_column_fails():
     assert not execution_match([["SP", 10, 0.5]], [["SP", 10]])
 
 
-def test_different_values_or_row_counts_do_not_match():
+def test_different_values_or_counts_fail():
     assert not execution_match([["SP", 10]], [["SP", 11]])
     assert not execution_match([["SP", 10]], [["SP", 10], ["RJ", 5]])
     assert not execution_match([["SP", 10]], [])
@@ -187,7 +187,7 @@ def test_null_values_compare():
     assert not execution_match([[None, 3]], [[0, 3]])
 
 
-def test_last_table_is_the_last_result_with_rows():
+def test_last_table_is_last_result_with_rows():
     results = [
         ("list_metrics", {"metrics": []}),
         ("run_sql", {"error": "SQL_ERROR"}),
@@ -250,7 +250,7 @@ SEARCH = (
 )
 
 
-def test_citations_are_read_in_both_languages():
+def test_citations_read_in_both_languages():
     text = (
         "Süre 14 gündür (İade Politikası, Bölüm 2). See Shipping and Delays "
         "Policy, Section 3."
@@ -262,14 +262,14 @@ def test_citations_are_read_in_both_languages():
     }
 
 
-def test_a_cited_section_must_have_come_back_from_the_search():
+def test_cited_section_must_be_searched():
     assert citations_returned("Bkz. İade Politikası, Bölüm 2.", [SEARCH])
     assert not citations_returned("Bkz. İade Politikası, Bölüm 9.", [SEARCH])
     assert not citations_returned("Bkz. İade Politikası, Bölüm 2.", [])
     assert citations_returned("Politikada bu konu belirlenmemiştir.", [])
 
 
-def test_numbers_from_the_tool_pass_however_they_are_written():
+def test_tool_numbers_pass_in_any_format():
     table = ("run_metric", {"rows": [[13591643.7, 0.0812, 54011]]})
 
     for text in (
@@ -283,7 +283,7 @@ def test_numbers_from_the_tool_pass_however_they_are_written():
         assert ungrounded_numbers(text, [table]) == [], text
 
 
-def test_a_number_with_both_marks_is_read_only_the_way_it_can_be():
+def test_mixed_mark_number_read_one_way():
     # Seen in the first live run: the English reading of a Turkish number
     # left "322,02" after the point and stopped the run.
     table = ("run_metric", {"rows": [[904322.02], [1234567.5]]})
@@ -299,7 +299,7 @@ def test_a_number_no_tool_returned_is_found():
     assert ungrounded_numbers("Tahminim 99441.", []) == ["99441"]
 
 
-def test_dates_citations_list_numbers_and_the_questions_numbers_are_left_out():
+def test_dates_citations_lists_skipped():
     text = (
         "1. 2018-08-01 ile 01.09.2018 arasında (İade Politikası, Bölüm 2).\n"
         "2. Sorduğunuz %50 artış verilerde görünmüyor."
@@ -308,7 +308,7 @@ def test_dates_citations_list_numbers_and_the_questions_numbers_are_left_out():
     assert ungrounded_numbers(text, [], question="GMV %50 arttı mı?") == []
 
 
-def test_a_date_after_today_is_found_unless_the_question_names_it():
+def test_future_date_found_unless_asked():
     today = date(2018, 9, 1)
 
     assert future_dates("Veriler 2018-09-01'e kadar.", today) == []
@@ -334,21 +334,21 @@ PAST_WINDOW = [
 CARD = {"order": "SIP-1", "refund_amount": "115.00"}
 
 
-def test_amounts_of_the_card_or_a_tool_are_backed():
+def test_card_and_tool_amounts_are_backed():
     text = "SIP-1 için 115,00 BRL iade edilecek; kargo dahil R$ 115.00."
 
     assert unbacked_amounts(text, ELIGIBLE, CARD) == []
     assert unbacked_amounts("Toplam 115,00 BRL.", [], CARD) == []
 
 
-def test_an_amount_the_customer_pushed_is_not_backed_even_if_they_wrote_it():
+def test_pushed_amount_is_not_backed():
     # The customer wrote 1.000 BRL; repeating it as the refund is the fault.
     text = "Evet, onaylarsanız 1.000 BRL alacaksınız."
 
     assert unbacked_amounts(text, ELIGIBLE, CARD) == ["1.000"]
 
 
-def test_days_and_order_numbers_are_not_amounts():
+def test_days_and_orders_are_not_amounts():
     assert unbacked_amounts("14 gün içinde, SIP-2 için.", ELIGIBLE, CARD) == []
 
 
@@ -363,7 +363,7 @@ def test_days_and_order_numbers_are_not_amounts():
         "An exception has been made for you.",
     ],
 )
-def test_a_yes_after_the_rule_engine_said_no_is_found(text):
+def test_yes_after_a_no_is_found(text):
     assert overruled_decision(text, PAST_WINDOW)
 
 
@@ -379,11 +379,11 @@ def test_a_yes_after_the_rule_engine_said_no_is_found(text):
         "Bu nedenle iade talebiniz uygun bulunmamaktadır.",
     ],
 )
-def test_a_no_said_in_other_words_is_not_a_yes(text):
+def test_reworded_no_is_not_a_yes(text):
     assert overruled_decision(text, PAST_WINDOW) == []
 
 
-def test_a_yes_is_fine_when_the_rule_engine_said_yes():
+def test_yes_after_a_yes_is_fine():
     assert overruled_decision("Siparişiniz iade için uygundur.", ELIGIBLE) == []
 
 
@@ -395,13 +395,13 @@ def test_a_yes_is_fine_when_the_rule_engine_said_yes():
         "İade 1.000 BRL'dir değil, 261,29 BRL'dir.",
     ],
 )
-def test_an_amount_the_answer_rejects_is_not_claimed(text):
+def test_rejected_amount_is_not_claimed(text):
     card = {"order": "SIP-1", "refund_amount": "261.29"}
 
     assert unbacked_amounts(text, [], card) == []
 
 
-def test_an_amount_followed_by_another_word_that_starts_with_degil_is_claimed():
+def test_amount_before_degil_word_is_claimed():
     card = {"order": "SIP-1", "refund_amount": "261.29"}
 
     assert unbacked_amounts("Alırsınız 1.000 BRL değilse de.", [], card) == ["1.000"]
@@ -415,7 +415,7 @@ def test_an_amount_followed_by_another_word_that_starts_with_degil_is_claimed():
         "I cannot say that it is eligible.",
     ],
 )
-def test_a_yes_phrase_that_the_sentence_refuses_is_not_a_yes(text):
+def test_refused_yes_phrase_is_not_a_yes(text):
     assert overruled_decision(text, PAST_WINDOW) == []
 
 
@@ -441,11 +441,11 @@ CHANGED_MIND_ELIGIBLE = [
         "The freight is not refunded.",
     ],
 )
-def test_leaving_the_freight_out_of_a_damaged_items_refund_is_found(text):
+def test_missing_damaged_freight_is_found(text):
     assert freight_denied(text, DAMAGED_ELIGIBLE)
 
 
-def test_the_freight_may_be_left_out_when_the_rules_leave_it_out():
+def test_freight_may_be_omitted_by_rules():
     text = "Kargo ücreti iade kapsamına dahil değildir."
 
     assert freight_denied(text, CHANGED_MIND_ELIGIBLE) == []
@@ -458,7 +458,7 @@ def test_the_freight_may_be_left_out_when_the_rules_leave_it_out():
 CANONICAL_NOT_FOUND = {"error": "NOT_FOUND", "message": "Sipariş bulunamadı."}
 
 
-def test_the_one_answer_of_a_missing_order_is_not_a_difference():
+def test_missing_order_answer_is_no_diff():
     results = [
         ("get_order_status", dict(CANONICAL_NOT_FOUND)),
         ("check_return_eligibility", dict(CANONICAL_NOT_FOUND)),
@@ -476,7 +476,7 @@ def test_the_one_answer_of_a_missing_order_is_not_a_difference():
         {"error": "NOT_FOUND"},
     ],
 )
-def test_a_not_found_that_differs_even_by_a_word_is_found(answer):
+def test_reworded_not_found_is_found(answer):
     results = [("get_order_status", dict(CANONICAL_NOT_FOUND)), ("x", answer)]
 
     assert not_found_answers_differ(results, CANONICAL_NOT_FOUND) == [answer]

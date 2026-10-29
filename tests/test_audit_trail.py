@@ -156,7 +156,7 @@ ATTACKS = [
     [attack[1:] for attack in ATTACKS],
     ids=[attack[0] for attack in ATTACKS],
 )
-def test_an_attack_is_in_the_log_and_on_the_trace(
+def test_attack_is_logged_and_traced(
     traced,
     caplog,
     synthetic_db_path,
@@ -178,7 +178,7 @@ def test_an_attack_is_in_the_log_and_on_the_trace(
     assert logged in caplog.text
 
 
-def test_a_failed_message_is_in_the_log_by_its_kind(traced, caplog, synthetic_db_path):
+def test_failed_message_logged_by_kind(traced, caplog, synthetic_db_path):
     caplog.set_level(logging.INFO)
 
     with pytest.raises(RuntimeError):
@@ -205,9 +205,7 @@ def test_an_approval_is_on_the_trace(traced, synthetic_db_path, fake_policy_inde
     assert {"answer=approved", "written=True"} <= marks(traced)
 
 
-def test_every_click_of_the_rep_is_on_the_trace_and_in_the_log(
-    traced, caplog, synthetic_db_path
-):
+def test_rep_clicks_are_logged_and_traced(traced, caplog, synthetic_db_path):
     caplog.set_level(logging.INFO)
     conn = sqlite3.connect(synthetic_db_path)
     with conn:
@@ -236,7 +234,7 @@ def test_every_click_of_the_rep_is_on_the_trace_and_in_the_log(
     assert f"ticket closed ticket={ticket['ticket']}" in caplog.text
 
 
-def test_the_trail_holds_no_raw_id_and_no_personal_value(
+def test_trail_has_no_raw_id_or_pii(
     traced, caplog, synthetic_db_path, fake_policy_index
 ):
     caplog.set_level(logging.INFO)
@@ -255,7 +253,7 @@ def test_the_trail_holds_no_raw_id_and_no_personal_value(
     assert "0532 123 45 67" not in trail
 
 
-def test_the_hosted_target_gets_the_marks_of_a_rogue_run(
+def test_hosted_target_gets_rogue_run_marks(
     monkeypatch, synthetic_db_path, fake_policy_index
 ):
     # Langfuse, where the error dashboard filters by these marks, gets the

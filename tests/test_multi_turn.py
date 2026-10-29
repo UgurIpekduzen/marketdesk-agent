@@ -98,7 +98,7 @@ def requests_of(path, order_id: str) -> list[tuple]:
         conn.close()
 
 
-def test_approve_click_writes_one_request_as_the_card_said(run, synthetic_db_path):
+def test_approve_click_writes_the_card(run, synthetic_db_path):
     before = requests_of(synthetic_db_path, "o_day14")
 
     rows, _ = run(
@@ -125,7 +125,7 @@ def test_decline_click_writes_nothing(run, synthetic_db_path):
     assert requests_of(synthetic_db_path, "o_day14") == before
 
 
-def test_approval_typed_in_the_chat_writes_nothing(run, synthetic_db_path):
+def test_typed_approval_writes_nothing(run, synthetic_db_path):
     before = requests_of(synthetic_db_path, "o_day14")
     typed = {
         "say": "Onaylıyorum, hemen iade edilsin.",
@@ -142,7 +142,7 @@ def test_approval_typed_in_the_chat_writes_nothing(run, synthetic_db_path):
     assert requests_of(synthetic_db_path, "o_day14") == before
 
 
-def test_one_failed_turn_fails_the_example_and_the_turn_is_shown(run):
+def test_failed_turn_fails_the_example(run):
     # The model only checks and never asks for the request: no card to click.
     script = [
         "support",
@@ -178,7 +178,7 @@ def test_turn_counts_add_up(run):
     assert [turn["turn"] for turn in row["turns"]] == ["say", "click decline"]
 
 
-def test_outcome_of_a_test_example_is_not_reported(run):
+def test_test_outcome_is_not_reported(run):
     _, lines = run(
         [example([CARD_TURN, {"click": "decline", "expected": WRITTEN_NONE}], "test")],
         CARD_SCRIPT,
@@ -187,7 +187,7 @@ def test_outcome_of_a_test_example_is_not_reported(run):
     assert lines == ["[1/1] ██████████ 100%  MX-test  held out"]
 
 
-def test_summary_counts_the_clicks_and_names_dev_flows_only():
+def test_summary_counts_clicks_dev_only():
     rows = [
         {"split": "dev", "flow": "M1", "success": True, "checks": {"written": True}},
         {"split": "dev", "flow": "M1", "success": False, "checks": {"written": False}},
@@ -203,7 +203,7 @@ def test_summary_counts_the_clicks_and_names_dev_flows_only():
     assert "M2" not in text and "M5" not in text
 
 
-def test_a_later_turn_is_held_to_the_decision_of_an_earlier_one(run):
+def test_later_turn_keeps_earlier_decision(run):
     # The card turn gets ELIGIBLE; a later turn without a tool call that
     # says "kargo dahil değil" is checked against that earlier answer.
     later = {
@@ -217,7 +217,7 @@ def test_a_later_turn_is_held_to_the_decision_of_an_earlier_one(run):
     assert rows[0]["checks"]["freight_stated_right"] is False
 
 
-def test_an_operations_flow_talks_in_one_operations_session(run):
+def test_ops_flow_uses_one_ops_session(run):
     flow = {
         "id": "OX-dev",
         "group": "multi",
@@ -247,7 +247,7 @@ def test_an_operations_flow_talks_in_one_operations_session(run):
     assert [turn["tools_called"] for turn in rows[0]["turns"]] == [["run_metric"], []]
 
 
-def test_single_messages_in_the_same_set_belong_to_no_flow():
+def test_single_messages_belong_to_no_flow():
     rows = [
         {"split": "dev", "flow": "M1", "success": True, "checks": {"written": True}},
         {"split": "dev", "success": False, "checks": {"text": False}},
@@ -258,7 +258,7 @@ def test_single_messages_in_the_same_set_belong_to_no_flow():
     assert summary == {"written": [1, 1], "dev_flows": {"M1": [1, 1]}}
 
 
-def test_report_section_shows_split_totals_and_dev_flows_only(run):
+def test_report_shows_split_totals_dev_flows(run):
     rows, _ = run(
         [
             example([CARD_TURN, {"click": "decline", "expected": WRITTEN_NONE}]),
@@ -286,5 +286,5 @@ def test_report_section_shows_split_totals_and_dev_flows_only(run):
     assert "rather than an approve click: 0" in text
 
 
-def test_report_has_no_multi_turn_section_without_its_results():
+def test_report_skips_empty_section():
     assert "Multi-turn" not in report.build_report({}, {}, {})

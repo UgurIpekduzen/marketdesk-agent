@@ -36,7 +36,7 @@ def test_missing_usage_counts_as_zero():
     assert token_usage("not a dict") == (0, 0)
 
 
-def test_steps_are_model_calls_plus_tool_calls():
+def test_steps_are_model_plus_tool_calls():
     log = RunLog()
     log.add_llm_call(
         {"usage_metadata": {"prompt_token_count": 100, "candidates_token_count": 10}}
@@ -52,7 +52,7 @@ def test_steps_are_model_calls_plus_tool_calls():
     assert (log.input_tokens, log.output_tokens) == (250, 30)
 
 
-def test_run_is_logged_as_one_line_without_the_customer_id(caplog):
+def test_run_log_line_has_no_customer_id(caplog):
     log = RunLog()
     log.add_llm_call(
         {"usage_metadata": {"prompt_token_count": 100, "candidates_token_count": 10}}
@@ -82,7 +82,7 @@ def test_run_without_a_customer_or_tools(caplog):
     assert "tools=-" in line
 
 
-def test_tool_arguments_are_kept_for_inspection_but_not_logged(caplog):
+def test_tool_arguments_kept_not_logged(caplog):
     log = RunLog()
     log.add_tool_call("get_order_status", {"order_ref": "SIP-1"})
     log.add_tool_call("list_customer_orders")
@@ -94,7 +94,7 @@ def test_tool_arguments_are_kept_for_inspection_but_not_logged(caplog):
     assert "SIP-1" not in caplog.records[0].getMessage()
 
 
-def test_tool_results_are_parsed_when_they_are_json():
+def test_json_tool_results_are_parsed():
     log = RunLog()
     log.add_tool_result("get_order_status", '{"order": "SIP-1", "status": "delivered"}')
     log.add_tool_result("echo", "plain text")

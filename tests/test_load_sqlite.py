@@ -125,7 +125,7 @@ def column(conn, sql):
     return [row[0] for row in conn.execute(sql)]
 
 
-def test_r0_leaves_out_orders_purchased_on_or_after_simulated_today(db):
+def test_r0_drops_orders_from_today_on(db):
     assert column(db, "SELECT order_id FROM orders ORDER BY order_id") == ["o1", "o3"]
 
 
@@ -143,7 +143,7 @@ def test_r0_compares_calendar_days(timestamp, excluded):
     assert load_sqlite.is_excluded_by_r0(timestamp, SIMULATED_TODAY) is excluded
 
 
-def test_r0_also_leaves_out_rows_that_belong_to_an_excluded_order(db):
+def test_r0_drops_rows_of_excluded_orders(db):
     assert column(db, "SELECT DISTINCT order_id FROM order_items") == ["o1"]
     assert column(db, "SELECT order_id FROM order_payments") == ["o1"]
     assert column(db, "SELECT order_id FROM order_reviews ORDER BY order_id") == [
@@ -156,7 +156,7 @@ def test_r0_also_leaves_out_rows_that_belong_to_an_excluded_order(db):
     ]
 
 
-def test_build_reports_row_counts_and_excluded_orders(raw_dir, tmp_path):
+def test_build_reports_counts_and_exclusions(raw_dir, tmp_path):
     counts = load_sqlite.build_database(raw_dir, tmp_path / "x.db", SIMULATED_TODAY)
 
     assert counts["orders"] == 2
@@ -168,7 +168,7 @@ def test_build_reports_row_counts_and_excluded_orders(raw_dir, tmp_path):
     assert counts["excluded_by_r0"] == 1
 
 
-def test_empty_cells_are_loaded_as_null_not_empty_string(db):
+def test_empty_cells_load_as_null(db):
     delivered = db.execute(
         "SELECT order_delivered_customer_date FROM orders WHERE order_id = 'o3'"
     ).fetchone()[0]
@@ -198,7 +198,7 @@ def test_columns_get_their_declared_types(db):
     assert score_type == "integer"
 
 
-def test_zip_code_prefix_keeps_its_leading_zero(db):
+def test_zip_prefix_keeps_leading_zero(db):
     prefixes = column(
         db, "SELECT customer_zip_code_prefix FROM customers WHERE customer_id = 'c1'"
     )
@@ -206,7 +206,7 @@ def test_zip_code_prefix_keeps_its_leading_zero(db):
     assert prefixes == ["01037"]
 
 
-def test_return_requests_table_exists_and_is_empty(db):
+def test_return_requests_table_starts_empty(db):
     columns = [row[1] for row in db.execute("PRAGMA table_info(return_requests)")]
 
     assert columns == [
@@ -221,7 +221,7 @@ def test_return_requests_table_exists_and_is_empty(db):
     assert db.execute("SELECT COUNT(*) FROM return_requests").fetchone()[0] == 0
 
 
-def test_escalation_tickets_table_exists_and_is_empty(db):
+def test_tickets_table_starts_empty(db):
     columns = [row[1] for row in db.execute("PRAGMA table_info(escalation_tickets)")]
 
     assert columns == [
@@ -242,7 +242,7 @@ def test_indexes_are_created(db):
         assert f"idx_{table_name}_{column_name}" in names
 
 
-def test_rebuild_replaces_the_existing_database(raw_dir, tmp_path):
+def test_rebuild_replaces_the_database(raw_dir, tmp_path):
     db_path = tmp_path / "marketdesk.db"
     load_sqlite.build_database(raw_dir, db_path, SIMULATED_TODAY)
     conn = sqlite3.connect(db_path)
@@ -264,7 +264,7 @@ def test_rebuild_replaces_the_existing_database(raw_dir, tmp_path):
         conn.close()
 
 
-def test_unexpected_csv_columns_stop_the_build_and_leave_no_database(tmp_path):
+def test_unexpected_columns_stop_the_build(tmp_path):
     raw_dir = write_raw(tmp_path / "raw")
     (raw_dir / "olist_sellers_dataset.csv").write_text("seller_id,unexpected\ns1,x\n")
     db_path = tmp_path / "marketdesk.db"
@@ -276,7 +276,7 @@ def test_unexpected_csv_columns_stop_the_build_and_leave_no_database(tmp_path):
     assert not (tmp_path / "marketdesk.db.tmp").exists()
 
 
-def test_failed_rebuild_keeps_the_previous_database(raw_dir, tmp_path):
+def test_failed_rebuild_keeps_the_old_one(raw_dir, tmp_path):
     db_path = tmp_path / "marketdesk.db"
     load_sqlite.build_database(raw_dir, db_path, SIMULATED_TODAY)
     (raw_dir / "olist_sellers_dataset.csv").write_text("seller_id,unexpected\ns1,x\n")
@@ -298,7 +298,7 @@ def test_failed_rebuild_keeps_the_previous_database(raw_dir, tmp_path):
         ["-m", "scripts.load_sqlite", "--help"],
     ],
 )
-def test_script_runs_as_a_file_and_as_a_module(command):
+def test_runs_as_file_and_as_module(command):
     project_root = Path(__file__).resolve().parent.parent
 
     result = subprocess.run(
@@ -313,7 +313,7 @@ def test_script_runs_as_a_file_and_as_a_module(command):
     assert "--db" in result.stdout
 
 
-def test_script_runs_from_another_working_directory(tmp_path):
+def test_runs_from_another_directory(tmp_path):
     script = Path(__file__).resolve().parent.parent / "scripts" / "load_sqlite.py"
 
     result = subprocess.run(
@@ -327,7 +327,7 @@ def test_script_runs_from_another_working_directory(tmp_path):
     assert result.returncode == 0, result.stderr
 
 
-def test_script_builds_a_database_from_a_given_source_folder(raw_dir, tmp_path):
+def test_builds_from_a_given_folder(raw_dir, tmp_path):
     script = Path(__file__).resolve().parent.parent / "scripts" / "load_sqlite.py"
     db_path = tmp_path / "out" / "orders.db"
 
@@ -347,7 +347,7 @@ def test_script_builds_a_database_from_a_given_source_folder(raw_dir, tmp_path):
         conn.close()
 
 
-def test_skipped_tables_and_their_indexes_are_not_created(raw_dir, tmp_path):
+def test_skipped_tables_have_no_indexes(raw_dir, tmp_path):
     db_path = tmp_path / "demo.db"
 
     counts = load_sqlite.build_database(

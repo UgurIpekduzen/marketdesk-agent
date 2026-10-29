@@ -57,7 +57,7 @@ def approve_and_create(session, conn, order_ref, reason, amount):
 # --- Without approval ---------------------------------------------------
 
 
-def test_call_without_approval_writes_nothing(synthetic_db, alice):
+def test_unapproved_call_writes_nothing(synthetic_db, alice):
     answer = create_return_request(alice, synthetic_db, "o_day14", "damaged", "115.00")
 
     assert answer == {
@@ -85,7 +85,7 @@ def test_made_up_token_writes_nothing(synthetic_db, alice, made_up):
     assert request_count(synthetic_db) == EXISTING_REQUESTS
 
 
-def test_calling_again_and_again_never_becomes_an_approval(synthetic_db, alice):
+def test_repeated_calls_are_not_approval(synthetic_db, alice):
     answers = [
         create_return_request(alice, synthetic_db, "o_day14", "damaged", "115.00")
         for _ in range(5)
@@ -95,7 +95,7 @@ def test_calling_again_and_again_never_becomes_an_approval(synthetic_db, alice):
     assert request_count(synthetic_db) == EXISTING_REQUESTS
 
 
-def test_token_for_one_order_does_not_open_a_request_for_another(synthetic_db, alice):
+def test_token_fits_only_its_own_order(synthetic_db, alice):
     create_return_request(alice, synthetic_db, "o_day14", "damaged", "115.00")
     token = alice.approvals.approve()
 
@@ -120,7 +120,7 @@ def test_token_does_not_cover_another_reason(synthetic_db, alice):
     assert request_count(synthetic_db) == EXISTING_REQUESTS
 
 
-def test_token_of_another_session_writes_nothing(synthetic_db, alice):
+def test_other_session_token_writes_nothing(synthetic_db, alice):
     other_session = Session(ALICE)
     create_return_request(other_session, synthetic_db, "o_day14", "damaged", "115.00")
     token = other_session.approvals.approve()
@@ -133,7 +133,7 @@ def test_token_of_another_session_writes_nothing(synthetic_db, alice):
     assert request_count(synthetic_db) == EXISTING_REQUESTS
 
 
-def test_refused_call_drops_the_request_that_was_waiting(synthetic_db, alice):
+def test_refusal_drops_the_waiting_request(synthetic_db, alice):
     create_return_request(alice, synthetic_db, "o_day14", "damaged", "115.00")
 
     create_return_request(alice, synthetic_db, "o_shipped", "late", "115.00")
@@ -145,7 +145,7 @@ def test_refused_call_drops_the_request_that_was_waiting(synthetic_db, alice):
 # --- With approval ------------------------------------------------------
 
 
-def test_approved_call_writes_exactly_one_row(synthetic_db, alice):
+def test_approved_call_writes_one_row(synthetic_db, alice):
     answer = approve_and_create(alice, synthetic_db, "o_day14", "damaged", "115.00")
 
     assert answer == {
@@ -188,13 +188,13 @@ def test_freight_only_claim_can_be_opened(synthetic_db, alice):
     assert new_requests(synthetic_db)[0]["refund_amount"] == 15.0
 
 
-def test_amount_given_as_a_number_is_accepted(synthetic_db, alice):
+def test_numeric_amount_is_accepted(synthetic_db, alice):
     answer = approve_and_create(alice, synthetic_db, "o_day14", "damaged", 115.0)
 
     assert answer["refund_amount"] == "115.00"
 
 
-def test_write_touches_only_the_return_requests_table(synthetic_db, alice):
+def test_write_touches_only_requests_table(synthetic_db, alice):
     def snapshot():
         return {
             table: synthetic_db.execute(f"SELECT * FROM {table}").fetchall()
@@ -209,7 +209,7 @@ def test_write_touches_only_the_return_requests_table(synthetic_db, alice):
     assert synthetic_db.total_changes == 1
 
 
-def test_approval_is_asked_with_the_alias_from_an_earlier_check(synthetic_db, alice):
+def test_approval_uses_earlier_check_alias(synthetic_db, alice):
     checked = check_return_eligibility(alice, synthetic_db, "o_day14", "damaged")
 
     answer = approve_and_create(
@@ -223,7 +223,7 @@ def test_approval_is_asked_with_the_alias_from_an_earlier_check(synthetic_db, al
 # --- R11: a second request ----------------------------------------------
 
 
-def test_second_request_for_the_same_order_is_a_duplicate(synthetic_db, alice):
+def test_second_request_is_a_duplicate(synthetic_db, alice):
     approve_and_create(alice, synthetic_db, "o_day14", "damaged", "115.00")
 
     again = create_return_request(alice, synthetic_db, "o_day14", "damaged", "115.00")
@@ -252,7 +252,7 @@ def test_token_cannot_be_used_twice(synthetic_db, alice):
     assert request_count(synthetic_db) == EXISTING_REQUESTS
 
 
-def test_request_that_appears_after_approval_still_blocks(synthetic_db, alice):
+def test_late_request_still_blocks(synthetic_db, alice):
     # Approved, but another request for the order is written before the call.
     create_return_request(alice, synthetic_db, "o_day14", "damaged", "115.00")
     token = alice.approvals.approve()
@@ -266,7 +266,7 @@ def test_request_that_appears_after_approval_still_blocks(synthetic_db, alice):
     assert len(new_requests(synthetic_db)) == 1
 
 
-def test_order_with_an_existing_request_is_a_duplicate(synthetic_db, alice):
+def test_existing_request_is_a_duplicate(synthetic_db, alice):
     answer = create_return_request(
         alice, synthetic_db, "o_duplicate", "changed_mind", "100.00"
     )
@@ -290,9 +290,7 @@ def test_order_with_an_existing_request_is_a_duplicate(synthetic_db, alice):
         ("o_late_day31", "late", "NOT_ELIGIBLE_WINDOW"),
     ],
 )
-def test_order_the_rules_refuse_is_never_offered_for_approval(
-    synthetic_db, alice, order_id, reason, code
-):
+def test_refused_order_never_gets_a_card(synthetic_db, alice, order_id, reason, code):
     answer = create_return_request(alice, synthetic_db, order_id, reason, "100.00")
 
     assert answer == {
@@ -305,7 +303,7 @@ def test_order_the_rules_refuse_is_never_offered_for_approval(
 
 
 @pytest.mark.parametrize("amount", ["115.01", "114.99", "1000", "0", "-115.00"])
-def test_amount_other_than_the_computed_one_is_refused(synthetic_db, alice, amount):
+def test_wrong_amount_is_refused(synthetic_db, alice, amount):
     answer = create_return_request(alice, synthetic_db, "o_day14", "damaged", amount)
 
     assert answer["error"] == "AMOUNT_MISMATCH"
@@ -314,7 +312,7 @@ def test_amount_other_than_the_computed_one_is_refused(synthetic_db, alice, amou
 
 
 @pytest.mark.parametrize("amount", ["a lot", "", "115,00"])
-def test_amount_that_is_not_a_number_is_refused(synthetic_db, alice, amount):
+def test_non_numeric_amount_is_refused(synthetic_db, alice, amount):
     answer = create_return_request(alice, synthetic_db, "o_day14", "damaged", amount)
 
     assert answer == {"error": "INVALID_AMOUNT", "message": messages.INVALID_AMOUNT}
@@ -326,7 +324,7 @@ def test_unknown_reason_is_refused(synthetic_db, alice):
     assert answer["error"] == "INVALID_REASON"
 
 
-def test_foreign_and_missing_orders_are_not_found(synthetic_db, alice):
+def test_foreign_and_missing_not_found(synthetic_db, alice):
     not_found = {"error": "NOT_FOUND", "message": messages.ORDER_NOT_FOUND}
 
     foreign = create_return_request(
@@ -340,9 +338,7 @@ def test_foreign_and_missing_orders_are_not_found(synthetic_db, alice):
     assert alice.approvals.awaiting is None
 
 
-def test_customer_cannot_open_a_request_for_a_foreign_order_even_with_a_token(
-    synthetic_db, alice
-):
+def test_foreign_order_refused_with_token(synthetic_db, alice):
     bob = Session(BOB)
     create_return_request(bob, synthetic_db, "o_other_customer", "damaged", "115.00")
     token = bob.approvals.approve()

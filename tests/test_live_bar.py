@@ -17,7 +17,7 @@ class Terminal(io.StringIO):
         return True
 
 
-def test_written_to_a_file_the_lines_come_as_before_and_nothing_is_rewritten():
+def test_file_output_is_plain_lines():
     stream = io.StringIO()
     bar = LiveBar(2, stream)
 
@@ -29,7 +29,7 @@ def test_written_to_a_file_the_lines_come_as_before_and_nothing_is_rewritten():
     assert stream.getvalue() == "[1/2] █████░░░░░  50%   D1  ok\n"
 
 
-def test_in_a_terminal_the_lines_stay_and_the_bar_is_rewritten_under_them():
+def test_terminal_redraws_the_bar():
     stream = Terminal()
     bar = LiveBar(4, stream)
 
@@ -47,7 +47,7 @@ def test_in_a_terminal_the_lines_stay_and_the_bar_is_rewritten_under_them():
     assert last.endswith("D2\r")
 
 
-def test_a_held_out_example_moves_the_bar_but_is_not_counted():
+def test_held_out_moves_bar_uncounted():
     bar = LiveBar(3, Terminal())
 
     bar.finish(True, 3)
@@ -57,7 +57,7 @@ def test_a_held_out_example_moves_the_bar_but_is_not_counted():
     assert plain(bar.line()).startswith("[3/3] ██████████ 100%  ✓ 1  ✗ 1   live 9")
 
 
-def test_a_log_line_clears_the_bar_and_the_bar_comes_back_after_it():
+def test_log_line_clears_bar_then_returns():
     stream = Terminal()
     log_stream = io.StringIO()
     handler = logging.StreamHandler(log_stream)
@@ -82,7 +82,7 @@ def test_a_log_line_clears_the_bar_and_the_bar_comes_back_after_it():
     assert stream.getvalue() == before
 
 
-def test_in_colour_the_bar_turns_red_once_an_example_fails(monkeypatch):
+def test_bar_turns_red_on_failure(monkeypatch):
     monkeypatch.delenv("NO_COLOR", raising=False)
     bar = LiveBar(2, Terminal())
     bar.finish(True, 1)
@@ -95,7 +95,7 @@ def test_in_colour_the_bar_turns_red_once_an_example_fails(monkeypatch):
     assert f"{RED}✗ 1{RESET}" in failing
 
 
-def test_no_colour_when_asked_for_none_or_not_in_a_terminal(monkeypatch):
+def test_no_colour_when_off_or_not_a_tty(monkeypatch):
     monkeypatch.setenv("NO_COLOR", "1")
 
     assert "\x1b[" not in LiveBar(2, Terminal()).line()

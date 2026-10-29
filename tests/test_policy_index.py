@@ -46,7 +46,7 @@ def folder_hash(folder):
 # --- Sections -----------------------------------------------------------
 
 
-def test_every_section_of_every_document_is_read():
+def test_every_section_is_read():
     sections = read_sections()
 
     assert len(sections) == 28
@@ -56,7 +56,7 @@ def test_every_section_of_every_document_is_read():
         assert numbers == list(range(1, len(numbers) + 1))
 
 
-def test_section_holds_heading_text_rules_and_citation():
+def test_section_has_heading_text_citation():
     section = next(
         section
         for section in read_sections()
@@ -85,7 +85,7 @@ def test_several_rules_are_kept_apart():
     assert by_id["returns#7"].rules == ()
 
 
-def test_embedded_text_starts_with_document_and_heading():
+def test_embedded_text_starts_with_heading():
     section = read_sections()[0]
 
     assert section.embedding_text == (
@@ -102,7 +102,7 @@ def test_section_ids_are_unique():
 # --- Fingerprint --------------------------------------------------------
 
 
-def test_fingerprint_changes_with_the_text_and_with_the_model(monkeypatch, tmp_path):
+def test_fingerprint_tracks_text_and_model(monkeypatch, tmp_path):
     sections = read_sections()
     original = source_hash(sections)
     assert source_hash(read_sections()) == original
@@ -121,7 +121,7 @@ def test_fingerprint_changes_with_the_text_and_with_the_model(monkeypatch, tmp_p
 # --- LlamaIndex nodes and embedding model --------------------------------
 
 
-def test_a_node_embeds_the_section_embedding_text():
+def test_node_embeds_the_section_text():
     for section in read_sections():
         node = section_node(section)
 
@@ -129,7 +129,7 @@ def test_a_node_embeds_the_section_embedding_text():
         assert node.get_content() == section.text
 
 
-def test_the_wrapped_embedder_keeps_queries_and_passages_apart():
+def test_wrapper_separates_queries_passages():
     class Recorder:
         def embed_queries(self, texts):
             return np.array([[1.0, 0.0] for _ in texts])
@@ -144,7 +144,7 @@ def test_the_wrapped_embedder_keeps_queries_and_passages_apart():
     assert model.get_text_embedding_batch(["a", "b"]) == [[0.0, 1.0], [0.0, 1.0]]
 
 
-def test_all_sections_are_embedded_in_one_batch(fake_embedder, tmp_path):
+def test_sections_embed_in_one_batch(fake_embedder, tmp_path):
     # The quantized model gives a text a slightly different vector in a
     # different batch; the stored vectors are the ones of a single batch.
     batches = []
@@ -170,7 +170,7 @@ def test_built_index_holds_every_section(fake_policy_index):
     assert fake_policy_index.source_hash == source_hash(read_sections())
 
 
-def test_search_returns_sections_with_their_source(fake_policy_index):
+def test_search_returns_sections_with_source(fake_policy_index):
     results = fake_policy_index.search("hediye çeki ile ödenen sipariş", 3)
 
     assert len(results) == 3
@@ -207,11 +207,11 @@ def test_score_is_the_cosine_similarity(fake_embedder, fake_policy_index):
         assert result["score"] == pytest.approx(cosine, abs=1e-4)
 
 
-def test_asking_for_more_than_there_is_returns_everything(fake_policy_index):
+def test_asking_for_too_many_returns_all(fake_policy_index):
     assert len(fake_policy_index.search("iade", 500)) == 28
 
 
-def test_section_without_rules_has_an_empty_list(fake_policy_index):
+def test_ruleless_section_has_empty_list(fake_policy_index):
     results = fake_policy_index.search("iade", 28)
 
     uncovered = [r for r in results if "belirlenmeyen" in r["heading"]]
@@ -236,7 +236,7 @@ def test_rebuilding_replaces_the_old_index(fake_embedder, tmp_path):
     assert len(PolicyIndex(fake_embedder, index_dir)) == 2
 
 
-def test_searching_leaves_the_stored_index_untouched(fake_embedder, tmp_path):
+def test_search_leaves_stored_index_intact(fake_embedder, tmp_path):
     index_dir = tmp_path / "index"
     build_index(fake_embedder, index_dir)
     before = folder_hash(index_dir)
@@ -287,13 +287,13 @@ def policy_sections(policies_dir=POLICIES_DIR) -> dict:
     }
 
 
-def test_stored_index_holds_exactly_the_policy_sections(tmp_path):
+def test_stored_index_matches_the_sections(tmp_path):
     # A section planted in the index, or one changed there, ranks like a
     # real one (measured); the stored texts must be the policies' own.
     assert stored_sections(INDEX_DIR, tmp_path) == policy_sections()
 
 
-def test_a_planted_section_in_an_index_is_found(fake_embedder, tmp_path):
+def test_planted_section_is_found(fake_embedder, tmp_path):
     policies = tmp_path / "policies"
     shutil.copytree(POLICIES_DIR, policies)
     (policies / "returns_update.md").write_text(
@@ -305,7 +305,7 @@ def test_a_planted_section_in_an_index_is_found(fake_embedder, tmp_path):
     assert stored_sections(tmp_path / "index", tmp_path) != policy_sections()
 
 
-def test_stored_index_is_not_changed_by_being_opened(fake_embedder):
+def test_opening_does_not_change_the_index(fake_embedder):
     before = folder_hash(INDEX_DIR)
 
     PolicyIndex(fake_embedder, INDEX_DIR)
@@ -313,7 +313,7 @@ def test_stored_index_is_not_changed_by_being_opened(fake_embedder):
     assert folder_hash(INDEX_DIR) == before
 
 
-def test_stored_vectors_have_the_model_dimensions(fake_embedder):
+def test_vectors_have_the_model_dimensions(fake_embedder):
     stored = PolicyIndex(fake_embedder, INDEX_DIR)
 
     vectors = stored._collection.get(include=["embeddings"])["embeddings"]

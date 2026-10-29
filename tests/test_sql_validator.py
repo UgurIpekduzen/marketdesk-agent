@@ -59,13 +59,13 @@ def test_select_over_the_views_passes(query):
     assert check(query).startswith(("SELECT", "WITH"))
 
 
-def test_trailing_semicolon_and_comment_are_fine():
+def test_trailing_semicolon_and_comment_ok():
     assert check("SELECT COUNT(*) FROM v_orders; -- how many") == (
         "SELECT COUNT(*) FROM v_orders LIMIT 1000"
     )
 
 
-def test_date_functions_pass_and_come_out_unchanged():
+def test_date_functions_pass_unchanged():
     sql = check(
         "SELECT strftime('%Y-%m', order_purchase_timestamp), "
         "AVG(julianday(order_delivered_customer_date) - "
@@ -101,7 +101,7 @@ def test_limit_with_offset_is_kept():
     "limit",
     ["LIMIT 5000", "LIMIT 1001", "LIMIT -1", "LIMIT 500 + 600", "LIMIT 5, 2000"],
 )
-def test_limit_above_the_maximum_or_not_a_plain_number_is_lowered(limit):
+def test_odd_or_oversized_limit_is_lowered(limit):
     sql = check(f"SELECT order_key FROM v_orders {limit}")
 
     assert "LIMIT 1000" in sql
@@ -118,7 +118,7 @@ def test_limit_is_added_to_a_union():
     assert sql.endswith("LIMIT 1000")
 
 
-def test_limit_inside_a_subquery_does_not_count_as_the_limit():
+def test_subquery_limit_is_not_the_limit():
     sql = check("SELECT * FROM (SELECT order_key FROM v_orders LIMIT 5000) AS x")
 
     assert sql.endswith("LIMIT 1000")
@@ -175,7 +175,7 @@ def test_empty_query_is_refused(query):
 
 
 @pytest.mark.parametrize("query", ["SELEC 1", "SELECT FROM WHERE", "SELECT (1"])
-def test_query_that_does_not_parse_is_refused(query):
+def test_unparsable_query_is_refused(query):
     assert rejection(query) == "PARSE_ERROR"
 
 
@@ -220,7 +220,7 @@ def test_raw_table_is_refused(table):
         "SELECT * FROM v_does_not_exist",
     ],
 )
-def test_raw_table_is_refused_wherever_it_is_named(query):
+def test_raw_table_is_refused_anywhere(query):
     assert rejection(query) == "TABLE_NOT_ALLOWED"
 
 
@@ -250,7 +250,7 @@ def test_function_used_as_a_table_is_refused(query):
         "WITH Orders AS (SELECT 1 AS x) SELECT * FROM Orders",
     ],
 )
-def test_cte_may_not_take_the_name_of_something_real(query):
+def test_cte_cannot_reuse_a_real_name(query):
     assert rejection(query) == "TABLE_NOT_ALLOWED"
 
 
@@ -277,7 +277,7 @@ def test_recursive_cte_over_nothing_passes():
         "something_unknown(1)",
     ],
 )
-def test_function_outside_the_list_is_refused(call):
+def test_unlisted_function_is_refused(call):
     assert rejection(f"SELECT {call} FROM v_orders") == "FUNCTION_NOT_ALLOWED"
 
 
@@ -319,7 +319,7 @@ ITEMS_WITH_PAYMENTS = (
         "SELECT 1 FROM v_order_items JOIN V_ORDER_PAYMENTS USING (order_key)",
     ],
 )
-def test_items_and_payments_in_one_place_are_refused(query):
+def test_items_and_payments_together_refused(query):
     assert rejection(query) == "JOIN_FANS_OUT"
 
 

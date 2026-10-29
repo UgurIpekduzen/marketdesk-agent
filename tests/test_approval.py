@@ -14,7 +14,7 @@ def approved_token(approvals, action=ACTION):
     return approvals.approve()
 
 
-def test_token_fits_the_action_it_was_issued_for():
+def test_token_fits_its_own_action():
     approvals = Approvals()
     token = approved_token(approvals)
 
@@ -52,14 +52,14 @@ def test_token_works_only_once():
         ReturnAction("o_one", "damaged", Decimal("115.01")),
     ],
 )
-def test_token_does_not_fit_another_order_reason_or_amount(other):
+def test_token_rejects_other_order_or_amount(other):
     approvals = Approvals()
     token = approved_token(approvals)
 
     assert approvals.consume(token, other) is False
 
 
-def test_token_tried_on_the_wrong_action_is_gone():
+def test_wrong_action_burns_the_token():
     approvals = Approvals()
     token = approved_token(approvals)
     approvals.consume(token, ReturnAction("o_two", "damaged", Decimal("115.00")))
@@ -87,7 +87,7 @@ def test_approving_clears_what_was_waiting():
         approvals.approve()
 
 
-def test_rejected_action_cannot_be_approved_afterwards():
+def test_rejected_action_stays_rejected():
     approvals = Approvals()
     approvals.request(ACTION)
     approvals.reject()

@@ -45,7 +45,7 @@ def by_seller(report: dict) -> dict:
     return {row["seller"]: row for row in report["rows"]}
 
 
-def test_sellers_are_shown_by_pseudonym_with_their_numbers(two_sellers):
+def test_sellers_show_pseudonym_and_numbers(two_sellers):
     report = build_seller_report(two_sellers, min_items=1)
 
     sellers = by_seller(report)
@@ -57,7 +57,7 @@ def test_sellers_are_shown_by_pseudonym_with_their_numbers(two_sellers):
     assert sellers[MAIN]["gmv"] == pytest.approx(3670.01 - 50.00)
 
 
-def test_the_numbers_are_the_ones_the_metrics_give_by_seller_state(two_sellers):
+def test_numbers_match_metrics_by_state(two_sellers):
     sellers = by_seller(build_seller_report(two_sellers, min_items=1))
 
     for metric, field in ((RANKING_METRIC, "late_rate"), *DETAIL_METRICS.items()):
@@ -70,7 +70,7 @@ def test_the_numbers_are_the_ones_the_metrics_give_by_seller_state(two_sellers):
             assert sellers[seller][field] == pytest.approx(value), (metric, seller)
 
 
-def test_the_rows_are_ordered_by_late_rate_highest_first(two_sellers):
+def test_rows_ordered_by_late_rate_desc(two_sellers):
     rates = [
         row["late_rate"]
         for row in build_seller_report(two_sellers, min_items=1)["rows"]
@@ -80,18 +80,18 @@ def test_the_rows_are_ordered_by_late_rate_highest_first(two_sellers):
     assert len(rates) == 2
 
 
-def test_a_seller_below_the_item_threshold_is_left_out(two_sellers):
+def test_small_seller_is_left_out(two_sellers):
     report = build_seller_report(two_sellers, min_items=2)
 
     assert set(by_seller(report)) == {MAIN}
     assert report["min_items"] == 2
 
 
-def test_the_report_holds_no_more_rows_than_asked(two_sellers):
+def test_report_respects_row_limit(two_sellers):
     assert len(build_seller_report(two_sellers, min_items=1, rows=1)["rows"]) == 1
 
 
-def test_nobody_reaching_the_threshold_gives_an_empty_report(two_sellers):
+def test_no_one_over_threshold_is_empty(two_sellers):
     report = build_seller_report(two_sellers, min_items=1000)
 
     assert report["rows"] == []
@@ -113,7 +113,7 @@ def test_every_number_has_its_source(two_sellers):
     assert detail["filters"]["seller_key"] == [row["seller"] for row in report["rows"]]
 
 
-def test_every_metric_used_brings_its_caveat_in_the_language_asked(two_sellers):
+def test_every_metric_brings_its_caveat(two_sellers):
     metrics = load_semantic_layer().metrics
 
     for language in Language:
@@ -146,7 +146,7 @@ def test_the_period_limits_every_number(two_sellers):
     assert later["sources"][0]["filters"] == {"purchase_from": "2018-07-01"}
 
 
-def test_a_bad_period_comes_back_as_the_metric_error(two_sellers):
+def test_bad_period_returns_metric_error(two_sellers):
     report = build_seller_report(
         two_sellers, min_items=1, period={"purchase_from": "yesterday"}
     )
@@ -154,14 +154,14 @@ def test_a_bad_period_comes_back_as_the_metric_error(two_sellers):
     assert report["error"] == "INVALID_FILTER"
 
 
-def test_a_seller_without_reviews_has_an_empty_score_not_a_missing_one(two_sellers):
+def test_unreviewed_seller_has_empty_score(two_sellers):
     two_sellers.execute("DELETE FROM order_reviews")
 
     for row in build_seller_report(two_sellers, min_items=1)["rows"]:
         assert row["avg_review_score"] is None
 
 
-def test_the_table_has_headers_in_the_language_and_the_rate_as_a_percentage(
+def test_headers_and_percentage_rate(
     two_sellers,
 ):
     report = build_seller_report(two_sellers, min_items=1)
@@ -182,7 +182,7 @@ def test_the_table_has_headers_in_the_language_and_the_rate_as_a_percentage(
     }
 
 
-def test_each_source_is_told_in_words_and_says_when_it_is_for_the_tables_sellers(
+def test_sources_are_told_in_words(
     two_sellers,
 ):
     report = build_seller_report(two_sellers, min_items=2)

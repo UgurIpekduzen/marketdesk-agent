@@ -26,14 +26,14 @@ def said(example: dict) -> list[dict]:
     return [turn for turn in example["turns"] if "say" in turn]
 
 
-def test_the_set_has_eight_flows_in_both_sessions():
+def test_set_has_eight_flows_both_sessions():
     assert [example["id"] for example in EXAMPLES] == [f"A{n}" for n in range(1, 9)]
     assert {example["session"] for example in EXAMPLES} == {"customer", "ops"}
     assert all(len(said(example)) >= 2 for example in EXAMPLES)
     assert {example["attack"] for example in EXAMPLES} == {"LLM01"}
 
 
-def test_its_results_have_a_name_of_their_own():
+def test_results_have_own_name():
     assert RESULT_PREFIXES["multi_turn_attacks"] == "multi_turn_attacks_v1"
 
 
@@ -52,7 +52,7 @@ def test_every_flow_is_well_formed(example):
         assert not any("click" in turn for turn in example["turns"])
 
 
-def test_the_phrases_that_must_not_leak_are_in_the_instructions():
+def test_forbidden_phrases_are_in_the_prompt():
     # If the instructions changed, the check would look for words they no
     # longer hold.
     leaked = next(e for e in EXAMPLES if e["id"] == "A6")

@@ -15,14 +15,14 @@ from src.orchestrator import Intent
 EXAMPLES = run_eval.load_golden(run_eval.NUMBER_TRAP_SET)
 
 
-def test_the_set_has_six_operations_questions_that_ask_for_a_derived_number():
+def test_set_has_six_derived_questions():
     assert [example["id"] for example in EXAMPLES] == [f"N{n}" for n in range(1, 7)]
     assert {example["session"] for example in EXAMPLES} == {"ops"}
     assert {example["group"] for example in EXAMPLES} == {"ops"}
 
 
 @pytest.mark.parametrize("example", EXAMPLES, ids=lambda example: example["id"])
-def test_every_example_checks_the_numbers_of_the_final_answer(example):
+def test_examples_check_final_answer_numbers(example):
     assert example["note"].strip()
     assert example["expected"]["intent"] in Intent
     assert example["expected"]["numbers_in_tool_output"] is True
@@ -30,7 +30,7 @@ def test_every_example_checks_the_numbers_of_the_final_answer(example):
     assert len(json.dumps(example)) < 400
 
 
-def test_its_results_have_a_name_of_their_own_and_one_without_the_critic():
+def test_results_named_for_both_critic_modes():
     assert run_eval.RESULT_PREFIXES["number_traps"] == "number_traps_v1"
     with_critic = run_eval.result_name(run_eval.NUMBER_TRAP_SET, "some/model")
     without = run_eval.result_name(run_eval.NUMBER_TRAP_SET, "some/model", critic=False)
@@ -89,7 +89,7 @@ def scored(intent, text, critic=None):
     return run_eval.score(example, prepared, Answer(intent, text, critic), 0)
 
 
-def test_an_operations_row_records_the_numbers_no_tool_returned_and_the_critic():
+def test_ops_row_records_ungrounded_numbers():
     row = scored("ops_metric", "777 sipariş var.", critic="flagged")
 
     assert row["ungrounded_numbers"] == ["777"]
@@ -97,21 +97,21 @@ def test_an_operations_row_records_the_numbers_no_tool_returned_and_the_critic()
     assert row["success"] is False
 
 
-def test_an_answer_with_only_the_tools_numbers_is_a_success():
+def test_tool_numbers_only_is_a_success():
     row = scored("ops_metric", "29 sipariş var.", critic="ok")
 
     assert row["ungrounded_numbers"] == []
     assert row["success"] is True
 
 
-def test_a_row_of_another_agent_records_nothing_about_the_critic():
+def test_other_agent_row_has_no_critic_data():
     row = scored("support", "Siparişiniz yolda.")
 
     assert "ungrounded_numbers" not in row
     assert "critic" not in row
 
 
-def test_the_summary_counts_the_answers_with_a_number_no_tool_returned():
+def test_summary_counts_ungrounded_answers():
     rows = [
         {"ungrounded_numbers": ["777"], "critic": "flagged"},
         {"ungrounded_numbers": [], "critic": "corrected"},

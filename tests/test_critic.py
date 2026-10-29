@@ -58,7 +58,7 @@ def asked_for_correction(fake) -> bool:
 # --- The check ------------------------------------------------------------------
 
 
-def test_a_number_a_tool_returned_is_supported():
+def test_tool_number_is_supported():
     results = [("run_metric", {"rows": [[29, 29]], "caveat": "Not."})]
 
     assert critic.unsupported("Haziran'da 29 sipariş var.", results, "Kaç?") == []
@@ -70,7 +70,7 @@ def test_a_number_no_tool_returned_is_not():
     assert critic.unsupported("Haziran'da 777 sipariş var.", results, "Kaç?") == ["777"]
 
 
-def test_a_number_the_question_holds_dates_and_years_are_left_out():
+def test_question_dates_and_years_skipped():
     results = [("run_metric", {"rows": [[29, 29]]})]
     text = (
         "2018-06-01 ile 30.06.2018 arası, 2018 Haziran: 29 sipariş. Soruda 500 vardı."
@@ -83,13 +83,13 @@ def test_a_number_the_question_holds_dates_and_years_are_left_out():
     "text",
     ["848.860,10 BRL", "848,860.10 BRL", "Yaklaşık 848,86 bin BRL"],
 )
-def test_the_turkish_and_the_english_way_of_writing_a_number_are_both_read(text):
+def test_turkish_and_english_formats_read(text):
     results = [("run_metric", {"rows": [[848860.1]]})]
 
     assert critic.unsupported(text, results, "GMV?") == []
 
 
-def test_the_number_of_rows_a_result_holds_is_a_number_the_tool_returned():
+def test_row_count_is_a_tool_number():
     rows = [[f"S-{n:04d}", 500 + n] for n in range(1, 21)]
     results = [("seller_report", {"rows": rows})]
 
@@ -107,7 +107,7 @@ def test_a_result_without_rows_adds_no_count():
     assert critic.unsupported("There are 3 rows.", results, "") == ["3"]
 
 
-def test_a_sellers_pseudonym_is_a_name_not_a_number():
+def test_seller_pseudonym_is_not_a_number():
     results = [("seller_report", {"rows": [["S-1286", 34, 82.35]]})]
     text = "S-1286 en yüksek orana sahip (%82,35, 34 kalem); S-1397 en düşük."
 
@@ -117,7 +117,7 @@ def test_a_sellers_pseudonym_is_a_name_not_a_number():
 # --- In the agent ---------------------------------------------------------------
 
 
-def test_an_answer_whose_numbers_come_from_the_tools_is_left_as_it_is(make_agent, fake):
+def test_supported_answer_is_untouched(make_agent, fake):
     fake.script = [JUNE, "Haziran 2018'de 29 sipariş var."]
 
     reply = ask(make_agent(), "Haziran 2018'de kaç sipariş?")
@@ -127,7 +127,7 @@ def test_an_answer_whose_numbers_come_from_the_tools_is_left_as_it_is(make_agent
     assert len(fake.requests) == 2
 
 
-def test_an_unsupported_number_gets_one_correction(make_agent, fake):
+def test_unsupported_number_gets_one_fix(make_agent, fake):
     fake.script = [
         JUNE,
         "Haziran 2018'de 777 sipariş var.",
@@ -144,7 +144,7 @@ def test_an_unsupported_number_gets_one_correction(make_agent, fake):
     assert reply.log.llm_calls == 3
 
 
-def test_an_answer_that_is_still_wrong_is_shown_with_a_note(make_agent, fake):
+def test_still_wrong_answer_gets_a_note(make_agent, fake):
     fake.script = [JUNE, "777 sipariş var.", "Hâlâ 888 sipariş var."]
 
     reply = ask(make_agent(), "Haziran 2018'de kaç sipariş?")
@@ -155,7 +155,7 @@ def test_an_answer_that_is_still_wrong_is_shown_with_a_note(make_agent, fake):
     assert reply.log.llm_calls == 3
 
 
-def test_the_note_is_in_the_language_of_the_session(make_agent, fake):
+def test_note_follows_session_language(make_agent, fake):
     fake.script = [JUNE, "777 orders.", "888 orders."]
 
     reply = ask(make_agent(language=Language.EN), "How many orders in June 2018?")
@@ -163,7 +163,7 @@ def test_the_note_is_in_the_language_of_the_session(make_agent, fake):
     assert reply.text.endswith(messages_en.CRITIC_NOTE)
 
 
-def test_the_note_does_not_repeat_the_numbers(make_agent, fake):
+def test_note_does_not_repeat_numbers(make_agent, fake):
     fake.script = [JUNE, "777 sipariş var.", "888 sipariş var."]
 
     reply = ask(make_agent(), "Haziran 2018'de kaç sipariş?")
@@ -172,7 +172,7 @@ def test_the_note_does_not_repeat_the_numbers(make_agent, fake):
     assert reply.text.count("888") == 1
 
 
-def test_a_critic_switched_off_leaves_the_answer_alone(make_agent, fake):
+def test_disabled_critic_leaves_answer(make_agent, fake):
     fake.script = [JUNE, "777 sipariş var."]
 
     reply = ask(make_agent(use_critic=False), "Haziran 2018'de kaç sipariş?")
@@ -182,7 +182,7 @@ def test_a_critic_switched_off_leaves_the_answer_alone(make_agent, fake):
     assert len(fake.requests) == 2
 
 
-def test_the_setting_in_config_switches_it_off(make_agent, fake, monkeypatch):
+def test_config_setting_disables_critic(make_agent, fake, monkeypatch):
     monkeypatch.setattr(config, "CRITIC_ENABLED", False)
     fake.script = [JUNE, "777 sipariş var."]
 
@@ -191,7 +191,7 @@ def test_the_setting_in_config_switches_it_off(make_agent, fake, monkeypatch):
     assert reply.critic is None
 
 
-def test_the_number_of_corrections_is_a_setting(make_agent, fake, monkeypatch):
+def test_correction_count_is_a_setting(make_agent, fake, monkeypatch):
     monkeypatch.setattr(config, "CRITIC_MAX_CORRECTIONS", 0)
     fake.script = [JUNE, "777 sipariş var."]
 
@@ -201,7 +201,7 @@ def test_the_number_of_corrections_is_a_setting(make_agent, fake, monkeypatch):
     assert len(fake.requests) == 2
 
 
-def test_each_question_is_checked_against_its_own_tool_results(make_agent, fake):
+def test_question_checks_its_own_results(make_agent, fake):
     # 29 came from the first question's tool; the second has no tool call.
     fake.script = [JUNE, "29 sipariş var.", "Tekrar: 29 sipariş.", "Hâlâ 29."]
 
@@ -237,7 +237,7 @@ def test_a_run_that_gave_up_is_not_looked_at(make_agent, fake):
     assert len(fake.requests) == 4
 
 
-def test_the_correction_is_marked_on_the_log_and_the_trace(make_agent, fake, caplog):
+def test_correction_is_logged_and_traced(make_agent, fake, caplog):
     import logging
 
     caplog.set_level(logging.INFO)
@@ -269,9 +269,7 @@ def test_the_critic_s_status_is_on_the_trace(make_agent, fake, monkeypatch):
     assert "critic=flagged" in marked
 
 
-def test_a_pseudonym_in_an_answer_does_not_ask_for_a_correction(
-    make_agent, fake, monkeypatch
-):
+def test_pseudonym_needs_no_correction(make_agent, fake, monkeypatch):
     # The synthetic database has one seller of 24 items.
     monkeypatch.setattr(config, "SELLER_REPORT_MIN_ITEMS", 1)
     fake.script = [
@@ -287,7 +285,7 @@ def test_a_pseudonym_in_an_answer_does_not_ask_for_a_correction(
     assert len(fake.requests) == 2
 
 
-def test_the_wording_in_use_tells_the_model_to_compute_with_a_query(make_agent, fake):
+def test_wording_says_compute_by_query(make_agent, fake):
     fake.script = [JUNE, "777 sipariş var.", "29 sipariş var."]
 
     reply = ask(make_agent(), "Haziran 2018'de kaç sipariş?")
@@ -300,9 +298,7 @@ def test_the_wording_in_use_tells_the_model_to_compute_with_a_query(make_agent, 
     assert "777" in str(fake.requests[-1])
 
 
-def test_the_first_wording_only_asks_for_the_tools_numbers(
-    make_agent, fake, monkeypatch
-):
+def test_first_wording_asks_for_tool_numbers(make_agent, fake, monkeypatch):
     monkeypatch.setattr(config, "CRITIC_CORRECTION_VARIANT", "plain")
     fake.script = [JUNE, "777 sipariş var.", "29 sipariş var."]
 
@@ -323,7 +319,7 @@ def test_the_first_wording_only_asks_for_the_tools_numbers(
         "There are twenty-three orders.",
     ],
 )
-def test_a_number_written_in_words_is_not_seen(text):
+def test_number_in_words_is_not_seen(text):
     # A known limit (the module says so): the check reads digits. Were it ever
     # to read words, this test is the one to change.
     results = [("run_metric", {"rows": [[29]]})]
@@ -332,7 +328,7 @@ def test_a_number_written_in_words_is_not_seen(text):
 
 
 @pytest.mark.parametrize("text", ["Toplam ٢٣ sipariş var.", "Toplam ２３ sipariş var."])
-def test_digits_of_other_scripts_are_read_as_numbers(text):
+def test_other_script_digits_are_numbers(text):
     results = [("run_metric", {"rows": [[29]]})]
 
     assert critic.unsupported(text, results, "") != []

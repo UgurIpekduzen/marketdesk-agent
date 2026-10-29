@@ -17,7 +17,7 @@ def test_set_file_is_what_the_script_builds():
     )
 
 
-def test_set_file_loads_and_test_messages_come_from_the_sentences():
+def test_set_loads_messages_from_sentences():
     examples = run_eval.load_golden(build_multi_turn.MULTI_TURN_SET)
     sentences = json.loads(build_multi_turn.SENTENCES.read_text(encoding="utf-8"))
     outside = {
@@ -46,7 +46,7 @@ def test_set_file_loads_and_test_messages_come_from_the_sentences():
             assert {t["say"] for t in e["turns"] if "say" in t} <= outside
 
 
-def test_every_test_example_picks_a_different_order():
+def test_each_test_example_picks_own_order():
     examples = run_eval.load_golden(build_multi_turn.MULTI_TURN_SET)
 
     selections = [e["select_sql"] for e in examples]

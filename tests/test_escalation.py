@@ -51,7 +51,7 @@ def test_escalation_returns_a_ticket_number(alice, conn):
     }
 
 
-def test_tickets_are_numbered_in_order_and_kept_in_the_table(alice, conn):
+def test_tickets_are_numbered_in_order(alice, conn):
     first = escalate_to_human(alice, conn, "First case.")
     second = escalate_to_human(alice, conn, "Second case.", "low")
 
@@ -69,7 +69,7 @@ def test_tickets_are_numbered_in_order_and_kept_in_the_table(alice, conn):
     ]
 
 
-def test_a_ticket_is_dated_on_the_simulated_day(alice, conn):
+def test_ticket_has_the_simulated_date(alice, conn):
     escalate_to_human(alice, conn, "A case.", today=date(2018, 8, 30))
 
     assert tickets(conn)[0][5] == "2018-08-30 00:00:00"
@@ -87,7 +87,7 @@ def test_tickets_outlive_the_connection(alice, synthetic_db_path):
         second.close()
 
 
-def test_escalation_writes_nothing_but_the_ticket(synthetic_db, alice):
+def test_escalation_writes_only_the_ticket(synthetic_db, alice):
     before = synthetic_db.execute("SELECT COUNT(*) FROM return_requests").fetchone()[0]
 
     escalate_to_human(alice, synthetic_db, "The customer asks for a person.")
@@ -98,7 +98,7 @@ def test_escalation_writes_nothing_but_the_ticket(synthetic_db, alice):
     assert synthetic_db.total_changes == 1
 
 
-def test_escalation_is_logged_without_the_customer_id(alice, conn, caplog):
+def test_escalation_log_has_no_customer_id(alice, conn, caplog):
     with caplog.at_level(logging.INFO, logger="src.tools.escalation"):
         escalate_to_human(alice, conn, "SIP-1 has no delivery date.", "high")
 
@@ -110,7 +110,7 @@ def test_escalation_is_logged_without_the_customer_id(alice, conn, caplog):
     assert ALICE not in line
 
 
-def test_raw_ids_in_the_summary_are_masked_everywhere(alice, conn, caplog):
+def test_summary_ids_are_masked(alice, conn, caplog):
     with caplog.at_level(logging.INFO, logger="src.tools.escalation"):
         escalate_to_human(alice, conn, f"Order {RAW_ID} arrived broken.")
 
@@ -118,7 +118,7 @@ def test_raw_ids_in_the_summary_are_masked_everywhere(alice, conn, caplog):
     assert RAW_ID not in caplog.text
 
 
-def test_ticket_holds_the_customer_as_a_hash_only(alice, conn):
+def test_ticket_holds_customer_hash_only(alice, conn):
     escalate_to_human(alice, conn, "The customer asks for a person.")
 
     assert tickets(conn)[0][1] == hash_id(ALICE)
@@ -139,7 +139,7 @@ def test_empty_summary_is_refused(alice, conn, summary):
     assert tickets(conn) == []
 
 
-def test_unknown_priority_is_refused_with_the_allowed_values(alice, conn):
+def test_unknown_priority_lists_allowed(alice, conn):
     answer = escalate_to_human(alice, conn, "A case.", "urgent")
 
     assert answer["error"] == "INVALID_PRIORITY"
@@ -148,7 +148,7 @@ def test_unknown_priority_is_refused_with_the_allowed_values(alice, conn):
     assert tickets(conn) == []
 
 
-def test_a_database_without_the_table_gets_it_and_keeps_its_tickets(alice, conn):
+def test_missing_table_is_created(alice, conn):
     conn.execute(f"DROP TABLE {TICKETS_TABLE}")
 
     ensure_tickets_table(conn)

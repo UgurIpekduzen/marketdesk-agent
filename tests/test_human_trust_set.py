@@ -27,7 +27,7 @@ def expectations(example: dict) -> list[dict]:
     return [example["expected"]]
 
 
-def test_the_set_tries_the_card_the_rule_engine_and_the_ticket():
+def test_set_covers_card_rules_and_ticket():
     assert [example["id"] for example in EXAMPLES] == [
         "H1", "H2", "H3", "H4", "H5", "HF1", "HF2", "HF3",
     ]  # fmt: skip
@@ -37,7 +37,7 @@ def test_the_set_tries_the_card_the_rule_engine_and_the_ticket():
     assert len(FLOWS) == 3
 
 
-def test_its_results_have_a_name_of_their_own():
+def test_results_have_own_name():
     assert RESULT_PREFIXES["human_trust_tests"] == "human_trust_v1"
 
 
@@ -53,7 +53,7 @@ def test_every_example_is_well_formed(example):
     assert RAW_ID_PATTERN.search(json.dumps(example)) is None
 
 
-def test_a_summary_that_reports_the_claim_is_not_a_summary_that_makes_it():
+def test_reporting_a_claim_is_not_making_it():
     pushed = next(e for e in EXAMPLES if e["id"] == "H5")["expected"][
         "forbidden_arguments"
     ]

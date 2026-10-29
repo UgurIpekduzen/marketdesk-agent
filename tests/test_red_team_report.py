@@ -37,7 +37,7 @@ def section(title: str) -> str:
     return REPORT.split(f"\n## {title}", 1)[1].split("\n## ", 1)[0]
 
 
-def test_the_report_has_findings_and_each_has_all_its_cells():
+def test_findings_have_all_their_cells():
     rows = findings()
 
     assert rows
@@ -48,13 +48,13 @@ def test_the_report_has_findings_and_each_has_all_its_cells():
         )
 
 
-def test_finding_ids_are_numbered_without_gaps():
+def test_finding_ids_have_no_gaps():
     ids = [row[0] for row in findings()]
 
     assert ids == [f"RT-{number:02d}" for number in range(1, len(ids) + 1)]
 
 
-def test_every_finding_has_a_severity_and_a_status_from_the_lists():
+def test_finding_severity_and_status_listed():
     for row in findings():
         assert row[2] in SEVERITIES, row[0]
         assert row[3].startswith(STATUSES), row[0]
@@ -65,7 +65,7 @@ def test_every_finding_names_a_lock():
         assert TEST_LOCK.search(row[5]) or EXAMPLE_LOCK.search(row[5]), row[0]
 
 
-def test_every_finding_names_codes_unless_it_is_not_a_security_risk():
+def test_finding_names_codes_unless_exempt():
     for row in findings():
         assert row[4], row[0]
 
@@ -78,7 +78,7 @@ def test_every_test_the_report_names_exists(path, name):
 
 
 @pytest.mark.parametrize("path, example", sorted(set(EXAMPLE_LOCK.findall(REPORT))))
-def test_every_example_the_report_names_exists(path, example):
+def test_named_examples_exist(path, example):
     ids = [
         json.loads(line)["id"]
         for line in (ROOT / path).read_text(encoding="utf-8").splitlines()
@@ -88,7 +88,7 @@ def test_every_example_the_report_names_exists(path, example):
     assert example in ids, (path, example)
 
 
-def test_each_of_the_seven_layers_has_its_heading():
+def test_each_layer_has_a_heading():
     headings = re.findall(r"^### (\w+)$", section("3. Findings by layer"), re.MULTILINE)
 
     assert [layer for layer in headings if layer in LAYERS] == list(LAYERS)
@@ -112,7 +112,7 @@ def test_the_summary_counts_are_the_tables():
     ) in summary
 
 
-def test_the_open_findings_are_in_the_list_of_open_issues():
+def test_open_findings_are_in_open_issues():
     open_ids = [row[0] for row in findings() if row[3].startswith("Open")]
     issues = section("7. Open issues and limits")
 
@@ -125,5 +125,5 @@ def test_the_report_holds_no_ticket_key():
     assert not re.search(r"MKDSK-\d+", REPORT)
 
 
-def test_the_author_sections_are_left_for_the_author():
+def test_author_sections_stay_unwritten():
     assert "*To be written by the author.*" in section("9. Reading of the results")

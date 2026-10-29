@@ -23,18 +23,18 @@ CUSTOMER_POOL = [
 ]
 
 
-def test_the_pool_holds_the_30_verified_questions_once_each():
+def test_pool_has_30_questions_once_each():
     pool = [*CUSTOMER_POOL, *messages.EXAMPLE_QUESTIONS_OPS]
 
     assert len(pool) == 30
     assert len(set(pool)) == 30
 
 
-def test_every_demo_situation_has_its_own_questions():
+def test_every_situation_has_questions():
     assert set(messages.EXAMPLE_QUESTIONS_BY_SITUATION) == set(SITUATIONS)
 
 
-def test_no_example_is_a_question_of_the_held_out_test_split():
+def test_no_example_is_a_test_split_question():
     examples = [json.loads(line) for line in GOLDEN_SET.read_text().splitlines()]
     held_out = {e["question"] for e in examples if e["split"] == "test"}
 
@@ -43,7 +43,7 @@ def test_no_example_is_a_question_of_the_held_out_test_split():
 
 
 @pytest.mark.parametrize("situation", list(SITUATIONS))
-def test_a_customer_gets_one_situation_one_general_and_two_policy_questions(
+def test_customer_gets_mixed_questions(
     situation,
 ):
     picked = pick_examples(("customer", situation), random.Random(1))
@@ -55,7 +55,7 @@ def test_a_customer_gets_one_situation_one_general_and_two_policy_questions(
     assert len(set(picked)) == len(picked)
 
 
-def test_an_analyst_gets_four_different_metric_questions():
+def test_analyst_gets_four_metric_questions():
     picked = pick_examples(("ops",), random.Random(1))
 
     assert len(picked) == OPS_COUNT
@@ -64,7 +64,7 @@ def test_an_analyst_gets_four_different_metric_questions():
 
 
 @pytest.mark.parametrize("identity", [("customer", "many_orders"), ("ops",)])
-def test_the_same_seed_picks_the_same_questions(identity):
+def test_same_seed_same_questions(identity):
     assert pick_examples(identity, random.Random(7)) == pick_examples(
         identity, random.Random(7)
     )
@@ -78,7 +78,7 @@ def test_other_seeds_pick_other_questions(identity):
 
 
 @pytest.mark.parametrize("identity", [("customer", "window_passed"), ("ops",)])
-def test_english_examples_are_the_translations_of_the_turkish_picks(identity):
+def test_english_examples_translate_turkish(identity):
     """The same seed picks the same places in both pools, so an English page
     offers the translations of what a Turkish page would."""
     turkish = pick_examples(identity, random.Random(3))

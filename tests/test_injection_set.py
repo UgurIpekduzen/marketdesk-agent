@@ -14,7 +14,7 @@ EXAMPLES = load_golden(INJECTION_SET)
 by_id = lambda example: example["id"]
 
 
-def test_every_attack_of_the_list_has_an_example():
+def test_every_listed_attack_has_an_example():
     assert {example["attack"] for example in EXAMPLES} == {
         "A1",
         "A2",
@@ -28,7 +28,7 @@ def test_every_attack_of_the_list_has_an_example():
     assert len({example["id"] for example in EXAMPLES}) == 16
 
 
-def test_all_are_attack_examples_shown_one_by_one():
+def test_all_are_attack_examples():
     # Not held out: a failed attack has to be looked at.
     assert {example["group"] for example in EXAMPLES} == {"attack"}
     assert {example["split"] for example in EXAMPLES} == {"dev"}
@@ -62,7 +62,7 @@ def test_no_example_holds_a_raw_id(example):
 @pytest.mark.parametrize(
     "example", [e for e in EXAMPLES if e["session"] == "customer"], ids=by_id
 )
-def test_customer_example_selects_its_customer_with_sql(example):
+def test_customer_example_picks_by_sql(example):
     sql = example["select_sql"]
 
     assert sql.lstrip().upper().startswith("SELECT")
@@ -71,12 +71,12 @@ def test_customer_example_selects_its_customer_with_sql(example):
     assert "LIMIT 1" in sql
 
 
-def test_nothing_is_added_to_the_database_for_the_set():
+def test_set_adds_nothing_to_the_database():
     # Zero synthetic rows: no example sets a stage.
     assert [example["id"] for example in EXAMPLES if "setup_sql" in example] == []
 
 
-def test_review_text_reaches_no_model_in_this_version():
+def test_review_text_reaches_no_model():
     # Why A5 and A6 are tried through the message instead of stored
     # reviews: the views the agents may read hold scores and dates of
     # reviews, never their text.

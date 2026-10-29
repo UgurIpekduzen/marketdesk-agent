@@ -53,7 +53,7 @@ def cached(fake, tmp_path):
     return CachedLLM(inner=fake, cache_dir=tmp_path / "cache")
 
 
-def test_first_call_goes_to_the_model_and_the_second_comes_from_the_cache(cached, fake):
+def test_second_call_comes_from_cache(cached, fake):
     first = chat(cached, "merhaba")
     second = chat(cached, "merhaba")
 
@@ -81,7 +81,7 @@ def test_cache_survives_a_new_object(fake, tmp_path):
     assert again.hits == 1
 
 
-def test_other_tools_or_settings_are_another_entry(cached, fake):
+def test_other_tools_or_settings_new_entry(cached, fake):
     chat(cached, "merhaba")
     chat(cached, "merhaba", tools=[{"function": {"name": "get_order_status"}}])
 
@@ -94,7 +94,7 @@ class SetFake(FakeLLM):
     additional_kwargs: dict = Field(default_factory=dict)
 
 
-def test_settings_are_part_of_the_entry_and_none_leave_it_as_it_was(tmp_path):
+def test_settings_are_part_of_the_key(tmp_path):
     model = SetFake(script=["bir", "iki", "üç"])
     cached = CachedLLM(inner=model, cache_dir=tmp_path)
 
@@ -110,7 +110,7 @@ def test_settings_are_part_of_the_entry_and_none_leave_it_as_it_was(tmp_path):
     assert cached.hits == 1
 
 
-def test_another_temperature_is_another_entry(cached, fake, monkeypatch):
+def test_other_temperature_new_entry(cached, fake, monkeypatch):
     chat(cached, "merhaba")
     monkeypatch.setattr(config, "LLM_TEMPERATURE", 0.7)
     chat(cached, "merhaba")
@@ -118,7 +118,7 @@ def test_another_temperature_is_another_entry(cached, fake, monkeypatch):
     assert len(fake.requests) == 2
 
 
-def test_tokens_and_time_are_kept_with_the_entry(fake, tmp_path):
+def test_tokens_and_time_are_kept(fake, tmp_path):
     class CountingFake(FakeLLM):
         def _answer(self, messages, **kwargs):
             response = super()._answer(messages, **kwargs)
@@ -170,7 +170,7 @@ def test_tool_calls_come_back_from_the_cache(tmp_path):
     assert second_model.requests == []
 
 
-def test_what_is_cached_is_what_the_guard_let_through(fake, tmp_path):
+def test_cache_holds_guarded_text(fake, tmp_path):
     cached = CachedLLM(inner=fake, cache_dir=tmp_path)
     guarded = GuardedLLM(inner=cached, redactor=Redactor())
 
@@ -182,7 +182,7 @@ def test_what_is_cached_is_what_the_guard_let_through(fake, tmp_path):
     assert "[id] nerede?" in fake.sent_text()
 
 
-def test_calls_that_would_go_round_the_cache_are_refused(cached):
+def test_cache_bypassing_calls_are_refused(cached):
     with pytest.raises(NotImplementedError):
         cached.chat([user("merhaba")])
     with pytest.raises(NotImplementedError):
@@ -210,7 +210,7 @@ def busy(tmp_path, failures, **options):
     )
 
 
-def test_busy_provider_is_asked_again_until_it_answers(tmp_path, caplog):
+def test_busy_provider_is_retried(tmp_path, caplog):
     errors = [
         RuntimeError("503 UNAVAILABLE. high demand"),
         RuntimeError("429 RESOURCE_EXHAUSTED"),
@@ -225,7 +225,7 @@ def test_busy_provider_is_asked_again_until_it_answers(tmp_path, caplog):
     assert caplog.text.count("provider is busy") == 2
 
 
-def test_provider_that_stays_busy_fails_after_the_last_try(tmp_path):
+def test_busy_provider_fails_after_retries(tmp_path):
     cached = busy(tmp_path, [RuntimeError("503 UNAVAILABLE")] * 3, retries=2)
 
     with pytest.raises(RuntimeError, match="503"):
@@ -244,7 +244,7 @@ def test_other_errors_are_not_retried(tmp_path):
     assert len(cached.inner.failures) == 1
 
 
-def test_waiting_is_not_counted_as_model_time(tmp_path):
+def test_waiting_is_not_model_time(tmp_path):
     cached = busy(tmp_path, [RuntimeError("503 UNAVAILABLE")])
     cached.retry_seconds = 0.2
 
@@ -280,7 +280,7 @@ EXAMPLES = [SUPPORT_EXAMPLE, OPS_EXAMPLE, POLICY_EXAMPLE]
 # --- Which error is which ---------------------------------------------------
 
 
-def test_the_daily_quota_is_told_from_the_minute_limit():
+def test_daily_quota_differs_from_minute():
     assert is_daily_quota(RuntimeError(DAILY_ERROR))
     assert not is_daily_quota(RuntimeError(MINUTE_ERROR))
     # The minute limit is waited out; the day's is not.
@@ -311,7 +311,7 @@ class GoogleGenAI(Failing):
     """Stands in for Gemini's model class: its message points to --paid."""
 
 
-def test_the_daily_quota_stops_at_once_without_waiting(tmp_path):
+def test_daily_quota_stops_at_once(tmp_path):
     inner = GoogleGenAI(script=["x"], answers=0)
     llm = CachedLLM(inner=inner, cache_dir=tmp_path, retry_seconds=3600)
 
@@ -321,7 +321,7 @@ def test_the_daily_quota_stops_at_once_without_waiting(tmp_path):
     assert inner.calls == 1
 
 
-def test_no_prepaid_credit_stops_at_once_without_waiting(tmp_path):
+def test_no_credit_stops_at_once(tmp_path):
     inner = Failing(script=["x"], answers=0, error=NO_CREDIT_ERROR)
     llm = CachedLLM(inner=inner, cache_dir=tmp_path, retry_seconds=3600)
 
@@ -331,7 +331,7 @@ def test_no_prepaid_credit_stops_at_once_without_waiting(tmp_path):
     assert inner.calls == 1
 
 
-def test_no_prepaid_credit_is_told_apart_from_the_quotas():
+def test_no_credit_differs_from_quotas():
     assert is_out_of_credit(RuntimeError(NO_CREDIT_ERROR))
     assert not is_transient(RuntimeError(NO_CREDIT_ERROR))
     assert not is_daily_quota(RuntimeError(NO_CREDIT_ERROR))
@@ -353,7 +353,7 @@ class Groq(Failing):
     """Stands in for Groq's model class: the message names the provider."""
 
 
-def test_the_daily_limit_of_another_provider_says_to_wait_not_to_pay(tmp_path):
+def test_other_daily_limit_says_wait(tmp_path):
     inner = Groq(script=["x"], answers=0, error=GROQ_DAY_ERROR)
     llm = CachedLLM(inner=inner, cache_dir=tmp_path, retry_seconds=3600)
 
@@ -364,7 +364,7 @@ def test_the_daily_limit_of_another_provider_says_to_wait_not_to_pay(tmp_path):
     assert inner.calls == 1
 
 
-def test_only_gemini_is_told_to_go_on_with_the_paid_key():
+def test_only_gemini_may_use_paid_key():
     assert "--paid" in daily_quota_message("GoogleGenAI")
     assert "Groq" in daily_quota_message("Groq")
     assert "--paid" not in daily_quota_message("Groq")
@@ -380,7 +380,7 @@ def test_the_minute_limit_is_waited_out(tmp_path):
     assert inner.calls == 3
 
 
-def test_a_run_on_the_paid_key_stops_at_its_limit(tmp_path):
+def test_paid_run_stops_at_its_limit(tmp_path):
     llm = CachedLLM(
         inner=FakeLLM(script=["a", "b", "c"]), cache_dir=tmp_path, max_live_calls=2
     )
@@ -407,9 +407,7 @@ def comparable(rows):
     ]
 
 
-def test_a_run_cut_by_the_quota_and_finished_later_gives_the_same_results(
-    synthetic_db_path, fake_policy_index, tmp_path
-):
+def test_resumed_run_gives_same_results(synthetic_db_path, fake_policy_index, tmp_path):
     def run(inner, cache_dir):
         llm = CachedLLM(inner=inner, cache_dir=cache_dir)
         return run_eval.run(

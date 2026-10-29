@@ -40,9 +40,7 @@ def instructions(request: dict) -> str:
     return request["messages"][0]["blocks"][0]["text"]
 
 
-def test_a_card_shown_before_a_failure_can_still_be_answered(
-    run, fake, synthetic_db_path
-):
+def test_shown_card_survives_a_failure(run, fake, synthetic_db_path):
     fake.script = [[RETURN_CALL], "Onayınız istenecek.", ProviderBusy(), "Peki."]
 
     async def scenario(agent):
@@ -58,9 +56,7 @@ def test_a_card_shown_before_a_failure_can_still_be_answered(
     assert request_count(synthetic_db_path) == ROWS_BEFORE + 1
 
 
-def test_a_request_the_person_never_saw_is_dropped_when_the_message_fails(
-    run, fake, synthetic_db_path
-):
+def test_unseen_request_dropped_on_failure(run, fake, synthetic_db_path):
     # The model asks for the request, then the provider fails before the
     # answer that would have come with the card.
     fake.script = [[RETURN_CALL], ProviderBusy(), "Bir sorun oldu, tekrar deneyelim."]
@@ -85,7 +81,7 @@ def test_a_request_the_person_never_saw_is_dropped_when_the_message_fails(
     )
 
 
-def test_a_failure_after_the_click_writes_nothing_more(run, fake, synthetic_db_path):
+def test_failure_after_click_writes_no_more(run, fake, synthetic_db_path):
     fake.script = [
         [RETURN_CALL],
         "Onayınız istenecek.",

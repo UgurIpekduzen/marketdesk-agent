@@ -18,7 +18,7 @@ from src.formatting import (
 from src.i18n import Language
 
 
-def test_separators_are_swapped_the_turkish_way():
+def test_turkish_separators():
     assert with_separators("1,234,567.89") == "1.234.567,89"
 
 
@@ -49,7 +49,7 @@ def test_numbers_are_written_the_turkish_way(value, whole, text):
         ("1234567.89", "1.234.567,89"),
     ],
 )
-def test_money_is_written_the_turkish_way_with_two_decimals(amount, text):
+def test_turkish_money_has_two_decimals(amount, text):
     assert format_amount(amount) == text
 
 
@@ -57,7 +57,7 @@ def test_money_carries_its_currency():
     assert format_money("115.00") == "115,00 BRL"
 
 
-def test_a_table_as_text_has_turkish_headers_and_numbers_aligned():
+def test_turkish_text_table_is_aligned():
     table = readable_table(
         {
             "columns": ["purchase_month", "numerator", "value"],
@@ -74,7 +74,7 @@ def test_a_table_as_text_has_turkish_headers_and_numbers_aligned():
     )
 
 
-def test_a_long_table_as_text_says_how_many_rows_it_left_out():
+def test_long_table_says_rows_left_out():
     rows = [[f"S{number}", number] for number in range(MAX_TEXT_ROWS + 7)]
     table = readable_table({"columns": ["state", "orders"], "rows": rows})
 
@@ -103,7 +103,7 @@ QUERY = (
 )
 
 
-def test_a_query_is_laid_out_one_clause_per_line():
+def test_query_has_one_clause_per_line():
     lines = readable_sql(QUERY).splitlines()
 
     assert lines[0] == "SELECT"
@@ -113,7 +113,7 @@ def test_a_query_is_laid_out_one_clause_per_line():
     assert ":simulated_today" in readable_sql(QUERY)
 
 
-def test_a_query_laid_out_reads_the_same_to_the_parser():
+def test_laid_out_query_parses_the_same():
     import sqlglot
 
     def tree(sql):
@@ -122,13 +122,13 @@ def test_a_query_laid_out_reads_the_same_to_the_parser():
     assert tree(readable_sql(QUERY)) == tree(QUERY)
 
 
-def test_a_query_the_parser_cannot_read_is_shown_as_it_is():
+def test_unparsable_query_is_shown_as_is():
     broken = "SELEC purchase_month FRM orders WHERE ("
 
     assert readable_sql(broken) == broken
 
 
-def test_how_computed_says_metric_grouping_filters_ranking_and_scope():
+def test_how_computed_names_its_parts():
     line = how_computed(
         {
             "metric": "late_delivery_rate",
@@ -166,7 +166,7 @@ def test_how_computed_says_the_period(period, said):
     assert "filtre" not in line
 
 
-def test_how_computed_counts_items_for_an_item_metric():
+def test_how_computed_counts_items():
     line = how_computed(
         {
             "metric": "gmv",
@@ -183,7 +183,7 @@ def test_how_computed_counts_items_for_an_item_metric():
 # --- English --------------------------------------------------------------
 
 
-def test_separators_stay_as_they_are_in_english():
+def test_english_separators_stay():
     assert with_separators("1,234,567.89", Language.EN) == "1,234,567.89"
 
 
@@ -200,12 +200,12 @@ def test_numbers_are_written_the_english_way(value, whole, text):
     assert format_number(value, whole, Language.EN) == text
 
 
-def test_money_is_written_the_english_way_with_its_currency():
+def test_english_money_has_currency():
     assert format_amount("1250", Language.EN) == "1,250.00"
     assert format_money("133.14", Language.EN) == "133.14 BRL"
 
 
-def test_a_table_as_text_has_english_headers_and_numbers():
+def test_english_text_table():
     table = readable_table(
         {
             "columns": ["purchase_month", "numerator", "value"],
@@ -219,7 +219,7 @@ def test_a_table_as_text_has_english_headers_and_numbers():
     )
 
 
-def test_a_long_english_table_says_in_english_how_many_rows_it_left_out():
+def test_long_english_table_says_rows_left():
     rows = [[f"S{number}", number] for number in range(MAX_TEXT_ROWS + 7)]
     table = readable_table({"columns": ["state", "orders"], "rows": rows}, Language.EN)
 

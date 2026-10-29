@@ -65,7 +65,7 @@ def test_ids_are_unique():
     assert len(ids) == len(set(ids))
 
 
-def test_each_group_runs_in_the_session_it_belongs_to():
+def test_each_group_has_its_session():
     for example in of_group("support") + of_group("policy"):
         assert example["session"] == "customer"
     for example in of_group("ops"):
@@ -100,7 +100,7 @@ def test_no_example_holds_a_raw_id(example):
 
 
 @pytest.mark.parametrize("example", CUSTOMER_EXAMPLES, ids=by_id)
-def test_customer_example_selects_its_customer_with_sql(example):
+def test_customer_example_picks_by_sql(example):
     sql = example["select_sql"]
 
     assert sql.lstrip().upper().startswith("SELECT")
@@ -124,7 +124,7 @@ def test_support_example_names_valid_codes(example):
         assert example["label"]["decision"] == expected["decision"]
 
 
-def test_every_decision_code_of_the_rule_engine_has_an_example():
+def test_every_decision_code_has_an_example():
     covered = {
         example["expected"]["decision"]
         for example in of_group("support")
@@ -152,7 +152,7 @@ def test_ops_example_has_a_golden_select(example):
 
 
 @pytest.mark.parametrize("example", of_group("policy"), ids=by_id)
-def test_policy_example_cites_a_section_that_exists(example):
+def test_policy_example_cites_real_section(example):
     assert example["reference_answer"].strip()
     assert {"name": "search_policies"} in example["expected"]["tools"]
     if "source" not in example:
@@ -168,7 +168,7 @@ def test_policy_example_cites_a_section_that_exists(example):
 
 
 @pytest.mark.parametrize("example", of_group("attack"), ids=by_id)
-def test_attack_example_says_what_must_not_happen(example):
+def test_attack_example_names_the_forbidden(example):
     assert set(example["expected"]) & {
         "refused",
         "forbidden_tools",
@@ -178,7 +178,7 @@ def test_attack_example_says_what_must_not_happen(example):
     }
 
 
-def test_setup_statement_only_adds_a_return_request():
+def test_setup_only_adds_a_return_request():
     setups = [example["setup_sql"] for example in EXAMPLES if "setup_sql" in example]
 
     assert setups
@@ -188,14 +188,14 @@ def test_setup_statement_only_adds_a_return_request():
 
 
 @pytest.mark.parametrize("example", EXAMPLES, ids=by_id)
-def test_example_with_a_refund_amount_has_a_label(example):
+def test_refund_example_has_a_label(example):
     # The amount is taken from the rule engine's decision for the label;
     # without a label the placeholder would stay in the expected value.
     if "{refund_amount" in json.dumps(example["expected"]):
         assert "label" in example
 
 
-def test_every_example_is_in_one_split_and_test_covers_every_group():
+def test_one_split_per_example():
     assert {example["split"] for example in EXAMPLES} == {"dev", "test"}
     held_out = [example for example in EXAMPLES if example["split"] == "test"]
     assert {example["group"] for example in held_out} == {
@@ -208,7 +208,7 @@ def test_every_example_is_in_one_split_and_test_covers_every_group():
     assert len(held_out) >= 25
 
 
-def test_questions_from_another_source_are_held_out_unless_inspected():
+def test_outside_questions_held_out():
     # Written by another model from a list of situations, so that their
     # wording owes nothing to the prompts; they start in the test split.
     from_outside = [example for example in EXAMPLES if example["id"].startswith("U")]

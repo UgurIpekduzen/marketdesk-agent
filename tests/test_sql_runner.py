@@ -48,7 +48,7 @@ def test_count_over_a_view(synthetic_db_path):
     }
 
 
-def test_number_of_customers_through_the_views(synthetic_db_path):
+def test_customer_count_through_the_views(synthetic_db_path):
     answer = run_sql(
         synthetic_db_path, "SELECT COUNT(DISTINCT customer_key) FROM v_orders"
     )
@@ -72,7 +72,7 @@ def test_gmv_by_state_matches_the_metric(synthetic_db_path, synthetic_db):
     assert answer["rows"][0][1] == pytest.approx(metric["rows"][0][-1])
 
 
-def test_late_delivery_rate_matches_the_metric(synthetic_db_path, synthetic_db):
+def test_late_rate_matches_the_metric(synthetic_db_path, synthetic_db):
     answer = run_sql(
         synthetic_db_path,
         "SELECT AVG(DATE(order_delivered_customer_date) > "
@@ -103,7 +103,7 @@ def test_larger_limit_is_lowered(synthetic_db_path):
 # --- Queries that are refused -------------------------------------------
 
 
-def test_raw_table_is_refused_with_the_allowed_views(synthetic_db_path):
+def test_raw_table_lists_allowed_views(synthetic_db_path):
     answer = run_sql(synthetic_db_path, "SELECT * FROM customers")
 
     assert answer["error"] == "SQL_REJECTED"
@@ -117,7 +117,7 @@ def test_raw_table_is_refused_with_the_allowed_views(synthetic_db_path):
     "column",
     ["customer_city", "customer_zip_code_prefix", "customer_unique_id", "order_id"],
 )
-def test_column_that_is_not_in_a_view_cannot_be_read(synthetic_db_path, column):
+def test_column_outside_a_view_is_unreadable(synthetic_db_path, column):
     answer = run_sql(synthetic_db_path, f"SELECT {column} FROM v_orders")
 
     assert answer["error"] == "SQL_ERROR"
@@ -139,7 +139,7 @@ def test_view_definitions_cannot_be_read(synthetic_db_path):
     assert answer["reason"] == "TABLE_NOT_ALLOWED"
 
 
-def test_cte_named_like_a_real_table_is_refused(synthetic_db_path):
+def test_cte_named_like_a_table_is_refused(synthetic_db_path):
     # The names come from the database itself, not from a list in the code.
     answer = run_sql(
         synthetic_db_path,
@@ -150,7 +150,7 @@ def test_cte_named_like_a_real_table_is_refused(synthetic_db_path):
     assert answer["reason"] == "TABLE_NOT_ALLOWED"
 
 
-def test_query_with_a_placeholder_fails_cleanly(synthetic_db_path):
+def test_placeholder_query_fails_cleanly(synthetic_db_path):
     answer = run_sql(synthetic_db_path, "SELECT * FROM v_orders WHERE order_key = ?")
 
     assert answer["error"] == "SQL_ERROR"
@@ -179,7 +179,7 @@ def test_outputs_hold_no_raw_id_or_place(synthetic_db_path):
 
 
 @pytest.mark.parametrize("attack", ATTACKS)
-def test_attack_is_refused_and_the_database_is_unchanged(synthetic_db_path, attack):
+def test_attack_is_refused_database_intact(synthetic_db_path, attack):
     before = file_hash(synthetic_db_path)
     files_before = sorted(path.name for path in synthetic_db_path.parent.iterdir())
 
@@ -193,7 +193,7 @@ def test_attack_is_refused_and_the_database_is_unchanged(synthetic_db_path, atta
     )
 
 
-def test_database_is_unchanged_after_ordinary_queries(synthetic_db_path):
+def test_ordinary_queries_leave_db_intact(synthetic_db_path):
     before = file_hash(synthetic_db_path)
 
     run_sql(synthetic_db_path, "SELECT * FROM v_orders")
@@ -216,7 +216,7 @@ def test_connection_refuses_writes(synthetic_db_path):
         conn.close()
 
 
-def test_connection_refuses_attach_and_creates_no_file(synthetic_db_path):
+def test_attach_is_refused_no_file_made(synthetic_db_path):
     target = synthetic_db_path.parent / "attached.db"
     conn = connect_read_only(synthetic_db_path)
     try:
@@ -228,7 +228,7 @@ def test_connection_refuses_attach_and_creates_no_file(synthetic_db_path):
     assert not target.exists()
 
 
-def test_without_the_attach_limit_a_read_only_connection_creates_a_file(
+def test_attach_limit_stops_file_creation(
     synthetic_db_path,
 ):
     # Why the limit is needed: mode=ro alone does not stop ATTACH.
@@ -264,7 +264,7 @@ def test_quick_query_is_not_stopped(synthetic_db_path):
     assert answer["rows"] == [[29]]
 
 
-def test_raw_tables_are_readable_only_when_asked_for(synthetic_db_path):
+def test_raw_tables_only_when_asked(synthetic_db_path):
     # The agents never ask: the safe views stay the default.
     query = "SELECT COUNT(*) FROM orders"
 
@@ -273,7 +273,7 @@ def test_raw_tables_are_readable_only_when_asked_for(synthetic_db_path):
     assert answer["rows"][0][0] > 0
 
 
-def test_items_joined_with_payments_are_refused_with_the_right_form(
+def test_items_payments_join_is_refused(
     synthetic_db_path,
 ):
     answer = run_sql(

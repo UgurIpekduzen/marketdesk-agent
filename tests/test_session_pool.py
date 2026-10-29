@@ -36,7 +36,7 @@ def clock():
     return Clock()
 
 
-def test_a_session_idle_for_too_long_is_closed(clock):
+def test_idle_session_is_closed(clock):
     pool = SessionPool(idle_seconds=900, max_open=5, clock=clock)
     session = pool.open(lambda: StandIn(clock))
 
@@ -62,7 +62,7 @@ def test_a_session_in_use_stays_open(clock):
     assert not session.closed
 
 
-def test_no_new_session_while_the_pool_is_full(clock):
+def test_full_pool_refuses_new_sessions(clock):
     pool = SessionPool(idle_seconds=900, max_open=2, clock=clock)
     pool.open(lambda: StandIn(clock))
     pool.open(lambda: StandIn(clock))
@@ -75,7 +75,7 @@ def test_no_new_session_while_the_pool_is_full(clock):
     assert pool.open_count == 2
 
 
-def test_idle_sessions_make_room_for_a_new_one(clock):
+def test_idle_sessions_make_room(clock):
     pool = SessionPool(idle_seconds=900, max_open=1, clock=clock)
     old = pool.open(lambda: StandIn(clock))
     clock.seconds += 901
@@ -87,7 +87,7 @@ def test_idle_sessions_make_room_for_a_new_one(clock):
     assert pool.open_count == 1
 
 
-def test_a_session_the_page_closed_frees_its_place(clock):
+def test_closed_session_frees_its_place(clock):
     pool = SessionPool(idle_seconds=900, max_open=1, clock=clock)
     pool.open(lambda: StandIn(clock)).close()
 
@@ -96,7 +96,7 @@ def test_a_session_the_page_closed_frees_its_place(clock):
     assert pool.open_count == 1
 
 
-def test_a_session_that_fails_to_start_takes_no_place(clock):
+def test_failed_start_takes_no_place(clock):
     pool = SessionPool(idle_seconds=900, max_open=1, clock=clock)
 
     def fail():
@@ -109,7 +109,7 @@ def test_a_session_that_fails_to_start_takes_no_place(clock):
     pool.open(lambda: StandIn(clock))
 
 
-def test_the_background_check_closes_idle_sessions(clock):
+def test_background_check_closes_idle(clock):
     pool = SessionPool(idle_seconds=900, max_open=5, clock=clock)
     session = pool.open(lambda: StandIn(clock))
     clock.seconds += 901
@@ -123,9 +123,7 @@ def test_the_background_check_closes_idle_sessions(clock):
         pool.stop()
 
 
-def test_closing_an_idle_session_stops_its_order_server(
-    synthetic_db_path, fake_policy_index
-):
+def test_closing_stops_the_order_server(synthetic_db_path, fake_policy_index):
     pool = SessionPool(idle_seconds=900, max_open=5)
     before = child_processes()
     session = pool.open(

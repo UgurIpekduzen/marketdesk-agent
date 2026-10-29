@@ -32,7 +32,7 @@ MARKUP = ("<script", "javascript:", "\\]\\(", "!\\[")
 SRC = Path(__file__).resolve().parent.parent / "src"
 
 
-def test_the_set_tries_every_kind_of_planted_data():
+def test_set_covers_every_planted_kind():
     assert len(EXAMPLES) == 8
     assert len({example["id"] for example in EXAMPLES}) == 8
     assert {example["group"] for example in EXAMPLES} == {"attack"}
@@ -46,12 +46,12 @@ def test_the_set_tries_every_kind_of_planted_data():
     }
 
 
-def test_its_results_have_a_name_of_their_own():
+def test_results_have_own_name():
     assert RESULT_PREFIXES["indirect_injection_tests"] == "indirect_injection_v1"
 
 
 @pytest.mark.parametrize("example", EXAMPLES, ids=by_id)
-def test_every_example_forbids_markup_and_holds_no_raw_id(example):
+def test_examples_forbid_markup_and_raw_ids(example):
     expected = example["expected"]
 
     assert example["note"].strip()
@@ -71,7 +71,7 @@ def test_every_example_forbids_markup_and_holds_no_raw_id(example):
 @pytest.mark.parametrize(
     "example", [e for e in EXAMPLES if "setup_sql" in e], ids=by_id
 )
-def test_a_setup_only_changes_data_fields_of_the_copy(example):
+def test_setup_changes_only_data_fields(example):
     sql = example["setup_sql"]
 
     assert sql.startswith("UPDATE ")
@@ -79,7 +79,7 @@ def test_a_setup_only_changes_data_fields_of_the_copy(example):
     assert not re.search(r"\b(DELETE|DROP|INSERT|ATTACH)\b", sql.split("SET", 1)[0])
 
 
-def test_the_planted_section_looks_like_a_returns_policy_section():
+def test_planted_section_looks_like_policy():
     planted = read_sections(POISONED_POLICIES)
 
     assert [section.citation for section in planted] == ["İade Politikası, Bölüm 8"]
@@ -90,9 +90,7 @@ def test_the_planted_section_looks_like_a_returns_policy_section():
     }
 
 
-def test_the_planted_index_is_temporary_and_the_real_one_is_untouched(
-    fake_embedder, tmp_path
-):
+def test_planted_index_is_temporary(fake_embedder, tmp_path):
     before = sorted((path.name, path.stat().st_size) for path in INDEX_DIR.rglob("*"))
     policies_before = sorted(path.name for path in POLICIES_DIR.glob("*.md"))
 
@@ -111,7 +109,7 @@ def test_the_planted_index_is_temporary_and_the_real_one_is_untouched(
 # --- A ticket summary never reaches a model --------------------------------
 
 
-def test_only_the_ticket_tool_the_server_and_the_rep_queue_name_the_tickets():
+def test_only_ticket_code_names_tickets():
     naming = {
         path.relative_to(SRC).as_posix()
         for path in SRC.rglob("*.py")
@@ -126,7 +124,7 @@ def test_only_the_ticket_tool_the_server_and_the_rep_queue_name_the_tickets():
     }
 
 
-def test_the_order_server_names_the_tickets_only_to_write_them():
+def test_server_names_tickets_only_to_write():
     server = (SRC / "mcp_server" / "server.py").read_text(encoding="utf-8")
 
     uses = [line for line in server.splitlines() if "TICKETS_TABLE" in line]

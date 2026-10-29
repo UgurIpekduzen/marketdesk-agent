@@ -57,7 +57,7 @@ def test_a_listed_table_takes_new_rows(db_path):
     assert conn.execute("SELECT COUNT(*) FROM return_requests").fetchone() == (2,)
 
 
-def test_a_listed_column_can_be_changed_and_no_other(db_path):
+def test_only_listed_columns_can_change(db_path):
     conn = restricted(db_path, updates=[("return_requests", "status")])
 
     write(conn, "UPDATE return_requests SET status = 'C' WHERE id = 1")
@@ -88,7 +88,7 @@ def test_a_listed_column_can_be_changed_and_no_other(db_path):
         "ATTACH DATABASE ':memory:' AS other",
     ],
 )
-def test_everything_not_listed_is_refused_and_changes_nothing(db_path, sql):
+def test_unlisted_changes_are_refused(db_path, sql):
     before = content(db_path)
     conn = restricted(db_path, inserts=["return_requests"])
 

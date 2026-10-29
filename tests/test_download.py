@@ -41,7 +41,7 @@ def test_download_can_run_twice(fake_dataset, tmp_path):
     assert len(list(raw_dir.iterdir())) == len(download_module.EXPECTED_FILES)
 
 
-def test_download_fails_when_a_file_is_missing(fake_dataset, tmp_path):
+def test_download_fails_on_missing_file(fake_dataset, tmp_path):
     (fake_dataset / "olist_orders_dataset.csv").unlink()
     raw_dir = tmp_path / "raw"
 
@@ -51,11 +51,11 @@ def test_download_fails_when_a_file_is_missing(fake_dataset, tmp_path):
     assert not raw_dir.exists()
 
 
-def test_dataset_handle_is_pinned_to_a_version():
+def test_dataset_is_pinned_to_a_version():
     assert "/versions/" in download_module.DATASET
 
 
-def test_fetch_downloads_into_the_given_folder(fake_dataset, tmp_path, monkeypatch):
+def test_fetch_downloads_to_given_folder(fake_dataset, tmp_path, monkeypatch):
     folder = tmp_path / "demo"
     asked = []
 

@@ -53,12 +53,12 @@ def ops_prompt_without_schema(language: Language) -> str:
 # --- Prompts --------------------------------------------------------------
 
 
-def test_the_turkish_prompts_are_what_they_were():
+def test_turkish_prompts_are_unchanged():
     assert sha(support_module.system_prompt(Language.TR)) == TURKISH_SUPPORT_PROMPT
     assert sha(ops_prompt_without_schema(Language.TR)) == TURKISH_OPS_PROMPT
 
 
-def test_the_english_support_prompt_asks_for_english_with_english_examples():
+def test_english_support_prompt_asks_english():
     prompt = support_module.system_prompt(Language.EN)
 
     assert "Always answer\nin English" in prompt
@@ -71,7 +71,7 @@ def test_the_english_support_prompt_asks_for_english_with_english_examples():
     )
 
 
-def test_the_english_ops_prompt_asks_for_english_numbers(synthetic_db_path):
+def test_english_ops_prompt_asks_english(synthetic_db_path):
     prompt = ops_module.system_prompt(synthetic_db_path, Language.EN)
 
     assert "Always answer in English" in prompt
@@ -91,7 +91,7 @@ def call_server(db_path, language, name, arguments):
     return asyncio.run(run())
 
 
-def test_an_english_order_server_writes_amounts_the_english_way(synthetic_db_path):
+def test_english_server_formats_amounts(synthetic_db_path):
     order = call_server(
         synthetic_db_path, Language.EN, "get_order_status", {"order_ref": "o_day14"}
     )
@@ -111,7 +111,7 @@ def test_an_english_order_server_writes_amounts_the_english_way(synthetic_db_pat
     assert check["refund_amount"] == "115.00"
 
 
-def test_an_order_server_started_without_a_language_writes_turkish(synthetic_db_path):
+def test_server_defaults_to_turkish(synthetic_db_path):
     order = call_server(
         synthetic_db_path, Language.TR, "get_order_status", {"order_ref": "o_day14"}
     )
@@ -119,7 +119,7 @@ def test_an_order_server_started_without_a_language_writes_turkish(synthetic_db_
     assert order["items_total_text"] == "115,00 BRL"
 
 
-def test_a_message_from_the_server_stays_turkish_in_english(synthetic_db_path):
+def test_server_message_stays_turkish(synthetic_db_path):
     """Strings only the model reads are not translated."""
     missing = call_server(
         synthetic_db_path, Language.EN, "get_order_status", {"order_ref": "o_none"}
@@ -131,7 +131,7 @@ def test_a_message_from_the_server_stays_turkish_in_english(synthetic_db_path):
 # --- Policy search ---------------------------------------------------------
 
 
-def test_english_search_results_cite_english_titles(fake_policy_index):
+def test_english_search_cites_english_titles(fake_policy_index):
     turkish = search_policies(fake_policy_index, "iade süresi", 3)
     english = search_policies(fake_policy_index, "iade süresi", 3, Language.EN)
 
@@ -163,7 +163,7 @@ def metric_script(answer):
     ]
 
 
-def test_an_english_ops_session_gets_english_metrics_and_caveat(synthetic_db_path):
+def test_english_ops_gets_english_metrics(synthetic_db_path):
     reply, fake = run_ops(synthetic_db_path, Language.EN, metric_script("GMV is ..."))
     gmv = load_semantic_layer().metrics["gmv"]
 
@@ -174,7 +174,7 @@ def test_an_english_ops_session_gets_english_metrics_and_caveat(synthetic_db_pat
     assert messages_en.OPS_USED_SQL_HEADING in reply.display
 
 
-def test_a_turkish_ops_session_gets_the_metrics_as_listed(synthetic_db_path):
+def test_turkish_ops_gets_metrics_as_listed(synthetic_db_path):
     reply, fake = run_ops(synthetic_db_path, Language.TR, metric_script("GMV ..."))
     gmv = load_semantic_layer().metrics["gmv"]
 
@@ -186,7 +186,7 @@ def test_a_turkish_ops_session_gets_the_metrics_as_listed(synthetic_db_path):
 # --- Router and support agent ---------------------------------------------
 
 
-def test_an_english_router_refuses_in_english(synthetic_db_path):
+def test_english_router_refuses_in_english(synthetic_db_path):
     async def run():
         router = Orchestrator.for_ops(
             synthetic_db_path, FakeLLM(script=["out_of_scope"]), Language.EN
@@ -236,9 +236,7 @@ def test_english_approval_texts(synthetic_db_path, fake_policy_index):
     )
 
 
-def test_an_english_customer_router_tells_its_agent_the_language(
-    synthetic_db_path, fake_policy_index
-):
+def test_english_router_tells_agent_language(synthetic_db_path, fake_policy_index):
     fake = FakeLLM(script=["support", "Hello."])
 
     async def scenario(router):

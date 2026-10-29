@@ -37,7 +37,7 @@ def pytest_configure(config):
 NONE = {"passed": 0, "failed": 0, "xfailed": 0}
 
 
-def test_the_bar_counts_and_fills_with_the_share_done():
+def test_bar_fills_with_share_done():
     def start(done, total):
         return progress_line(done, total, NONE, 0, "", 200).split("  ✓")[0]
 
@@ -47,7 +47,7 @@ def test_the_bar_counts_and_fills_with_the_share_done():
     assert start(2125, 2125) == "[2125/2125] ██████████ 100%"
 
 
-def test_the_line_holds_the_counts_the_time_and_the_file():
+def test_line_shows_counts_time_and_file():
     line = progress_line(1234, 2125, COUNTS, 151, "tests/test_x.py", 200)
 
     assert line == (
@@ -55,13 +55,13 @@ def test_the_line_holds_the_counts_the_time_and_the_file():
     )
 
 
-def test_the_line_is_cut_to_the_terminal_width():
+def test_line_is_cut_to_terminal_width():
     line = progress_line(1234, 2125, COUNTS, 151, "tests/test_x.py", 40)
 
     assert len(line) == 39
 
 
-def test_in_colour_the_bar_turns_red_once_a_test_fails_and_colours_do_not_count():
+def test_bar_turns_red_on_failure():
     passing = progress_line(1, 4, NONE, 0, "tests/test_x.py", 200, colour=True)
     failing = progress_line(
         1, 4, {**NONE, "failed": 1}, 0, "tests/test_x.py", 200, colour=True
@@ -94,7 +94,7 @@ class Config:
         return object()
 
 
-def test_only_a_terminal_at_the_default_verbosity_gets_the_line():
+def test_only_default_terminal_gets_the_line():
     assert active(Config(0), Stream(terminal=True))
     assert not active(Config(0), Stream(terminal=False))
     assert not active(Config(1), Stream(terminal=True))
@@ -134,7 +134,7 @@ def run_sample(tmp_path: Path, terminal: bool, workers: int = 0) -> str:
     return b"".join(chunks).decode()
 
 
-def test_in_a_terminal_the_run_shows_one_line_and_names_the_failure(tmp_path):
+def test_terminal_shows_line_and_failure(tmp_path):
     output = run_sample(tmp_path, terminal=True)
 
     assert REWRITE in output
@@ -150,7 +150,7 @@ def test_in_a_terminal_the_run_shows_one_line_and_names_the_failure(tmp_path):
     assert "1 failed, 4 passed, 1 xfailed" in plain
 
 
-def test_with_workers_the_line_counts_the_tests_of_all_of_them(tmp_path):
+def test_line_counts_tests_of_all_workers(tmp_path):
     output = run_sample(tmp_path, terminal=True, workers=2)
 
     plain = re.sub(r"\x1b\[[0-9;]*m", "", output)
@@ -159,7 +159,7 @@ def test_with_workers_the_line_counts_the_tests_of_all_of_them(tmp_path):
     assert "1 failed, 4 passed, 1 xfailed" in plain
 
 
-def test_written_to_a_file_the_run_looks_as_pytest_writes_it(tmp_path):
+def test_file_output_looks_like_pytest(tmp_path):
     output = run_sample(tmp_path, terminal=False)
 
     assert REWRITE not in output

@@ -75,14 +75,14 @@ def test_prefixes_are_the_ones_e5_expects():
     assert (QUERY_PREFIX, PASSAGE_PREFIX) == ("query: ", "passage: ")
 
 
-def test_result_has_one_row_of_unit_length_per_text(parts):
+def test_one_unit_row_per_text(parts):
     vectors = Embedder(*parts).embed_queries(["bir", "iki kelime", "üç ayrı kelime"])
 
     assert vectors.shape == (3, 2)
     assert np.linalg.norm(vectors, axis=1) == pytest.approx([1.0, 1.0, 1.0])
 
 
-def test_pooling_averages_the_tokens_and_leaves_padding_out(parts):
+def test_pooling_averages_skips_padding(parts):
     # "query: ab abcd" -> ids 6, 2, 4 (mean 4); "query: a" -> ids 6, 1 + padding
     # (mean 3.5). The second column is 1 for every token.
     vectors = Embedder(*parts).embed_queries(["ab abcd", "a"])
@@ -92,7 +92,7 @@ def test_pooling_averages_the_tokens_and_leaves_padding_out(parts):
     assert vectors == pytest.approx(expected)
 
 
-def test_a_text_gives_the_same_vector_alone_and_in_a_batch(parts):
+def test_vector_same_alone_and_in_batch(parts):
     embedder = Embedder(*parts)
 
     alone = embedder.embed_queries(["a"])
@@ -112,7 +112,7 @@ def test_model_gets_ids_and_mask_as_integers(parts):
     assert feed["attention_mask"].dtype == np.int64
 
 
-def test_token_type_ids_are_sent_only_to_a_model_that_wants_them():
+def test_token_type_ids_only_when_wanted():
     session = FakeSession(("input_ids", "attention_mask", "token_type_ids"))
 
     Embedder(session, FakeTokenizer()).embed_queries(["iki kelime"])
@@ -122,7 +122,7 @@ def test_token_type_ids_are_sent_only_to_a_model_that_wants_them():
     assert not feed["token_type_ids"].any()
 
 
-def test_model_settings_point_at_a_pinned_revision():
+def test_model_is_pinned_to_a_revision():
     assert len(config.EMBEDDING_MODEL_REVISION) == 40
     assert config.EMBEDDING_MODEL_FILE.endswith(".onnx")
     assert config.EMBEDDING_DIMENSIONS == 384

@@ -13,7 +13,7 @@ from tests.synthetic_data import ALICE
 ROOT = Path(__file__).resolve().parent.parent
 
 
-def test_every_guard_names_the_tests_and_the_attack_sets_that_watch_it():
+def test_every_guard_names_its_watchers():
     for mutation in MUTATIONS.values():
         assert mutation.unit_tests, mutation.name
         for path in mutation.unit_tests:
@@ -28,13 +28,13 @@ def test_every_guard_names_the_tests_and_the_attack_sets_that_watch_it():
             assert mutations.dev_ids(golden), (mutation.name, golden)
 
 
-def test_the_control_breaks_nothing_and_there_is_one_only():
+def test_one_control_breaks_nothing():
     assert CONTROL in MUTATIONS
     assert MUTATIONS[CONTROL].live == ()
     assert [name for name in MUTATIONS if "control" in name] == [CONTROL]
 
 
-def test_only_the_dev_split_is_run_on_a_broken_system():
+def test_broken_system_runs_dev_split_only():
     ids = mutations.dev_ids("eval/golden_set.jsonl").split(",")
     rows = [
         json.loads(line)
@@ -45,7 +45,7 @@ def test_only_the_dev_split_is_run_on_a_broken_system():
     assert not set(ids) & {row["id"] for row in rows if row["split"] == "test"}
 
 
-def test_each_patch_changes_a_behaviour_and_restores_it():
+def test_patch_changes_then_restores():
     from collections import Counter
 
     from src import orchestrator
@@ -95,7 +95,7 @@ def test_each_patch_changes_a_behaviour_and_restores_it():
     assert sql_validator.check_tree  # the original function is back
 
 
-def test_a_guard_of_the_order_server_is_broken_in_the_server_process(
+def test_server_guard_breaks_in_the_server(
     synthetic_db_path,
 ):
     from tests.test_mcp_server import RETURN, request_count, with_server
@@ -117,7 +117,7 @@ def test_a_guard_of_the_order_server_is_broken_in_the_server_process(
     assert request_count(synthetic_db_path) == before + 1
 
 
-def test_the_client_is_whole_again_after_a_server_mutation():
+def test_client_restored_after_mutation():
     from src.mcp_server import client
 
     original = client.server_parameters
@@ -129,7 +129,7 @@ def test_the_client_is_whole_again_after_a_server_mutation():
     assert ALICE  # the fixture customer exists
 
 
-def test_the_report_names_the_guards_the_tests_did_not_notice():
+def test_report_names_unnoticed_guards():
     results = {
         CONTROL: {"killed": False, "tests_failed": [], "summary": "ok"},
         "approval_off": {

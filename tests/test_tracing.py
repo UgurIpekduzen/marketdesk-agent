@@ -73,9 +73,7 @@ def support_run(db_path, index, script, *messages_to_send):
 # --- What a run records ------------------------------------------------------
 
 
-def test_run_is_recorded_as_steps_model_calls_and_tool_calls(
-    traced, synthetic_db_path, fake_policy_index
-):
+def test_run_is_traced_as_steps_and_calls(traced, synthetic_db_path, fake_policy_index):
     exporter = traced()
     script = [[("get_order_status", {"order_ref": "o_day14"})], "Teslim edildi."]
 
@@ -122,9 +120,7 @@ def test_refused_write_is_on_the_tool_span(
     )
 
 
-def test_approval_and_decline_are_spans_of_their_own(
-    traced, synthetic_db_path, fake_policy_index
-):
+def test_approval_and_decline_have_spans(traced, synthetic_db_path, fake_policy_index):
     exporter = traced()
 
     async def scenario(agent):
@@ -173,7 +169,7 @@ def test_sql_check_is_on_the_tool_span(traced, synthetic_db_path):
 # --- Nothing personal or secret leaves ---------------------------------------
 
 
-def test_trace_of_a_run_holds_no_raw_id_city_or_zip(
+def test_trace_has_no_raw_id_city_or_zip(
     traced, secrets, synthetic_db_path, fake_policy_index
 ):
     exporter = traced()
@@ -210,7 +206,7 @@ def test_no_secret_is_in_any_span(traced, secrets):
     assert text.count(tracing.SECRET_MASK) == 5
 
 
-def test_key_made_for_the_process_is_not_in_any_span(traced, monkeypatch):
+def test_process_key_is_in_no_span(traced, monkeypatch):
     monkeypatch.delenv(HASH_KEY_VARIABLE, raising=False)
     exporter = traced()
 
@@ -228,7 +224,7 @@ def test_raw_id_becomes_its_keyed_hash(secrets):
     assert cleaned == f"order {hash_id(RAW_ID)} and {hash_id(RAW_ID)}"
 
 
-def test_personal_values_of_a_session_are_masked_once_registered(monkeypatch):
+def test_registered_values_are_masked(monkeypatch):
     monkeypatch.setattr(tracing, "_personal_values", {})
     text = "Teslimat adresi Curitiba, 80010."
 
@@ -239,7 +235,7 @@ def test_personal_values_of_a_session_are_masked_once_registered(monkeypatch):
     assert tracing.scrub(text) == "Teslimat adresi [city], [zip]."
 
 
-def test_span_name_status_and_events_are_cleaned_too(traced, secrets):
+def test_span_name_status_events_cleaned(traced, secrets):
     exporter = traced()
 
     with (
@@ -255,7 +251,7 @@ def test_span_name_status_and_events_are_cleaned_too(traced, secrets):
     assert hash_id(RAW_ID) in exported.status.description
 
 
-def test_masking_exporter_passes_on_what_the_inner_exporter_answers():
+def test_masking_exporter_passes_result():
     inner = InMemorySpanExporter()
 
     assert tracing.MaskingExporter(inner).export([]) == SpanExportResult.SUCCESS
@@ -275,7 +271,7 @@ def test_off_records_nothing(synthetic_db_path, fake_policy_index):
     assert reply
 
 
-def test_tracing_is_off_unless_the_environment_says_otherwise(monkeypatch):
+def test_tracing_is_off_by_default(monkeypatch):
     monkeypatch.delenv("TRACING_TARGET", raising=False)
     assert importlib.reload(config).TRACING_TARGET == "off"
 
@@ -313,7 +309,7 @@ def test_hosted_target_gets_no_message_text(
 
 
 @pytest.mark.parametrize("target", ["phoenix", "langfuse"])
-def test_every_model_span_names_the_model_also_behind_the_guard(
+def test_model_spans_name_the_model(
     traced, synthetic_db_path, fake_policy_index, target
 ):
     # Without a model name a tracing tool cannot price a call.
@@ -334,9 +330,7 @@ def test_every_model_span_names_the_model_also_behind_the_guard(
     assert {span.attributes.get("llm.model_name") for span in model_spans} == {"fake"}
 
 
-def test_hosted_target_gets_only_allowed_attributes(
-    traced, synthetic_db_path, fake_policy_index
-):
+def test_hosted_gets_allowed_attributes(traced, synthetic_db_path, fake_policy_index):
     exporter = traced("langfuse")
     script = [[("get_order_status", {"order_ref": "o_day14"})], "Teslim edildi."]
 
@@ -349,9 +343,7 @@ def test_hosted_target_gets_only_allowed_attributes(
             ), key
 
 
-def test_hosted_target_still_gets_the_rule_decision(
-    traced, synthetic_db_path, fake_policy_index
-):
+def test_hosted_still_gets_rule_decision(traced, synthetic_db_path, fake_policy_index):
     exporter = traced("langfuse")
     script = [
         [("check_return_eligibility", {"order_ref": "o_day14", "reason": "damaged"})],
@@ -366,7 +358,7 @@ def test_hosted_target_still_gets_the_rule_decision(
     assert attributes["marketdesk.rule"] == "R7"
 
 
-def test_hosted_target_gets_no_event_detail_or_error_text(traced):
+def test_hosted_gets_no_event_or_error_text(traced):
     exporter = traced("langfuse")
 
     with pytest.raises(RuntimeError), tracing.span("lookup") as current:
@@ -396,7 +388,7 @@ def test_unknown_target_is_refused():
         tracing.target_settings("somewhere")
 
 
-def test_phoenix_is_the_local_container_and_needs_no_key():
+def test_phoenix_is_local_and_needs_no_key():
     endpoint, headers = tracing.target_settings("phoenix")
 
     assert endpoint == "http://phoenix:6006/v1/traces"
@@ -404,7 +396,7 @@ def test_phoenix_is_the_local_container_and_needs_no_key():
     assert isinstance(tracing.target_exporter("phoenix"), SpanExporter)
 
 
-def test_langfuse_is_signed_in_to_with_the_keys(monkeypatch):
+def test_langfuse_signs_in_with_keys(monkeypatch):
     monkeypatch.setenv("LANGFUSE_PUBLIC_KEY", "pk-test")
     monkeypatch.setenv("LANGFUSE_SECRET_KEY", "sk-test")
 
@@ -418,7 +410,7 @@ def test_langfuse_is_signed_in_to_with_the_keys(monkeypatch):
 # --- Cost estimate -----------------------------------------------------------
 
 
-def test_cost_is_estimated_from_the_token_counts(monkeypatch):
+def test_cost_is_estimated_from_tokens(monkeypatch):
     monkeypatch.setattr(config, "LLM_PRICE_INPUT_PER_MTOK", 0.30)
     monkeypatch.setattr(config, "LLM_PRICE_OUTPUT_PER_MTOK", 2.50)
     attributes = {tracing.INPUT_TOKENS: 2000, tracing.OUTPUT_TOKENS: 100}
@@ -426,7 +418,7 @@ def test_cost_is_estimated_from_the_token_counts(monkeypatch):
     assert tracing.estimated_cost(attributes) == pytest.approx(0.00085)
 
 
-def test_no_cost_without_tokens_or_without_a_price(monkeypatch):
+def test_no_cost_without_tokens_or_price(monkeypatch):
     assert tracing.estimated_cost({}) is None
 
     monkeypatch.setattr(config, "LLM_PRICE_INPUT_PER_MTOK", None)
@@ -434,7 +426,7 @@ def test_no_cost_without_tokens_or_without_a_price(monkeypatch):
     assert tracing.estimated_cost({tracing.INPUT_TOKENS: 10}) is None
 
 
-def test_cost_is_written_on_a_span_that_has_token_counts(traced, monkeypatch):
+def test_cost_goes_on_spans_with_tokens(traced, monkeypatch):
     monkeypatch.setattr(config, "LLM_PRICE_INPUT_PER_MTOK", 0.30)
     monkeypatch.setattr(config, "LLM_PRICE_OUTPUT_PER_MTOK", 2.50)
     exporter = traced()
@@ -447,7 +439,7 @@ def test_cost_is_written_on_a_span_that_has_token_counts(traced, monkeypatch):
     assert exported.attributes[tracing.COST_ATTRIBUTE] == pytest.approx(0.30)
 
 
-def test_no_cost_is_written_while_no_price_is_set(traced, monkeypatch):
+def test_no_cost_while_no_price_is_set(traced, monkeypatch):
     monkeypatch.setattr(config, "LLM_PRICE_INPUT_PER_MTOK", None)
     exporter = traced()
 
@@ -490,9 +482,7 @@ def is_vector(value) -> bool:
     )
 
 
-def test_policy_search_is_recorded_as_embedding_and_retrieval_steps(
-    traced, fake_policy_index
-):
+def test_policy_search_has_two_steps(traced, fake_policy_index):
     exporter = traced("phoenix")
 
     results = fake_policy_index.search(POLICY_QUESTION, 3)
@@ -503,9 +493,7 @@ def test_policy_search_is_recorded_as_embedding_and_retrieval_steps(
     assert results[0]["text"] in text
 
 
-def test_hosted_target_gets_no_text_or_vector_of_a_policy_search(
-    traced, fake_policy_index
-):
+def test_hosted_gets_no_search_payload(traced, fake_policy_index):
     exporter = traced("langfuse")
 
     results = fake_policy_index.search(POLICY_QUESTION, 3)
@@ -525,9 +513,7 @@ def test_hosted_target_gets_no_text_or_vector_of_a_policy_search(
         assert result["text"] not in text
 
 
-def test_local_target_masks_an_id_in_a_policy_search(
-    traced, fake_policy_index, secrets
-):
+def test_local_masks_ids_in_policy_search(traced, fake_policy_index, secrets):
     exporter = traced("phoenix")
 
     fake_policy_index.search(f"{RAW_ID} siparişinin iade süresi", 3)
@@ -564,9 +550,7 @@ def routed(db_path, script, question):
         router.close()
 
 
-def test_router_and_agent_are_one_trace_marked_with_the_class(
-    traced, synthetic_db_path
-):
+def test_router_and_agent_share_a_trace(traced, synthetic_db_path):
     exporter = traced()
     script = ["ops_metric", [("run_metric", {"metric_name": "order_count"})], "29."]
 
@@ -581,7 +565,7 @@ def test_router_and_agent_are_one_trace_marked_with_the_class(
     assert {span.context.trace_id for span in spans} == {message.context.trace_id}
 
 
-def test_a_refused_message_is_marked_on_its_trace(traced, synthetic_db_path):
+def test_refusal_is_marked_on_the_trace(traced, synthetic_db_path):
     exporter = traced()
 
     routed(synthetic_db_path, ["support"], "SIP-1 nerede?")
@@ -591,7 +575,7 @@ def test_a_refused_message_is_marked_on_its_trace(traced, synthetic_db_path):
     assert message.attributes["marketdesk.error"] == "ROUTER_REFUSED"
 
 
-def test_a_run_at_the_step_limit_is_marked_on_its_trace(traced, synthetic_db_path):
+def test_step_limit_is_marked_on_the_trace(traced, synthetic_db_path):
     exporter = traced()
     script = ["ops_metric"] + [
         [("run_metric", {"metric_name": "order_count", "customer_state": [str(n)]})]
@@ -612,9 +596,7 @@ def test_a_run_at_the_step_limit_is_marked_on_its_trace(traced, synthetic_db_pat
         (RuntimeError("Gizli hata metni"), "RUN_FAILED"),
     ],
 )
-def test_a_failure_is_marked_by_its_kind_without_its_text(
-    traced, synthetic_db_path, failure, code
-):
+def test_failure_marked_by_kind_not_text(traced, synthetic_db_path, failure, code):
     exporter = traced("langfuse")
 
     # The router's call works, the agent's first call fails.

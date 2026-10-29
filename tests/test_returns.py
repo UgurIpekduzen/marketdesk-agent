@@ -34,7 +34,7 @@ def test_order_left_out_at_load_is_not_found(synthetic_db):
     assert decide(synthetic_db, "o_purchased_today").code == DecisionCode.NOT_FOUND
 
 
-def test_order_of_another_customer_is_not_found(synthetic_db):
+def test_foreign_order_is_not_found(synthetic_db):
     assert decide(synthetic_db, "o_other_customer").code == DecisionCode.NOT_FOUND
 
 
@@ -44,7 +44,7 @@ def test_order_is_found_by_its_own_customer(synthetic_db):
     assert decision.code == DecisionCode.ELIGIBLE
 
 
-def test_foreign_and_missing_orders_give_the_same_decision(synthetic_db):
+def test_foreign_and_missing_same_decision(synthetic_db):
     foreign = decide(synthetic_db, "o_other_customer")
     missing = decide(synthetic_db, "o_does_not_exist")
 
@@ -57,7 +57,7 @@ def test_foreign_and_missing_orders_give_the_same_decision(synthetic_db):
 @pytest.mark.parametrize(
     "order_id", ["o_created", "o_approved", "o_invoiced", "o_processing"]
 )
-def test_order_not_handed_over_yet_can_be_cancelled(synthetic_db, order_id):
+def test_unshipped_order_can_be_cancelled(synthetic_db, order_id):
     decision = decide(synthetic_db, order_id)
 
     assert decision.code == DecisionCode.NOT_DELIVERED_CANCELLABLE
@@ -67,7 +67,7 @@ def test_shipped_order_is_in_transit(synthetic_db):
     assert decide(synthetic_db, "o_shipped").code == DecisionCode.IN_TRANSIT
 
 
-def test_order_delivered_after_today_is_in_transit(synthetic_db):
+def test_future_delivery_is_in_transit(synthetic_db):
     # Delivery date 2018-09-05, four days after the simulated today.
     decision = decide(synthetic_db, "o_delivered_future")
 
@@ -75,11 +75,11 @@ def test_order_delivered_after_today_is_in_transit(synthetic_db):
 
 
 @pytest.mark.parametrize("order_id", ["o_canceled", "o_unavailable"])
-def test_canceled_or_unavailable_order_is_closed(synthetic_db, order_id):
+def test_canceled_order_is_closed(synthetic_db, order_id):
     assert decide(synthetic_db, order_id).code == DecisionCode.ALREADY_CLOSED
 
 
-def test_delivered_order_without_delivery_date_needs_a_human(synthetic_db):
+def test_undated_delivery_needs_a_human(synthetic_db):
     decision = decide(synthetic_db, "o_no_delivery_date")
 
     assert decision.code == DecisionCode.NEEDS_HUMAN
@@ -98,18 +98,18 @@ def test_unknown_status_needs_a_human():
 # --- Step 3: R11 --------------------------------------------------------
 
 
-def test_second_request_for_the_same_order_is_a_duplicate(synthetic_db):
+def test_second_request_is_a_duplicate(synthetic_db):
     assert decide(synthetic_db, "o_duplicate").code == DecisionCode.DUPLICATE_REQUEST
 
 
-def test_rejected_request_still_blocks_a_second_one(synthetic_db):
+def test_rejected_request_still_blocks(synthetic_db):
     # Delivered 62 days ago: the duplicate check comes before the window.
     decision = decide(synthetic_db, "o_duplicate_old", reason="damaged")
 
     assert decision.code == DecisionCode.DUPLICATE_REQUEST
 
 
-def test_request_in_another_state_does_not_block(synthetic_db):
+def test_other_state_does_not_block(synthetic_db):
     synthetic_db.execute(
         "UPDATE return_requests SET status = 'WITHDRAWN' WHERE order_id = 'o_duplicate'"
     )
@@ -153,7 +153,7 @@ def test_today_is_a_parameter_not_the_clock():
     assert one_day_later.code == DecisionCode.NOT_ELIGIBLE_WINDOW
 
 
-def test_decisions_without_a_window_carry_no_day_count(synthetic_db):
+def test_windowless_decisions_have_no_days(synthetic_db):
     assert decide(synthetic_db, "o_shipped").days_since_delivery is None
 
 
@@ -168,11 +168,11 @@ def test_decisions_without_a_window_carry_no_day_count(synthetic_db):
         ("o_day0", False),  # delivered before the estimate
     ],
 )
-def test_freight_refund_flag_needs_ten_days_of_delay(synthetic_db, order_id, flag):
+def test_freight_flag_needs_ten_days(synthetic_db, order_id, flag):
     assert decide(synthetic_db, order_id).freight_refund is flag
 
 
-def test_freight_refund_flag_stays_after_every_window(synthetic_db):
+def test_freight_flag_outlives_windows(synthetic_db):
     # 31 days after delivery: the delay is a fact, but nothing is refunded.
     decision = decide(synthetic_db, "o_late_day31")
 
@@ -232,7 +232,7 @@ def test_refund_amount(synthetic_db, order_id, reason, code, amount):
         "o_duplicate",
     ],
 )
-def test_other_decisions_carry_no_amount_or_flag(synthetic_db, order_id):
+def test_other_decisions_have_no_amount(synthetic_db, order_id):
     decision = decide(synthetic_db, order_id)
 
     assert decision == ReturnDecision(decision.code, decision.rule)
@@ -292,14 +292,14 @@ def test_voucher_share_of_the_refund(synthetic_db, reason, amount, voucher, orig
     assert decision.original_method_refund == Decimal(original)
 
 
-def test_refund_without_a_voucher_goes_to_the_original_method(synthetic_db):
+def test_no_voucher_refunds_original_method(synthetic_db):
     decision = decide(synthetic_db, "o_day14")
 
     assert decision.voucher_refund == Decimal("0.00")
     assert decision.original_method_refund == Decimal("100.00")
 
 
-def test_voucher_split_always_adds_up_to_the_refund():
+def test_voucher_split_adds_up():
     # A third of 100.00 cannot be split evenly: 33.33 + 66.67.
     facts = facts_delivered_on(
         date(2018, 8, 25),
@@ -314,7 +314,7 @@ def test_voucher_split_always_adds_up_to_the_refund():
     assert decision.original_method_refund == Decimal("66.67")
 
 
-def test_order_without_payment_rows_has_no_voucher_share():
+def test_no_payment_rows_no_voucher_share():
     facts = facts_delivered_on(date(2018, 8, 25), price_total=Decimal("100.00"))
 
     decision = evaluate(facts, ReturnReason.CHANGED_MIND, TODAY)
@@ -339,7 +339,7 @@ def test_seller_delay_flag(synthetic_db, order_id, flag):
     assert decide(synthetic_db, order_id).seller_delay is flag
 
 
-def test_seller_delay_does_not_change_the_decision_or_amount(synthetic_db):
+def test_seller_delay_changes_nothing(synthetic_db):
     late = decide(synthetic_db, "o_seller_late")
     on_time = decide(synthetic_db, "o_late_9")
 
@@ -366,7 +366,7 @@ def test_seller_delay_does_not_change_the_decision_or_amount(synthetic_db):
         ("o_day31", "wrong_item", "R7"),
     ],
 )
-def test_decision_names_the_rule_that_decided(synthetic_db, order_id, reason, rule):
+def test_decision_names_its_rule(synthetic_db, order_id, reason, rule):
     assert decide(synthetic_db, order_id, reason).rule == rule
 
 
@@ -378,7 +378,7 @@ def test_unknown_reason_is_rejected(synthetic_db):
         decide(synthetic_db, "o_day0", reason="no_longer_needed")
 
 
-def test_delivery_timestamp_is_read_as_a_calendar_day(synthetic_db):
+def test_timestamp_is_read_as_a_day(synthetic_db):
     # Stored as 2018-08-18 23:50:00.
     facts = load_order_facts(synthetic_db, "o_day14", ALICE)
 

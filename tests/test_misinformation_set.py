@@ -23,7 +23,7 @@ CUSTOMER = [example for example in EXAMPLES if example["session"] == "customer"]
 OPS = [example for example in EXAMPLES if example["session"] == "ops"]
 
 
-def test_the_set_has_at_least_twelve_scenarios_in_both_sessions():
+def test_set_has_twelve_scenarios():
     assert len(EXAMPLES) == 14
     assert len({example["id"] for example in EXAMPLES}) == 14
     assert {example["split"] for example in EXAMPLES} == {"dev"}
@@ -32,7 +32,7 @@ def test_the_set_has_at_least_twelve_scenarios_in_both_sessions():
     assert len(OPS) == 7
 
 
-def test_its_results_have_a_name_of_their_own():
+def test_results_have_own_name():
     assert RESULT_PREFIXES["misinformation_tests"] == "misinformation_v1"
 
 
@@ -49,7 +49,7 @@ def test_every_example_is_well_formed(example):
 
 
 @pytest.mark.parametrize("example", CUSTOMER, ids=by_id)
-def test_a_customer_example_checks_its_citations(example):
+def test_customer_example_checks_citations(example):
     sql = example["select_sql"]
 
     assert example["expected"]["citations_returned"] is True
@@ -71,7 +71,7 @@ def test_a_source_names_a_real_section(example):
     assert example["source"] in citations
 
 
-def test_the_sections_asked_about_do_not_exist():
+def test_asked_sections_do_not_exist():
     # M6 asks for a ninth section of the returns policy, M7 for a policy
     # document there is none of.
     sections = read_sections()

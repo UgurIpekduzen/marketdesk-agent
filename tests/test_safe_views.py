@@ -27,7 +27,7 @@ def columns_of(conn, view):
     return [row[1] for row in conn.execute(f"PRAGMA table_info({view})")]
 
 
-def test_the_database_holds_exactly_the_safe_views(synthetic_db):
+def test_database_holds_only_the_safe_views(synthetic_db):
     views = [
         row[0]
         for row in synthetic_db.execute(
@@ -40,7 +40,7 @@ def test_the_database_holds_exactly_the_safe_views(synthetic_db):
 
 
 @pytest.mark.parametrize("view", ALLOWED_VIEWS)
-def test_view_shows_no_id_city_zip_code_or_review_text(synthetic_db, view):
+def test_views_hide_id_city_zip_review(synthetic_db, view):
     columns = columns_of(synthetic_db, view)
 
     assert columns
@@ -70,7 +70,7 @@ def test_view_rows_hold_no_raw_id_or_place(synthetic_db, view):
     assert "secret" not in text
 
 
-def test_every_order_appears_once_in_v_orders(synthetic_db):
+def test_each_order_appears_once(synthetic_db):
     orders, keys = synthetic_db.execute(
         "SELECT COUNT(*), COUNT(DISTINCT order_key) FROM v_orders"
     ).fetchone()
@@ -100,7 +100,7 @@ def test_views_join_on_the_order_key(synthetic_db):
     assert [tuple(row) for row in rows] == [("delivered", 2, 90.0)]
 
 
-def test_items_payments_and_reviews_keep_their_row_counts(synthetic_db):
+def test_views_keep_their_row_counts(synthetic_db):
     for view, table in (
         ("v_order_items", "order_items"),
         ("v_order_payments", "order_payments"),
@@ -113,7 +113,7 @@ def test_items_payments_and_reviews_keep_their_row_counts(synthetic_db):
         assert in_view == in_table > 0
 
 
-def test_item_view_shows_category_and_seller_state(synthetic_db):
+def test_item_view_shows_category_and_state(synthetic_db):
     row = synthetic_db.execute(
         "SELECT product_category_en, seller_state, price, freight_value "
         "FROM v_order_items LIMIT 1"
@@ -122,7 +122,7 @@ def test_item_view_shows_category_and_seller_state(synthetic_db):
     assert tuple(row) == ("furniture_decor", "SP", 100.0, 15.0)
 
 
-def test_return_request_view_links_to_the_order(synthetic_db):
+def test_request_view_links_to_order(synthetic_db):
     rows = synthetic_db.execute(
         "SELECT rr.status, o.order_status FROM v_return_requests AS rr "
         "JOIN v_orders AS o ON o.order_key = rr.order_key ORDER BY rr.status"

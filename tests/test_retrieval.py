@@ -42,13 +42,13 @@ def ranks(index):
     return found
 
 
-def test_damaged_item_query_finds_the_damaged_item_policy_in_the_top_three(index):
+def test_damaged_query_finds_policy_in_top3(index):
     results = search_policies(index, "hasarlı ürün", 3)["results"]
 
     assert "Hasarlı veya Yanlış Ürün Politikası" in [r["document"] for r in results]
 
 
-def test_every_rule_has_a_question_and_every_rule_is_found(ranks):
+def test_every_rule_has_a_found_question(ranks):
     best_rank_per_rule = {}
     for (rule, _, _), rank in zip(QUESTIONS, ranks, strict=True):
         if rule is not None:
@@ -58,7 +58,7 @@ def test_every_rule_has_a_question_and_every_rule_is_found(ranks):
     assert all(rank <= 5 for rank in best_rank_per_rule.values()), best_rank_per_rule
 
 
-def test_retrieval_stays_at_the_measured_level(ranks):
+def test_retrieval_keeps_measured_level(ranks):
     first = sum(rank == 1 for rank in ranks)
     top_three = sum(rank <= 3 for rank in ranks)
     top_five = sum(rank <= 5 for rank in ranks)
@@ -68,7 +68,7 @@ def test_retrieval_stays_at_the_measured_level(ranks):
     assert top_five >= 17
 
 
-def test_uncovered_question_finds_the_section_that_says_so(index):
+def test_uncovered_question_finds_its_note(index):
     results = search_policies(index, "İade kargosunun ücretini kim öder?", 5)["results"]
 
     assert "İade Politikası, Bölüm 7" in [result["citation"] for result in results]

@@ -155,7 +155,7 @@ def labels(page) -> list[str]:
     return [button.label for button in page.button]
 
 
-def test_page_opens_on_the_choice_screen_without_a_session(open_page):
+def test_opens_on_choice_screen(open_page):
     page = open_page(role=None)
 
     assert not page.exception
@@ -171,7 +171,7 @@ def test_page_opens_on_the_choice_screen_without_a_session(open_page):
     assert "session" not in page.session_state
 
 
-def test_customers_are_offered_by_situation_and_no_id_is_shown(open_page):
+def test_customers_listed_by_situation_no_id(open_page):
     page = open_page(role=None)
 
     (customers,) = [radio for radio in page.radio if radio.key != "language"]
@@ -179,7 +179,7 @@ def test_customers_are_offered_by_situation_and_no_id_is_shown(open_page):
     assert ALICE not in shown(page)
 
 
-def test_starting_as_a_customer_shows_who_you_are_in_the_sidebar(open_page):
+def test_customer_start_shows_identity(open_page):
     page = open_page()
 
     assert not page.exception
@@ -194,7 +194,7 @@ def test_starting_as_a_customer_shows_who_you_are_in_the_sidebar(open_page):
     assert messages.UI_CHOICE_HEADING not in shown(page)
 
 
-def test_starting_as_the_ops_team_opens_an_ops_session(open_page):
+def test_ops_start_opens_an_ops_session(open_page):
     page = open_page(role=messages.UI_START_OPS)
 
     assert not page.exception
@@ -203,7 +203,7 @@ def test_starting_as_the_ops_team_opens_an_ops_session(open_page):
     assert page.chat_input[0].placeholder == messages.UI_INPUT_OPS
 
 
-def test_change_closes_the_session_and_goes_back_to_the_choice_screen(open_page):
+def test_change_returns_to_choice_screen(open_page):
     page = open_page(["support", "Merhaba."])
     page = ask(page, "Merhaba")
     first = page.session_state["session"]
@@ -219,7 +219,7 @@ def test_change_closes_the_session_and_goes_back_to_the_choice_screen(open_page)
     assert not page.chat_input
 
 
-def test_no_customers_still_lets_the_ops_team_in(open_page, monkeypatch):
+def test_ops_enters_without_customers(open_page, monkeypatch):
     monkeypatch.setattr(resources, "load_demo_customers", lambda path: [])
     st.cache_data.clear()
     page = AppTest.from_file(APP, default_timeout=60).run()
@@ -253,7 +253,7 @@ def test_a_missing_database_is_built_once(open_page, monkeypatch, tmp_path):
     assert messages.UI_DATA_NOTE in [caption.value for caption in page.caption]
 
 
-def test_a_paused_page_shows_a_notice_and_nothing_else(open_page, monkeypatch):
+def test_paused_page_shows_only_a_notice(open_page, monkeypatch):
     monkeypatch.setenv(config.PAUSE_VARIABLE, "1")
 
     page = open_page(role=None)
@@ -265,7 +265,7 @@ def test_a_paused_page_shows_a_notice_and_nothing_else(open_page, monkeypatch):
     assert "session" not in page.session_state
 
 
-def test_the_page_runs_again_once_the_pause_is_taken_back(open_page, monkeypatch):
+def test_page_resumes_after_pause(open_page, monkeypatch):
     monkeypatch.setenv(config.PAUSE_VARIABLE, "0")
 
     page = open_page()
@@ -274,7 +274,7 @@ def test_the_page_runs_again_once_the_pause_is_taken_back(open_page, monkeypatch
     assert page.chat_input
 
 
-def test_a_database_that_cannot_be_built_is_said_plainly(open_page, monkeypatch):
+def test_unbuildable_database_is_explained(open_page, monkeypatch):
     open_page()
     attempts = []
 
@@ -297,7 +297,7 @@ def test_a_database_that_cannot_be_built_is_said_plainly(open_page, monkeypatch)
     assert len(attempts) == 2
 
 
-def test_a_session_closed_after_a_pause_is_started_again(open_page):
+def test_session_restarts_after_pause(open_page):
     page = open_page()
     old = page.session_state["session"]
     old.close()  # what the pool does after the idle time
@@ -347,7 +347,7 @@ def sidebar_text(page) -> str:
     return "\n".join(str(part) for part in parts)
 
 
-def test_sidebar_keeps_the_steps_of_the_newest_answer_in_closed_details(open_page):
+def test_sidebar_keeps_new_steps_closed(open_page):
     page = open_page(
         [
             "support",
@@ -379,7 +379,7 @@ def test_sidebar_keeps_the_steps_of_the_newest_answer_in_closed_details(open_pag
     assert messages.UI_STEPS_NO_TOOLS in text
 
 
-def test_an_image_in_the_model_answer_reaches_no_other_site(open_page):
+def test_model_image_reaches_no_other_site(open_page):
     page = open_page(
         ["support", "Teslim edildi. ![](https://example.com/r.png?veri=o_day14)"]
     )
@@ -391,7 +391,7 @@ def test_an_image_in_the_model_answer_reaches_no_other_site(open_page):
     assert messages.UI_IMAGE_REMOVED in text
 
 
-def test_a_link_in_the_model_answer_cannot_be_clicked(open_page):
+def test_model_link_is_not_clickable(open_page):
     page = open_page(["support", "Ödemeyi [buradan](https://evil.example/pay) yapın."])
 
     page = ask(page, "Nasıl ödeme yaparım?")
@@ -401,7 +401,7 @@ def test_a_link_in_the_model_answer_cannot_be_clicked(open_page):
     assert "Ödemeyi buradan yapın." in text
 
 
-def test_a_link_or_image_the_visitor_types_is_drawn_inert(open_page):
+def test_visitor_link_or_image_is_inert(open_page):
     page = open_page(["support", "Yardımcı olayım."])
 
     page = ask(page, "![x](https://evil.example/i.png) [bak](https://evil.example/b)")
@@ -436,9 +436,7 @@ def last_refund_amount(db_path) -> float:
         conn.close()
 
 
-def test_return_request_waits_for_a_click_and_is_written_after_approve(
-    open_page, synthetic_db_path
-):
+def test_request_waits_for_click_then_writes(open_page, synthetic_db_path):
     at_start = request_count(synthetic_db_path)
     page = open_page(RETURN_SCRIPT)
 
@@ -479,7 +477,7 @@ def test_decline_writes_nothing_and_says_so(open_page, synthetic_db_path):
     assert messages.APPROVAL_DECLINED in shown(page)
 
 
-def test_the_card_is_gone_before_the_choice_is_sent(open_page):
+def test_card_is_gone_before_choice_is_sent(open_page):
     page = open_page(RETURN_SCRIPT)
     page = ask(page, "o_day14 hasarlı geldi, iade istiyorum")
     session = page.session_state["session"]
@@ -499,7 +497,7 @@ def test_the_card_is_gone_before_the_choice_is_sent(open_page):
     assert messages.UI_APPROVAL_HEADING not in shown(page)
 
 
-def test_an_answer_of_a_reloaded_class_is_still_drawn(open_page):
+def test_reloaded_class_answer_is_drawn(open_page):
     page = open_page(["support", "Teslim edildi."])
     page = ask(page, "Siparişim nerede?")
     role, view = page.session_state["turns"][-1]
@@ -516,7 +514,7 @@ def test_an_answer_of_a_reloaded_class_is_still_drawn(open_page):
     assert "namespace(" not in text
 
 
-def test_message_saying_approved_writes_nothing(open_page, synthetic_db_path):
+def test_typed_approval_writes_nothing(open_page, synthetic_db_path):
     at_start = request_count(synthetic_db_path)
     page = open_page(RETURN_SCRIPT)
 
@@ -539,7 +537,7 @@ def test_customer_cannot_get_an_ops_answer(open_page):
 # --- An operations conversation -------------------------------------------
 
 
-def test_ops_answer_shows_table_sql_and_caveat(open_page):
+def test_ops_answer_shows_table_sql_caveat(open_page):
     page = open_page(
         [
             "ops_metric",
@@ -580,7 +578,7 @@ def test_ops_answer_shows_table_sql_and_caveat(open_page):
     assert "\nFROM" in page.code[0].value
 
 
-def test_the_sql_window_shows_the_tried_sql_when_no_answer_was_found(open_page):
+def test_sql_window_shows_tried_sql(open_page):
     # Three different queries: the same call three times is stopped earlier.
     tries = [
         [("run_sql", {"query": f"SELECT nope{n} FROM v_orders"})] for n in range(3)
@@ -602,7 +600,7 @@ def captions(page) -> list[str]:
     return [caption.value for caption in page.main.caption]
 
 
-def test_a_metric_answer_says_how_it_was_computed(open_page):
+def test_metric_answer_says_how_computed(open_page):
     page = open_page(
         [
             "ops_metric",
@@ -624,7 +622,7 @@ def test_a_metric_answer_says_how_it_was_computed(open_page):
     assert "Sipariş sayısı" in line
 
 
-def test_a_filter_value_from_the_model_is_drawn_as_written(open_page):
+def test_model_filter_value_drawn_as_written(open_page):
     value = "![x](https://evil.example/leak)"
     page = open_page(
         [
@@ -644,7 +642,7 @@ def test_a_filter_value_from_the_model_is_drawn_as_written(open_page):
     assert "\\!\\[x\\]\\(`https://evil.example/leak)`" in line
 
 
-def test_a_single_value_is_said_without_a_table(open_page):
+def test_single_value_has_no_table(open_page):
     page = open_page(
         [
             "ops_metric",
@@ -661,7 +659,7 @@ def test_a_single_value_is_said_without_a_table(open_page):
     assert not page.dataframe
 
 
-def test_changing_the_session_type_starts_a_new_conversation(open_page):
+def test_type_change_starts_new_conversation(open_page):
     page = open_page(["support", "Merhaba, nasıl yardımcı olabilirim?"])
     page = ask(page, "Merhaba")
     first = page.session_state["session"]
@@ -674,7 +672,7 @@ def test_changing_the_session_type_starts_a_new_conversation(open_page):
     assert messages.UI_SESSION_OPS in sidebar_text(page)
 
 
-def test_new_conversation_button_forgets_the_old_one(open_page):
+def test_new_conversation_forgets_old_one(open_page):
     page = open_page(["support", "Merhaba."])
     page = ask(page, "Merhaba")
 
@@ -694,7 +692,7 @@ def example_labels(page) -> list[str]:
     return [page.button(key=f"example_{n}").label for n in range(len(keys))]
 
 
-def test_a_customer_is_offered_four_examples_from_the_pool(open_page):
+def test_customer_gets_four_pool_examples(open_page):
     page = open_page()
 
     shown_examples = example_labels(page)
@@ -706,7 +704,7 @@ def test_a_customer_is_offered_four_examples_from_the_pool(open_page):
     assert messages.UI_EXAMPLES_HEADING in shown(page)
 
 
-def test_an_analyst_is_offered_four_metric_examples(open_page):
+def test_analyst_gets_four_metric_examples(open_page):
     page = open_page(role=messages.UI_START_OPS)
 
     shown_examples = example_labels(page)
@@ -714,7 +712,7 @@ def test_an_analyst_is_offered_four_metric_examples(open_page):
     assert set(shown_examples) <= set(messages.EXAMPLE_QUESTIONS_OPS)
 
 
-def test_a_clicked_example_is_sent_as_if_typed_and_the_examples_go(open_page):
+def test_clicked_example_is_sent_as_typed(open_page):
     page = open_page(["support", "Merhaba."])
     question = example_labels(page)[1]
 
@@ -727,7 +725,7 @@ def test_a_clicked_example_is_sent_as_if_typed_and_the_examples_go(open_page):
     assert messages.UI_EXAMPLES_HEADING not in shown(page)
 
 
-def test_examples_stay_the_same_until_a_new_conversation(open_page, monkeypatch):
+def test_examples_stay_until_new_chat(open_page, monkeypatch):
     picks = iter([["birinci"], ["ikinci"], ["üçüncü"]])
     monkeypatch.setattr(
         examples, "pick_examples", lambda identity, rng, language: next(picks)
@@ -742,7 +740,7 @@ def test_examples_stay_the_same_until_a_new_conversation(open_page, monkeypatch)
     assert example_labels(page) == ["ikinci"]
 
 
-def test_no_examples_while_a_request_waits_for_approval(open_page):
+def test_no_examples_while_approval_waits(open_page):
     page = open_page(RETURN_SCRIPT)
     page = page.button(key="example_0").click().run()
 
@@ -785,7 +783,7 @@ def add_ticket(db_path, summary) -> None:
         conn.close()
 
 
-def test_the_rep_session_shows_the_queue_and_no_chat(open_page):
+def test_rep_session_shows_queue_no_chat(open_page):
     page = open_page(role=messages.UI_START_REP)
 
     assert not page.exception
@@ -801,9 +799,7 @@ def test_the_rep_session_shows_the_queue_and_no_chat(open_page):
     assert "o_duplicate" not in shown(page)
 
 
-def test_the_rep_approves_a_request_and_it_leaves_the_queue(
-    open_page, synthetic_db_path
-):
+def test_rep_approval_leaves_the_queue(open_page, synthetic_db_path):
     page = open_page(role=messages.UI_START_REP)
 
     page = page.button(key="approve_1").click().run()
@@ -824,7 +820,7 @@ def test_the_rep_rejects_a_request(open_page, synthetic_db_path):
     assert request_status(synthetic_db_path, 1) == "REJECTED"
 
 
-def test_a_senior_request_is_shown_without_buttons(open_page, synthetic_db_path):
+def test_senior_request_has_no_buttons(open_page, synthetic_db_path):
     senior = add_senior_request(synthetic_db_path)
 
     page = open_page(role=messages.UI_START_REP)
@@ -836,9 +832,7 @@ def test_a_senior_request_is_shown_without_buttons(open_page, synthetic_db_path)
     assert f"reject_{senior}" not in keys
 
 
-def test_a_ticket_summary_is_plain_text_and_the_ticket_can_be_closed(
-    open_page, synthetic_db_path
-):
+def test_ticket_summary_plain_and_closable(open_page, synthetic_db_path):
     summary = "Müşteri temsilci istiyor ![x](https://evil.example/leak)"
     add_ticket(synthetic_db_path, summary)
     page = open_page(role=messages.UI_START_REP)
@@ -863,7 +857,7 @@ def test_a_ticket_summary_is_plain_text_and_the_ticket_can_be_closed(
 # --- Crafted messages ------------------------------------------------------
 
 
-def test_a_customer_missing_from_the_list_is_not_taken(open_page, monkeypatch):
+def test_unlisted_customer_is_rejected(open_page, monkeypatch):
     page = open_page(role=None)
     (start,) = [b for b in page.button if b.label == messages.UI_START_CUSTOMER]
     (customers,) = [radio for radio in page.radio if radio.key != "language"]
@@ -885,7 +879,7 @@ def test_a_customer_missing_from_the_list_is_not_taken(open_page, monkeypatch):
     assert page.session_state["session"]
 
 
-def test_a_choice_that_is_not_a_listed_customer_starts_nothing(open_page, monkeypatch):
+def test_unlisted_choice_starts_nothing(open_page, monkeypatch):
     # Should the framework ever pass the text on, the page still refuses it.
     page = open_page(role=None)
     monkeypatch.setattr(st, "radio", lambda *args, **kwargs: "someone")
@@ -898,9 +892,7 @@ def test_a_choice_that_is_not_a_listed_customer_starts_nothing(open_page, monkey
     assert page.subheader[0].value == messages.UI_CHOICE_HEADING
 
 
-def test_a_click_on_a_start_button_that_is_gone_keeps_the_session(
-    open_page, monkeypatch
-):
+def test_gone_start_button_keeps_session(open_page, monkeypatch):
     page = open_page(role=None)
     (ops_start,) = [b for b in page.button if b.label == messages.UI_START_OPS]
     page = click(page, messages.UI_START_CUSTOMER)
@@ -914,7 +906,7 @@ def test_a_click_on_a_start_button_that_is_gone_keeps_the_session(
     assert page.chat_input[0].placeholder == messages.UI_INPUT_CUSTOMER
 
 
-def test_a_click_on_an_example_that_is_gone_sends_nothing(open_page, monkeypatch):
+def test_gone_example_sends_nothing(open_page, monkeypatch):
     page = open_page(["support", "Merhaba."])
     example = page.button(key="example_0")
     page = ask(page, "Merhaba")
@@ -929,7 +921,7 @@ def test_a_click_on_an_example_that_is_gone_sends_nothing(open_page, monkeypatch
 
 
 @pytest.mark.parametrize("role", [messages.UI_START_CUSTOMER, messages.UI_START_OPS])
-def test_a_rep_button_sent_from_another_session_changes_nothing(
+def test_foreign_rep_button_changes_nothing(
     open_page, monkeypatch, synthetic_db_path, role
 ):
     page = open_page(role=messages.UI_START_REP)
@@ -943,9 +935,7 @@ def test_a_rep_button_sent_from_another_session_changes_nothing(
     assert messages.UI_REVIEW_HEADING not in shown(page)
 
 
-def test_a_second_click_on_a_decided_request_changes_nothing(
-    open_page, monkeypatch, synthetic_db_path
-):
+def test_second_click_changes_nothing(open_page, monkeypatch, synthetic_db_path):
     page = open_page(role=messages.UI_START_REP)
     reject = page.button(key="reject_1")
     page = page.button(key="approve_1").click().run()
@@ -956,9 +946,7 @@ def test_a_second_click_on_a_decided_request_changes_nothing(
     assert request_status(synthetic_db_path, 1) == "APPROVED"
 
 
-def test_a_message_through_the_closed_chat_box_leaves_the_approval_as_shown(
-    open_page, monkeypatch, synthetic_db_path
-):
+def test_message_past_closed_box_keeps_card(open_page, monkeypatch, synthetic_db_path):
     page = open_page([*RETURN_SCRIPT, "support", "Önce talebi yanıtlayın."])
     page = ask(page, "o_day14 hasarlı geldi, iade istiyorum")
     shown_on_card = page.session_state["pending"]
@@ -977,9 +965,7 @@ def test_a_message_through_the_closed_chat_box_leaves_the_approval_as_shown(
     assert written_orders(synthetic_db_path) == [*before, "o_day14"]
 
 
-def test_a_long_message_sent_past_the_box_is_refused_on_the_server(
-    open_page, monkeypatch
-):
+def test_long_message_refused_by_server(open_page, monkeypatch):
     # An empty script: a model call would show a different error.
     page = open_page()
 
@@ -996,7 +982,7 @@ def test_a_long_message_sent_past_the_box_is_refused_on_the_server(
     )
 
 
-def test_the_hourly_question_limit_is_said_plainly(open_page, monkeypatch):
+def test_hourly_limit_is_explained(open_page, monkeypatch):
     monkeypatch.setattr(config, "MAX_QUESTIONS_PER_HOUR", 1)
     page = open_page(["support", "Merhaba."])
     page = ask(page, "Merhaba")
@@ -1007,7 +993,7 @@ def test_the_hourly_question_limit_is_said_plainly(open_page, monkeypatch):
     assert page.error[0].value == messages.UI_ERROR_QUESTION_LIMIT
 
 
-def test_the_daily_call_budget_is_said_plainly(open_page, monkeypatch):
+def test_daily_budget_is_explained(open_page, monkeypatch):
     # The router's call and the answer: two calls, the whole budget.
     monkeypatch.setattr(config, "MAX_MODEL_CALLS_PER_DAY", 2)
     page = open_page(["support", "Merhaba."])
@@ -1019,9 +1005,7 @@ def test_the_daily_call_budget_is_said_plainly(open_page, monkeypatch):
     assert page.error[0].value == messages.UI_ERROR_DAILY_BUDGET
 
 
-def test_a_click_on_an_approve_button_that_is_gone_writes_nothing(
-    open_page, monkeypatch, synthetic_db_path
-):
+def test_gone_approve_button_writes_nothing(open_page, monkeypatch, synthetic_db_path):
     page = open_page(RETURN_SCRIPT)
     page = ask(page, "o_day14 hasarlı geldi, iade istiyorum")
     (button,) = [b for b in page.button if b.label == messages.UI_APPROVE]
@@ -1039,7 +1023,7 @@ def test_a_click_on_an_approve_button_that_is_gone_writes_nothing(
 # --- When something fails ----------------------------------------------------
 
 
-def test_exhausted_quota_is_a_plain_message_without_a_traceback(open_page, monkeypatch):
+def test_exhausted_quota_has_no_traceback(open_page, monkeypatch):
     page = open_page(["support"])
 
     async def out_of_quota(self, message):
@@ -1062,7 +1046,7 @@ def avatars(page) -> list[str]:
     return [message.avatar for message in page.chat_message]
 
 
-def test_the_person_and_each_agent_have_their_own_avatar(open_page):
+def test_each_speaker_has_an_avatar(open_page):
     page = open_page(["support", "Merhaba.", "ops_metric", "Hazır."])
 
     page = ask(page, "Selam")
@@ -1073,7 +1057,7 @@ def test_the_person_and_each_agent_have_their_own_avatar(open_page):
     assert avatars(page) == [USER_AVATAR, OPS_AVATAR]
 
 
-def test_the_page_shows_the_logo_and_the_mark(monkeypatch, open_page):
+def test_page_shows_logo_and_mark(monkeypatch, open_page):
     shown_logos = []
     monkeypatch.setattr(
         st, "logo", lambda image, **options: shown_logos.append((image, options))
@@ -1087,7 +1071,7 @@ def test_the_page_shows_the_logo_and_the_mark(monkeypatch, open_page):
 
 
 @pytest.mark.parametrize("name", ["logo.svg", "icon.svg"])
-def test_the_logo_files_are_svg_in_the_theme_colour(name):
+def test_logo_files_are_svg_in_theme_colour(name):
     path = Path(__file__).resolve().parent.parent / "assets" / name
     root = ElementTree.parse(path).getroot()
     settings = tomllib.loads(
@@ -1111,7 +1095,7 @@ def browser_locale(monkeypatch, locale):
     monkeypatch.setattr(type(st.context), "locale", property(lambda self: locale))
 
 
-def test_a_turkish_or_unknown_browser_gets_the_turkish_page(open_page, monkeypatch):
+def test_unknown_browser_gets_turkish(open_page, monkeypatch):
     for locale in ("tr-TR", "de-DE", None):
         browser_locale(monkeypatch, locale)
         page = open_page(role=None)
@@ -1120,7 +1104,7 @@ def test_a_turkish_or_unknown_browser_gets_the_turkish_page(open_page, monkeypat
         assert page.subheader[0].value == messages.UI_CHOICE_HEADING
 
 
-def test_an_english_browser_gets_the_english_page(open_page, monkeypatch):
+def test_english_browser_gets_english(open_page, monkeypatch):
     browser_locale(monkeypatch, "en-US")
 
     page = open_page(role=None)
@@ -1137,7 +1121,7 @@ def test_an_english_browser_gets_the_english_page(open_page, monkeypatch):
     assert customers.options == [messages_en.DEMO_CUSTOMER_LABELS["recent_delivery"]]
 
 
-def test_the_switch_changes_the_choice_screen(open_page):
+def test_switch_changes_choice_screen(open_page):
     page = open_page(role=None)
 
     page = switch_language(page, Language.EN)
@@ -1165,7 +1149,7 @@ def test_a_customer_session_in_english(open_page):
     assert set(example_labels(page)) <= pool
 
 
-def test_the_choice_screen_has_the_switch_outside_the_sidebar(open_page):
+def test_choice_screen_switch_not_in_sidebar(open_page):
     """A phone shows the sidebar closed; the language comes first."""
     page = open_page(role=None)
 
@@ -1173,13 +1157,13 @@ def test_the_choice_screen_has_the_switch_outside_the_sidebar(open_page):
     assert page.radio(key="language").options == ["Türkçe", "English"]
 
 
-def test_in_a_session_the_switch_is_in_the_sidebar(open_page):
+def test_session_switch_is_in_sidebar(open_page):
     page = open_page()
 
     assert [radio.key for radio in page.sidebar.radio] == ["language"]
 
 
-def test_the_examples_are_offered_again_after_the_language_changed(open_page):
+def test_examples_return_on_language_set(open_page):
     page = open_page()
 
     page = switch_language(page, Language.EN)
@@ -1192,7 +1176,7 @@ def test_the_examples_are_offered_again_after_the_language_changed(open_page):
     }
 
 
-def test_changing_the_language_starts_a_new_conversation(open_page):
+def test_language_change_starts_new_chat(open_page):
     page = open_page(["support", "Merhaba."])
     page = ask(page, "Merhaba")
     first = page.session_state["session"]
@@ -1208,9 +1192,7 @@ def test_changing_the_language_starts_a_new_conversation(open_page):
     assert page.session_state["identity"] == ("customer", "recent_delivery")
 
 
-def test_a_request_waiting_for_approval_is_dropped_with_the_language(
-    open_page, synthetic_db_path
-):
+def test_waiting_request_dropped_on_language(open_page, synthetic_db_path):
     page = open_page(RETURN_SCRIPT)
     page = ask(page, "SIP-1 hasarlı, iade edin.")
     assert page.session_state["pending"] is not None
@@ -1223,7 +1205,7 @@ def test_a_request_waiting_for_approval_is_dropped_with_the_language(
     assert written_orders(synthetic_db_path) == before
 
 
-def test_a_language_the_page_does_not_have_is_turkish(open_page, monkeypatch):
+def test_unknown_language_falls_back_to_tr(open_page, monkeypatch):
     page = switch_language(open_page(role=None), Language.EN)
     widget_id = page.radio(key="language").id
 
@@ -1254,7 +1236,7 @@ def seller_report_text(page) -> str:
     )
 
 
-def test_the_ops_page_offers_the_seller_report_closed(open_page):
+def test_ops_page_offers_seller_report(open_page):
     page = open_page(role=messages.UI_START_OPS)
 
     assert [expander.label for expander in page.expander][:1] == [
@@ -1264,14 +1246,14 @@ def test_the_ops_page_offers_the_seller_report_closed(open_page):
     assert not page.dataframe
 
 
-def test_a_customer_page_has_no_seller_report(open_page):
+def test_customer_page_has_no_seller_report(open_page):
     page = open_page()
 
     assert messages.UI_SELLER_REPORT not in [e.label for e in page.expander]
     assert not page.toggle
 
 
-def test_the_report_shows_its_table_caveats_and_sources(open_page, monkeypatch):
+def test_report_shows_table_caveats_sources(open_page, monkeypatch):
     monkeypatch.setattr(config, "SELLER_REPORT_MIN_ITEMS", 1)
     page = open_page(role=messages.UI_START_OPS)
 
@@ -1297,7 +1279,7 @@ def test_a_report_nobody_reaches_says_so(open_page):
     assert not page.dataframe
 
 
-def test_the_report_is_written_in_the_page_language(open_page, monkeypatch):
+def test_report_uses_page_language(open_page, monkeypatch):
     monkeypatch.setattr(config, "SELLER_REPORT_MIN_ITEMS", 1)
     page = open_page(role=messages.UI_START_OPS)
     page = page.radio[0].set_value(Language.EN).run()
@@ -1332,9 +1314,7 @@ def add_reviews(path):
     conn.close()
 
 
-def test_a_review_answer_shows_the_themes_the_note_and_the_agent(
-    open_page, synthetic_db_path
-):
+def test_review_answer_shows_themes(open_page, synthetic_db_path):
     add_reviews(synthetic_db_path)
     themes = [
         {

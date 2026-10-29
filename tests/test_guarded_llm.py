@@ -131,7 +131,7 @@ def test_every_role_is_cleaned(guarded, fake):
     }
 
 
-def test_arguments_of_earlier_tool_calls_are_cleaned(guarded, fake):
+def test_earlier_tool_arguments_are_cleaned(guarded, fake):
     earlier_call = ChatMessage(
         role=MessageRole.ASSISTANT,
         blocks=[
@@ -152,7 +152,7 @@ def test_arguments_of_earlier_tool_calls_are_cleaned(guarded, fake):
     assert RAW_ID not in fake.sent_text()
 
 
-def test_messages_given_by_the_caller_are_not_changed(guarded):
+def test_caller_messages_are_not_changed(guarded):
     message = user(f"{RAW_ID} nerede?")
 
     guarded.chat([message])
@@ -167,7 +167,7 @@ def test_clean_request_is_passed_on_as_it_is(guarded, fake):
     assert fake.requests[0]["kwargs"] == {"temperature": "0"}
 
 
-def test_customer_session_gets_aliases_instead_of_masks(fake):
+def test_customer_session_gets_aliases(fake):
     session = Session("u_alice", personal_values={"campinas": "[city]"})
     guarded = GuardedLLM(inner=fake, redactor=session.redactor())
 
@@ -209,7 +209,7 @@ def test_build_llm_wraps_the_provider_model(monkeypatch, fake):
     assert llm.redactor is redactor
 
 
-def test_build_llm_without_a_session_still_masks(monkeypatch, fake):
+def test_no_session_still_masks(monkeypatch, fake):
     monkeypatch.setattr(guarded_llm, "build_provider_llm", lambda: fake)
 
     build_llm().chat([user(RAW_ID)])
@@ -224,12 +224,12 @@ def test_unknown_provider_is_an_error(monkeypatch):
         guarded_llm.build_provider_llm()
 
 
-def test_main_and_fallback_providers_have_an_api_key_variable():
+def test_providers_have_key_variables():
     assert config.LLM_PROVIDER in guarded_llm.API_KEY_VARIABLES
     assert config.LLM_FALLBACK_PROVIDER in guarded_llm.API_KEY_VARIABLES
 
 
-def test_main_model_is_used_unless_the_fallback_is_switched_on(monkeypatch):
+def test_main_model_unless_fallback_is_on(monkeypatch):
     assert config.LLM_USE_FALLBACK is False
     assert guarded_llm.configured_model() == (config.LLM_PROVIDER, config.LLM_MODEL)
 
@@ -257,7 +257,7 @@ def recording_provider(created):
         (True, "llama_index.llms.groq", "Groq", "GROQ_API_KEY"),
     ],
 )
-def test_provider_model_gets_name_key_and_temperature(
+def test_model_gets_name_key_temperature(
     monkeypatch, use_fallback, module, class_name, key_variable
 ):
     created = []
@@ -277,7 +277,7 @@ def test_provider_model_gets_name_key_and_temperature(
     assert created == [expected]
 
 
-def test_a_groq_model_can_be_told_how_much_to_think(monkeypatch):
+def test_groq_model_takes_reasoning_effort(monkeypatch):
     created = []
     monkeypatch.setattr(
         importlib.import_module("llama_index.llms.groq"),
@@ -293,7 +293,7 @@ def test_a_groq_model_can_be_told_how_much_to_think(monkeypatch):
     assert created[0]["additional_kwargs"] == {"reasoning_effort": "low"}
 
 
-def test_a_model_can_be_given_its_own_temperature(monkeypatch):
+def test_model_takes_own_temperature(monkeypatch):
     created = []
     monkeypatch.setattr(
         importlib.import_module("llama_index.llms.groq"),
@@ -311,7 +311,7 @@ def test_a_model_can_be_given_its_own_temperature(monkeypatch):
     ]
 
 
-def test_a_model_is_given_a_limit_on_its_answers_only_when_asked(monkeypatch):
+def test_answer_limit_only_when_asked(monkeypatch):
     created = []
     monkeypatch.setattr(
         importlib.import_module("llama_index.llms.groq"),
@@ -327,7 +327,7 @@ def test_a_model_is_given_a_limit_on_its_answers_only_when_asked(monkeypatch):
     assert created[1]["max_tokens"] == 800
 
 
-def test_only_groq_models_take_a_reasoning_effort(monkeypatch):
+def test_only_groq_takes_reasoning_effort(monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY_FREE", "test-key")
 
     with pytest.raises(ValueError, match="reasoning_effort"):
@@ -359,7 +359,7 @@ def is_provider_module(name):
     )
 
 
-def test_only_the_guard_module_imports_a_provider():
+def test_only_guard_imports_a_provider():
     offenders = []
     sources = [
         PROJECT_ROOT / "app.py",
@@ -381,7 +381,7 @@ def test_only_the_guard_module_imports_a_provider():
     assert any(is_provider_module(name) for name in imported_modules(GUARD_MODULE))
 
 
-def test_the_import_check_recognises_a_provider_import(tmp_path):
+def test_import_check_finds_provider_import(tmp_path):
     sample = tmp_path / "sample.py"
     sample.write_text(
         "import os\n"

@@ -99,7 +99,7 @@ def fuzz_params():
 
 
 @pytest.mark.parametrize(("guard", "case"), list(fuzz_params()))
-def test_hidden_personal_data_does_not_get_past_the_guard(guard: str, case: Case):
+def test_hidden_pii_is_caught_by_the_guard(guard: str, case: Case):
     assert not leaks(GUARDS[guard](case.text), case)
 
 
@@ -111,7 +111,7 @@ def test_every_case_is_listed_once():
         assert CAUGHT_TODAY[guard] <= set(keys), guard
 
 
-def test_a_plain_message_passes_every_guard_unchanged():
+def test_plain_message_passes_unchanged():
     text = "SIP-2 siparişim 2018-08-20'de geldi, 133,14 BRL iade istiyorum."
 
     for guard in GUARDS.values():

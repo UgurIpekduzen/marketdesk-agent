@@ -20,7 +20,7 @@ def pairs():
         yield from zip(load(turkish_path), load(english_path), strict=True)
 
 
-def test_the_english_sets_are_what_the_script_builds():
+def test_english_sets_match_the_script():
     turkish = {
         path: path.read_text(encoding="utf-8") for path in build_english_sets.SETS
     }
@@ -36,7 +36,7 @@ def test_the_english_sets_are_what_the_script_builds():
         )
 
 
-def test_both_languages_hold_the_same_examples_to_the_same_expectations():
+def test_languages_hold_same_examples():
     for turkish, english in pairs():
         assert english["id"] == turkish["id"]
         assert english["language"] == "en"
@@ -50,19 +50,19 @@ def test_both_languages_hold_the_same_examples_to_the_same_expectations():
             assert english["expected"][field] == value, (turkish["id"], field)
 
 
-def test_an_order_in_the_question_stays_in_the_question():
+def test_order_stays_in_the_question():
     for turkish, english in pairs():
         assert ("{order}" in english["question"]) == ("{order}" in turkish["question"])
 
 
-def test_nothing_turkish_is_left_in_the_english_texts():
+def test_no_turkish_left_in_english_texts():
     for _, english in pairs():
         texts = [english["question"], english.get("reference_answer", "")]
         texts += json.dumps(english["expected"].get("must_contain", [])).split('"')
         assert not any(TURKISH_LETTERS & set(text) for text in texts), english["id"]
 
 
-def test_sources_are_cited_with_the_english_titles():
+def test_sources_use_english_titles():
     titles = set(messages_en.POLICY_DOCUMENT_TITLES.values())
     sources = [
         source
@@ -81,7 +81,7 @@ def test_sources_are_cited_with_the_english_titles():
         assert title in titles and number.isdigit(), source
 
 
-def test_a_language_bound_text_without_a_translation_is_refused():
+def test_untranslated_bound_text_is_refused():
     example = {
         "id": "X",
         "question": "Kargo nerede?",
@@ -92,7 +92,7 @@ def test_a_language_bound_text_without_a_translation_is_refused():
         build_english_sets.translate(example, {"question": "Where is it?"})
 
 
-def test_language_free_texts_need_no_translation():
+def test_language_free_text_needs_none():
     example = {
         "id": "X",
         "question": "Son siparişim nerede?",
@@ -104,7 +104,7 @@ def test_language_free_texts_need_no_translation():
     assert english["expected"]["must_contain"] == ["SIP-", "?", ["14"]]
 
 
-def test_an_example_without_a_translation_is_refused():
+def test_untranslated_example_is_refused():
     turkish = {
         path: path.read_text(encoding="utf-8") for path in build_english_sets.SETS
     }

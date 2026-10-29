@@ -30,7 +30,7 @@ def rank(index, query):
     "query",
     ["iade süresi kaç gün", "teslimden sonra kaç gün içinde iade edebilirim"],
 )
-def test_a_section_written_like_the_real_one_comes_first(planted_index, query):
+def test_lookalike_section_ranks_first(planted_index, query):
     # Measured on 2026-10-21: a planted section in the real section's words
     # outranks it, so the defence cannot be the search order.
     assert rank(planted_index, query) == 1
@@ -39,5 +39,5 @@ def test_a_section_written_like_the_real_one_comes_first(planted_index, query):
 @pytest.mark.parametrize(
     "query", ["hasarlı ürün iadesi", "iptal edebilir miyim", "iade talebi nasıl açılır"]
 )
-def test_it_does_not_reach_questions_about_other_topics(planted_index, query):
+def test_other_topics_are_not_reached(planted_index, query):
     assert rank(planted_index, query) is None

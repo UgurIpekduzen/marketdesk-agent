@@ -4,7 +4,7 @@ import config
 from src.agents.sql_correction import LIMIT_REACHED, SqlCorrectionLimit
 
 
-def test_first_attempt_and_two_corrections_may_fail_before_the_limit():
+def test_attempt_and_two_fixes_may_fail():
     limit = SqlCorrectionLimit()
 
     states = []
@@ -40,7 +40,7 @@ def test_reset_starts_again():
     assert limit.failed_queries == []
 
 
-def test_the_number_of_corrections_can_be_set():
+def test_correction_count_is_configurable():
     limit = SqlCorrectionLimit(max_corrections=0)
 
     limit.record_failure("only attempt")

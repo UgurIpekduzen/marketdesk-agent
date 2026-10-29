@@ -39,7 +39,7 @@ def days_late(conn, order_id):
     )
 
 
-def test_database_holds_between_20_and_30_orders(synthetic_db):
+def test_database_has_20_to_30_orders(synthetic_db):
     count = value(synthetic_db, "SELECT COUNT(*) FROM orders")
 
     # One order of synthetic_data.ORDERS is left out by R0.
@@ -47,7 +47,7 @@ def test_database_holds_between_20_and_30_orders(synthetic_db):
     assert 20 <= count <= 30
 
 
-def test_order_purchased_on_simulated_today_is_not_loaded(synthetic_db):
+def test_order_bought_today_is_not_loaded(synthetic_db):
     assert (
         value(
             synthetic_db,
@@ -65,7 +65,7 @@ def test_order_purchased_on_simulated_today_is_not_loaded(synthetic_db):
     )
 
 
-def test_one_order_belongs_to_another_customer(synthetic_db):
+def test_one_order_is_a_foreign_order(synthetic_db):
     owners = dict(
         synthetic_db.execute(
             "SELECT customers.customer_unique_id, COUNT(*) FROM orders "
@@ -97,7 +97,7 @@ def test_one_order_belongs_to_another_customer(synthetic_db):
         ("o_unavailable", "unavailable"),
     ],
 )
-def test_every_non_delivered_status_has_an_order(synthetic_db, order_id, status):
+def test_each_open_status_has_an_order(synthetic_db, order_id, status):
     row = synthetic_db.execute(
         "SELECT order_status, order_delivered_customer_date FROM orders WHERE order_id = ?",
         (order_id,),
@@ -107,7 +107,7 @@ def test_every_non_delivered_status_has_an_order(synthetic_db, order_id, status)
     assert row["order_delivered_customer_date"] is None
 
 
-def test_delivered_order_with_a_future_delivery_date(synthetic_db):
+def test_delivered_order_with_future_date(synthetic_db):
     assert (
         value(
             synthetic_db,
@@ -118,7 +118,7 @@ def test_delivered_order_with_a_future_delivery_date(synthetic_db):
     assert days_since_delivery(synthetic_db, "o_delivered_future") == -4
 
 
-def test_delivered_order_without_a_delivery_date(synthetic_db):
+def test_delivered_order_without_date(synthetic_db):
     row = synthetic_db.execute(
         "SELECT order_status, order_delivered_customer_date FROM orders "
         "WHERE order_id = 'o_no_delivery_date'"
@@ -132,9 +132,7 @@ def test_delivered_order_without_a_delivery_date(synthetic_db):
     ("order_id", "days"),
     [("o_day0", 0), ("o_day14", 14), ("o_day15", 15), ("o_day30", 30), ("o_day31", 31)],
 )
-def test_window_boundary_orders_are_the_promised_number_of_days_old(
-    synthetic_db, order_id, days
-):
+def test_boundary_orders_have_promised_age(synthetic_db, order_id, days):
     assert days_since_delivery(synthetic_db, order_id) == days
 
 
@@ -187,7 +185,7 @@ def test_two_item_order_has_two_items(synthetic_db):
     )
 
 
-def test_voucher_order_is_one_quarter_voucher(synthetic_db):
+def test_voucher_order_is_a_quarter_voucher(synthetic_db):
     voucher = value(
         synthetic_db,
         "SELECT SUM(payment_value) FROM order_payments "
@@ -227,14 +225,14 @@ def orders_handed_over_after_the_limit(conn):
     ]
 
 
-def test_orders_handed_to_the_carrier_after_the_limit(synthetic_db):
+def test_late_carrier_handover_orders(synthetic_db):
     assert orders_handed_over_after_the_limit(synthetic_db) == [
         "o_seller_late",
         "o_seller_late_one_item",
     ]
 
 
-def test_only_one_item_of_the_two_item_order_missed_its_limit(synthetic_db):
+def test_one_of_two_items_missed_its_limit(synthetic_db):
     late_items = [
         row[0]
         for row in synthetic_db.execute(
@@ -247,7 +245,7 @@ def test_only_one_item_of_the_two_item_order_missed_its_limit(synthetic_db):
     assert late_items == [2]
 
 
-def test_same_day_handover_is_later_by_the_clock_but_not_by_the_calendar(synthetic_db):
+def test_same_day_handover_ignores_clock(synthetic_db):
     row = synthetic_db.execute(
         "SELECT o.order_delivered_carrier_date > i.shipping_limit_date, "
         "DATE(o.order_delivered_carrier_date) > DATE(i.shipping_limit_date) "

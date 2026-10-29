@@ -12,7 +12,7 @@ TEXT = """dev
 Failed in dev: none"""
 
 
-def test_a_table_is_framed_with_its_columns_aligned():
+def test_table_is_framed_and_aligned():
     drawn = terminal_tables(TEXT).split("\n")
 
     assert drawn[0] == "dev"
@@ -28,7 +28,7 @@ def test_a_table_is_framed_with_its_columns_aligned():
     assert drawn[-1] == "Failed in dev: none"
 
 
-def test_a_column_with_nothing_measured_is_left_out_of_the_drawing():
+def test_empty_column_is_left_out():
     assert "SQL execution" not in terminal_tables(TEXT)
     assert "SQL execution" in TEXT
 

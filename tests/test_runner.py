@@ -49,7 +49,7 @@ def test_step_limit_gives_the_fixed_message():
     assert log.llm_calls == config.MAX_STEPS
 
 
-def test_empty_answer_gives_the_fixed_message():
+def test_empty_answer_gives_fixed_message():
     text, _ = run(["  "])
 
     assert text == messages.EMPTY_REPLY

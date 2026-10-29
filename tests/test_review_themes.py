@@ -37,7 +37,7 @@ DELAY = {
 }
 
 
-def test_a_theme_is_counted_by_the_reviews_that_hold_one_of_its_words():
+def test_theme_counts_its_reviews():
     answer = verify_themes(SAMPLE, themes(DELAY))
 
     (theme,) = answer["themes"]
@@ -47,7 +47,7 @@ def test_a_theme_is_counted_by_the_reviews_that_hold_one_of_its_words():
     assert answer["sampled"] == 4
 
 
-def test_a_word_is_the_start_of_a_word_of_the_text_accents_and_case_aside():
+def test_word_matches_a_text_word_start():
     assert mentions("ATRASOU muito", "atras")
     assert mentions("Embalagem fraca", "embalagem")
     assert mentions("Não chegou", "nao")
@@ -55,7 +55,7 @@ def test_a_word_is_the_start_of_a_word_of_the_text_accents_and_case_aside():
     assert folded("Péssimo  Produto") == "pessimo produto"
 
 
-def test_the_themes_are_ordered_by_how_often_they_come_up():
+def test_themes_are_ordered_by_frequency():
     packaging = {"name": "Embalagem", "keywords": ["embalagem"], "quotes": []}
 
     answer = verify_themes(SAMPLE, themes(packaging, DELAY))
@@ -66,7 +66,7 @@ def test_the_themes_are_ordered_by_how_often_they_come_up():
     ]
 
 
-def test_a_quote_of_a_review_that_is_not_in_the_sample_is_refused():
+def test_quote_outside_sample_is_refused():
     bad = {
         **DELAY,
         "quotes": [
@@ -77,7 +77,7 @@ def test_a_quote_of_a_review_that_is_not_in_the_sample_is_refused():
     assert verify_themes(SAMPLE, themes(bad))["error"] == "UNKNOWN_REVIEW"
 
 
-def test_a_quote_that_is_not_word_for_word_is_refused():
+def test_inexact_quote_is_refused():
     paraphrase = {
         **DELAY,
         "quotes": [
@@ -92,7 +92,7 @@ def test_a_quote_that_is_not_word_for_word_is_refused():
     assert verify_themes(SAMPLE, themes(paraphrase))["error"] == "QUOTE_NOT_VERBATIM"
 
 
-def test_a_quote_of_another_review_than_the_one_named_is_refused():
+def test_quote_of_another_review_is_refused():
     wrong = {
         **DELAY,
         "quotes": [
@@ -103,7 +103,7 @@ def test_a_quote_of_another_review_than_the_one_named_is_refused():
     assert verify_themes(SAMPLE, themes(wrong))["error"] == "QUOTE_NOT_VERBATIM"
 
 
-def test_case_and_spacing_do_not_make_a_quote_wrong():
+def test_case_and_spacing_are_forgiven():
     quote = {
         "review_id": "R-000002",
         "text": "ATRASOU  e o vendedor NÃO respondeu",
@@ -120,7 +120,7 @@ def test_case_and_spacing_do_not_make_a_quote_wrong():
     )
 
 
-def test_a_quote_that_is_too_short_is_refused():
+def test_too_short_quote_is_refused():
     short = {
         **DELAY,
         "quotes": [{"review_id": "R-000001", "text": "muito", "translation": "x"}],
@@ -129,7 +129,7 @@ def test_a_quote_that_is_too_short_is_refused():
     assert verify_themes(SAMPLE, themes(short))["error"] == "QUOTE_NOT_VERBATIM"
 
 
-def test_a_theme_none_of_whose_words_is_in_the_sample_is_refused():
+def test_theme_absent_from_sample_is_refused():
     invented = {"name": "Preço alto", "keywords": ["caro", "preco"], "quotes": []}
 
     assert (
@@ -151,11 +151,11 @@ def test_a_theme_none_of_whose_words_is_in_the_sample_is_refused():
         (themes({"name": "x", "keywords": ["abc"] * 7}), "INVALID_KEYWORDS"),
     ],
 )
-def test_a_malformed_answer_is_an_error_for_the_model_to_correct(payload, code):
+def test_malformed_answer_is_correctable(payload, code):
     assert verify_themes(SAMPLE, payload)["error"] == code
 
 
-def test_too_many_themes_or_quotes_are_refused():
+def test_too_many_themes_or_quotes_refused():
     many = [DELAY] * (MAX_THEMES + 1)
     quote = {"review_id": "R-000001", "text": "atraso de dez dias", "translation": "x"}
     crowded = {**DELAY, "quotes": [quote] * (MAX_QUOTES + 1)}
@@ -164,7 +164,7 @@ def test_too_many_themes_or_quotes_are_refused():
     assert verify_themes(SAMPLE, themes(crowded))["error"] == "TOO_MANY_QUOTES"
 
 
-def test_a_count_the_model_writes_is_not_used():
+def test_model_written_count_is_ignored():
     # The model may send a count of its own; the one in the answer is counted here.
     claimed = {**DELAY, "reviews": 4, "share_percent": 100}
 
@@ -196,7 +196,7 @@ BIG_SAMPLE = {
 
 
 @pytest.mark.parametrize("word", ["com", "que", "não", "NAO", "para", "pro", "uma"])
-def test_a_word_that_is_in_every_review_whatever_it_says_is_refused(word):
+def test_word_in_every_review_is_refused(word):
     theme = {"name": "Atraso na entrega", "keywords": [word, "atras"], "quotes": []}
 
     answer = verify_themes(SAMPLE, themes(theme))
@@ -205,7 +205,7 @@ def test_a_word_that_is_in_every_review_whatever_it_says_is_refused(word):
     assert word in answer["message"]
 
 
-def test_a_word_that_is_in_most_reviews_of_a_large_sample_is_refused():
+def test_word_in_most_of_big_sample_refused():
     sample = {f"R-{n:06d}": "Produto bom, entrega boa." for n in range(10)}
     sample["R-000010"] = "Chegou quebrado e atrasado."
     theme = {"name": "Qualidade", "keywords": ["produto"], "quotes": []}
@@ -216,7 +216,7 @@ def test_a_word_that_is_in_most_reviews_of_a_large_sample_is_refused():
     assert "10 of 11" in answer["message"]
 
 
-def test_the_same_word_is_fine_in_a_small_sample_and_when_it_is_not_in_most_reviews():
+def test_common_word_ok_in_small_sample():
     theme = {"name": "Produto", "keywords": ["produto"], "quotes": []}
 
     assert "error" not in verify_themes(BIG_SAMPLE, themes(theme))
@@ -225,7 +225,7 @@ def test_the_same_word_is_fine_in_a_small_sample_and_when_it_is_not_in_most_revi
     assert "error" not in verify_themes(small, themes(theme))
 
 
-def test_the_counts_of_the_honest_words_are_unchanged():
+def test_honest_word_counts_are_unchanged():
     theme = {"name": "Atraso", "keywords": ["atras", "demor"], "quotes": []}
 
     answer = verify_themes(BIG_SAMPLE, themes(theme))
@@ -259,7 +259,7 @@ def quote_of(review_id, text):
         ("R-000010", "5 estrelas, esperava mais"),
     ],
 )
-def test_a_quote_cut_out_of_a_sentence_is_refused(review_id, text):
+def test_partial_sentence_quote_is_refused(review_id, text):
     assert quote_of(review_id, text)["error"] == "QUOTE_NOT_VERBATIM"
 
 
@@ -283,7 +283,7 @@ def test_a_quote_of_whole_sentences_is_kept(review_id, text):
     assert "error" not in quote_of(review_id, text)
 
 
-def test_the_title_and_the_message_of_a_review_are_two_sentences():
+def test_title_and_message_are_two_sentences():
     sample = {"R-000001": "Ótimo — Chegou super rápido e veio tudo certo!"}
     theme = {
         "name": "Entrega",

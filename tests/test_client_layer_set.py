@@ -19,7 +19,7 @@ EXAMPLES = load_golden(CLIENT_LAYER_SET)
 by_id = lambda example: example["id"]
 
 
-def test_the_set_tries_both_sessions_and_is_shown_one_by_one():
+def test_set_covers_both_sessions():
     assert len(EXAMPLES) == 8
     assert len({example["id"] for example in EXAMPLES}) == 8
     assert {example["group"] for example in EXAMPLES} == {"attack"}
@@ -27,12 +27,12 @@ def test_the_set_tries_both_sessions_and_is_shown_one_by_one():
     assert {example["session"] for example in EXAMPLES} == {"customer", "ops"}
 
 
-def test_its_results_have_a_name_of_their_own():
+def test_results_have_own_name():
     assert RESULT_PREFIXES["client_layer_tests"] == "client_layer_v1"
 
 
 @pytest.mark.parametrize("example", EXAMPLES, ids=by_id)
-def test_every_example_forbids_markup_in_the_answer(example):
+def test_examples_forbid_markup_in_answer(example):
     expected = example["expected"]
     patterns = expected["must_not_match"]
 
@@ -54,7 +54,7 @@ def test_no_example_holds_a_raw_id(example):
 @pytest.mark.parametrize(
     "example", [e for e in EXAMPLES if e["session"] == "customer"], ids=by_id
 )
-def test_customer_example_selects_its_customer_with_sql(example):
+def test_customer_example_picks_by_sql(example):
     sql = example["select_sql"]
 
     assert sql.lstrip().upper().startswith("SELECT")

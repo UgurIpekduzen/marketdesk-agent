@@ -171,7 +171,7 @@ def test_where_is_my_last_order(customer):
     assert_nothing_personal_was_sent(fake)
 
 
-def test_return_request_with_the_raw_order_number_typed_by_the_customer(customer):
+def test_request_with_typed_raw_order_number(customer):
     session, tools, llm, fake = customer
     order_id = real_shaped("o_day14")
     fake.script = [
@@ -285,7 +285,7 @@ def test_escalation(customer):
     assert_nothing_personal_was_sent(fake)
 
 
-def test_customer_who_writes_their_own_city_mail_and_phone(customer):
+def test_customer_writes_own_city_mail_phone(customer):
     _, tools, llm, fake = customer
     fake.script = ["Size nasıl yardımcı olabilirim?"]
 
@@ -356,7 +356,7 @@ def test_free_sql_question(ops):
     assert_nothing_personal_was_sent(fake)
 
 
-def test_sql_that_tries_to_read_personal_columns(ops):
+def test_sql_reading_personal_columns(ops):
     tools, llm, fake = ops
     fake.script = [
         [
@@ -406,7 +406,7 @@ def support(realistic_db, fake_policy_index):
     return run, fake, db_path
 
 
-def test_support_agent_return_flow_with_approval(support):
+def test_return_flow_with_approval(support):
     run, fake, db_path = support
     order_id = real_shaped("o_day14")
     fake.script = [
@@ -463,7 +463,7 @@ def test_support_agent_order_list_and_policy(support):
     assert_nothing_personal_was_sent(fake)
 
 
-def test_support_agent_foreign_order_and_escalation(support):
+def test_foreign_order_and_escalation(support):
     run, fake, _ = support
     foreign = real_shaped("o_other_customer")
     fake.script = [
@@ -479,7 +479,7 @@ def test_support_agent_foreign_order_and_escalation(support):
     assert_nothing_personal_was_sent(fake)
 
 
-def test_raw_id_the_model_writes_into_a_tool_argument_is_masked(support):
+def test_raw_id_in_tool_argument_is_masked(support):
     # A raw id in the model's own tool call comes back in the history of the
     # next request; the guard masks it there.
     run, fake, _ = support
@@ -495,7 +495,7 @@ def test_raw_id_the_model_writes_into_a_tool_argument_is_masked(support):
 # --- The guard as the last line -----------------------------------------
 
 
-def test_tool_that_leaks_on_purpose_does_not_reach_the_provider(customer):
+def test_leaky_tool_never_reaches_provider(customer):
     session, _, llm, fake = customer
     order_id = real_shaped("o_day14")
 
@@ -524,7 +524,7 @@ def test_tool_that_leaks_on_purpose_does_not_reach_the_provider(customer):
     assert_nothing_personal_was_sent(fake)
 
 
-def test_without_the_guard_the_same_run_does_leak(customer):
+def test_same_run_leaks_without_the_guard(customer):
     # Shows that the check above can fail: the agent talks to the model directly.
     session, _, _, fake = customer
 

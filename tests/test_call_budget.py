@@ -36,7 +36,7 @@ def test_checking_counts_no_call():
         budget.check()
 
 
-def test_a_call_is_given_back_a_day_after_it_was_made():
+def test_call_is_returned_after_a_day():
     clock = Clock()
     budget = CallBudget(per_day=2, clock=clock)
     budget.take()
@@ -52,7 +52,7 @@ def test_a_call_is_given_back_a_day_after_it_was_made():
         budget.take()
 
 
-def test_calls_made_at_once_do_not_pass_the_budget_together():
+def test_parallel_calls_respect_the_budget():
     budget = CallBudget(per_day=50)
     refused = []
 
@@ -71,7 +71,7 @@ def test_calls_made_at_once_do_not_pass_the_budget_together():
     assert len(refused) == 30
 
 
-def test_the_used_up_budget_has_its_own_failure_code():
+def test_used_up_budget_has_own_failure_code():
     budget = CallBudget(per_day=0)
 
     with pytest.raises(CallBudgetReached) as refused:

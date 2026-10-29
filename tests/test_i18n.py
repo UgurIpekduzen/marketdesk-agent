@@ -52,19 +52,19 @@ def test_each_language_has_its_catalog():
     assert catalog("en") is messages_en
 
 
-def test_english_has_every_string_the_user_sees_and_no_other():
+def test_english_has_every_user_string():
     turkish = set(strings_of(messages)) - messages.MODEL_ONLY
     english = set(strings_of(messages_en))
 
     assert english == turkish
 
 
-def test_strings_only_the_model_reads_are_turkish_only():
+def test_model_only_strings_are_turkish():
     assert messages.MODEL_ONLY <= set(strings_of(messages))
     assert not messages.MODEL_ONLY & set(strings_of(messages_en))
 
 
-def test_both_languages_fill_in_the_same_placeholders():
+def test_languages_share_placeholders():
     english = strings_of(messages_en)
     for name, turkish in strings_of(messages).items():
         # Turkish titles are cited as written: only English has the map.
@@ -81,7 +81,7 @@ def test_both_languages_fill_in_the_same_placeholders():
                 ), f"{name}[{key}]"
 
 
-def test_english_strings_are_not_left_in_turkish():
+def test_english_strings_are_translated():
     turkish_letters = set("çğıöşüÇĞİÖŞÜ")
     for name, value in strings_of(messages_en).items():
         # The titles map has the Turkish document titles as its keys.
@@ -90,7 +90,7 @@ def test_english_strings_are_not_left_in_turkish():
             assert not turkish_letters & set(str(text)), name
 
 
-def test_every_policy_document_has_an_english_title():
+def test_policies_have_english_titles():
     from src.knowledge.policy_index import read_sections
 
     titles = {section.document for section in read_sections()}
@@ -98,7 +98,7 @@ def test_every_policy_document_has_an_english_title():
     assert titles == set(messages_en.POLICY_DOCUMENT_TITLES)
 
 
-def test_example_lists_are_as_long_in_both_languages():
+def test_example_lists_match_in_length():
     for name in (
         "EXAMPLE_QUESTIONS_GENERAL",
         "EXAMPLE_QUESTIONS_POLICY",

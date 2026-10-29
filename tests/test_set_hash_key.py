@@ -13,7 +13,7 @@ def key_in(env_path) -> str:
     return line[len(PREFIX) :]
 
 
-def test_key_is_added_and_the_other_lines_are_kept(tmp_path):
+def test_key_is_added_other_lines_kept(tmp_path):
     env_path = tmp_path / ".env"
     env_path.write_text("# keys\nGEMINI_API_KEY_FREE=abc\n")
 
@@ -23,7 +23,7 @@ def test_key_is_added_and_the_other_lines_are_kept(tmp_path):
     assert len(key_in(env_path)) == 64
 
 
-def test_empty_entry_is_filled_in_where_it_stands(tmp_path):
+def test_empty_entry_is_filled_in_place(tmp_path):
     env_path = tmp_path / ".env"
     env_path.write_text(f"{PREFIX}\nGROQ_API_KEY=xyz\n")
 

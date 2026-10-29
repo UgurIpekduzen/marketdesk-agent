@@ -36,12 +36,12 @@ def rules_in(text):
     return {rule for line in RULE_LINE.findall(text) for rule in line.split(", ")}
 
 
-def test_the_folder_holds_exactly_the_five_documents():
+def test_folder_holds_the_five_documents():
     assert sorted(path.name for path in POLICIES_DIR.glob("*.md")) == sorted(DOCUMENTS)
 
 
 @pytest.mark.parametrize("name", DOCUMENTS)
-def test_document_has_one_title_and_numbered_sections(name):
+def test_document_has_title_and_numbering(name):
     text = read(name)
     numbers = [int(number) for number in SECTION_HEADING.findall(text)]
 
@@ -59,14 +59,14 @@ def test_document_names_only_known_rules(name):
     assert rules <= ALL_RULES
 
 
-def test_every_rule_is_covered_by_at_least_one_document():
+def test_every_rule_has_a_document():
     covered = set().union(*(rules_in(read(name)) for name in DOCUMENTS))
 
     assert covered == ALL_RULES
 
 
 @pytest.mark.parametrize("name", DOCUMENTS)
-def test_every_section_but_the_last_names_its_rules(name):
+def test_sections_name_their_rules(name):
     sections = read(name).split("\n## ")[1:]
 
     assert all(RULE_LINE.search(section) for section in sections[:-1])
@@ -74,7 +74,7 @@ def test_every_section_but_the_last_names_its_rules(name):
 
 
 @pytest.mark.parametrize("name", DOCUMENTS)
-def test_document_says_what_it_does_not_cover(name):
+def test_document_states_what_it_omits(name):
     last_section = read(name).split("\n## ")[-1]
 
     assert "belirlenmemiştir" in last_section
@@ -118,11 +118,11 @@ def test_document_says_what_it_does_not_cover(name):
         ("payments_and_refunds.md", f"en fazla {config.RETURN_WINDOW_LONG_DAYS} gün"),
     ],
 )
-def test_numbers_in_the_documents_match_the_settings(name, phrase):
+def test_numbers_match_the_settings(name, phrase):
     assert phrase in read(name)
 
 
-def test_voucher_example_matches_the_rule_engine(synthetic_db):
+def test_voucher_example_matches_the_rules(synthetic_db):
     # The payments document works through the o_voucher order of the tests.
     decision = check_return(synthetic_db, "o_voucher", ALICE, "changed_mind")
     text = read("payments_and_refunds.md")

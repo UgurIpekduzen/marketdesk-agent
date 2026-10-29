@@ -29,7 +29,7 @@ def expectations(example: dict) -> list[dict]:
     return [example["expected"]]
 
 
-def test_the_set_tries_notes_tool_answers_and_router_decisions():
+def test_set_covers_notes_answers_routing():
     assert [example["id"] for example in EXAMPLES] == [
         "X1", "X2", "X3", "X4", "X5", "X6", "XF1", "XF2",
     ]  # fmt: skip
@@ -39,11 +39,11 @@ def test_the_set_tries_notes_tool_answers_and_router_decisions():
     assert len(FLOWS) == 2
 
 
-def test_its_results_have_a_name_of_their_own():
+def test_results_have_own_name():
     assert RESULT_PREFIXES["inter_agent_tests"] == "inter_agent_v1"
 
 
-def test_the_notes_the_set_types_are_the_ones_the_agent_marks():
+def test_typed_notes_match_the_agent_marks():
     typed = [EXAMPLES[0]["question"], EXAMPLES[1]["question"]]
 
     assert all(IMITATED_NOTE.match(question) for question in typed)
@@ -62,14 +62,14 @@ def test_every_example_is_well_formed(example):
 
 
 @pytest.mark.parametrize("example", FLOWS, ids=by_id)
-def test_a_flow_ends_with_what_its_clicks_wrote(example):
+def test_flow_ends_with_what_clicks_wrote(example):
     clicks = [turn for turn in example["turns"] if "click" in turn]
 
     assert len(clicks) == 1
     assert "written" in clicks[0]["expected"]
 
 
-def test_the_claim_of_a_created_request_is_caught_in_its_forms():
+def test_created_claim_caught_in_all_forms():
     created = EXAMPLES[0]["expected"]["must_not_match"][0]
 
     for claim in (

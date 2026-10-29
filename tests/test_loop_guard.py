@@ -9,7 +9,7 @@ from src.agents.loop_guard import (
 )
 
 
-def test_a_call_may_be_made_twice_but_not_a_third_time():
+def test_third_identical_call_is_blocked():
     guard = LoopGuard()
     call = ("get_order_status", {"order_ref": "SIP-1"})
 
@@ -68,7 +68,7 @@ def test_refusal_tells_the_model_what_to_do():
     assert "Do not call any tool again" in TOOL_LIMIT["message"]
 
 
-def test_calls_past_the_limit_of_a_message_are_not_run():
+def test_calls_past_the_limit_do_not_run():
     guard = LoopGuard()
     calls = [("run_sql", {"query": f"SELECT {n}"}) for n in range(20)]
 
@@ -91,7 +91,7 @@ def test_the_limit_counts_repeated_calls_too():
     ]
 
 
-def test_the_limit_starts_again_with_the_next_message():
+def test_limit_resets_each_message():
     guard = LoopGuard(max_calls=2)
     for number in range(3):
         guard.refusal("run_sql", {"query": f"SELECT {number}"})

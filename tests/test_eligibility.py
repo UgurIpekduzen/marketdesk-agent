@@ -86,7 +86,7 @@ def test_order_that_cannot_be_returned_yet(synthetic_db, alice):
         ("o_shipped", "damaged", False, False),
     ],
 )
-def test_freight_included_tells_whether_the_freight_is_in_the_refund(
+def test_freight_included_flags_freight(
     synthetic_db, alice, order, reason, freight_included, freight_refund
 ):
     answer = check_return_eligibility(alice, synthetic_db, order, reason)
@@ -95,7 +95,7 @@ def test_freight_included_tells_whether_the_freight_is_in_the_refund(
     assert answer["freight_refund"] is freight_refund
 
 
-def test_the_description_tells_what_the_two_freight_fields_mean():
+def test_description_explains_freight_fields():
     doc = inspect.cleandoc(check_return_eligibility.__doc__)
 
     assert "freight_included is true when the freight is part of" in doc
@@ -104,7 +104,7 @@ def test_the_description_tells_what_the_two_freight_fields_mean():
     assert "freight_refund is true only for a late-delivery refund" in doc
 
 
-def test_late_delivery_inside_the_window_refunds_the_freight_too(synthetic_db, alice):
+def test_late_in_window_refunds_freight(synthetic_db, alice):
     answer = check_return_eligibility(alice, synthetic_db, "o_late_10", "late")
 
     assert answer["decision"] == "ELIGIBLE"
@@ -125,7 +125,7 @@ def test_freight_only_claim(synthetic_db, alice):
     assert answer["request_status"] == "PENDING_REVIEW"
 
 
-def test_late_delivery_after_every_window_promises_nothing(synthetic_db, alice):
+def test_late_after_window_promises_nothing(synthetic_db, alice):
     # The rule engine still flags the delay; the output must not.
     answer = check_return_eligibility(alice, synthetic_db, "o_late_day31", "late")
 
@@ -142,7 +142,7 @@ def test_seller_delay_is_passed_on(synthetic_db, alice):
     assert answer["seller_delay"] is True
 
 
-def test_alias_from_an_earlier_answer_is_accepted(synthetic_db, alice):
+def test_earlier_alias_is_accepted(synthetic_db, alice):
     alias = get_order_status(alice, synthetic_db, "o_day15")["order"]
 
     by_alias = check_return_eligibility(alice, synthetic_db, alias, "changed_mind")
@@ -153,7 +153,7 @@ def test_alias_from_an_earlier_answer_is_accepted(synthetic_db, alice):
     assert by_alias["decision"] == "NOT_ELIGIBLE_WINDOW"
 
 
-def test_foreign_missing_and_unknown_alias_give_the_same_answer(synthetic_db, alice):
+def test_foreign_missing_unknown_same_answer(synthetic_db, alice):
     answers = [
         check_return_eligibility(alice, synthetic_db, order_ref, "damaged")
         for order_ref in ("o_other_customer", "o_does_not_exist", "SIP-7")
@@ -162,13 +162,13 @@ def test_foreign_missing_and_unknown_alias_give_the_same_answer(synthetic_db, al
     assert answers == [NOT_FOUND] * 3
 
 
-def test_not_found_is_the_same_answer_as_in_the_order_lookup(synthetic_db, alice):
+def test_not_found_matches_order_lookup(synthetic_db, alice):
     assert check_return_eligibility(
         alice, synthetic_db, "o_other_customer", "damaged"
     ) == get_order_status(alice, synthetic_db, "o_other_customer")
 
 
-def test_alias_of_another_session_is_not_found(synthetic_db, alice):
+def test_other_session_alias_not_found(synthetic_db, alice):
     alias = get_order_status(alice, synthetic_db, "o_day14")["order"]
 
     answer = check_return_eligibility(Session(BOB), synthetic_db, alias, "damaged")
@@ -177,9 +177,7 @@ def test_alias_of_another_session_is_not_found(synthetic_db, alice):
 
 
 @pytest.mark.parametrize("order_ref", ["o_day14", "o_other_customer"])
-def test_unknown_reason_is_refused_with_the_allowed_values(
-    synthetic_db, alice, order_ref
-):
+def test_unknown_reason_lists_allowed_values(synthetic_db, alice, order_ref):
     # The same refusal whether or not the order is the customer's own.
     answer = check_return_eligibility(alice, synthetic_db, order_ref, "too_small")
 
@@ -189,9 +187,7 @@ def test_unknown_reason_is_refused_with_the_allowed_values(
 
 
 @pytest.mark.parametrize("order_ref", ["o_day14", "o_other_customer"])
-def test_missing_reason_is_asked_for_and_nothing_is_decided(
-    synthetic_db, alice, order_ref
-):
+def test_missing_reason_is_asked_for(synthetic_db, alice, order_ref):
     # The same answer whether or not the order is the customer's own.
     answer = check_return_eligibility(alice, synthetic_db, order_ref)
 
@@ -211,7 +207,7 @@ def test_checking_writes_nothing(synthetic_db, alice):
     assert after == before
 
 
-def test_output_holds_no_raw_id_city_or_zip_code(synthetic_db, alice):
+def test_output_has_no_raw_id_city_or_zip(synthetic_db, alice):
     for table in ("orders", "order_items", "order_payments"):
         synthetic_db.execute(
             f"UPDATE {table} SET order_id = ? WHERE order_id = 'o_day14'",

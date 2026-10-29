@@ -51,7 +51,7 @@ def system_prompt(fake: FakeLLM, call: int) -> str:
 # --- Which baseline runs on what, and what it is shown ---------------------
 
 
-def test_each_baseline_runs_on_its_own_groups(run):
+def test_each_baseline_runs_its_groups(run):
     rows, fake = run(EXAMPLES, GOOD_SCRIPT)
 
     assert [(row["baseline"], row["id"]) for row in rows] == [
@@ -69,7 +69,7 @@ def test_no_baseline_is_given_a_tool(run):
     assert all(request["tools"] == [] for request in fake.requests)
 
 
-def test_b0_reads_every_policy_section_and_b1_only_the_closest(run):
+def test_b0_reads_all_b1_the_closest(run):
     _, fake = run(EXAMPLES, GOOD_SCRIPT)
     sections = baselines.all_sections()
 
@@ -82,7 +82,7 @@ def test_b0_reads_every_policy_section_and_b1_only_the_closest(run):
     assert len(closest) < len(everything)
 
 
-def test_b2_reads_the_raw_tables_and_not_the_safe_views(run):
+def test_b2_reads_raw_tables_not_views(run):
     _, fake = run(EXAMPLES, GOOD_SCRIPT)
 
     schema = system_prompt(fake, 3)
@@ -93,7 +93,7 @@ def test_b2_reads_the_raw_tables_and_not_the_safe_views(run):
     assert "late_delivery_rate" not in schema
 
 
-def test_order_is_an_alias_in_what_the_model_reads(run):
+def test_order_is_an_alias_for_the_model(run):
     _, fake = run(EXAMPLES, GOOD_SCRIPT)
 
     question = str(fake.requests[0]["messages"][1])
@@ -102,7 +102,7 @@ def test_order_is_an_alias_in_what_the_model_reads(run):
     assert "o_day14" not in fake.sent_text()
 
 
-def test_query_rows_are_not_sent_to_the_model(run):
+def test_query_rows_not_sent_to_model(run):
     rows, fake = run([OPS_EXAMPLE], ["SELECT COUNT(*) FROM orders"])
 
     # One call writes the SQL; nothing follows it.
@@ -125,14 +125,14 @@ def test_good_answers_succeed(run):
     assert not by_run[("B0", "S")]["made_up"]
 
 
-def test_policy_answer_without_the_source_fails(run):
+def test_policy_answer_without_source_fails(run):
     rows, _ = run([POLICY_EXAMPLE], ["14 gün içinde.", GOOD_POLICY_ANSWER])
 
     assert rows[0]["checks"] == {"text": True, "source": False}
     assert rows[1]["success"]
 
 
-def test_policy_example_without_a_source_is_scored_on_its_text_alone(run):
+def test_sourceless_example_scored_on_text(run):
     no_source = {key: value for key, value in POLICY_EXAMPLE.items() if key != "source"}
 
     rows, _ = run([no_source], ["14 gün içinde.", "14 gün içinde."])
@@ -141,7 +141,7 @@ def test_policy_example_without_a_source_is_scored_on_its_text_alone(run):
     assert rows[0]["success"]
 
 
-def test_invented_rule_in_a_policy_answer_counts_as_made_up(run):
+def test_invented_rule_counts_as_made_up(run):
     answer = "14 gün, para 5 iş günü içinde döner (İade Politikası, Bölüm 2)."
     rows, _ = run([POLICY_EXAMPLE], [answer, GOOD_POLICY_ANSWER])
 
@@ -160,7 +160,7 @@ def test_invented_rule_in_a_policy_answer_counts_as_made_up(run):
         "İade talebiniz oluşturuldu.",
     ],
 )
-def test_statement_about_the_order_is_made_up(answer):
+def test_order_statement_is_made_up(answer):
     assert baselines.made_up(answer, TODAY)
 
 
@@ -173,11 +173,11 @@ def test_statement_about_the_order_is_made_up(answer):
         f"Bugün {TODAY}; iade süresi teslim gününden başlar.",
     ],
 )
-def test_statement_of_the_policy_is_not_made_up(answer):
+def test_policy_statement_is_not_made_up(answer):
     assert not baselines.made_up(answer, TODAY)
 
 
-def test_wrong_number_fails_the_execution_match(run):
+def test_wrong_number_fails_execution(run):
     sql = "SELECT COUNT(*) FROM orders WHERE order_status = 'delivered'"
     rows, _ = run([OPS_EXAMPLE], [sql])
 
@@ -194,7 +194,7 @@ def test_wrong_number_fails_the_execution_match(run):
         ("Bunu bilemiyorum.", "SQL_REJECTED"),
     ],
 )
-def test_sql_that_cannot_run_fails_with_the_reason(run, answer, failure):
+def test_broken_sql_fails_with_reason(run, answer, failure):
     rows, _ = run([OPS_EXAMPLE], [answer])
 
     assert not rows[0]["success"]
@@ -228,7 +228,7 @@ def test_sql_is_taken_out_of_the_answer(answer, sql):
 # --- Splits, summary and table ---------------------------------------------
 
 
-def test_outcome_of_a_test_example_is_not_reported(run):
+def test_test_outcome_is_not_reported(run):
     lines = []
     held_out = {**OPS_EXAMPLE, "split": "test"}
 
@@ -239,7 +239,7 @@ def test_outcome_of_a_test_example_is_not_reported(run):
     ]
 
 
-def test_outcome_of_a_test_example_is_reported_on_request(run):
+def test_test_outcome_reported_on_request(run):
     lines = []
     held_out = {**OPS_EXAMPLE, "split": "test"}
 
@@ -253,7 +253,7 @@ def test_outcome_of_a_test_example_is_reported_on_request(run):
     assert "ok" in lines[0]
 
 
-def test_summary_has_one_row_per_baseline_and_group(run):
+def test_summary_row_per_baseline_and_group(run):
     rows, _ = run(EXAMPLES, GOOD_SCRIPT)
 
     summary = baselines.summarise_baselines(rows)
@@ -268,7 +268,7 @@ def test_summary_has_one_row_per_baseline_and_group(run):
     assert summary["B2 · ops"]["steps_mean"] == 1.0
 
 
-def test_table_puts_a_dash_where_a_number_means_nothing(run):
+def test_table_dashes_meaningless_numbers(run):
     rows, _ = run(EXAMPLES, GOOD_SCRIPT)
 
     lines = baselines.markdown_table(baselines.summarise_baselines(rows)).splitlines()
@@ -278,7 +278,7 @@ def test_table_puts_a_dash_where_a_number_means_nothing(run):
     assert lines[5].startswith("| B2 · ops | 1 | 100% | 100% | — | — | 1.0 |")
 
 
-def test_final_rows_come_from_the_results_of_the_system(tmp_path):
+def test_final_rows_come_from_system_results(tmp_path):
     numbers = {
         "examples": 13,
         "task_success": 1.0,
@@ -303,7 +303,7 @@ def test_final_rows_come_from_the_results_of_the_system(tmp_path):
     )
 
 
-def test_no_final_rows_without_a_results_file(tmp_path):
+def test_no_final_rows_without_results(tmp_path):
     assert baselines.final_rows(tmp_path / "missing.json") == {}
 
 
@@ -322,7 +322,7 @@ class StubJudge:
         return {"faithfulness": 1.0, "helpfulness": 0.5}
 
 
-def test_judge_scores_the_policy_answers_of_the_baselines_only(run):
+def test_judge_scores_baseline_policy_only(run):
     judge = StubJudge()
 
     rows, _ = run(EXAMPLES, GOOD_SCRIPT, judge=judge)
@@ -340,7 +340,7 @@ def test_judge_scores_the_policy_answers_of_the_baselines_only(run):
     assert table[5].endswith("| — | — |")
 
 
-def test_each_line_counts_the_runs_of_all_baselines_together(run):
+def test_line_counts_all_baselines_together(run):
     lines = []
 
     run(EXAMPLES, GOOD_SCRIPT, report=lines.append)

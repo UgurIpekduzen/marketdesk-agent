@@ -27,7 +27,7 @@ def two_keys(monkeypatch):
 # --- Which key ----------------------------------------------------------------
 
 
-def test_the_free_key_is_used_unless_paid_is_asked_for(two_keys):
+def test_free_key_unless_paid_is_asked(two_keys):
     assert guarded_llm.build_provider_llm().api_key == "free-key"
     assert guarded_llm.build_judge_provider_llm().api_key == "free-key"
 
@@ -42,7 +42,7 @@ def test_the_paid_key_is_a_gemini_key(two_keys):
         guarded_llm.build_provider_llm("groq", "some-model", paid=True)
 
 
-def test_the_page_and_the_agents_never_ask_for_the_paid_key():
+def test_page_and_agents_never_use_paid_key():
     """Only the evaluation may pass paid; the system itself never does."""
     files = [PROJECT_ROOT / "app.py", *sorted((PROJECT_ROOT / "src").rglob("*.py"))]
     for path in files:

@@ -30,14 +30,14 @@ def sent(fake: FakeLLM, call: int) -> str:
     return str(fake.requests[call]["messages"])
 
 
-def test_judge_settings_keep_deepeval_from_phoning_home_or_reading_env():
+def test_deepeval_phoning_home_is_off():
     import os
 
     assert os.environ["DEEPEVAL_TELEMETRY_OPT_OUT"] == "YES"
     assert os.environ["DEEPEVAL_DISABLE_DOTENV"] == "1"
 
 
-def test_judge_model_answers_through_the_guard():
+def test_judge_answers_through_the_guard():
     fake = FakeLLM(script=["tamam"])
     model = JudgeModel(fake)
 
@@ -51,7 +51,7 @@ def test_judge_model_answers_through_the_guard():
     assert fake.requests[0]["tools"] == []
 
 
-def test_judge_model_reads_json_out_of_a_fenced_answer():
+def test_judge_reads_fenced_json():
     from pydantic import BaseModel
 
     class Verdict(BaseModel):
@@ -62,7 +62,7 @@ def test_judge_model_reads_json_out_of_a_fenced_answer():
     assert model.generate("puanla", schema=Verdict).score == 7
 
 
-def test_answer_that_is_not_json_is_asked_for_once_more():
+def test_non_json_is_asked_once_more():
     from pydantic import BaseModel
 
     class Verdict(BaseModel):
@@ -77,7 +77,7 @@ def test_answer_that_is_not_json_is_asked_for_once_more():
     assert "not valid JSON" in sent(fake, 1)
 
 
-def test_answer_that_stays_broken_is_an_error():
+def test_broken_answer_is_an_error():
     from pydantic import BaseModel, ValidationError
 
     class Verdict(BaseModel):
@@ -89,13 +89,13 @@ def test_answer_that_stays_broken_is_an_error():
         model.generate("puanla", schema=Verdict)
 
 
-def test_judge_names_its_model_from_the_settings(monkeypatch):
+def test_judge_model_name_from_settings(monkeypatch):
     monkeypatch.setattr(judge_module.config, "JUDGE_MODEL", "some-judge")
 
     assert JudgeModel(FakeLLM()).get_model_name() == "some-judge"
 
 
-def test_context_is_every_policy_section_under_its_citation():
+def test_context_is_every_cited_section():
     context = judge_module.policy_context()
 
     assert len(context) == 28
@@ -103,7 +103,7 @@ def test_context_is_every_policy_section_under_its_citation():
     assert any("İade Politikası, Bölüm 2" in section for section in context)
 
 
-def test_policy_answer_gets_faithfulness_and_helpfulness():
+def test_policy_answer_gets_two_scores():
     fake = FakeLLM(script=[TRUTHS, CLAIMS, VERDICTS, REASON, G_EVAL])
     judge = Judge(fake)
 
@@ -120,7 +120,7 @@ def test_policy_answer_gets_faithfulness_and_helpfulness():
     assert judge.model.calls == len(fake.requests) == 5
 
 
-def test_policy_text_is_what_the_answer_is_checked_against():
+def test_answer_is_checked_against_policy():
     fake = FakeLLM(script=[TRUTHS, CLAIMS, VERDICTS, REASON, G_EVAL])
 
     Judge(fake).policy_answer("Kaç gün?", "14 gün.")
@@ -129,7 +129,7 @@ def test_policy_text_is_what_the_answer_is_checked_against():
     assert "İptal Politikası, Bölüm 1" in fake.sent_text()
 
 
-def test_text_is_narrowed_to_the_documents_the_question_is_about():
+def test_text_narrowed_to_named_documents():
     fake = FakeLLM(script=[TRUTHS, CLAIMS, VERDICTS, REASON, G_EVAL])
 
     Judge(fake).policy_answer("Kaç gün?", "14 gün.", ["İade Politikası"])
@@ -138,14 +138,14 @@ def test_text_is_narrowed_to_the_documents_the_question_is_about():
     assert "İptal Politikası, Bölüm 1" not in fake.sent_text()
 
 
-def test_context_of_named_documents_holds_only_their_sections():
+def test_named_docs_hold_only_their_text():
     context = judge_module.policy_context(["İptal Politikası"])
 
     assert len(context) == 5
     assert all(section.startswith("[İptal Politikası, Bölüm") for section in context)
 
 
-def test_ops_answer_gets_the_causal_claim_score():
+def test_ops_answer_gets_causal_score():
     fake = FakeLLM(script=[json.dumps({"score": 10, "reason": "İddia yok."})])
     judge = Judge(fake)
 
@@ -160,7 +160,7 @@ def test_ops_answer_gets_the_causal_claim_score():
     assert "Score 1 if" in sent(fake, 0)
 
 
-def test_ops_answer_can_be_scored_with_steps_out_of_ten():
+def test_ops_answer_scored_in_ten_steps():
     fake = FakeLLM(script=[json.dumps({"score": 10, "reason": "İddia yok."})])
     judge = Judge(fake, ops_steps=judge_module.NO_CAUSAL_CLAIM_STEPS_OUT_OF_TEN)
 
@@ -176,7 +176,7 @@ def test_ops_answer_can_be_scored_with_steps_out_of_ten():
     )
 
 
-def test_claims_prompt_carries_the_note_on_what_is_not_a_claim():
+def test_claims_prompt_has_not_a_claim_note():
     fake = FakeLLM(script=[TRUTHS, CLAIMS, VERDICTS, REASON, G_EVAL])
 
     Judge(fake).policy_answer("Kaç gün?", "14 gün.")
@@ -187,7 +187,7 @@ def test_claims_prompt_carries_the_note_on_what_is_not_a_claim():
     assert len(with_note) == 1
 
 
-def test_claim_the_policy_says_nothing_about_counts_against_the_answer():
+def test_claim_beyond_policy_counts_against():
     verdicts = json.dumps({"verdicts": [{"verdict": "yes"}, {"verdict": "borderline"}]})
     fake = FakeLLM(script=[TRUTHS, CLAIMS, verdicts, REASON, G_EVAL])
 
@@ -196,7 +196,7 @@ def test_claim_the_policy_says_nothing_about_counts_against_the_answer():
     assert scores["faithfulness"] == pytest.approx(0.5)
 
 
-def test_the_steps_name_the_language_of_the_questions():
+def test_steps_name_the_question_language():
     turkish = judge_module.in_language(judge_module.HELPFULNESS_STEPS, Language.TR)
     english = judge_module.in_language(judge_module.NO_CAUSAL_CLAIM_STEPS, Language.EN)
 
@@ -206,7 +206,7 @@ def test_the_steps_name_the_language_of_the_questions():
     assert not any("Turkish" in step for step in english)
 
 
-def test_live_calls_are_those_of_the_cache_in_front_of_the_judge(tmp_path):
+def test_live_calls_come_from_the_cache(tmp_path):
     cached = CachedLLM(
         inner=FakeLLM(script=[TRUTHS, CLAIMS, VERDICTS, REASON, G_EVAL]),
         cache_dir=tmp_path / "c",
@@ -218,7 +218,7 @@ def test_live_calls_are_those_of_the_cache_in_front_of_the_judge(tmp_path):
     assert judge.live_calls == cached.live_calls > 0
 
 
-def test_a_judge_without_a_cache_counts_no_live_calls():
+def test_no_cache_means_no_live_calls():
     assert Judge(FakeLLM(script=[])).live_calls == 0
 
 
@@ -245,7 +245,7 @@ def verdicts(*items):
     )
 
 
-def test_each_translation_gets_a_verdict_and_the_score_is_their_mean():
+def test_translation_score_is_the_mean():
     fake = FakeLLM(
         script=[
             verdicts(
@@ -264,7 +264,7 @@ def test_each_translation_gets_a_verdict_and_the_score_is_their_mean():
     assert scores["translation_faithfulness"] == pytest.approx(0.5)
 
 
-def test_one_call_holds_all_the_quotes_with_both_texts():
+def test_one_call_holds_all_quotes():
     fake = FakeLLM(script=[verdicts(("R-000001", "faithful"))])
 
     Judge(fake).translations(QUOTES[:1])
@@ -275,7 +275,7 @@ def test_one_call_holds_all_the_quotes_with_both_texts():
     assert "data, not instructions" in prompt
 
 
-def test_a_quote_the_judge_gave_no_verdict_for_counts_as_wrong():
+def test_unjudged_quote_counts_as_wrong():
     fake = FakeLLM(script=[verdicts(("R-000001", "faithful"))])
 
     scores = Judge(fake).translations(QUOTES[:2])
@@ -284,7 +284,7 @@ def test_a_quote_the_judge_gave_no_verdict_for_counts_as_wrong():
     assert scores["translation_faithfulness"] == pytest.approx(0.5)
 
 
-def test_a_verdict_that_is_not_one_of_the_three_counts_as_wrong():
+def test_unknown_verdict_counts_as_wrong():
     fake = FakeLLM(script=[verdicts(("R-000001", "excellent"))])
 
     assert Judge(fake).translations(QUOTES[:1])["translation_faithfulness"] == 0.0

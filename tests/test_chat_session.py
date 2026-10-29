@@ -51,7 +51,7 @@ def open_session(synthetic_db_path, fake_policy_index):
         session.close()
 
 
-def test_customer_session_answers_through_the_router(open_session):
+def test_customer_answers_via_router(open_session):
     session = open_session(
         ["support", [("get_order_status", {"order_ref": "o_day14"})], "Teslim edildi."]
     )
@@ -64,7 +64,7 @@ def test_customer_session_answers_through_the_router(open_session):
     assert answer.reply.log.tool_calls == ["get_order_status"]
 
 
-def test_conversation_and_aliases_are_kept_between_questions(open_session):
+def test_conversation_and_aliases_persist(open_session):
     session = open_session(
         [
             "support",
@@ -85,7 +85,7 @@ def test_conversation_and_aliases_are_kept_between_questions(open_session):
     assert "error" not in result
 
 
-def test_request_is_written_only_after_approve(open_session, synthetic_db_path):
+def test_request_written_only_after_approve(open_session, synthetic_db_path):
     session = open_session(
         ["support", [("create_return_request", RETURN)], "Onayınız istenecek."]
     )
@@ -102,9 +102,7 @@ def test_request_is_written_only_after_approve(open_session, synthetic_db_path):
     assert "oluşturuldu" in message
 
 
-def test_a_message_is_refused_on_the_server_while_a_card_waits(
-    open_session, synthetic_db_path
-):
+def test_message_refused_while_card_waits(open_session, synthetic_db_path):
     session = open_session(
         ["support", [("create_return_request", RETURN)], "Onayınız istenecek."]
     )
@@ -120,7 +118,7 @@ def test_a_message_is_refused_on_the_server_while_a_card_waits(
     assert request_count(synthetic_db_path) == 3
 
 
-def test_after_the_answer_to_the_card_messages_are_taken_again(open_session):
+def test_messages_resume_after_card_answer(open_session):
     session = open_session(
         [
             "support",
@@ -136,7 +134,7 @@ def test_after_the_answer_to_the_card_messages_are_taken_again(open_session):
     assert session.ask("Başka bir sorum var.").display == "Buyurun."
 
 
-def test_the_refusal_while_a_card_waits_has_its_own_text():
+def test_card_wait_refusal_has_own_text():
     from src.i18n import Language
 
     for language in Language:
@@ -145,7 +143,7 @@ def test_the_refusal_while_a_card_waits_has_its_own_text():
         assert text != friendly_error(MessageTooLong("x"), language)
 
 
-def test_a_click_on_an_old_card_writes_nothing(open_session, synthetic_db_path):
+def test_old_card_click_writes_nothing(open_session, synthetic_db_path):
     session = open_session(
         ["support", [("create_return_request", RETURN)], "Onayınız istenecek."]
     )
@@ -172,7 +170,7 @@ def test_decline_writes_nothing(open_session, synthetic_db_path):
     assert request_count(synthetic_db_path) == at_start
 
 
-def test_ops_session_has_no_customer_and_answers_from_the_views(open_session):
+def test_ops_session_has_no_customer(open_session):
     session = open_session(
         [
             "ops_metric",
@@ -189,7 +187,7 @@ def test_ops_session_has_no_customer_and_answers_from_the_views(open_session):
     assert answer.awaiting_approval is None
 
 
-def test_customer_session_refuses_an_ops_question(open_session):
+def test_customer_refuses_ops_question(open_session):
     session = open_session(["ops_metric"])
 
     answer = session.ask("Geçen ayın cirosu ne kadar?")
@@ -197,7 +195,7 @@ def test_customer_session_refuses_an_ops_question(open_session):
     assert answer.refused
 
 
-def test_error_in_one_question_leaves_the_session_usable(open_session):
+def test_error_leaves_session_usable(open_session):
     session = open_session(["support", "Merhaba."])
     session._do(lambda router: _fail())
 
@@ -231,7 +229,7 @@ async def _divide():
     return 1 / 0
 
 
-def test_each_question_marks_the_session_as_used(open_session):
+def test_question_marks_session_used(open_session):
     session = open_session(["support", "Merhaba."])
     session.last_used = 0.0
 
@@ -240,7 +238,7 @@ def test_each_question_marks_the_session_as_used(open_session):
     assert session.last_used > 0.0
 
 
-def test_a_message_over_the_limit_never_reaches_the_model(open_session):
+def test_oversized_message_skips_the_model(open_session):
     # An empty script: a model call would fail the test.
     session = open_session([])
 
@@ -256,7 +254,7 @@ def test_a_message_at_the_limit_is_answered(open_session):
     assert answer.display == "Merhaba."
 
 
-def test_sessions_share_the_question_limit_and_approvals_do_not_count(
+def test_question_limit_ignores_approvals(
     open_session,
 ):
     limit = QuestionLimit(per_hour=1)
@@ -275,7 +273,7 @@ def model_requests(session):
     return session._provider_llm.inner.requests
 
 
-def test_the_call_budget_counts_every_model_call(open_session):
+def test_call_budget_counts_model_calls(open_session):
     # The router's call, one step with a tool, and the answer: three calls.
     budget = CallBudget(per_day=3)
     session = open_session(
@@ -290,7 +288,7 @@ def test_the_call_budget_counts_every_model_call(open_session):
     assert len(model_requests(session)) == 3
 
 
-def test_a_run_that_reaches_the_budget_stops_in_the_middle(open_session):
+def test_run_stops_when_budget_is_reached(open_session):
     budget = CallBudget(per_day=2)
     session = open_session(
         ["support", [("get_order_status", {"order_ref": "o_day14"})], "Teslim."],
@@ -316,9 +314,7 @@ def test_sessions_share_the_call_budget(open_session):
     assert model_requests(second) == []
 
 
-def test_clicks_on_the_card_use_no_model_call_and_write_once(
-    open_session, synthetic_db_path
-):
+def test_card_clicks_write_once_no_model(open_session, synthetic_db_path):
     budget = CallBudget(per_day=3)
     session = open_session(
         ["support", [("create_return_request", RETURN)], "Onayınız istenecek."],
@@ -335,7 +331,7 @@ def test_clicks_on_the_card_use_no_model_call_and_write_once(
     assert len(model_requests(session)) == 3
 
 
-def test_closing_ends_the_thread_and_refuses_more_work(open_session):
+def test_close_ends_thread_refuses_work(open_session):
     session = open_session([])
     thread = session._thread
 
@@ -348,7 +344,7 @@ def test_closing_ends_the_thread_and_refuses_more_work(open_session):
         session.ask("Merhaba")
 
 
-def test_closing_stops_the_order_server_process(open_session):
+def test_close_stops_order_server(open_session):
     before = child_processes()
     session = open_session([])
     while_open = child_processes()
@@ -359,7 +355,7 @@ def test_closing_stops_the_order_server_process(open_session):
     assert child_processes() == before
 
 
-def test_session_that_cannot_start_raises_and_leaves_no_thread(fake_policy_index):
+def test_failed_start_raises_no_thread(fake_policy_index):
     threads_before = threading.active_count()
 
     with pytest.raises(Exception):  # noqa: B017
@@ -368,7 +364,7 @@ def test_session_that_cannot_start_raises_and_leaves_no_thread(fake_policy_index
     assert threading.active_count() == threads_before
 
 
-def test_two_sessions_do_not_share_a_conversation(open_session):
+def test_sessions_do_not_share_conversation(open_session):
     first = open_session(["support", "Birinci."])
     second = open_session(["support", "İkinci."])
 
@@ -393,9 +389,7 @@ class CleansUpLater(FakeLLM):
         return await super().achat(messages, **kwargs)
 
 
-def test_tasks_left_on_the_loop_finish_when_the_session_closes(
-    synthetic_db_path, caplog
-):
+def test_close_finishes_pending_tasks(synthetic_db_path, caplog):
     CLEANED.clear()
     session = ChatSession(
         synthetic_db_path,

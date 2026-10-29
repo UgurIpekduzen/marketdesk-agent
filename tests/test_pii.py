@@ -16,7 +16,7 @@ from src.guardrails.pii import (
 RAW_ID = "0a1b2c3d4e5f60718293a4b5c6d7e8f9"
 
 
-def test_hash_is_the_first_ten_characters_of_a_keyed_hash(monkeypatch):
+def test_hash_is_ten_chars_of_a_keyed_hash(monkeypatch):
     monkeypatch.setenv(HASH_KEY_VARIABLE, "a-secret-key")
 
     expected = hmac.new(b"a-secret-key", RAW_ID.encode(), hashlib.sha256)
@@ -25,13 +25,13 @@ def test_hash_is_the_first_ten_characters_of_a_keyed_hash(monkeypatch):
     assert len(hash_id(RAW_ID)) == 10
 
 
-def test_hash_is_not_the_plain_hash_anyone_could_compute(monkeypatch):
+def test_hash_is_not_a_plain_hash(monkeypatch):
     monkeypatch.setenv(HASH_KEY_VARIABLE, "a-secret-key")
 
     assert hash_id(RAW_ID) != hashlib.sha256(RAW_ID.encode()).hexdigest()[:10]
 
 
-def test_same_id_gives_the_same_hash_and_another_id_another():
+def test_same_id_same_hash():
     assert hash_id(RAW_ID) == hash_id(RAW_ID)
     assert hash_id(RAW_ID) != hash_id(RAW_ID[::-1])
 
@@ -44,9 +44,7 @@ def test_another_key_gives_another_hash(monkeypatch):
     assert hash_id(RAW_ID) != first
 
 
-def test_without_a_key_one_is_made_for_the_process_and_a_warning_logged(
-    monkeypatch, caplog
-):
+def test_missing_key_is_made_with_a_warning(monkeypatch, caplog):
     monkeypatch.delenv(HASH_KEY_VARIABLE, raising=False)
     monkeypatch.setattr(pii, "_generated_key", None)
 
@@ -75,7 +73,7 @@ def test_text_without_ids_is_left_alone():
 # --- Numbers with check digits (all made up) -----------------------------------
 
 
-def test_a_turkish_id_number_is_known_by_its_check_digits():
+def test_tckn_is_known_by_check_digits():
     assert is_tckn("10000000146")
     assert is_tckn("100 000 001 46")
     assert not is_tckn("10000000147")  # last digit off
@@ -83,20 +81,20 @@ def test_a_turkish_id_number_is_known_by_its_check_digits():
     assert not is_tckn("1000000014")  # 10 digits
 
 
-def test_an_iban_is_known_by_its_check_digits():
+def test_iban_is_known_by_check_digits():
     assert is_iban("TR330006100519786457841326")
     assert is_iban("TR33 0006 1005 1978 6457 8413 26")
     assert not is_iban("TR340006100519786457841326")
 
 
-def test_a_card_number_is_known_by_its_luhn_check():
+def test_card_is_known_by_luhn():
     assert is_card("4111111111111111")
     assert is_card("4111 1111 1111 1111")
     assert not is_card("4111111111111112")
     assert not is_card("411111111111")  # 12 digits
 
 
-def test_a_date_is_never_a_number_with_check_digits():
+def test_date_is_not_a_checked_number():
     assert not is_card("2018-07-01 2018-07-31")
     assert not is_tckn("2018-07-01 1")
 
@@ -104,7 +102,7 @@ def test_a_date_is_never_a_number_with_check_digits():
 # --- Brazilian tax numbers, for the free text of reviews -------------------------
 
 
-def test_a_cpf_is_known_by_its_two_check_digits():
+def test_cpf_is_known_by_check_digits():
     from src.guardrails.pii import is_cpf
 
     assert is_cpf("529.982.247-25")
@@ -115,7 +113,7 @@ def test_a_cpf_is_known_by_its_two_check_digits():
     assert not is_cpf("1234567890")
 
 
-def test_a_cnpj_is_known_by_its_two_check_digits():
+def test_cnpj_is_known_by_check_digits():
     from src.guardrails.pii import is_cnpj
 
     assert is_cnpj("11.222.333/0001-81")

@@ -54,7 +54,7 @@ def router_log() -> RunLog:
     return log_with(tokens=(200, 1))
 
 
-def test_support_answer_shows_agent_tools_steps_and_tokens():
+def test_support_answer_shows_tools_steps():
     log = log_with(["get_order_status"], tokens=(2000, 50), llm_calls=2)
     answer = Answer(
         Intent.SUPPORT, "x", SupportReply("Teslim edildi.", log), router_log()
@@ -72,7 +72,7 @@ def test_support_answer_shows_agent_tools_steps_and_tokens():
     assert view.table is None
 
 
-def test_pending_request_is_carried_to_the_page():
+def test_pending_request_reaches_the_page():
     reply = SupportReply("Onayınız istenecek.", log_with(), PENDING)
 
     view = view_of(Answer(Intent.SUPPORT, "x", reply, router_log()))
@@ -80,7 +80,7 @@ def test_pending_request_is_carried_to_the_page():
     assert view.pending == PENDING
 
 
-def test_only_the_sections_the_answer_names_are_sources():
+def test_only_named_sections_are_sources():
     log = log_with(["search_policies"], [("search_policies", SECTIONS)])
     reply = SupportReply("14 gün içinde (İade Politikası, Bölüm 2).", log)
 
@@ -89,7 +89,7 @@ def test_only_the_sections_the_answer_names_are_sources():
     assert view.sources == ["İade Politikası, Bölüm 2"]
 
 
-def test_ops_answer_shows_table_sql_and_caveat_apart_from_the_text():
+def test_ops_answer_shows_table_sql_caveat():
     result = {"columns": ["state", "rate"], "rows": [["SP", 0.03]], "sql": "SELECT 1"}
     log = log_with(
         ["run_metric"], [("list_metrics", {"metrics": []}), ("run_metric", result)]
@@ -106,7 +106,7 @@ def test_ops_answer_shows_table_sql_and_caveat_apart_from_the_text():
     assert view.caveats == ["Gözlemsel."]
 
 
-def test_a_plain_total_shows_turkish_headers_and_no_repeated_numerator():
+def test_plain_total_has_turkish_headers():
     table = {
         "columns": ["purchase_month", "numerator", "value"],
         "rows": [["2018-01", 7269, 7269], ["2018-02", 6728, 6728]],
@@ -121,7 +121,7 @@ def test_a_plain_total_shows_turkish_headers_and_no_repeated_numerator():
     assert table["columns"] == ["purchase_month", "numerator", "value"]
 
 
-def test_a_ratio_keeps_its_numerator_and_denominator():
+def test_ratio_keeps_numerator_denominator():
     table = {
         "columns": ["customer_state", "numerator", "denominator", "value"],
         "rows": [["SP", 318, 41736, 0.0076]],
@@ -134,7 +134,7 @@ def test_a_ratio_keeps_its_numerator_and_denominator():
     assert shown["numbers"] == {"Pay": True, "Payda": True, "Değer": False}
 
 
-def test_free_sql_columns_keep_their_names_and_only_numbers_are_numeric():
+def test_free_sql_columns_keep_names():
     table = {
         "columns": ["payment_type", "orders", "share", "active"],
         "rows": [
@@ -152,7 +152,7 @@ def test_free_sql_columns_keep_their_names_and_only_numbers_are_numeric():
     assert shown["numbers"] == {"orders": True, "share": False}
 
 
-def test_the_page_table_shows_turkish_numbers_from_the_library_types():
+def test_page_table_shows_turkish_numbers():
     # The page hands the numbers over through pandas, which gives numpy
     # types, and turns a whole column with a gap into decimals.
     import pandas as pd
@@ -176,19 +176,19 @@ CAVEAT = (
 )
 
 
-def test_a_caveat_the_answer_already_says_is_not_shown_again():
+def test_said_caveat_is_not_repeated():
     text = f"2018-01: 7.269 sipariş.\n\n*{CAVEAT}*"
 
     assert unsaid_caveats(text, [CAVEAT]) == []
 
 
-def test_a_caveat_split_over_lines_in_the_answer_counts_as_said():
+def test_split_caveat_counts_as_said():
     text = "2018-01: 7.269 sipariş. " + CAVEAT.replace(" Kategori", "\nKategori")
 
     assert unsaid_caveats(text, [CAVEAT]) == []
 
 
-def test_a_caveat_left_out_or_cut_short_is_still_shown():
+def test_missing_caveat_is_still_shown():
     # As in a live answer: only the first sentence of the caveat was repeated.
     cut_short = "2018-01: 7.269 sipariş.\n\n*Not: Her durumdaki sipariş sayılır, iptal edilenler dahil.*"
 
@@ -196,7 +196,7 @@ def test_a_caveat_left_out_or_cut_short_is_still_shown():
     assert unsaid_caveats(cut_short, [CAVEAT]) == [CAVEAT]
 
 
-def test_ops_answer_does_not_repeat_the_caveat_it_already_says():
+def test_ops_answer_does_not_repeat_caveat():
     result = {"columns": ["value"], "rows": [[7269]], "sql": "SELECT 1"}
     log = log_with(["run_metric"], [("run_metric", result)])
     reply = OpsReply(
@@ -208,7 +208,7 @@ def test_ops_answer_does_not_repeat_the_caveat_it_already_says():
     assert view.caveats == []
 
 
-def test_ops_answer_that_gave_up_shows_the_tried_sql_and_no_table():
+def test_given_up_answer_shows_sql_no_table():
     result = {"columns": ["n"], "rows": [[1]], "sql": "SELECT 1"}
     log = log_with(["run_sql"], [("run_sql", result)])
     reply = OpsReply(messages.SQL_GAVE_UP, log, queries=["SELEC 1"], gave_up=True)
@@ -219,7 +219,7 @@ def test_ops_answer_that_gave_up_shows_the_tried_sql_and_no_table():
     assert view.queries_heading == messages.OPS_TRIED_SQL_HEADING
 
 
-def test_refused_message_is_shown_as_the_routers_answer():
+def test_refusal_is_the_routers_answer():
     answer = Answer(
         Intent.OPS_METRIC, messages.ROUTER_OPS_NOT_ALLOWED, None, router_log()
     )
@@ -232,7 +232,7 @@ def test_refused_message_is_shown_as_the_routers_answer():
     assert view.steps == 1
 
 
-def test_approval_card_names_order_reason_amount_and_level():
+def test_card_names_order_reason_amount():
     card = approval_card({**PENDING, "request_status": "PENDING_SENIOR"})
 
     assert card == {
@@ -243,7 +243,7 @@ def test_approval_card_names_order_reason_amount_and_level():
     }
 
 
-def test_the_card_only_writes_the_amount_differently():
+def test_card_only_formats_the_amount():
     pending = dict(PENDING)
 
     approval_card(pending)
@@ -304,7 +304,7 @@ def test_failure_becomes_a_plain_message(failure, message):
     assert friendly_error(failure) == message
 
 
-def test_failure_details_go_to_the_log_not_to_the_message(caplog):
+def test_failure_details_go_to_the_log(caplog):
     with caplog.at_level("ERROR"):
         message = friendly_error(RuntimeError("secret detail at line 42"))
 
@@ -320,7 +320,7 @@ def test_failure_details_go_to_the_log_not_to_the_message(caplog):
         "![x][ref]",
     ],
 )
-def test_a_markdown_image_in_an_answer_is_not_drawn(image, caplog):
+def test_markdown_image_is_not_drawn(image, caplog):
     log = log_with(["get_order_status"])
     answer = Answer(
         Intent.SUPPORT, "x", SupportReply(f"Teslim edildi. {image}", log), router_log()
@@ -342,7 +342,7 @@ def test_a_markdown_image_in_an_answer_is_not_drawn(image, caplog):
         "Bakın: ![a](<https://example.com/?veri=(SIP-1)>)",
     ],
 )
-def test_no_form_of_markdown_image_is_left_to_draw(text, caplog):
+def test_no_image_form_is_drawn(text, caplog):
     with caplog.at_level("WARNING"):
         cleaned = without_images(text)
 
@@ -351,13 +351,13 @@ def test_no_form_of_markdown_image_is_left_to_draw(text, caplog):
     assert "markdown images" in caplog.text
 
 
-def test_links_and_plain_text_are_left_as_they_are():
+def test_links_and_text_are_left_alone():
     text = "Ayrıntı için [iade politikası](https://example.com/iade) bölüm 2. Not! [a]"
 
     assert without_images(text) == text
 
 
-def test_tool_names_are_drawn_as_code_that_cannot_become_markdown():
+def test_tool_names_are_drawn_as_code():
     text = tools_text(["list_customer_orders", "![x](https://example.com/a.png)`"])
 
     assert text == "`list_customer_orders` → `![x](https://example.com/a.png)`"
@@ -390,11 +390,11 @@ def test_approval_card_in_english():
         (ZeroDivisionError("division by zero"), messages_en.UI_ERROR_GENERIC),
     ],
 )
-def test_failure_becomes_a_plain_english_message(failure, message):
+def test_failure_becomes_plain_english(failure, message):
     assert friendly_error(failure, Language.EN) == message
 
 
-def test_a_refused_message_is_the_english_routers_answer():
+def test_refusal_is_the_english_answer():
     answer = Answer(
         Intent.OPS_METRIC, messages_en.ROUTER_OPS_NOT_ALLOWED, None, router_log()
     )
@@ -404,7 +404,7 @@ def test_a_refused_message_is_the_english_routers_answer():
     assert view.agent == messages_en.UI_AGENT_ROUTER
 
 
-def test_an_english_answer_without_tools_says_so_and_drops_images():
+def test_english_no_tools_says_so():
     assert tools_text([], Language.EN) == messages_en.UI_STEPS_NO_TOOLS
     assert without_images("![x](https://a.example/p.png)", Language.EN) == (
         messages_en.UI_IMAGE_REMOVED
@@ -431,19 +431,19 @@ def test_every_form_of_link_loses_its_target(text, drawn):
     assert without_links(text) == drawn
 
 
-def test_an_answer_without_links_is_left_as_it_is():
+def test_linkless_answer_is_left_alone():
     text = "SIP-1 teslim edildi (İade Politikası, Bölüm 2). **133,14 BRL** iade."
 
     assert safe_markdown(text) == text
 
 
-def test_safe_markdown_takes_out_images_and_links_together():
+def test_safe_markdown_strips_both():
     text = "![x](https://evil.example/i.png) [öde](https://evil.example/p)"
 
     assert safe_markdown(text) == f"{messages.UI_IMAGE_REMOVED} öde"
 
 
-def test_an_address_in_an_escaped_text_is_drawn_as_code():
+def test_escaped_address_is_drawn_as_code():
     # Escaping alone does not stop markdown from making the address a link.
     assert escape_markdown("Ay = https://evil.example/x.y") == (
         "Ay = `https://evil.example/x.y`"

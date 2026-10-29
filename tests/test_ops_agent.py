@@ -81,7 +81,7 @@ def test_the_agent_has_four_read_only_tools(agent):
         assert len(tool.metadata.description) <= 1024
 
 
-def test_system_prompt_lists_the_views_with_their_columns(agent, fake):
+def test_prompt_lists_views_and_columns(agent, fake):
     fake.script = ["Merhaba."]
 
     ask(agent, "Merhaba")
@@ -103,7 +103,7 @@ def test_schema_is_read_from_the_database(synthetic_db_path):
     assert "v_return_requests(return_request_key, order_key, reason," in schema
 
 
-def test_system_prompt_holds_the_rules_the_agent_must_follow(synthetic_db_path):
+def test_prompt_holds_the_agent_rules(synthetic_db_path):
     for rule in (
         "Call list_metrics",
         "Always prefer a metric to your own SQL",
@@ -125,7 +125,7 @@ def test_system_prompt_holds_the_rules_the_agent_must_follow(synthetic_db_path):
         assert rule in system_prompt(synthetic_db_path), rule
 
 
-def test_run_metric_tool_has_one_typed_argument_per_filter(agent):
+def test_run_metric_has_typed_filter_args(agent):
     tool = next(t for t in agent._agent.tools if t.metadata.name == "run_metric")
     properties = tool.metadata.get_parameters_dict()["properties"]
 
@@ -145,7 +145,7 @@ def test_run_metric_tool_has_one_typed_argument_per_filter(agent):
     assert "filters" not in properties
 
 
-def test_period_and_dimension_filters_reach_the_metric(agent, fake):
+def test_filters_reach_the_metric(agent, fake):
     fake.script = [
         [
             (
@@ -176,7 +176,7 @@ def test_period_and_dimension_filters_reach_the_metric(agent, fake):
 # --- Metrics --------------------------------------------------------------
 
 
-def test_metric_answer_carries_its_sql_and_caveat(agent, fake):
+def test_metric_answer_has_sql_and_caveat(agent, fake):
     fake.script = [
         [("list_metrics", {})],
         [("run_metric", {"metric_name": "late_delivery_rate"})],
@@ -229,7 +229,7 @@ def test_metric_with_filters_and_grouping(agent, fake):
     assert tool_results(fake)[0]["rows"] == [["2018-06", 29, 29]]
 
 
-def test_metric_error_is_passed_to_the_model_and_adds_no_source(agent, fake):
+def test_metric_error_adds_no_source(agent, fake):
     fake.script = [
         [("run_metric", {"metric_name": "profit"})],
         "Kâr verisi yok.",
@@ -243,7 +243,7 @@ def test_metric_error_is_passed_to_the_model_and_adds_no_source(agent, fake):
     assert reply.display == "Kâr verisi yok."
 
 
-def test_a_metric_call_is_recorded_as_made_and_kept_out_of_the_display(agent, fake):
+def test_metric_call_recorded_not_displayed(agent, fake):
     fake.script = [
         [
             (
@@ -276,7 +276,7 @@ def test_a_metric_call_is_recorded_as_made_and_kept_out_of_the_display(agent, fa
     assert messages.COMPUTED_HEADING not in reply.display
 
 
-def test_a_failed_metric_call_and_free_sql_record_no_computation(agent, fake):
+def test_failed_calls_record_no_computation(agent, fake):
     fake.script = [
         [("run_metric", {"metric_name": "profit"})],
         [("run_sql", {"query": GOOD_SQL})],
@@ -301,7 +301,7 @@ def test_same_caveat_is_shown_once(agent, fake):
     assert len(reply.caveats) == 1
 
 
-def test_ranking_is_done_by_the_tool_not_by_the_model(agent, fake):
+def test_tool_ranks_not_the_model(agent, fake):
     fake.script = [
         [
             (
@@ -338,7 +338,7 @@ def test_sql_answer_carries_the_sql_that_ran(agent, fake):
     assert ["delivered", 22] in tool_results(fake)[0]["rows"]
 
 
-def test_query_corrected_on_the_second_try_gives_a_normal_answer(agent, fake):
+def test_corrected_query_gives_normal_answer(agent, fake):
     fake.script = [
         [("run_sql", {"query": BAD_SQL})],
         [("run_sql", {"query": "SELECT customer_state FROM v_orders LIMIT 1"})],
@@ -357,7 +357,7 @@ def test_query_corrected_on_the_second_try_gives_a_normal_answer(agent, fake):
     assert reply.queries == ["SELECT customer_state FROM v_orders LIMIT 1"]
 
 
-def test_a_join_of_items_and_payments_is_refused_and_corrected(agent, fake):
+def test_items_payments_join_is_corrected(agent, fake):
     joined = (
         "SELECT AVG(f) FROM (SELECT SUM(i.freight_value) AS f FROM v_order_items "
         "AS i JOIN v_order_payments AS p USING (order_key) GROUP BY i.order_key)"
@@ -386,7 +386,7 @@ def test_a_join_of_items_and_payments_is_refused_and_corrected(agent, fake):
     assert reply.queries[0].startswith(right)
 
 
-def test_wrong_column_three_times_ends_in_could_not_answer(agent, fake):
+def test_three_wrong_columns_end_unanswered(agent, fake):
     attempts = [
         "SELECT customer_city FROM v_orders",
         "SELECT city FROM v_orders",
@@ -430,7 +430,7 @@ def test_fourth_query_is_not_run(agent, fake, synthetic_db_path):
     assert len(reply.queries) == 3
 
 
-def test_validator_refusals_count_as_failed_attempts(agent, fake):
+def test_refusals_count_as_failed_attempts(agent, fake):
     fake.script = [
         [("run_sql", {"query": "SELECT * FROM customers"})],
         [("run_sql", {"query": "DROP TABLE orders"})],
@@ -450,7 +450,7 @@ def test_validator_refusals_count_as_failed_attempts(agent, fake):
     ]
 
 
-def test_metric_found_after_the_limit_is_a_real_answer(agent, fake):
+def test_metric_after_the_limit_is_an_answer(agent, fake):
     fake.script = [
         *(
             [("run_sql", {"query": f"SELECT missing_{n} FROM v_orders"})]
@@ -467,7 +467,7 @@ def test_metric_found_after_the_limit_is_a_real_answer(agent, fake):
     assert len(reply.queries) == 1
 
 
-def test_correction_count_starts_again_with_the_next_question(agent, fake):
+def test_corrections_reset_per_question(agent, fake):
     fake.script = [
         *(
             [("run_sql", {"query": f"SELECT missing_{n} FROM v_orders"})]
@@ -520,7 +520,7 @@ def test_model_is_reached_through_the_guard(agent, fake):
     assert "[id] siparişini ve [email] müşterisini bul." in sent
 
 
-def test_nothing_personal_reaches_the_model_from_the_views(agent, fake):
+def test_views_send_no_personal_data(agent, fake):
     fake.script = [
         [("run_sql", {"query": "SELECT * FROM v_orders"})],
         [("run_sql", {"query": "SELECT * FROM v_order_items"})],
@@ -548,7 +548,7 @@ def test_long_result_is_cut_for_the_model():
     assert len(result["rows"]) == MAX_ROWS_FOR_MODEL + 50  # the original is untouched
 
 
-def test_short_result_and_errors_are_left_alone():
+def test_short_results_are_left_alone():
     assert cut_rows({"rows": [[1]]}) == {"rows": [[1]]}
     assert cut_rows({"error": "SQL_ERROR"}) == {"error": "SQL_ERROR"}
 
@@ -569,7 +569,7 @@ def test_third_identical_call_is_not_run(agent, fake):
     ]
 
 
-def test_calls_past_the_tool_limit_of_a_message_are_not_run(agent, fake):
+def test_calls_past_tool_limit_do_not_run(agent, fake):
     # Twenty different queries asked for in one step: only the first twelve
     # reach the database.
     calls = [
@@ -613,7 +613,7 @@ def small_threshold(monkeypatch):
     monkeypatch.setattr(config, "SELLER_REPORT_MIN_ITEMS", 1)
 
 
-def test_the_seller_report_tool_takes_a_period_and_nothing_else(agent):
+def test_seller_report_takes_only_a_period(agent):
     tool = next(t for t in agent._agent.tools if t.metadata.name == "seller_report")
 
     assert set(tool.metadata.get_parameters_dict()["properties"]) == {
@@ -622,9 +622,7 @@ def test_the_seller_report_tool_takes_a_period_and_nothing_else(agent):
     }
 
 
-def test_the_seller_report_answer_carries_its_table_sql_and_caveats(
-    agent, fake, small_threshold
-):
+def test_seller_report_has_table_sql_caveats(agent, fake, small_threshold):
     fake.script = [[("seller_report", {})], "S-0001 en çok geç kargolayan."]
 
     reply = ask(agent, "Hangi satıcılar kargoyu geç veriyor?")
@@ -654,7 +652,7 @@ def test_the_seller_report_answer_carries_its_table_sql_and_caveats(
     assert "s_main" not in json.dumps(result) + str(reply.table) + str(reply.queries)
 
 
-def test_the_seller_report_passes_the_period_on(agent, fake, small_threshold):
+def test_seller_report_passes_the_period(agent, fake, small_threshold):
     fake.script = [
         [("seller_report", {"purchase_from": "2018-07-01"})],
         "Temmuz ve sonrası.",
@@ -665,7 +663,7 @@ def test_the_seller_report_passes_the_period_on(agent, fake, small_threshold):
     assert reply.computations[0]["filters"] == {"purchase_from": "2018-07-01"}
 
 
-def test_a_bad_period_is_an_error_answer_and_shows_no_table(agent, fake):
+def test_bad_period_gives_error_no_table(agent, fake):
     fake.script = [[("seller_report", {"purchase_from": "dün"})], "Tarih geçersiz."]
 
     reply = ask(agent, "Dünden beri hangi satıcılar?")
@@ -675,5 +673,5 @@ def test_a_bad_period_is_an_error_answer_and_shows_no_table(agent, fake):
     assert reply.queries == []
 
 
-def test_the_prompt_sends_seller_overviews_to_the_report(synthetic_db_path):
+def test_prompt_routes_sellers_to_report(synthetic_db_path):
     assert "call seller_report once" in system_prompt(synthetic_db_path)

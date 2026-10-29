@@ -78,7 +78,7 @@ def test_only_the_rep_session_gets_a_queue(synthetic_db_path, identity):
         ReviewQueue(synthetic_db_path, identity)
 
 
-def test_a_database_without_tickets_gets_the_table(synthetic_db_path):
+def test_missing_tickets_table_is_created(synthetic_db_path):
     conn = sqlite3.connect(synthetic_db_path)
     conn.execute(f"DROP TABLE {TICKETS_TABLE}")
     conn.close()
@@ -89,7 +89,7 @@ def test_a_database_without_tickets_gets_the_table(synthetic_db_path):
 # --- What the rep sees --------------------------------------------------------
 
 
-def test_waiting_requests_show_hashes_and_no_raw_id(queue, synthetic_db_path):
+def test_waiting_requests_show_hashes(queue, synthetic_db_path):
     review = add_request(synthetic_db_path)
     senior = add_request(synthetic_db_path, "o_day15", SENIOR, 620.0)
 
@@ -107,9 +107,7 @@ def test_waiting_requests_show_hashes_and_no_raw_id(queue, synthetic_db_path):
     assert "o_day14" not in repr(rows)
 
 
-def test_tickets_are_shown_high_priority_first_with_the_customer_hash(
-    queue, synthetic_db_path
-):
+def test_tickets_show_high_priority_first(queue, synthetic_db_path):
     add_ticket(synthetic_db_path, "Önce gelen.", "normal")
     add_ticket(synthetic_db_path, "Acil olan.", "high")
 
@@ -124,9 +122,7 @@ def test_tickets_are_shown_high_priority_first_with_the_customer_hash(
 
 
 @pytest.mark.parametrize("decision", [RequestStatus.APPROVED, RequestStatus.REJECTED])
-def test_a_request_waiting_for_review_is_decided_once(
-    queue, synthetic_db_path, decision
-):
+def test_waiting_request_is_decided_once(queue, synthetic_db_path, decision):
     request_id = add_request(synthetic_db_path)
 
     assert queue.decide(request_id, decision) == {
@@ -148,7 +144,7 @@ def test_a_request_waiting_for_review_is_decided_once(
 
 
 @pytest.mark.parametrize("decision", [RequestStatus.APPROVED, RequestStatus.REJECTED])
-def test_a_senior_request_cannot_be_decided_here(queue, synthetic_db_path, decision):
+def test_senior_request_is_not_decided_here(queue, synthetic_db_path, decision):
     request_id = add_request(synthetic_db_path, status=SENIOR, amount=620.0)
 
     answer = queue.decide(request_id, decision)
@@ -164,14 +160,14 @@ def test_an_unknown_request_is_not_found(queue):
 @pytest.mark.parametrize(
     "decision", ["PENDING_REVIEW", "PENDING_SENIOR", "DELETED", ""]
 )
-def test_only_approve_and_reject_are_decisions(queue, synthetic_db_path, decision):
+def test_only_approve_and_reject_decide(queue, synthetic_db_path, decision):
     request_id = add_request(synthetic_db_path)
 
     assert queue.decide(request_id, decision)["error"] == "INVALID_DECISION"
     assert status_of(synthetic_db_path, request_id) == REVIEW
 
 
-def test_a_decision_changes_one_row_and_no_order(queue, synthetic_db_path):
+def test_decision_changes_one_row_no_order(queue, synthetic_db_path):
     first = add_request(synthetic_db_path)
     second = add_request(synthetic_db_path, "o_day15")
     conn = sqlite3.connect(synthetic_db_path)
@@ -186,7 +182,7 @@ def test_a_decision_changes_one_row_and_no_order(queue, synthetic_db_path):
     assert status_of(synthetic_db_path, second) == REVIEW
 
 
-def test_only_the_decided_requests_shown_are_the_latest(queue, synthetic_db_path):
+def test_decided_requests_show_the_latest(queue, synthetic_db_path):
     ids = [add_request(synthetic_db_path, f"o_{n}") for n in range(DECIDED_SHOWN + 3)]
     for request_id in ids:
         queue.decide(request_id, RequestStatus.REJECTED)
@@ -196,7 +192,7 @@ def test_only_the_decided_requests_shown_are_the_latest(queue, synthetic_db_path
     assert shown == list(reversed(ids))[:DECIDED_SHOWN]
 
 
-def test_a_decision_is_logged_without_raw_ids(queue, synthetic_db_path, caplog):
+def test_decision_log_has_no_raw_ids(queue, synthetic_db_path, caplog):
     request_id = add_request(synthetic_db_path)
 
     with caplog.at_level(logging.INFO, logger="src.tools.review_queue"):
@@ -242,9 +238,7 @@ def test_an_unknown_ticket_is_not_found(queue):
         "DROP TABLE orders",
     ],
 )
-def test_the_console_connection_may_change_only_the_status(
-    queue, synthetic_db_path, sql
-):
+def test_console_may_change_only_status(queue, synthetic_db_path, sql):
     add_request(synthetic_db_path)
     add_ticket(synthetic_db_path)
     before = hashlib.sha256(synthetic_db_path.read_bytes()).hexdigest()
@@ -280,9 +274,7 @@ def decide_all_at_once(queue, request_id, decisions):
     return answers
 
 
-def test_a_request_decided_by_many_reps_at_once_is_decided_exactly_once(
-    queue, synthetic_db_path
-):
+def test_request_decided_once_by_many_reps(queue, synthetic_db_path):
     request_id = add_request(synthetic_db_path)
     decisions = [RequestStatus.APPROVED, RequestStatus.REJECTED] * 6
 
@@ -296,7 +288,7 @@ def test_a_request_decided_by_many_reps_at_once_is_decided_exactly_once(
     assert status_of(synthetic_db_path, request_id) == won[0]["status"]
 
 
-def test_a_senior_request_stays_untouched_under_many_clicks(queue, synthetic_db_path):
+def test_senior_request_survives_many_clicks(queue, synthetic_db_path):
     request_id = add_request(synthetic_db_path, status=SENIOR, amount=900.0)
 
     answers = decide_all_at_once(
@@ -307,9 +299,7 @@ def test_a_senior_request_stays_untouched_under_many_clicks(queue, synthetic_db_
     assert status_of(synthetic_db_path, request_id) == SENIOR
 
 
-def test_a_ticket_closed_by_many_reps_at_once_is_closed_exactly_once(
-    queue, synthetic_db_path
-):
+def test_ticket_closed_once_by_many_reps(queue, synthetic_db_path):
     ticket = add_ticket(synthetic_db_path)
     ticket_id = int(str(ticket).split("-")[-1])
     start = threading.Barrier(8)

@@ -56,14 +56,14 @@ def execute(db_path, sql):
     conn.close()
 
 
-def test_all_checks_pass_on_a_correct_database(db_path, raw_dir):
+def test_correct_database_passes_all_checks(db_path, raw_dir):
     checks = run(db_path, raw_dir)
 
     assert failed_names(checks) == []
     assert any(check.name == "return_requests table exists" for check in checks)
 
 
-def test_wrong_row_count_fails_and_reports_both_numbers(db_path, raw_dir):
+def test_wrong_row_count_reports_both(db_path, raw_dir):
     wrong = smoke.Expected(
         raw_rows=EXPECTED.raw_rows,
         raw_order_status=EXPECTED.raw_order_status,
@@ -90,7 +90,7 @@ def test_wrong_raw_row_count_fails(db_path, raw_dir):
     ]
 
 
-def test_unexpected_raw_order_status_is_reported(db_path, raw_dir):
+def test_unexpected_raw_status_is_reported(db_path, raw_dir):
     path = raw_dir / "olist_orders_dataset.csv"
     path.write_text(path.read_text().replace("o3,c3,shipped", "o3,c3,lost"))
 
@@ -116,7 +116,7 @@ def test_unexpected_order_status_is_reported(db_path, raw_dir):
     ]
 
 
-def test_order_on_simulated_today_is_reported(db_path, raw_dir):
+def test_order_on_today_is_reported(db_path, raw_dir):
     execute(
         db_path,
         "UPDATE orders SET order_purchase_timestamp = '2018-09-01 00:00:00' "
@@ -139,13 +139,13 @@ def test_rows_without_an_order_are_reported(db_path, raw_dir):
     ]
 
 
-def test_missing_return_requests_table_is_reported(db_path, raw_dir):
+def test_missing_requests_table_is_reported(db_path, raw_dir):
     execute(db_path, "DROP TABLE return_requests")
 
     assert failed_names(run(db_path, raw_dir)) == ["return_requests table exists"]
 
 
-def test_rows_in_return_requests_do_not_fail_the_check(db_path, raw_dir):
+def test_request_rows_do_not_fail_the_check(db_path, raw_dir):
     execute(
         db_path,
         "INSERT INTO return_requests "
@@ -156,14 +156,14 @@ def test_rows_in_return_requests_do_not_fail_the_check(db_path, raw_dir):
     assert failed_names(run(db_path, raw_dir)) == []
 
 
-def test_missing_raw_folder_skips_the_raw_checks(db_path, tmp_path):
+def test_missing_raw_folder_skips_raw_checks(db_path, tmp_path):
     checks = run(db_path, tmp_path / "no-raw-here")
 
     assert failed_names(checks) == []
     assert not any(check.name.startswith("raw ") for check in checks)
 
 
-def test_missing_database_raises_a_clear_error(raw_dir, tmp_path):
+def test_missing_database_raises_clearly(raw_dir, tmp_path):
     with pytest.raises(FileNotFoundError, match="Run the load step first"):
         run(tmp_path / "missing.db", raw_dir)
 
@@ -176,7 +176,7 @@ def test_database_is_not_changed(db_path, raw_dir):
     assert hashlib.sha256(db_path.read_bytes()).hexdigest() == before
 
 
-def test_main_returns_1_and_explains_when_the_database_is_missing(tmp_path, capsys):
+def test_main_explains_a_missing_database(tmp_path, capsys):
     code = smoke.main(["--db", str(tmp_path / "missing.db"), "--src", str(tmp_path)])
 
     assert code == 1
@@ -193,7 +193,7 @@ def test_main_returns_1_when_a_check_fails(db_path, raw_dir, capsys):
     assert "Smoke test FAILED" in output
 
 
-def test_script_runs_as_a_file_from_another_working_directory(tmp_path):
+def test_runs_as_file_from_another_directory(tmp_path):
     script = Path(__file__).resolve().parent.parent / "scripts" / "smoke.py"
 
     result = subprocess.run(

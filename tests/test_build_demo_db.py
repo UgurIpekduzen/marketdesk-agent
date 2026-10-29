@@ -35,7 +35,7 @@ def tables(db_path):
         conn.close()
 
 
-def test_builds_the_database_without_the_geolocation_table(fake_fetch, tmp_path):
+def test_build_skips_geolocation_table(fake_fetch, tmp_path):
     db_path = tmp_path / "data" / "marketdesk.db"
 
     assert build_demo_db.ensure_database(db_path) is True
@@ -45,7 +45,7 @@ def test_builds_the_database_without_the_geolocation_table(fake_fetch, tmp_path)
     assert "geolocation" not in tables(db_path)
 
 
-def test_the_downloaded_files_are_deleted_afterwards(fake_fetch, tmp_path):
+def test_downloaded_files_are_deleted(fake_fetch, tmp_path):
     build_demo_db.ensure_database(tmp_path / "marketdesk.db")
 
     (folder,) = fake_fetch
@@ -62,7 +62,7 @@ def test_an_existing_database_is_left_alone(fake_fetch, tmp_path):
     assert db_path.read_bytes() == b"already here"
 
 
-def test_a_failed_download_leaves_no_database(monkeypatch, tmp_path):
+def test_failed_download_leaves_no_database(monkeypatch, tmp_path):
     def fail(output_dir):
         raise OSError("network is down")
 
