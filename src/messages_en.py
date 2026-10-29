@@ -356,6 +356,7 @@ UI_REVIEW_NOTE = (
 UI_REVIEW_REQUESTS_TAB = "Return requests ({count})"
 UI_REVIEW_TICKETS_TAB = "Support tickets ({count})"
 UI_REVIEW_TRACING_TAB = "Error tracing"
+UI_TRACING_LOAD = "Read the counts"
 UI_REVIEW_NO_REQUESTS = "No return requests are waiting."
 UI_REVIEW_NO_TICKETS = "No support tickets are open."
 UI_REVIEW_DECIDED = "Decided (last {count})"

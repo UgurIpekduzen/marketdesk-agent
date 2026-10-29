@@ -472,6 +472,7 @@ UI_REVIEW_NOTE = (
 UI_REVIEW_REQUESTS_TAB = "İade talepleri ({count})"
 UI_REVIEW_TICKETS_TAB = "Destek biletleri ({count})"
 UI_REVIEW_TRACING_TAB = "Hata izleme"
+UI_TRACING_LOAD = "Sayıları oku"
 UI_REVIEW_NO_REQUESTS = "Bekleyen iade talebi yok."
 UI_REVIEW_NO_TICKETS = "Açık destek bileti yok."
 UI_REVIEW_DECIDED = "Karara bağlananlar (son {count})"

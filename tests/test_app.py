@@ -792,7 +792,27 @@ def add_ticket(db_path, summary) -> None:
         conn.close()
 
 
-def test_rep_console_has_a_tab_that_counts_the_error_kinds(open_page):
+def test_rep_console_does_not_read_the_traces_until_asked(open_page, monkeypatch):
+    reads = []
+    open_page.observations = [{"name": "message", "metadata": {}}]
+    page = open_page(role=messages.UI_START_REP)
+    monkeypatch.setattr(
+        tracing_dashboard,
+        "fetch_observations",
+        lambda *args, **kwargs: reads.append(1) or [],
+    )
+    st.cache_data.clear()
+
+    page = page.run()
+
+    assert not page.exception
+    assert messages.UI_REVIEW_TRACING_TAB in [tab.label for tab in page.tabs]
+    assert messages.UI_TRACING_LOAD in labels(page)
+    assert reads == []
+    assert not page.metric
+
+
+def test_the_tracing_tab_counts_the_error_kinds_when_asked(open_page):
     open_page.observations = [
         {"name": "message", "metadata": {tracing_dashboard.ERROR_KEY: "STEP_LIMIT"}},
         {
@@ -805,11 +825,11 @@ def test_rep_console_has_a_tab_that_counts_the_error_kinds(open_page):
         },
         {"name": "message", "metadata": {}},
     ]
-
     page = open_page(role=messages.UI_START_REP)
 
+    page = click(page, messages.UI_TRACING_LOAD)
+
     assert not page.exception
-    assert messages.UI_REVIEW_TRACING_TAB in [tab.label for tab in page.tabs]
     values = {metric.label: metric.value for metric in page.metric}
     assert values == {
         messages.DASH_OBSERVATIONS: "4",
@@ -818,8 +838,26 @@ def test_rep_console_has_a_tab_that_counts_the_error_kinds(open_page):
     }
 
 
+def test_the_counts_stay_while_the_queue_is_used(open_page):
+    open_page.observations = [
+        {"name": "message", "metadata": {tracing_dashboard.ERROR_KEY: "STEP_LIMIT"}}
+    ]
+    page = open_page(role=messages.UI_START_REP)
+    page = click(page, messages.UI_TRACING_LOAD)
+
+    page = page.run()
+
+    assert {metric.label for metric in page.metric} == {
+        messages.DASH_OBSERVATIONS,
+        messages.DASH_ERRORS,
+        messages.DASH_KINDS,
+    }
+
+
 def test_the_tracing_tab_says_when_no_error_is_marked(open_page):
     page = open_page(role=messages.UI_START_REP)
+
+    page = click(page, messages.UI_TRACING_LOAD)
 
     assert not page.exception
     assert messages.DASH_NO_ERRORS in [info.value for info in page.info]
@@ -834,13 +872,26 @@ def test_the_tracing_tab_says_why_it_cannot_read_and_the_queue_still_works(
     page = open_page(role=messages.UI_START_REP)
     monkeypatch.setattr(tracing_dashboard, "fetch_observations", refuse)
     st.cache_data.clear()
-    page = page.run()
+
+    page = click(page, messages.UI_TRACING_LOAD)
 
     assert not page.exception
     assert messages.DASH_REQUEST_FAILED.format(status=401) in [
         warning.value for warning in page.warning
     ]
     assert messages.UI_REVIEW_APPROVE in labels(page)
+
+
+def test_signing_out_forgets_the_counts(open_page):
+    open_page.observations = [
+        {"name": "message", "metadata": {tracing_dashboard.ERROR_KEY: "STEP_LIMIT"}}
+    ]
+    page = open_page(role=messages.UI_START_REP)
+    page = click(page, messages.UI_TRACING_LOAD)
+
+    page = click(page, messages.UI_CHANGE)
+
+    assert "tracing_result" not in page.session_state
 
 
 def test_rep_session_shows_queue_no_chat(open_page):

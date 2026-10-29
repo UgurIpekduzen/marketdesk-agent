@@ -187,9 +187,19 @@ def error_counts() -> tuple:
 
 
 def draw_error_tracing(texts) -> None:
-    """How often each error kind is marked in the traces (numbers only)."""
+    """How often each error kind is marked in the traces (numbers only).
+
+    Read only when asked: Streamlit draws every tab at every page run, and the
+    read takes seconds (more if Langfuse is slow), which the queue must not
+    wait for.
+    """
     st.caption(texts.DASH_CAPTION)
-    observed, rows, failure = error_counts()
+    if st.button(texts.UI_TRACING_LOAD, key="tracing_load"):
+        st.session_state.tracing_result = error_counts()
+    result = st.session_state.get("tracing_result")
+    if result is None:
+        return
+    observed, rows, failure = result
     if failure is not None:
         st.warning(tracing_dashboard.failure_text(texts, failure))
         return
@@ -264,6 +274,7 @@ def sign_out() -> None:
         "examples",
         "review_notice",
         "language_notice",
+        "tracing_result",
     ):
         st.session_state.pop(name, None)
 
