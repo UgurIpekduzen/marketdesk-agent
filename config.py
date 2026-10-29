@@ -190,7 +190,17 @@ TRACING_TARGET = os.environ.get("TRACING_TARGET", "off")
 PAUSE_VARIABLE = "MARKETDESK_PAUSED"
 # "phoenix" is the service name inside the Compose network.
 TRACING_PHOENIX_ENDPOINT = "http://phoenix:6006/v1/traces"
-TRACING_LANGFUSE_ENDPOINT = "https://cloud.langfuse.com/api/public/otel/v1/traces"
+
+
+def langfuse_endpoint(base_url: str) -> str:
+    """Where Langfuse Cloud takes spans, for the region its keys belong to."""
+    return base_url.rstrip("/") + "/api/public/otel/v1/traces"
+
+
+# Langfuse keys belong to one region: the EU one (the default) or
+# https://us.cloud.langfuse.com. Keys of one are refused by the other.
+LANGFUSE_BASE_URL = os.environ.get("LANGFUSE_BASE_URL", "https://cloud.langfuse.com")
+TRACING_LANGFUSE_ENDPOINT = langfuse_endpoint(LANGFUSE_BASE_URL)
 
 # --- Demo page ----------------------------------------------------------
 

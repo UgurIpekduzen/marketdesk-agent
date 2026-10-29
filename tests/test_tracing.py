@@ -396,6 +396,14 @@ def test_phoenix_is_local_and_needs_no_key():
     assert isinstance(tracing.target_exporter("phoenix"), SpanExporter)
 
 
+def test_langfuse_endpoint_follows_the_region_of_the_keys():
+    eu = config.langfuse_endpoint("https://cloud.langfuse.com")
+    us = config.langfuse_endpoint("https://us.cloud.langfuse.com/")
+
+    assert eu == "https://cloud.langfuse.com/api/public/otel/v1/traces"
+    assert us == "https://us.cloud.langfuse.com/api/public/otel/v1/traces"
+
+
 def test_langfuse_signs_in_with_keys(monkeypatch):
     monkeypatch.setenv("LANGFUSE_PUBLIC_KEY", "pk-test")
     monkeypatch.setenv("LANGFUSE_SECRET_KEY", "sk-test")
