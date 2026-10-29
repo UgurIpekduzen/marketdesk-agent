@@ -293,6 +293,24 @@ def multi_turn_attacks(attacker: JudgeModel, pilot: bool = False) -> list:
     return [linear, crescendo]
 
 
+def multi_turn_cases(attacker: JudgeModel, chosen, pilot: bool = False):
+    """Yield (vulnerability with one type, attack) for every test case.
+
+    Every case gets an attack object of its own. DeepTeam's crescendo keeps
+    its conversation in the object and adds each case to it, so one object
+    shared by several cases sends a request that grows with every case, until
+    Groq refuses it as too large (7,500 tokens for the second type, 10,600 for
+    the last), and DeepTeam reports "Error enhancing attack". The order is one
+    kind of attack at a time, as before.
+    """
+    kinds = len(multi_turn_attacks(attacker, pilot))
+    for kind in range(kinds):
+        for vulnerability, type_names in chosen:
+            for vulnerability_type in type_names:
+                attack = multi_turn_attacks(attacker, pilot)[kind]
+                yield (vulnerability, [vulnerability_type]), attack
+
+
 # The errors after which a scan goes no further: a daily limit, the limit of
 # live calls, no paid credit. DeepTeam catches every error of a model or of
 # the target and tries again, so the scan would go on asking a provider that
@@ -865,12 +883,12 @@ def main() -> int:
                     else MULTI_TURN_VULNERABILITIES
                 )
                 rows = []
-                for attack in multi_turn_attacks(attacker, args.pilot):
+                for entry, attack in multi_turn_cases(attacker, chosen, args.pilot):
                     if first_stop(fuses) is not None:
                         break
                     rows += scan(
                         customer_target,
-                        chosen,
+                        [entry],
                         CUSTOMER_PURPOSE,
                         attacker,
                         judge,

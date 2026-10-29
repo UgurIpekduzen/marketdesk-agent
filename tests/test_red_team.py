@@ -587,6 +587,35 @@ def test_only_attacker_answers_are_limited(monkeypatch, tmp_path):
     assert red_team.config.REDTEAM_ATTACKER_MAX_TOKENS < 1000
 
 
+def test_every_multi_turn_case_has_an_attack_of_its_own():
+    attacker = object.__new__(red_team.JudgeModel)
+
+    cases = list(
+        red_team.multi_turn_cases(attacker, red_team.MULTI_TURN_VULNERABILITIES)
+    )
+
+    assert len(cases) == 20
+    assert len({id(attack) for _, attack in cases}) == 20
+    # One type in each, and linear before crescendo as in the scan.
+    assert all(len(entry[1]) == 1 for entry, _ in cases)
+    assert [type(attack).__name__ for _, attack in cases[:10]] == [
+        "LinearJailbreaking"
+    ] * 10
+    assert [type(attack).__name__ for _, attack in cases[10:]] == [
+        "CrescendoJailbreaking"
+    ] * 10
+
+
+def test_the_pilot_tries_one_case_with_one_attack():
+    attacker = object.__new__(red_team.JudgeModel)
+    chosen = [(red_team.PromptLeakage, ["instructions"])]
+
+    cases = list(red_team.multi_turn_cases(attacker, chosen, pilot=True))
+
+    assert len(cases) == 1
+    assert type(cases[0][1]).__name__ == "LinearJailbreaking"
+
+
 # --- Another attacker, to compare ------------------------------------------------
 
 
