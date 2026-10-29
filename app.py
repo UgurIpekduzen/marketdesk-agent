@@ -18,7 +18,7 @@ import pandas as pd
 import streamlit as st
 
 import config
-from src import tracing
+from src import tracing, tracing_dashboard
 from src.formatting import (
     format_number,
     readable_sql,
@@ -171,6 +171,55 @@ def seller_report(path: str, language: Language) -> dict:
         conn.close()
 
 
+@st.cache_data(ttl=60, show_spinner=False)
+def error_counts() -> tuple:
+    """(observations read, the error rows, a failure or None), kept 60 seconds.
+
+    A failure is kept too, so a Langfuse that is down is asked once a minute,
+    not at every click of every visitor.
+    """
+    try:
+        public, secret = tracing_dashboard.credentials()
+        observations = tracing_dashboard.fetch_observations(public, secret)
+    except tracing_dashboard.DashboardUnavailable as failure:
+        return 0, [], failure
+    return len(observations), tracing_dashboard.count_errors(observations), None
+
+
+def draw_error_tracing(texts) -> None:
+    """How often each error kind is marked in the traces (numbers only)."""
+    st.caption(texts.DASH_CAPTION)
+    observed, rows, failure = error_counts()
+    if failure is not None:
+        st.warning(tracing_dashboard.failure_text(texts, failure))
+        return
+    columns = st.columns(3)
+    columns[0].metric(texts.DASH_OBSERVATIONS, observed)
+    columns[1].metric(texts.DASH_ERRORS, sum(row.count for row in rows))
+    columns[2].metric(texts.DASH_KINDS, len({row.kind for row in rows}))
+    if not rows:
+        st.info(texts.DASH_NO_ERRORS)
+        return
+    frame = pd.DataFrame(
+        {
+            texts.DASH_COLUMN_KIND: [row.kind for row in rows],
+            texts.DASH_COLUMN_WHERE: [texts.DASH_WHERE[row.where] for row in rows],
+            texts.DASH_COLUMN_COUNT: [row.count for row in rows],
+        }
+    )
+    st.subheader(texts.DASH_BY_KIND)
+    st.bar_chart(
+        frame.pivot_table(
+            index=texts.DASH_COLUMN_KIND,
+            columns=texts.DASH_COLUMN_WHERE,
+            values=texts.DASH_COLUMN_COUNT,
+            aggfunc="sum",
+            fill_value=0,
+        )
+    )
+    st.dataframe(frame, hide_index=True, use_container_width=True)
+
+
 def close_session() -> None:
     session = st.session_state.pop("session", None)
     if session is not None:
@@ -292,10 +341,11 @@ def draw_review(queue: ReviewQueue) -> None:
     st.subheader(texts.UI_REVIEW_HEADING)
     st.caption(texts.UI_REVIEW_NOTE)
     waiting, tickets = queue.waiting_requests(), queue.open_tickets()
-    requests_tab, tickets_tab = st.tabs(
+    requests_tab, tickets_tab, tracing_tab = st.tabs(
         [
             texts.UI_REVIEW_REQUESTS_TAB.format(count=len(waiting)),
             texts.UI_REVIEW_TICKETS_TAB.format(count=len(tickets)),
+            texts.UI_REVIEW_TRACING_TAB,
         ]
     )
     clicked = None
@@ -340,6 +390,8 @@ def draw_review(queue: ReviewQueue) -> None:
                 st.text(ticket.summary)
                 if st.button(texts.UI_REVIEW_CLOSE, key=f"close_{ticket.ticket_id}"):
                     clicked = ("close", ticket.ticket_id, None)
+    with tracing_tab:
+        draw_error_tracing(texts)
     if clicked is None:
         return
     action, number, decision = clicked

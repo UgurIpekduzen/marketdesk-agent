@@ -16,7 +16,7 @@ from streamlit.proto.WidgetStates_pb2 import WidgetState
 from streamlit.testing.v1 import AppTest
 
 import config
-from src import messages, messages_en
+from src import messages, messages_en, tracing_dashboard
 from src.i18n import Language
 from src.tools.escalation import escalate_to_human
 from src.tools.session import Session
@@ -57,6 +57,14 @@ def open_page(monkeypatch, synthetic_db_path, fake_policy_index):
                     )
                 ],
             )
+        # The rep console reads the error counts of the traces: no network, the
+        # tests say which observations Langfuse holds.
+        monkeypatch.setattr(
+            tracing_dashboard, "credentials", lambda *a, **k: ("pk", "sk")
+        )
+        monkeypatch.setattr(
+            tracing_dashboard, "fetch_observations", lambda *a, **k: start.observations
+        )
         st.cache_resource.clear()
         st.cache_data.clear()
         page = AppTest.from_file(APP, default_timeout=60).run()
@@ -65,6 +73,7 @@ def open_page(monkeypatch, synthetic_db_path, fake_policy_index):
             page = click(page, role)
         return page
 
+    start.observations = []
     yield start
     for page in pages:
         if "session" in page.session_state:
@@ -781,6 +790,57 @@ def add_ticket(db_path, summary) -> None:
         escalate_to_human(Session(ALICE), conn, summary, "high")
     finally:
         conn.close()
+
+
+def test_rep_console_has_a_tab_that_counts_the_error_kinds(open_page):
+    open_page.observations = [
+        {"name": "message", "metadata": {tracing_dashboard.ERROR_KEY: "STEP_LIMIT"}},
+        {
+            "name": "FunctionTool.acall",
+            "metadata": {tracing_dashboard.ERROR_KEY: "NOT_FOUND"},
+        },
+        {
+            "name": "FunctionTool.acall",
+            "metadata": {tracing_dashboard.ERROR_KEY: "NOT_FOUND"},
+        },
+        {"name": "message", "metadata": {}},
+    ]
+
+    page = open_page(role=messages.UI_START_REP)
+
+    assert not page.exception
+    assert messages.UI_REVIEW_TRACING_TAB in [tab.label for tab in page.tabs]
+    values = {metric.label: metric.value for metric in page.metric}
+    assert values == {
+        messages.DASH_OBSERVATIONS: "4",
+        messages.DASH_ERRORS: "3",
+        messages.DASH_KINDS: "2",
+    }
+
+
+def test_the_tracing_tab_says_when_no_error_is_marked(open_page):
+    page = open_page(role=messages.UI_START_REP)
+
+    assert not page.exception
+    assert messages.DASH_NO_ERRORS in [info.value for info in page.info]
+
+
+def test_the_tracing_tab_says_why_it_cannot_read_and_the_queue_still_works(
+    open_page, monkeypatch
+):
+    def refuse(*args, **kwargs):
+        raise tracing_dashboard.DashboardUnavailable("REQUEST_FAILED", 401)
+
+    page = open_page(role=messages.UI_START_REP)
+    monkeypatch.setattr(tracing_dashboard, "fetch_observations", refuse)
+    st.cache_data.clear()
+    page = page.run()
+
+    assert not page.exception
+    assert messages.DASH_REQUEST_FAILED.format(status=401) in [
+        warning.value for warning in page.warning
+    ]
+    assert messages.UI_REVIEW_APPROVE in labels(page)
 
 
 def test_rep_session_shows_queue_no_chat(open_page):
