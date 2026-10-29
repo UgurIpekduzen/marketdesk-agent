@@ -505,3 +505,26 @@ COMPUTED_SCOPE = "{today} ve öncesinde verilen siparişler"
 # The SQL of the newest answer, opened from the sidebar in a wide window.
 UI_SHOW_SQL = "SQL'i göster"
 UI_SQL_DIALOG_TITLE = "SQL sorgusu"
+
+# The local page that counts the error kinds of the traces (task trace:dashboard).
+DASH_TITLE = "Hata izleme"
+DASH_CAPTION = (
+    "Langfuse'taki izlerde işaretlenen hata türlerinin sayısı. İzler ileti "
+    "metni ya da kimlik içermez."
+)
+DASH_OBSERVATIONS = "Okunan gözlem"
+DASH_ERRORS = "Hata işaretli gözlem"
+DASH_KINDS = "Hata türü sayısı"
+DASH_BY_KIND = "Hata türüne göre"
+DASH_COLUMN_KIND = "Hata türü"
+DASH_COLUMN_WHERE = "Nerede"
+DASH_COLUMN_COUNT = "Sayı"
+DASH_WHERE = {"message": "ileti", "tool": "araç"}
+DASH_NO_ERRORS = "Okunan gözlemlerde hata işaretli olan yok."
+DASH_KEYS_MISSING = (
+    "LANGFUSE_PUBLIC_KEY ve LANGFUSE_SECRET_KEY ayarlı değil. Bunları .env "
+    "dosyasına yazın."
+)
+DASH_REQUEST_FAILED = "Langfuse isteği reddetti (HTTP {status})."
+DASH_UNREACHABLE = "Langfuse'a ulaşılamadı."
+DASH_WRITTEN = "Sayfa yazıldı: {path}"

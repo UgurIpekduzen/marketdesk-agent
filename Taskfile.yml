@@ -204,6 +204,11 @@ tasks:
     cmds:
       - "{{.RUN}} uv run python scripts/trace_examples.py {{.CLI_ARGS}}"
 
+  trace:dashboard:
+    desc: Count the error kinds of the Langfuse traces, print them and write data/error_tracing.html (no server; keys from .env); `-- --lang en --newest 5000`
+    cmds:
+      - "{{.RUN}} uv run python scripts/trace_dashboard.py {{.CLI_ARGS}}"
+
   # --- Agents ------------------------------------------------------------
 
   agent:check:

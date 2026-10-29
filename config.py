@@ -201,6 +201,10 @@ def langfuse_endpoint(base_url: str) -> str:
 # https://us.cloud.langfuse.com. Keys of one are refused by the other.
 LANGFUSE_BASE_URL = os.environ.get("LANGFUSE_BASE_URL", "https://cloud.langfuse.com")
 TRACING_LANGFUSE_ENDPOINT = langfuse_endpoint(LANGFUSE_BASE_URL)
+# How many of the newest observations the error tracing page reads by default
+# (a local page, `task trace:dashboard`; it reads the traces with the keys of
+# the project).
+TRACING_DASHBOARD_OBSERVATIONS = 1000
 
 # --- Demo page ----------------------------------------------------------
 

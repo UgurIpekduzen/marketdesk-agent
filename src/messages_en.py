@@ -394,3 +394,26 @@ COMPUTED_SCOPE = "orders placed on or before {today}"
 # The SQL of the newest answer, opened from the sidebar in a wide window.
 UI_SHOW_SQL = "Show the SQL"
 UI_SQL_DIALOG_TITLE = "SQL query"
+
+# The local page that counts the error kinds of the traces (task trace:dashboard).
+DASH_TITLE = "Error tracing"
+DASH_CAPTION = (
+    "How many times each error kind is marked in the Langfuse traces. The "
+    "traces hold no message text and no id."
+)
+DASH_OBSERVATIONS = "Observations read"
+DASH_ERRORS = "Observations with an error"
+DASH_KINDS = "Error kinds"
+DASH_BY_KIND = "By error kind"
+DASH_COLUMN_KIND = "Error kind"
+DASH_COLUMN_WHERE = "Where"
+DASH_COLUMN_COUNT = "Count"
+DASH_WHERE = {"message": "message", "tool": "tool"}
+DASH_NO_ERRORS = "No observation read carries an error."
+DASH_KEYS_MISSING = (
+    "LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY are not set. Put them in "
+    "the .env file."
+)
+DASH_REQUEST_FAILED = "Langfuse refused the request (HTTP {status})."
+DASH_UNREACHABLE = "Langfuse could not be reached."
+DASH_WRITTEN = "Page written: {path}"
