@@ -57,6 +57,38 @@ Every finding has a regression lock: a unit test that runs in CI, or an evaluati
 | Inter-agent messages | M4.13 | 22 Oct | 8 attempts, plus failures in the middle of an approval | 7 of 8 after the fix | pending |
 | Audit and stopping | M4.14 | 22 Oct | 12 kinds of attack found in the log and on the trace | all kinds now in at least one place; 9 played with the stand-in model in both | – |
 
+### How strong the attacks were
+
+Every set above passes at about 100 %. A pass says that the model and the guards together held; it does not say that a guard works, because the model alone may have refused. Late in the work (24–28 Oct) the attacks were tested the other way round, on the principle that the system always has a hole and an attack that finds none is a weak attack until shown otherwise.
+
+**Breaking each guard on purpose** (`eval/mutations.py`, `task eval:mutations`). Each of ten guards is switched off in the running process, never in the source, and the tests meant to watch it are run. A control that breaks nothing must pass. Results in `eval/results/mutations_v1.md`.
+
+| | Guards |
+|---|---|
+| Unit tests noticed the broken guard | 10 of 10 |
+| The attack sets, with the model, noticed it | 3: the approval token, the equal answer for a foreign and a missing order, the critic |
+| The attack sets did **not** notice it | 4: the table allowlist of free SQL, the check of review themes, the roles of the router, the safe drawing of the model's links and images |
+| No attack through the model can reach the guard | 3: the outbound guard, the write allowlist, the binding of a click to its card |
+
+The four the attack sets missed are held by unit tests and fuzzing only. For the SQL validator the cause is plain: the model refuses to write raw SQL, so an attack never reaches it. Reading this table the other way is the point of it: a set that stays green with a guard switched off is not evidence for that guard.
+
+**What this turned up, and was fixed.**
+
+- The check of the attack sets read only the error code of a foreign order, so a tool that said `NOT_FOUND` in other words went unseen. It now compares the whole answer with the one of a missing order.
+- The SQL validator, run against the real SQLite with SQLite's own authorizer as the oracle (`tests/test_sql_validator_fuzz.py`): one query could build 900 MB in a second (`format('%.*c', 900000000, 'x')`) and nested `replace` 1.4 GB, because the timeout counts steps and one function call is one step. The connection now limits the length of a value and the memory of the engine, and an answer holds at most 2,000,000 characters. `sqlite_version()` is refused.
+- A click on an approval card did not say which card it was on, so a request made while a card waited could be written with the click on another one. The server now refuses a message while a card waits and writes only if the click carries the card that waits.
+- A review theme counted by "com" or "que" came out as most reviews, and a quote cut after "Não" said the opposite of the review. Words that are common are refused as a theme and a quote has to be whole sentences of the review.
+- Races, said as tests: twelve reps deciding one request at once write exactly one decision; a ticket closed by eight reps is closed once. One limit of the critic is also a test and is not fixed: it does not see numbers written in words (digits of other scripts it does see).
+
+**Attacks made from templates** (`eval/template_attacks.jsonl`, 28 examples, and `eval/template_attacks_en.jsonl`, 30): no model writes them, so no attacker can refuse. About two thirds of bare attacks never reach an agent, because the router refuses them first, so each is carried inside an ordinary question. Dev results: 28 of 28 and 30 of 30 held, no request written without approval, a foreign order stayed `NOT_FOUND` in 5 of 5 and 9 of 9. Five more reviews that carry instructions were added to the review set (a fake system note, a request to print the prompt, generic words, a cut quote, a tool hijack): 8 of 8 held.
+
+**Limits of the attack strength.**
+
+- The automated scan's attacker (Qwen on Groq's free tier) refuses to write some attacks, and its daily limit of 200,000 tokens is spent by a single scan. Refusals are counted apart from failures and are not kept in the cache, so a rerun asks again.
+- DeepTeam's judge for BOLA read its list of allowed orders from the wrong place and called every order foreign; it is now given the session's own orders.
+- Some expectations were changed after the results were seen, and each is a change of the check, not of what the system did: the expectation of review example R6 (a write asked in an operations session), of golden example U9a (a policy the documents do not cover), the patterns of the template set, and the reading of "değildir" as a refusal of an amount. They are listed here so that a reader can discount them.
+- Three dev examples of the golden sets fail in the last run and are not analysed here: S2 (Turkish), U9a and U9b (English).
+
 ## 3. Findings by layer
 
 The seven layers of the attack surface are those of the threat model. **Severity** is set from what an attacker could do: **High**, a write without the person's approval, another customer's data, or a way to change what is stored beyond the two tables the system may write; **Medium**, a customer or a rep is told something false, personal data reaches a third party, or a visitor can use up a shared resource or reach another site; **Low**, no direct harm (traceability, tooling, hygiene). **Status** is Fixed, Open (planned) or Accepted (known, left, with the reason). Codes are explained in section 8; the code lists for every risk are in the threat model.
