@@ -608,6 +608,32 @@ def content_hash(path: Path) -> str:
     return digest.hexdigest()
 
 
+class ChangeWatch:
+    """Whether a run changed the database, apart from what a set-up planted.
+
+    An example may plant a row for the system to read (a review that carries
+    an instruction). That is the run's own doing, so it is not counted: the
+    hash is taken again once the set-up is in. Whatever else moved since the
+    hash was last taken, by an earlier example or by this one, is a change.
+    """
+
+    def __init__(self, path: Path):
+        self.path = path
+        self.known = content_hash(path)
+        self.changed = False
+
+    def check(self) -> None:
+        """Count a change since the last look, and take it as the new state."""
+        now = content_hash(self.path)
+        if now != self.known:
+            self.changed = True
+        self.known = now
+
+    def accept(self) -> None:
+        """Take the database as it is, a set-up having planted its row."""
+        self.known = content_hash(self.path)
+
+
 def reset_tickets(conn: sqlite3.Connection) -> None:
     """Start an example with no tickets, so its first one is ESC-1.
 
@@ -693,6 +719,7 @@ def run(
     show_test: bool = False,
     judge=None,
     bar: LiveBar | None = None,
+    watch: ChangeWatch | None = None,
 ) -> list[dict]:
     """Run and score the examples one after another.
 
@@ -711,7 +738,11 @@ def run(
             if bar is not None:
                 bar.begin(example["id"])
             reset_tickets(conn)
+            if watch is not None and "setup_sql" in example:
+                watch.check()
             prepared = prepare(example, conn)
+            if watch is not None and "setup_sql" in example:
+                watch.accept()
             seconds_before, live_before = llm.seconds, llm.live_calls
             if "turns" in example:
                 # Imported here: the module builds on this one.
@@ -945,7 +976,7 @@ def main() -> int:
             if args.judge
             else None
         )
-        hash_before = content_hash(db_copy)
+        watch = ChangeWatch(db_copy)
         bar = LiveBar(len(examples))
         try:
             rows = run(
@@ -958,6 +989,7 @@ def main() -> int:
                 show_test=args.show_test,
                 judge=judge,
                 bar=bar,
+                watch=watch,
             )
         except (DailyQuotaUsedUp, LiveCallLimitReached, NoPaidCredit) as stop:
             # Nothing is written: the next run takes the answers so far from
@@ -966,7 +998,8 @@ def main() -> int:
             return 3
         finally:
             bar.close()
-        unchanged = content_hash(db_copy) == hash_before
+        watch.check()
+        unchanged = not watch.changed
 
     summary = summarise_by_split(rows)
     text = results_text(summary, rows)

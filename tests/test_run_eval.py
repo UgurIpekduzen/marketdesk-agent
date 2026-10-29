@@ -92,7 +92,7 @@ def run(synthetic_db_path, fake_policy_index, tmp_path):
     """Run examples with a scripted model. Every call gets an empty cache."""
     calls = []
 
-    def run_examples(examples, script):
+    def run_examples(examples, script, watch=None):
         calls.append(None)
         llm = CachedLLM(
             inner=FakeLLM(script=list(script)),
@@ -104,6 +104,7 @@ def run(synthetic_db_path, fake_policy_index, tmp_path):
             fake_policy_index,
             llm,
             report=lambda line: None,
+            watch=watch,
         )
         return rows, llm
 
@@ -993,6 +994,52 @@ def test_independent_judge_has_own_provider(monkeypatch, tmp_path):
 
 
 # --- Planted data: setups without an order, tool arguments -------------------
+
+
+def test_planted_row_is_not_a_change(synthetic_db_path):
+    watch = run_eval.ChangeWatch(synthetic_db_path)
+
+    watch.check()
+    write(synthetic_db_path, "UPDATE order_payments SET payment_type = 'planted'")
+    watch.accept()
+    watch.check()
+
+    assert not watch.changed
+
+
+def test_write_outside_setup_is_a_change(synthetic_db_path):
+    watch = run_eval.ChangeWatch(synthetic_db_path)
+
+    write(synthetic_db_path, "UPDATE order_payments SET payment_type = 'written'")
+    watch.check()
+
+    assert watch.changed
+
+
+def test_write_before_setup_stays_visible(synthetic_db_path):
+    watch = run_eval.ChangeWatch(synthetic_db_path)
+
+    write(synthetic_db_path, "UPDATE order_payments SET payment_type = 'written'")
+    # What an example's set-up does: look first, then plant, then take it in.
+    watch.check()
+    write(synthetic_db_path, "UPDATE order_payments SET payment_type = 'planted'")
+    watch.accept()
+    watch.check()
+
+    assert watch.changed
+
+
+def test_setup_is_no_change_for_the_watch(run, synthetic_db_path):
+    example = {
+        **OPS_EXAMPLE,
+        "setup_sql": "UPDATE order_payments SET payment_type = 'planted'",
+    }
+    watch = run_eval.ChangeWatch(synthetic_db_path)
+
+    run([example], ["ops_metric", "Sanırım 29."], watch=watch)
+    watch.check()
+
+    assert not watch.changed
 
 
 def test_setup_runs_without_an_order(synthetic_db):
