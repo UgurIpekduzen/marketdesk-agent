@@ -164,6 +164,22 @@ def labels(page) -> list[str]:
     return [button.label for button in page.button]
 
 
+def test_a_tracing_address_that_is_not_https_turns_tracing_off(
+    open_page, monkeypatch, caplog
+):
+    monkeypatch.setattr(config, "TRACING_TARGET", "langfuse")
+    monkeypatch.setattr(config, "LANGFUSE_BASE_URL", "http://x.test")
+    monkeypatch.setenv("LANGFUSE_PUBLIC_KEY", "pk-test")
+    monkeypatch.setenv("LANGFUSE_SECRET_KEY", "sk-test")
+
+    page = open_page(role=None)
+
+    assert not page.exception
+    assert page.title[0].value == messages.UI_TITLE
+    assert "tracing is off" in caplog.text
+    assert "sk-test" not in caplog.text
+
+
 def test_opens_on_choice_screen(open_page):
     page = open_page(role=None)
 

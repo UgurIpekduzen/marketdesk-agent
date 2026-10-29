@@ -4,10 +4,13 @@ No network: Langfuse is a stand-in that answers pages of observations.
 """
 
 import base64
+import http.server
 import io
 import json
 import pickle
+import threading
 import urllib.error
+import urllib.request
 
 import pytest
 
@@ -279,3 +282,71 @@ def test_a_failure_keeps_its_status_when_it_is_pickled_for_the_cache():
     kept = pickle.loads(pickle.dumps(failure))
 
     assert (kept.code, kept.status) == ("REQUEST_FAILED", 401)
+
+
+# --- The keys stay on the address they were meant for ----------------------
+
+
+def test_a_plain_address_is_refused_before_anything_is_sent():
+    sent = []
+
+    def opener(request, timeout=None):
+        sent.append(request)
+        return Page({"data": [], "meta": {}})
+
+    with pytest.raises(DashboardUnavailable) as raised:
+        fetch_observations("pk", "sk", 10, "http://x.test", opener)
+
+    assert raised.value.code == "INSECURE_URL"
+    assert sent == []
+
+
+def test_the_message_for_a_plain_address_says_https_in_both_languages():
+    failure = DashboardUnavailable("INSECURE_URL")
+
+    assert "https://" in tracing_dashboard.failure_text(messages, failure)
+    assert "https://" in tracing_dashboard.failure_text(messages_en, failure)
+
+
+def test_a_redirect_is_not_followed_so_the_keys_do_not_travel_on():
+    reached = []
+
+    class Target(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            reached.append(self.headers.get("Authorization"))
+            self.send_response(200)
+            self.send_header("Content-Length", "2")
+            self.end_headers()
+            self.wfile.write(b"{}")
+
+        def log_message(self, *args):
+            pass
+
+    target = http.server.HTTPServer(("127.0.0.1", 0), Target)
+
+    class Redirector(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(302)
+            self.send_header("Location", f"http://127.0.0.1:{target.server_port}/")
+            self.end_headers()
+
+        def log_message(self, *args):
+            pass
+
+    redirector = http.server.HTTPServer(("127.0.0.1", 0), Redirector)
+    for server in (target, redirector):
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+    request = urllib.request.Request(
+        f"http://127.0.0.1:{redirector.server_port}/",
+        headers={"Authorization": "Basic secret"},
+    )
+
+    try:
+        with pytest.raises(urllib.error.HTTPError) as raised:
+            tracing_dashboard.OPENER.open(request, timeout=5)
+    finally:
+        target.shutdown()
+        redirector.shutdown()
+
+    assert raised.value.code == 302
+    assert reached == []

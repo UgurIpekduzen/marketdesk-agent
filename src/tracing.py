@@ -254,7 +254,9 @@ def target_settings(target: str) -> tuple[str, dict[str, str]]:
             f"{os.environ['LANGFUSE_PUBLIC_KEY']}:{os.environ['LANGFUSE_SECRET_KEY']}"
         )
         signed = base64.b64encode(keys.encode()).decode()
-        return config.TRACING_LANGFUSE_ENDPOINT, {"Authorization": f"Basic {signed}"}
+        return config.langfuse_endpoint(config.LANGFUSE_BASE_URL), {
+            "Authorization": f"Basic {signed}"
+        }
     raise ValueError(f"unknown tracing target: {target!r}")
 
 

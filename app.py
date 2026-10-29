@@ -73,8 +73,16 @@ LANGUAGE_CHOICES = {Language.TR: "Türkçe", Language.EN: "English"}
 
 @st.cache_resource
 def start_tracing() -> bool:
-    """Once per server process; does nothing while the target is "off"."""
-    tracing.setup_tracing()
+    """Once per server process; does nothing while the target is "off".
+
+    A tracing setting that cannot be used (an address that is not https, an
+    unknown target) turns tracing off and is logged: the page goes on, and
+    no key is sent anywhere.
+    """
+    try:
+        tracing.setup_tracing()
+    except ValueError as failure:
+        logging.getLogger(__name__).error("tracing is off: %s", failure)
     return True
 
 

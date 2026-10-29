@@ -193,14 +193,19 @@ TRACING_PHOENIX_ENDPOINT = "http://phoenix:6006/v1/traces"
 
 
 def langfuse_endpoint(base_url: str) -> str:
-    """Where Langfuse Cloud takes spans, for the region its keys belong to."""
+    """Where Langfuse Cloud takes spans, for the region its keys belong to.
+
+    Only https: the keys go in a header, and a typo must not send them in the
+    clear.
+    """
+    if not base_url.lower().startswith("https://"):
+        raise ValueError("LANGFUSE_BASE_URL must start with https://")
     return base_url.rstrip("/") + "/api/public/otel/v1/traces"
 
 
 # Langfuse keys belong to one region: the EU one (the default) or
 # https://us.cloud.langfuse.com. Keys of one are refused by the other.
 LANGFUSE_BASE_URL = os.environ.get("LANGFUSE_BASE_URL", "https://cloud.langfuse.com")
-TRACING_LANGFUSE_ENDPOINT = langfuse_endpoint(LANGFUSE_BASE_URL)
 # How many of the newest observations the error tracing page reads by default
 # (a local page, `task trace:dashboard`; it reads the traces with the keys of
 # the project).

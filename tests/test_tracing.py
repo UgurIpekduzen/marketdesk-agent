@@ -404,13 +404,30 @@ def test_langfuse_endpoint_follows_the_region_of_the_keys():
     assert us == "https://us.cloud.langfuse.com/api/public/otel/v1/traces"
 
 
+@pytest.mark.parametrize(
+    "address", ["http://cloud.langfuse.com", "cloud.langfuse.com", "ftp://x.test", ""]
+)
+def test_langfuse_endpoint_refuses_an_address_that_is_not_https(address):
+    with pytest.raises(ValueError, match="https"):
+        config.langfuse_endpoint(address)
+
+
+def test_langfuse_keys_are_not_signed_for_a_plain_address(monkeypatch):
+    monkeypatch.setenv("LANGFUSE_PUBLIC_KEY", "pk-test")
+    monkeypatch.setenv("LANGFUSE_SECRET_KEY", "sk-test")
+    monkeypatch.setattr(config, "LANGFUSE_BASE_URL", "http://cloud.langfuse.com")
+
+    with pytest.raises(ValueError, match="https"):
+        tracing.target_settings("langfuse")
+
+
 def test_langfuse_signs_in_with_keys(monkeypatch):
     monkeypatch.setenv("LANGFUSE_PUBLIC_KEY", "pk-test")
     monkeypatch.setenv("LANGFUSE_SECRET_KEY", "sk-test")
 
     endpoint, headers = tracing.target_settings("langfuse")
 
-    assert endpoint == config.TRACING_LANGFUSE_ENDPOINT
+    assert endpoint == config.langfuse_endpoint(config.LANGFUSE_BASE_URL)
     # base64 of "pk-test:sk-test"
     assert headers == {"Authorization": "Basic cGstdGVzdDpzay10ZXN0"}
 

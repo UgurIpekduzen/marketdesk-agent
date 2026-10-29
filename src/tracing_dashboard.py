@@ -29,6 +29,16 @@ PAGE_SIZE = 100
 TIMEOUT_SECONDS = 30
 
 
+class NoRedirects(urllib.request.HTTPRedirectHandler):
+    """Refuse every redirect: urllib would send the keys on to the new address."""
+
+    def redirect_request(self, *args, **kwargs):
+        return None
+
+
+OPENER = urllib.request.build_opener(NoRedirects)
+
+
 class DashboardUnavailable(RuntimeError):
     """The page cannot show its numbers; the code says why, in no words."""
 
@@ -78,9 +88,12 @@ def fetch_observations(
     secret_key: str,
     newest: int = config.TRACING_DASHBOARD_OBSERVATIONS,
     base_url: str = config.LANGFUSE_BASE_URL,
-    opener: Callable = urllib.request.urlopen,
+    opener: Callable = OPENER.open,
 ) -> list[dict]:
     """The newest observations, page by page, at most as many as asked."""
+    if not base_url.lower().startswith("https://"):
+        # The keys are sent in a header: never over a plain connection.
+        raise DashboardUnavailable("INSECURE_URL")
     signed = base64.b64encode(f"{public_key}:{secret_key}".encode()).decode()
     headers = {"Authorization": f"Basic {signed}"}
     observations: list[dict] = []
@@ -123,6 +136,8 @@ def failure_text(texts, failure: DashboardUnavailable) -> str:
     """What the page or the command says when the numbers cannot be read."""
     if failure.code == "KEYS_MISSING":
         return texts.DASH_KEYS_MISSING
+    if failure.code == "INSECURE_URL":
+        return texts.DASH_INSECURE_URL
     if failure.code == "REQUEST_FAILED":
         return texts.DASH_REQUEST_FAILED.format(status=failure.status)
     return texts.DASH_UNREACHABLE

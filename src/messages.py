@@ -529,4 +529,5 @@ DASH_KEYS_MISSING = (
 )
 DASH_REQUEST_FAILED = "Langfuse isteği reddetti (HTTP {status})."
 DASH_UNREACHABLE = "Langfuse'a ulaşılamadı."
+DASH_INSECURE_URL = "LANGFUSE_BASE_URL https:// ile başlamalı."
 DASH_WRITTEN = "Sayfa yazıldı: {path}"

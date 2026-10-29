@@ -418,4 +418,5 @@ DASH_KEYS_MISSING = (
 )
 DASH_REQUEST_FAILED = "Langfuse refused the request (HTTP {status})."
 DASH_UNREACHABLE = "Langfuse could not be reached."
+DASH_INSECURE_URL = "LANGFUSE_BASE_URL must start with https://."
 DASH_WRITTEN = "Page written: {path}"
