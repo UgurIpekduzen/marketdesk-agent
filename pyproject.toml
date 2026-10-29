@@ -21,7 +21,7 @@ dependencies = [
     "pandas==3.0.6",
     "pyyaml==6.0.3",
     "sqlglot==30.21.0",
-    "streamlit==1.65.0",
+    "streamlit==1.66.1",
     "tokenizers==0.23.2",
 ]
 
