@@ -45,9 +45,11 @@ from tests.fakes import FakeLLM
 
 RESULTS_DIR = PROJECT_ROOT / "eval" / "results"
 GOLDEN_RESULTS = RESULTS_DIR / "golden_v1_gemini-3.5-flash-lite.json"
-# Model calls in a run: an answer alone, and then one to seven tools first.
-# Eight is the step limit.
-MODEL_CALLS = (1, 2, 4, config.MAX_STEPS)
+# Model calls in a run: an answer alone, and then one to six tools first.
+# Seven is the longest run that ends with an answer: LlamaIndex stops with
+# "Max iterations reached" when it handles the output of the eighth call, even
+# if that is the answer, and run_agent then gives the step-limit message.
+MODEL_CALLS = (1, 2, 4, config.MAX_STEPS - 1)
 WARM_UP_RUNS = 5
 DEFAULT_RUNS = 200
 
@@ -73,38 +75,43 @@ def milliseconds_since(start: float) -> float:
     return (time.perf_counter() - start) * 1000
 
 
-async def one_run(model_calls: int) -> tuple[float, float, int]:
-    """(build ms, run ms, model calls made)."""
+async def one_run(model_calls: int) -> tuple[float, float, int, bool]:
+    """(build ms, run ms, model calls made, stopped at the step limit)."""
     start = time.perf_counter()
     agent, context = agent_and_context(model_calls)
     built = milliseconds_since(start)
     start = time.perf_counter()
     _, log = await run_agent(agent, context, "hello")
-    return built, milliseconds_since(start), log.llm_calls
+    return built, milliseconds_since(start), log.llm_calls, log.stopped_at_step_limit
 
 
 async def measure(model_calls: int, runs: int) -> dict:
     for _ in range(WARM_UP_RUNS):
         await one_run(model_calls)
-    built, took, made = [], [], set()
+    built, took, made, stopped = [], [], set(), 0
     for _ in range(runs):
-        build_ms, run_ms, calls = await one_run(model_calls)
+        build_ms, run_ms, calls, at_limit = await one_run(model_calls)
         built.append(build_ms)
         took.append(run_ms)
         made.add(calls)
-    return summarize(model_calls, built, took, made)
+        stopped += at_limit
+    return summarize(model_calls, built, took, made, stopped)
 
 
 def percentile(values: list[float], share: float) -> float:
     return float(np.percentile(values, share))
 
 
-def summarize(model_calls: int, built: list, took: list, made: set) -> dict:
+def summarize(
+    model_calls: int, built: list, took: list, made: set, stopped: int
+) -> dict:
     return {
         "model_calls": model_calls,
         "runs": len(took),
         # What the stand-in model was asked for must be what the run made.
         "model_calls_made": sorted(made),
+        # Runs that ended at the step limit instead of with an answer.
+        "stopped_at_step_limit": stopped,
         "build_ms_p50": round(percentile(built, 50), 2),
         "run_ms_p50": round(percentile(took, 50), 2),
         "run_ms_p95": round(percentile(took, 95), 2),
@@ -161,6 +168,13 @@ def markdown(result: dict) -> str:
             f"| {row['run_ms_max']} | {row['step_ms_p50']} | {row['step_ms_p95']} "
             f"| {row['build_ms_p50']} |"
         )
+    stopped = sum(row.get("stopped_at_step_limit", 0) for row in result["scenarios"])
+    lines.append("")
+    lines.append(
+        "Every run ended with an answer."
+        if not stopped
+        else f"{stopped} runs ended at the step limit instead of with an answer."
+    )
     model = result["model"]
     lines.append("")
     if model:

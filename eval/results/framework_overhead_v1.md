@@ -4,9 +4,11 @@
 
 | Model calls in a run | Run p50 (ms) | Run p95 (ms) | Run max (ms) | Step p50 (ms) | Step p95 (ms) | Build p50 (ms) |
 |---|---|---|---|---|---|---|
-| 1 | 4.49 | 6.78 | 44.48 | 4.49 | 6.78 | 0.61 |
-| 2 | 8.28 | 10.43 | 19.53 | 4.14 | 5.22 | 0.65 |
-| 4 | 15.53 | 18.39 | 51.02 | 3.88 | 4.6 | 0.64 |
-| 8 | 32.12 | 52.13 | 98.37 | 4.02 | 6.52 | 0.74 |
+| 1 | 4.59 | 5.96 | 42.0 | 4.59 | 5.96 | 0.64 |
+| 2 | 8.64 | 10.39 | 13.23 | 4.32 | 5.2 | 0.66 |
+| 4 | 16.22 | 18.82 | 57.52 | 4.06 | 4.7 | 0.66 |
+| 7 | 27.78 | 32.37 | 66.96 | 3.97 | 4.62 | 0.68 |
 
-For scale: the model took 751.4 ms per call in the 25 development examples of the golden set (83 calls). The framework's step above is 0.54% of that.
+Every run ended with an answer.
+
+For scale: the model took 751.4 ms per call in the 25 development examples of the golden set (83 calls). The framework's step above is 0.53% of that.

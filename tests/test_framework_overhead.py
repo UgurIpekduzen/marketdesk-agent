@@ -13,13 +13,28 @@ from eval import framework_overhead as overhead
 
 def test_run_makes_the_model_calls_asked():
     for model_calls in overhead.MODEL_CALLS:
-        _, _, made = asyncio.run(overhead.one_run(model_calls))
+        _, _, made, _ = asyncio.run(overhead.one_run(model_calls))
 
         assert made == model_calls
 
 
-def test_longest_run_fits_the_step_limit():
-    assert max(overhead.MODEL_CALLS) == config.MAX_STEPS
+def test_every_run_ends_with_an_answer():
+    for model_calls in overhead.MODEL_CALLS:
+        _, _, _, stopped = asyncio.run(overhead.one_run(model_calls))
+
+        assert not stopped, model_calls
+
+
+def test_the_eighth_call_hits_the_limit():
+    # Why the longest run is seven calls and not eight.
+    _, _, made, stopped = asyncio.run(overhead.one_run(config.MAX_STEPS))
+
+    assert made == config.MAX_STEPS
+    assert stopped
+
+
+def test_longest_run_is_below_the_limit():
+    assert max(overhead.MODEL_CALLS) == config.MAX_STEPS - 1
 
 
 def test_measure_reports_every_run():
@@ -27,6 +42,7 @@ def test_measure_reports_every_run():
 
     assert result["runs"] == 3
     assert result["model_calls_made"] == [2]
+    assert result["stopped_at_step_limit"] == 0
     assert result["run_ms_p50"] > 0
     assert result["step_ms_p50"] == pytest.approx(result["run_ms_p50"] / 2, abs=0.01)
 
@@ -34,7 +50,7 @@ def test_measure_reports_every_run():
 def test_summary_works_out_percentiles():
     took = [10.0, 20.0, 30.0, 40.0]
 
-    result = overhead.summarize(4, [1.0] * 4, took, {4})
+    result = overhead.summarize(4, [1.0] * 4, took, {4}, 0)
 
     assert result["run_ms_p50"] == 25.0
     assert result["run_ms_max"] == 40.0
@@ -85,16 +101,17 @@ def scenario(model_calls):
 def test_report_compares_with_the_model():
     result = {
         "runs": 200,
-        "scenarios": [scenario(2), scenario(8)],
+        "scenarios": [scenario(2), scenario(7)],
         "model": {"examples": 25, "model_calls": 83, "ms_per_call": 800.0},
     }
 
     text = overhead.markdown(result)
 
-    assert "| 8 | 8.0 | 9.0 | 10.0 | 4.0 | 4.5 | 0.6 |" in text
+    assert "| 7 | 8.0 | 9.0 | 10.0 | 4.0 | 4.5 | 0.6 |" in text
     assert "800.0 ms per call in the 25 development examples" in text
     assert "0.50%" in text
     assert "upper bound" in text
+    assert "Every run ended with an answer." in text
 
 
 def test_report_says_when_nothing_to_compare():
