@@ -2,7 +2,7 @@
 
 This document says what an attacker could want from MarketDesk, where they can get in, what stops them today, and what the red teaming (milestone M4) still has to test. It is the plan for M4: every gap below names the task that tests or closes it, by its code in the plan (M4.1 is this document).
 
-Written on 2026-10-20, from the code on the `test` branch at `8a8d426`; R15 and R16 updated the same day after the configuration review, R22 after the English attack run, R3 and R20 after the protocol layer review, R7 and R8 after the privacy fuzzing, R12 after the client layer measurement. Tests named below are in `tests/`. Lists used:
+Written on 2026-10-20, from the code on the `test` branch at `7968148`; R15 and R16 updated the same day after the configuration review, R22 after the English attack run, R3 and R20 after the protocol layer review, R7 and R8 after the privacy fuzzing, R12 after the client layer measurement. Tests named below are in `tests/`. Lists used:
 
 - **LLM:** OWASP Top 10 for LLM Applications 2025 (LLM01–LLM10).
 - **ASI:** OWASP Top 10 for Agentic Applications 2026, official numbering of 2025-12-09 (ASI01–ASI10).
