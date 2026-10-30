@@ -3,6 +3,7 @@
 No network: Langfuse is a stand-in that answers pages of observations.
 """
 
+import ast
 import base64
 import http.server
 import io
@@ -11,6 +12,7 @@ import pickle
 import threading
 import urllib.error
 import urllib.request
+from pathlib import Path
 
 import pytest
 
@@ -22,8 +24,10 @@ from src.tracing_dashboard import (
     count_errors,
     credentials,
     fetch_observations,
+    kinds_by_total,
     render_html,
     render_table,
+    vega_chart,
 )
 
 ERROR = tracing_dashboard.ERROR_KEY
@@ -61,7 +65,7 @@ class FakeLangfuse:
         return Page(self.pages.pop(0))
 
 
-def test_messages_and_tools_are_counted_apart_and_ranked():
+def test_messages_tools_counted_apart():
     observations = [
         span("message", "ROUTER_REFUSED"),
         span("message", "ROUTER_REFUSED"),
@@ -78,13 +82,13 @@ def test_messages_and_tools_are_counted_apart_and_ranked():
     ]
 
 
-def test_an_observation_without_an_error_is_not_counted():
+def test_clean_observation_not_counted():
     observations = [span("message"), span("FunctionTool.acall"), {"name": "x"}]
 
     assert count_errors(observations) == []
 
 
-def test_the_same_kind_in_a_message_and_in_a_tool_is_two_rows():
+def test_same_kind_twice_is_two_rows():
     observations = [
         span("message", "NOT_FOUND"),
         span("FunctionTool.acall", "NOT_FOUND"),
@@ -98,7 +102,7 @@ def test_the_same_kind_in_a_message_and_in_a_tool_is_two_rows():
     }
 
 
-def test_pages_are_read_by_cursor_until_there_is_none():
+def test_pages_are_read_by_cursor():
     langfuse = FakeLangfuse(
         {"data": [span("message", "A")], "meta": {"cursor": "next"}},
         {"data": [span("message", "B")], "meta": {}},
@@ -112,7 +116,7 @@ def test_pages_are_read_by_cursor_until_there_is_none():
     assert "cursor=next" in langfuse.requests[1].full_url
 
 
-def test_the_request_asks_for_metadata_and_no_clock_time():
+def test_request_asks_for_metadata():
     langfuse = FakeLangfuse({"data": [], "meta": {}})
 
     fetch_observations("pk", "sk", 10, "https://x.test/", langfuse)
@@ -134,7 +138,7 @@ def test_the_keys_go_in_one_header_only():
     assert "pk-1" not in request.full_url and "sk-2" not in request.full_url
 
 
-def test_reading_stops_at_the_number_asked_for_even_if_pages_go_on():
+def test_reading_stops_at_the_limit():
     calls = []
 
     def endless(request, timeout=None):
@@ -147,7 +151,7 @@ def test_reading_stops_at_the_number_asked_for_even_if_pages_go_on():
     assert len(calls) == 3
 
 
-def test_a_refused_request_gives_the_status_and_not_the_answer():
+def test_refusal_gives_status_only():
     def refuse(request, timeout=None):
         raise urllib.error.HTTPError(
             request.full_url, 401, "secret sk-2 was wrong", {}, io.BytesIO(b"sk-2")
@@ -161,7 +165,7 @@ def test_a_refused_request_gives_the_status_and_not_the_answer():
     assert "sk-2" not in str(raised.value)
 
 
-def test_a_service_that_cannot_be_reached_is_told_apart():
+def test_unreachable_is_told_apart():
     def down(request, timeout=None):
         raise urllib.error.URLError("no route to host")
 
@@ -171,7 +175,7 @@ def test_a_service_that_cannot_be_reached_is_told_apart():
     assert raised.value.code == "UNREACHABLE"
 
 
-def test_keys_are_read_from_the_environment_or_the_page_says_they_are_missing():
+def test_keys_come_from_environment():
     assert credentials({"LANGFUSE_PUBLIC_KEY": "a", "LANGFUSE_SECRET_KEY": "b"}) == (
         "a",
         "b",
@@ -192,7 +196,7 @@ ROWS = [
 ]
 
 
-def test_the_page_shows_every_kind_with_its_count_and_in_the_chosen_language():
+def test_page_shows_kinds_and_counts():
     page = render_html(ROWS, 342, messages_en, "en")
 
     assert page.startswith('<!doctype html><html lang="en">')
@@ -202,22 +206,22 @@ def test_the_page_shows_every_kind_with_its_count_and_in_the_chosen_language():
     assert messages.DASH_TITLE not in page
 
 
-def test_a_kind_in_a_message_and_in_a_tool_is_one_bar_with_two_parts():
+def test_one_bar_with_two_parts():
     page = render_html(ROWS, 10, messages_en, "en")
 
     svg = page[page.index("<svg") : page.index("</svg>")]
-    assert svg.count(">NOT_FOUND</text>") == 1
+    assert svg.count(f">{messages_en.DASH_ERROR_LABELS['NOT_FOUND']}</text>") == 1
     assert ">2</text>" in svg
 
 
-def test_the_page_is_one_file_without_scripts_or_outside_addresses():
+def test_page_has_no_script_or_url():
     page = render_html(ROWS, 10, messages_en, "en")
 
     assert "<script" not in page
     assert "http://" not in page and "https://" not in page
 
 
-def test_what_comes_from_the_traces_is_escaped_in_the_page():
+def test_trace_text_is_escaped():
     rows = [ErrorCount("<img src=x onerror=alert(1)>", "tool", 1)]
 
     page = render_html(rows, 1, messages_en, "en")
@@ -226,25 +230,25 @@ def test_what_comes_from_the_traces_is_escaped_in_the_page():
     assert "&lt;img" in page
 
 
-def test_without_errors_the_page_says_so_and_draws_no_chart():
+def test_no_errors_no_chart():
     page = render_html([], 5, messages_en, "en")
 
     assert messages_en.DASH_NO_ERRORS in page
     assert "<svg" not in page
 
 
-def test_the_table_lists_the_counts_for_the_terminal():
+def test_terminal_table_has_counts():
     table = render_table(ROWS, 342, messages_en)
 
     lines = table.splitlines()
     assert "342" in lines[0] and "11" not in lines[0]
-    assert lines[1].split() == ["TOOL_LIMIT", "tool", "8"]
+    label = messages_en.DASH_ERROR_LABELS["TOOL_LIMIT"]
+    assert lines[1].startswith(label)
+    assert lines[1].split()[-3:] == ["TOOL_LIMIT", "tool", "8"]
     assert len(lines) == 1 + len(ROWS)
 
 
-def test_the_command_writes_the_page_and_prints_the_table(
-    monkeypatch, tmp_path, capsys
-):
+def test_command_writes_page_and_table(monkeypatch, tmp_path, capsys):
     monkeypatch.setenv("LANGFUSE_PUBLIC_KEY", "pk")
     monkeypatch.setenv("LANGFUSE_SECRET_KEY", "sk")
     monkeypatch.setattr(
@@ -262,9 +266,7 @@ def test_the_command_writes_the_page_and_prints_the_table(
     assert "STEP_LIMIT" in shown and str(output) in shown
 
 
-def test_the_command_says_why_it_cannot_read_and_writes_nothing(
-    monkeypatch, tmp_path, capsys
-):
+def test_command_failure_writes_nothing(monkeypatch, tmp_path, capsys):
     monkeypatch.delenv("LANGFUSE_PUBLIC_KEY", raising=False)
     monkeypatch.delenv("LANGFUSE_SECRET_KEY", raising=False)
     output = tmp_path / "page.html"
@@ -276,7 +278,7 @@ def test_the_command_says_why_it_cannot_read_and_writes_nothing(
     assert messages_en.DASH_KEYS_MISSING in capsys.readouterr().err
 
 
-def test_a_failure_keeps_its_status_when_it_is_pickled_for_the_cache():
+def test_failure_survives_pickling():
     failure = DashboardUnavailable("REQUEST_FAILED", 401)
 
     kept = pickle.loads(pickle.dumps(failure))
@@ -287,7 +289,7 @@ def test_a_failure_keeps_its_status_when_it_is_pickled_for_the_cache():
 # --- The keys stay on the address they were meant for ----------------------
 
 
-def test_a_plain_address_is_refused_before_anything_is_sent():
+def test_http_is_refused_unsent():
     sent = []
 
     def opener(request, timeout=None):
@@ -301,14 +303,14 @@ def test_a_plain_address_is_refused_before_anything_is_sent():
     assert sent == []
 
 
-def test_the_message_for_a_plain_address_says_https_in_both_languages():
+def test_https_message_in_both_languages():
     failure = DashboardUnavailable("INSECURE_URL")
 
     assert "https://" in tracing_dashboard.failure_text(messages, failure)
     assert "https://" in tracing_dashboard.failure_text(messages_en, failure)
 
 
-def test_a_redirect_is_not_followed_so_the_keys_do_not_travel_on():
+def test_redirect_is_not_followed():
     reached = []
 
     class Target(http.server.BaseHTTPRequestHandler):
@@ -350,3 +352,187 @@ def test_a_redirect_is_not_followed_so_the_keys_do_not_travel_on():
 
     assert raised.value.code == 302
     assert reached == []
+
+
+def test_kinds_ordered_by_total():
+    rows = [
+        ErrorCount("NOT_FOUND", "message", 1),
+        ErrorCount("NOT_FOUND", "tool", 3),
+        ErrorCount("STEP_LIMIT", "message", 2),
+        ErrorCount("TOOL_LIMIT", "tool", 8),
+        ErrorCount("A_KIND", "tool", 2),
+    ]
+
+    ordered = kinds_by_total(rows)
+
+    assert [kind for kind, _ in ordered] == [
+        "TOOL_LIMIT",
+        "NOT_FOUND",
+        "A_KIND",
+        "STEP_LIMIT",
+    ]
+    assert ordered[1][1] == {"message": 1, "tool": 3}
+
+
+def test_parts_share_colours_with_page():
+    assert set(tracing_dashboard.WHERE_ORDER) == set(tracing_dashboard.WHERE_COLOURS)
+    page = render_html(ROWS, 10, messages_en, "en")
+    assert "--message: #5b9bd8" in page and "--tool: #e8a24a" in page
+
+
+def test_app_chart_order_and_colours():
+    data, spec = vega_chart(ROWS, messages_en)
+
+    in_words = [messages_en.DASH_ERROR_LABELS[kind] for kind, _ in kinds_by_total(ROWS)]
+    assert spec["encoding"]["y"]["sort"] == in_words
+    assert {row["kind"] for row in data} <= set(in_words)
+    scale = spec["encoding"]["color"]["scale"]
+    assert scale["domain"] == ["message", "tool"]
+    assert scale["range"] == [
+        tracing_dashboard.WHERE_COLOURS["message"],
+        tracing_dashboard.WHERE_COLOURS["tool"],
+    ]
+    # One entry for each part that has a count: NOT_FOUND has both, the rest one.
+    assert {(row["kind"], row["where"]): row["count"] for row in data} == {
+        (messages_en.DASH_ERROR_LABELS["TOOL_LIMIT"], "tool"): 8,
+        (messages_en.DASH_ERROR_LABELS["ROUTER_REFUSED"], "message"): 3,
+        (messages_en.DASH_ERROR_LABELS["NOT_FOUND"], "message"): 1,
+        (messages_en.DASH_ERROR_LABELS["NOT_FOUND"], "tool"): 1,
+    }
+
+
+def test_chart_label_room_whole_ticks():
+    _, spec = vega_chart(ROWS, messages_en)
+
+    longest = max(len(row.kind) for row in ROWS)
+    # About 8 pixels a letter at the size of the axis labels.
+    assert tracing_dashboard.LABEL_LIMIT >= longest * 8
+    assert spec["encoding"]["y"]["axis"]["labelLimit"] == tracing_dashboard.LABEL_LIMIT
+    assert spec["encoding"]["x"]["axis"]["tickMinStep"] == 1
+
+
+def test_axes_named_in_page_language():
+    _, spec_tr = vega_chart(ROWS, messages)
+    _, spec_en = vega_chart(ROWS, messages_en)
+
+    assert spec_tr["encoding"]["y"]["axis"]["title"] == messages.DASH_COLUMN_KIND
+    assert spec_en["encoding"]["x"]["axis"]["title"] == messages_en.DASH_COLUMN_COUNT
+    assert spec_tr["encoding"]["color"]["scale"]["domain"] == ["ileti", "araç"]
+
+
+# --- The kinds in words ----------------------------------------------------
+
+
+def codes_the_code_can_emit() -> set[str]:
+    """Every error code the tools and the failures can put on a span, read from the code."""
+    root = Path(__file__).resolve().parent.parent / "src"
+    codes = set()
+    for path in root.rglob("*.py"):
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+            if isinstance(node, ast.Call):
+                name = getattr(node.func, "id", getattr(node.func, "attr", ""))
+                if name == "error" and node.args:
+                    first = node.args[0]
+                    if isinstance(first, ast.Constant) and isinstance(first.value, str):
+                        codes.add(first.value)
+            if isinstance(node, ast.Dict):
+                for key, value in zip(node.keys, node.values, strict=True):
+                    if (
+                        isinstance(key, ast.Constant)
+                        and key.value == "error"
+                        and isinstance(value, ast.Constant)
+                        and isinstance(value.value, str)
+                    ):
+                        codes.add(value.value)
+    return {code for code in codes if code.isupper() and " " not in code}
+
+
+def test_emitted_codes_have_words():
+    from src import failures, orchestrator
+
+    emitted = codes_the_code_can_emit() | {
+        failures.QUOTA_EXCEEDED,
+        failures.PROVIDER_BUSY,
+        failures.KEY_REFUSED,
+        failures.KEY_NOT_SET,
+        failures.DAILY_BUDGET,
+        failures.RUN_FAILED,
+        orchestrator.ROUTER_REFUSED,
+        "STEP_LIMIT",
+    }
+
+    assert emitted
+    assert emitted <= set(messages.DASH_ERROR_LABELS)
+    assert emitted <= set(messages_en.DASH_ERROR_LABELS)
+
+
+def test_words_are_unique_and_fit():
+    for catalog in (messages, messages_en):
+        words = list(catalog.DASH_ERROR_LABELS.values())
+        assert len(set(words)) == len(words)
+        # About 8 pixels a letter at the size of the axis labels.
+        assert max(len(word) for word in words) * 8 <= tracing_dashboard.LABEL_LIMIT
+
+
+def test_unworded_kind_shows_code():
+    assert tracing_dashboard.kind_label(messages_en, "A_NEW_KIND") == "A_NEW_KIND"
+    assert tracing_dashboard.kind_label(messages_en, "NOT_FOUND") == "Order not found"
+    assert tracing_dashboard.kind_label(messages, "NOT_FOUND") == "Sipariş bulunamadı"
+
+
+def test_page_shows_words_and_codes():
+    rows = [ErrorCount("TOOL_LIMIT", "tool", 8), ErrorCount("A_NEW_KIND", "tool", 1)]
+
+    page = render_html(rows, 9, messages_en, "en")
+
+    assert "Tool call limit exceeded" in page
+    assert "<code>TOOL_LIMIT</code>" in page
+    assert "<code>A_NEW_KIND</code>" in page
+
+
+def test_decision_codes_have_words():
+    from src.rules.returns import DecisionCode
+
+    # create_return_request answers an error with the decision's own code when
+    # the refund is zero; ELIGIBLE has a refund, so it never comes out as one.
+    codes = {code.value for code in DecisionCode} - {DecisionCode.ELIGIBLE.value}
+
+    assert codes <= set(messages.DASH_ERROR_LABELS)
+    assert codes <= set(messages_en.DASH_ERROR_LABELS)
+
+
+def test_runtime_codes_are_known():
+    """The scan of the emitted codes reads only codes written out in the source.
+
+    These are the places where an error code is not written out: a helper that
+    takes the code, a decision's code, the span's copy of a tool's error. A new
+    place breaks this test, and its codes need words in both catalogs (and a
+    line in the test above, if they are not literal).
+    """
+    root = Path(__file__).resolve().parent.parent / "src"
+    found = set()
+    for path in root.rglob("*.py"):
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+            if isinstance(node, ast.Dict):
+                for key, value in zip(node.keys, node.values, strict=True):
+                    if (
+                        isinstance(key, ast.Constant)
+                        and key.value == "error"
+                        and not isinstance(value, ast.Constant)
+                    ):
+                        found.add((path.name, ast.unparse(value)))
+            if (
+                isinstance(node, ast.Call)
+                and getattr(node.func, "id", getattr(node.func, "attr", "")) == "error"
+                and node.args
+                and not isinstance(node.args[0], ast.Constant)
+            ):
+                found.add((path.name, "error(" + ast.unparse(node.args[0]) + ")"))
+
+    assert found == {
+        ("review_corpus.py", "code"),
+        ("review_themes.py", "code"),
+        ("semantic_layer.py", "code"),
+        ("return_requests.py", "decision.code.value"),
+        ("tracing.py", "result.get('error')"),
+    }

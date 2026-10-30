@@ -396,7 +396,7 @@ def test_phoenix_is_local_and_needs_no_key():
     assert isinstance(tracing.target_exporter("phoenix"), SpanExporter)
 
 
-def test_langfuse_endpoint_follows_the_region_of_the_keys():
+def test_endpoint_follows_key_region():
     eu = config.langfuse_endpoint("https://cloud.langfuse.com")
     us = config.langfuse_endpoint("https://us.cloud.langfuse.com/")
 
@@ -407,12 +407,12 @@ def test_langfuse_endpoint_follows_the_region_of_the_keys():
 @pytest.mark.parametrize(
     "address", ["http://cloud.langfuse.com", "cloud.langfuse.com", "ftp://x.test", ""]
 )
-def test_langfuse_endpoint_refuses_an_address_that_is_not_https(address):
+def test_endpoint_refuses_non_https(address):
     with pytest.raises(ValueError, match="https"):
         config.langfuse_endpoint(address)
 
 
-def test_langfuse_keys_are_not_signed_for_a_plain_address(monkeypatch):
+def test_keys_not_signed_for_http(monkeypatch):
     monkeypatch.setenv("LANGFUSE_PUBLIC_KEY", "pk-test")
     monkeypatch.setenv("LANGFUSE_SECRET_KEY", "sk-test")
     monkeypatch.setattr(config, "LANGFUSE_BASE_URL", "http://cloud.langfuse.com")

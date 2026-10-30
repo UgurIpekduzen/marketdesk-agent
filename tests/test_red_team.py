@@ -587,7 +587,7 @@ def test_only_attacker_answers_are_limited(monkeypatch, tmp_path):
     assert red_team.config.REDTEAM_ATTACKER_MAX_TOKENS < 1000
 
 
-def test_every_multi_turn_case_has_an_attack_of_its_own():
+def test_each_case_has_its_own_attack():
     attacker = object.__new__(red_team.JudgeModel)
 
     cases = list(
@@ -606,7 +606,7 @@ def test_every_multi_turn_case_has_an_attack_of_its_own():
     ] * 10
 
 
-def test_the_pilot_tries_one_case_with_one_attack():
+def test_pilot_tries_one_case():
     attacker = object.__new__(red_team.JudgeModel)
     chosen = [(red_team.PromptLeakage, ["instructions"])]
 

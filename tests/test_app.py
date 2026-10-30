@@ -164,9 +164,7 @@ def labels(page) -> list[str]:
     return [button.label for button in page.button]
 
 
-def test_a_tracing_address_that_is_not_https_turns_tracing_off(
-    open_page, monkeypatch, caplog
-):
+def test_non_https_tracing_turns_it_off(open_page, monkeypatch, caplog):
     monkeypatch.setattr(config, "TRACING_TARGET", "langfuse")
     monkeypatch.setattr(config, "LANGFUSE_BASE_URL", "http://x.test")
     monkeypatch.setenv("LANGFUSE_PUBLIC_KEY", "pk-test")
@@ -808,7 +806,7 @@ def add_ticket(db_path, summary) -> None:
         conn.close()
 
 
-def test_rep_console_does_not_read_the_traces_until_asked(open_page, monkeypatch):
+def test_traces_are_read_only_when_asked(open_page, monkeypatch):
     reads = []
     open_page.observations = [{"name": "message", "metadata": {}}]
     page = open_page(role=messages.UI_START_REP)
@@ -828,7 +826,7 @@ def test_rep_console_does_not_read_the_traces_until_asked(open_page, monkeypatch
     assert not page.metric
 
 
-def test_the_tracing_tab_counts_the_error_kinds_when_asked(open_page):
+def test_tracing_tab_counts_error_kinds(open_page):
     open_page.observations = [
         {"name": "message", "metadata": {tracing_dashboard.ERROR_KEY: "STEP_LIMIT"}},
         {
@@ -854,7 +852,7 @@ def test_the_tracing_tab_counts_the_error_kinds_when_asked(open_page):
     }
 
 
-def test_the_counts_stay_while_the_queue_is_used(open_page):
+def test_counts_stay_while_queue_is_used(open_page):
     open_page.observations = [
         {"name": "message", "metadata": {tracing_dashboard.ERROR_KEY: "STEP_LIMIT"}}
     ]
@@ -870,7 +868,7 @@ def test_the_counts_stay_while_the_queue_is_used(open_page):
     }
 
 
-def test_the_tracing_tab_says_when_no_error_is_marked(open_page):
+def test_tracing_tab_says_no_error(open_page):
     page = open_page(role=messages.UI_START_REP)
 
     page = click(page, messages.UI_TRACING_LOAD)
@@ -879,9 +877,7 @@ def test_the_tracing_tab_says_when_no_error_is_marked(open_page):
     assert messages.DASH_NO_ERRORS in [info.value for info in page.info]
 
 
-def test_the_tracing_tab_says_why_it_cannot_read_and_the_queue_still_works(
-    open_page, monkeypatch
-):
+def test_tracing_failure_spares_the_queue(open_page, monkeypatch):
     def refuse(*args, **kwargs):
         raise tracing_dashboard.DashboardUnavailable("REQUEST_FAILED", 401)
 

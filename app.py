@@ -220,21 +220,17 @@ def draw_error_tracing(texts) -> None:
         return
     frame = pd.DataFrame(
         {
-            texts.DASH_COLUMN_KIND: [row.kind for row in rows],
+            texts.DASH_COLUMN_KIND: [
+                tracing_dashboard.kind_label(texts, row.kind) for row in rows
+            ],
+            texts.DASH_COLUMN_CODE: [row.kind for row in rows],
             texts.DASH_COLUMN_WHERE: [texts.DASH_WHERE[row.where] for row in rows],
             texts.DASH_COLUMN_COUNT: [row.count for row in rows],
         }
     )
     st.subheader(texts.DASH_BY_KIND)
-    st.bar_chart(
-        frame.pivot_table(
-            index=texts.DASH_COLUMN_KIND,
-            columns=texts.DASH_COLUMN_WHERE,
-            values=texts.DASH_COLUMN_COUNT,
-            aggfunc="sum",
-            fill_value=0,
-        )
-    )
+    data, spec = tracing_dashboard.vega_chart(rows, texts)
+    st.vega_lite_chart(data, spec, use_container_width=True)
     st.dataframe(frame, hide_index=True, use_container_width=True)
 
 

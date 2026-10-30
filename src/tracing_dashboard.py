@@ -174,19 +174,82 @@ table { width: 100%; border-collapse: collapse; }
 th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); }
 td.number, th.number { text-align: right; }
 """
-LABEL_WIDTH = 190
+# The two parts of a bar and their colours, the same in the page and in the app
+# (the dark theme's blue and orange of STYLE).
+WHERE_ORDER = ("message", "tool")
+WHERE_COLOURS = {"message": "#5b9bd8", "tool": "#e8a24a"}
+# The chart of the app: a step of this many pixels for each kind, and room for
+# the longest kind's label.
+CHART_STEP = 30
+LABEL_LIMIT = 300
+LABEL_WIDTH = 240
 BAR_WIDTH = 330
 ROW_HEIGHT = 30
 
 
-def chart_svg(rows: list[ErrorCount]) -> str:
-    """Bars by error kind, a message and a tool part in each."""
+def kind_label(texts, kind: str) -> str:
+    """An error kind said in words; a kind that has no words is shown by its code."""
+    return texts.DASH_ERROR_LABELS.get(kind, kind)
+
+
+def kinds_by_total(rows: list[ErrorCount]) -> list[tuple[str, dict[str, int]]]:
+    """Each error kind with its count in messages and in tools, most frequent first."""
     by_kind: dict[str, dict[str, int]] = {}
     for row in rows:
         by_kind.setdefault(row.kind, {})[row.where] = row.count
-    ordered = sorted(
-        by_kind.items(), key=lambda item: (-sum(item[1].values()), item[0])
-    )
+    return sorted(by_kind.items(), key=lambda item: (-sum(item[1].values()), item[0]))
+
+
+def vega_chart(rows: list[ErrorCount], texts) -> tuple[list[dict], dict]:
+    """(data, spec) of the horizontal bar chart of the app, for st.vega_lite_chart.
+
+    A bar for each kind, the most frequent on top, a message and a tool part in
+    each in the colours of the page; the labels of the kinds are given room,
+    and the counts go by whole numbers.
+    """
+    ordered = kinds_by_total(rows)
+    data = [
+        {
+            "kind": kind_label(texts, kind),
+            "where": texts.DASH_WHERE[where],
+            "count": parts[where],
+        }
+        for kind, parts in ordered
+        for where in WHERE_ORDER
+        if parts.get(where)
+    ]
+    spec = {
+        "mark": {"type": "bar", "cornerRadiusEnd": 2},
+        "height": {"step": CHART_STEP},
+        "encoding": {
+            "y": {
+                "field": "kind",
+                "type": "nominal",
+                "sort": [kind_label(texts, kind) for kind, _ in ordered],
+                "axis": {"title": texts.DASH_COLUMN_KIND, "labelLimit": LABEL_LIMIT},
+            },
+            "x": {
+                "field": "count",
+                "type": "quantitative",
+                "axis": {"title": texts.DASH_COLUMN_COUNT, "tickMinStep": 1},
+            },
+            "color": {
+                "field": "where",
+                "type": "nominal",
+                "scale": {
+                    "domain": [texts.DASH_WHERE[where] for where in WHERE_ORDER],
+                    "range": [WHERE_COLOURS[where] for where in WHERE_ORDER],
+                },
+                "legend": {"title": None, "orient": "bottom"},
+            },
+        },
+    }
+    return data, spec
+
+
+def chart_svg(rows: list[ErrorCount], texts) -> str:
+    """Bars by error kind, a message and a tool part in each."""
+    ordered = kinds_by_total(rows)
     top = max(sum(parts.values()) for _, parts in ordered)
     height = ROW_HEIGHT * len(ordered)
     width = LABEL_WIDTH + BAR_WIDTH + 60
@@ -196,7 +259,7 @@ def chart_svg(rows: list[ErrorCount]) -> str:
         x = LABEL_WIDTH
         lines.append(
             f'<text x="{LABEL_WIDTH - 8}" y="{y + 19}" text-anchor="end">'
-            f"{html.escape(kind)}</text>"
+            f"{html.escape(kind_label(texts, kind))}</text>"
         )
         for where, colour in (("message", "--message"), ("tool", "--tool")):
             count = parts.get(where, 0)
@@ -232,16 +295,18 @@ def render_html(rows: list[ErrorCount], observed: int, texts, language: str) -> 
             for where, colour in (("message", "--message"), ("tool", "--tool"))
         )
         body_rows = "".join(
-            f"<tr><td>{html.escape(row.kind)}</td>"
+            f"<tr><td>{html.escape(kind_label(texts, row.kind))}</td>"
+            f"<td><code>{html.escape(row.kind)}</code></td>"
             f"<td>{html.escape(texts.DASH_WHERE[row.where])}</td>"
             f'<td class="number">{row.count}</td></tr>'
             for row in rows
         )
         content = (
             f'<h2>{html.escape(texts.DASH_BY_KIND)}</h2><div class="card">'
-            f'{chart_svg(rows)}<div class="legend">{legend}</div></div>'
+            f'{chart_svg(rows, texts)}<div class="legend">{legend}</div></div>'
             f'<div class="card" style="margin-top: 16px"><table><thead><tr>'
             f"<th>{html.escape(texts.DASH_COLUMN_KIND)}</th>"
+            f"<th>{html.escape(texts.DASH_COLUMN_CODE)}</th>"
             f"<th>{html.escape(texts.DASH_COLUMN_WHERE)}</th>"
             f'<th class="number">{html.escape(texts.DASH_COLUMN_COUNT)}</th>'
             f"</tr></thead><tbody>{body_rows}</tbody></table></div>"
@@ -268,9 +333,12 @@ def render_table(rows: list[ErrorCount], observed: int, texts) -> str:
     )
     if not rows:
         return head + "\n" + texts.DASH_NO_ERRORS
-    width = max(len(row.kind) for row in rows)
+    names = [kind_label(texts, row.kind) for row in rows]
+    width = max(len(name) for name in names)
+    code_width = max(len(row.kind) for row in rows)
     lines = [
-        f"{row.kind:<{width}}  {texts.DASH_WHERE[row.where]:<8} {row.count:>4}"
-        for row in rows
+        f"{name:<{width}}  {row.kind:<{code_width}}  "
+        f"{texts.DASH_WHERE[row.where]:<8} {row.count:>4}"
+        for name, row in zip(names, rows)
     ]
     return "\n".join([head, *lines])
