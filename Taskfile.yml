@@ -301,6 +301,11 @@ tasks:
     cmds:
       - "{{.RUN}} uv run python eval/build_english_sets.py"
 
+  eval:overhead:
+    desc: Measure what the agent framework adds to a step, with a stand-in model that answers at once (no model calls, no API key); `-- --runs N` for more runs per row
+    cmds:
+      - "{{.RUN}} uv run python eval/framework_overhead.py {{.CLI_ARGS}}"
+
   eval:mutations:
     desc: Break each guard on purpose and check that the tests notice (no model calls); `-- --live` also runs the attack sets with the model on each broken guard (uses LLM quota, `-- --live --paid` to finish on the paid key); `-- --list` names the guards
     cmds:
