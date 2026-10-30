@@ -600,6 +600,36 @@ def test_run_stops_at_the_step_limit(run, fake):
     assert len(fake.requests) == config.MAX_STEPS == 8
 
 
+def test_answer_on_last_call_is_not_given(run, fake):
+    # LlamaIndex raises when it handles the output of the last call allowed,
+    # even if that output is the answer.
+    looks = [
+        [("get_order_status", {"order_ref": f"o_{number}"})]
+        for number in range(config.MAX_STEPS - 1)
+    ]
+    fake.script = [*looks, "Hepsine baktım."]
+
+    reply = run(asking("Bütün siparişlerime tek tek bak."))
+
+    assert reply.text == messages.STEP_LIMIT_REACHED
+    assert reply.log.stopped_at_step_limit is True
+    assert len(fake.requests) == config.MAX_STEPS
+
+
+def test_answer_one_call_before_is_given(run, fake):
+    looks = [
+        [("get_order_status", {"order_ref": f"o_{number}"})]
+        for number in range(config.MAX_STEPS - 2)
+    ]
+    fake.script = [*looks, "Hepsine baktım."]
+
+    reply = run(asking("Bütün siparişlerime tek tek bak."))
+
+    assert reply.text == "Hepsine baktım."
+    assert reply.log.stopped_at_step_limit is False
+    assert len(fake.requests) == config.MAX_STEPS - 1
+
+
 def test_empty_answer_gives_fixed_message(run, fake):
     fake.script = ["   "]
 

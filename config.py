@@ -165,7 +165,12 @@ CRITIC_CORRECTION_VARIANT = CRITIC_DEFAULT_VARIANT
 
 # --- Agent loop ---------------------------------------------------------
 
-# Upper limit on the steps an agent may take for one user message.
+# Upper limit on the steps an agent may take for one user message. It counts
+# model calls, and LlamaIndex raises when it handles the output of the last
+# one allowed, even if that output is the answer: a message that needs seven
+# tool calls and an answer on the eighth call gets the step-limit message.
+# No evaluation example reached it (checked on 2026-10-31 in the results
+# files). tests/test_support_agent.py keeps the behaviour.
 MAX_STEPS = 8
 # Upper limit on the tool calls of one user message, over all its steps: a
 # model may ask for many calls in one step. Measured on 2026-10-21, no
