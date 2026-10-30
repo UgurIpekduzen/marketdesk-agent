@@ -195,6 +195,11 @@ tasks:
     cmds:
       - "{{.RUN}} uv run python scripts/check_embedding.py"
 
+  embed:compare:
+    desc: Compare embedding models (e5-small, e5-base, bge-m3) on the policy questions, each in its own process; downloads about 970 MB once, runs on the CPU, needs no API key; `-- --only NAME` for one model, `-- --list` names them
+    cmds:
+      - "{{.RUN}} uv run python eval/embedding_compare.py {{.CLI_ARGS}}"
+
   trace:examples:
     desc: Send example traces of every error kind to the tracing target, with the stand-in model (no model calls); `-- --target phoenix` for Phoenix
     cmds:
