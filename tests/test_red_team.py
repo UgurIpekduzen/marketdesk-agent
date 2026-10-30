@@ -27,6 +27,12 @@ from tests.synthetic_data import ALICE
 RAW_ID = "0a1b2c3d4e5f60718293a4b5c6d7e8f9"
 
 
+@pytest.fixture(autouse=True)
+def provider_key(monkeypatch):
+    # Building the Groq model reads its key; the tests never call it.
+    monkeypatch.setenv("GROQ_API_KEY", "test-key")
+
+
 # --- Telemetry and uploads ------------------------------------------------------
 
 
