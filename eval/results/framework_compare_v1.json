@@ -1,0 +1,264 @@
+{
+ "runs": 200,
+ "ways": {
+  "LlamaIndex, bare agent.run": {
+   "versions": {
+    "llama-index-core": "0.14.25"
+   },
+   "scenarios": [
+    {
+     "model_calls": 1,
+     "runs": 200,
+     "model_calls_made": [
+      1
+     ],
+     "stopped_at_step_limit": 0,
+     "build_ms_p50": 0.62,
+     "run_ms_p50": 4.44,
+     "run_ms_p95": 6.23,
+     "run_ms_max": 45.07,
+     "step_ms_p50": 4.44,
+     "step_ms_p95": 6.23
+    },
+    {
+     "model_calls": 2,
+     "runs": 200,
+     "model_calls_made": [
+      2
+     ],
+     "stopped_at_step_limit": 0,
+     "build_ms_p50": 0.64,
+     "run_ms_p50": 7.97,
+     "run_ms_p95": 11.52,
+     "run_ms_max": 31.97,
+     "step_ms_p50": 3.99,
+     "step_ms_p95": 5.76
+    },
+    {
+     "model_calls": 4,
+     "runs": 200,
+     "model_calls_made": [
+      4
+     ],
+     "stopped_at_step_limit": 0,
+     "build_ms_p50": 0.64,
+     "run_ms_p50": 15.06,
+     "run_ms_p95": 17.11,
+     "run_ms_max": 59.49,
+     "step_ms_p50": 3.76,
+     "step_ms_p95": 4.28
+    },
+    {
+     "model_calls": 7,
+     "runs": 200,
+     "model_calls_made": [
+      7
+     ],
+     "stopped_at_step_limit": 0,
+     "build_ms_p50": 0.65,
+     "run_ms_p50": 24.94,
+     "run_ms_p95": 28.45,
+     "run_ms_max": 61.46,
+     "step_ms_p50": 3.56,
+     "step_ms_p95": 4.06
+    }
+   ]
+  },
+  "LlamaIndex, through run_agent": {
+   "versions": {
+    "llama-index-core": "0.14.25"
+   },
+   "scenarios": [
+    {
+     "model_calls": 1,
+     "runs": 200,
+     "model_calls_made": [
+      1
+     ],
+     "stopped_at_step_limit": 0,
+     "build_ms_p50": 0.6,
+     "run_ms_p50": 4.54,
+     "run_ms_p95": 4.98,
+     "run_ms_max": 7.85,
+     "step_ms_p50": 4.54,
+     "step_ms_p95": 4.98
+    },
+    {
+     "model_calls": 2,
+     "runs": 200,
+     "model_calls_made": [
+      2
+     ],
+     "stopped_at_step_limit": 0,
+     "build_ms_p50": 0.65,
+     "run_ms_p50": 8.31,
+     "run_ms_p95": 10.32,
+     "run_ms_max": 49.33,
+     "step_ms_p50": 4.16,
+     "step_ms_p95": 5.16
+    },
+    {
+     "model_calls": 4,
+     "runs": 200,
+     "model_calls_made": [
+      4
+     ],
+     "stopped_at_step_limit": 0,
+     "build_ms_p50": 0.68,
+     "run_ms_p50": 16.1,
+     "run_ms_p95": 20.06,
+     "run_ms_max": 45.84,
+     "step_ms_p50": 4.03,
+     "step_ms_p95": 5.02
+    },
+    {
+     "model_calls": 7,
+     "runs": 200,
+     "model_calls_made": [
+      7
+     ],
+     "stopped_at_step_limit": 0,
+     "build_ms_p50": 0.7,
+     "run_ms_p50": 26.74,
+     "run_ms_p95": 31.95,
+     "run_ms_max": 60.32,
+     "step_ms_p50": 3.82,
+     "step_ms_p95": 4.56
+    }
+   ]
+  },
+  "Pydantic AI 2.63.0": {
+   "versions": {
+    "pydantic-ai-slim": "2.63.0"
+   },
+   "scenarios": [
+    {
+     "model_calls": 1,
+     "runs": 200,
+     "model_calls_made": [
+      1
+     ],
+     "stopped_at_step_limit": 0,
+     "build_ms_p50": 0.48,
+     "run_ms_p50": 1.9,
+     "run_ms_p95": 2.27,
+     "run_ms_max": 3.08,
+     "step_ms_p50": 1.9,
+     "step_ms_p95": 2.27
+    },
+    {
+     "model_calls": 2,
+     "runs": 200,
+     "model_calls_made": [
+      2
+     ],
+     "stopped_at_step_limit": 0,
+     "build_ms_p50": 0.51,
+     "run_ms_p50": 3.22,
+     "run_ms_p95": 3.74,
+     "run_ms_max": 52.04,
+     "step_ms_p50": 1.61,
+     "step_ms_p95": 1.87
+    },
+    {
+     "model_calls": 4,
+     "runs": 200,
+     "model_calls_made": [
+      4
+     ],
+     "stopped_at_step_limit": 0,
+     "build_ms_p50": 0.56,
+     "run_ms_p50": 5.85,
+     "run_ms_p95": 6.57,
+     "run_ms_max": 7.89,
+     "step_ms_p50": 1.46,
+     "step_ms_p95": 1.64
+    },
+    {
+     "model_calls": 7,
+     "runs": 200,
+     "model_calls_made": [
+      7
+     ],
+     "stopped_at_step_limit": 0,
+     "build_ms_p50": 0.59,
+     "run_ms_p50": 9.69,
+     "run_ms_p95": 10.57,
+     "run_ms_max": 11.32,
+     "step_ms_p50": 1.38,
+     "step_ms_p95": 1.51
+    }
+   ]
+  },
+  "LangChain 1.4.7 create_agent (on LangGraph)": {
+   "versions": {
+    "langchain": "1.4.7",
+    "langgraph": "1.2.19",
+    "langchain-core": "1.7.3"
+   },
+   "scenarios": [
+    {
+     "model_calls": 1,
+     "runs": 200,
+     "model_calls_made": [
+      1
+     ],
+     "stopped_at_step_limit": 0,
+     "build_ms_p50": 2.27,
+     "run_ms_p50": 0.98,
+     "run_ms_p95": 1.28,
+     "run_ms_max": 1.69,
+     "step_ms_p50": 0.98,
+     "step_ms_p95": 1.28
+    },
+    {
+     "model_calls": 2,
+     "runs": 200,
+     "model_calls_made": [
+      2
+     ],
+     "stopped_at_step_limit": 0,
+     "build_ms_p50": 2.27,
+     "run_ms_p50": 2.24,
+     "run_ms_p95": 2.77,
+     "run_ms_max": 3.27,
+     "step_ms_p50": 1.12,
+     "step_ms_p95": 1.39
+    },
+    {
+     "model_calls": 4,
+     "runs": 200,
+     "model_calls_made": [
+      4
+     ],
+     "stopped_at_step_limit": 0,
+     "build_ms_p50": 2.37,
+     "run_ms_p50": 4.57,
+     "run_ms_p95": 5.87,
+     "run_ms_max": 10.4,
+     "step_ms_p50": 1.14,
+     "step_ms_p95": 1.47
+    },
+    {
+     "model_calls": 7,
+     "runs": 200,
+     "model_calls_made": [
+      7
+     ],
+     "stopped_at_step_limit": 0,
+     "build_ms_p50": 2.46,
+     "run_ms_p50": 7.9,
+     "run_ms_p95": 8.89,
+     "run_ms_max": 74.85,
+     "step_ms_p50": 1.13,
+     "step_ms_p95": 1.27
+    }
+   ]
+  }
+ },
+ "model": {
+  "examples": 25,
+  "model_calls": 83,
+  "ms_per_call": 751.4
+ }
+}
