@@ -50,14 +50,27 @@ The results are those of 2026-10-17: the same sections in the same order, the sa
 
 | Model calls in a run | Run p50 (ms) | Run p95 (ms) | Step p50 (ms) | Step p95 (ms) |
 |---|---|---|---|---|
-| 1 | 4.5 | 6.8 | 4.5 | 6.8 |
-| 2 | 8.3 | 10.4 | 4.1 | 5.2 |
-| 4 | 15.5 | 18.4 | 3.9 | 4.6 |
-| 8 (the step limit) | 32.1 | 52.1 | 4.0 | 6.5 |
+| 1 | 4.6 | 6.0 | 4.6 | 6.0 |
+| 2 | 8.6 | 10.4 | 4.3 | 5.2 |
+| 4 | 16.2 | 18.8 | 4.1 | 4.7 |
+| 7 (the longest run that ends with an answer) | 27.8 | 32.4 | 4.0 | 4.6 |
 
-A step takes about 4 ms. Building the agent and its context takes about 0.7 ms, once per session. In the 25 development examples of the golden set the model took 751 ms per call (83 calls, from the results file), so the framework's step is about 0.54% of it.
+A step takes about 4 ms. Building the agent and its context takes about 0.7 ms, once per session. A run of eight calls is not in the table because it does not end with an answer: LlamaIndex stops with "Max iterations reached" when it handles the output of the eighth call, even if that is the answer, and `run_agent` then returns the step-limit message (a test records this). In the 25 development examples of the golden set the model took 751 ms per call (83 calls, from the results file), so the framework's step is about 0.53% of it.
 
-Read with care: the figure is an upper bound for the framework, because it includes the project's own `run_agent` and the stand-in's bookkeeping (it records every request). It leaves out the real tools, the network, the guard around the model and tracing. Only LlamaIndex was measured: another framework was not run, so nothing here says how it compares. The figures found on the web (about 6 ms for LlamaIndex and 14 ms for LangGraph) are from third-party blogs, for another architecture, and are not used here.
+Read with care: the figure includes the project's own `run_agent` and the stand-in's bookkeeping (it records every request). Measured without them (the bare `agent.run` and a stand-in that records nothing, in the comparison below), a step took 3.6 to 4.4 ms, so the two add little. The figure leaves out the real tools, the network, the guard around the model and tracing. Two other frameworks are measured in the next section, and only there. The figures found on the web (about 6 ms for LlamaIndex and 14 ms for LangGraph) come from a benchmark by AIMultiple (January 2026) of a whole RAG workflow, per query, with several model calls and a graph of steps; its method is described, but its library versions, hardware, spread and raw data are not published, and a comparison page by Metavert repeats the figures without naming a source. They are per query and not per model call, so they cannot be set against the figures here, and they are not used.
+
+## Three frameworks side by side
+
+`task eval:overhead:compare` (`eval/framework_compare.py`) runs the same scenario for LlamaIndex (the bare `agent.run`, and through `run_agent`), for Pydantic AI and for LangChain's `create_agent`, which runs on LangGraph, in one process, with a scripted model that answers at once and a tool that does nothing. LangGraph's own `create_react_agent` is deprecated in favour of `create_agent` (it warns so, to be removed in LangGraph 2.0), so `create_agent` was used. Pydantic AI (`pydantic-ai-slim` 2.63.0, its own `FunctionModel`) and LangChain (`langchain` 1.4.7 with `langgraph` 1.2.19 and `langchain-core` 1.7.3, a scripted chat model that answers in its async path directly) are not dependencies of the project: the task adds them for the run only, and `pyproject.toml` and `uv.lock` stay as they are. 200 runs per row after 5 warm-up runs, CPU. The LlamaIndex stand-in here records nothing.
+
+| Way | Step p50 (ms), for 1 / 2 / 4 / 7 model calls | Step p95 (ms), the same | Run of 7 calls, p50 / p95 (ms) | Building the agent, p50 (ms) |
+|---|---|---|---|---|
+| LlamaIndex, bare agent.run | 4.4 / 4.0 / 3.8 / 3.6 | 6.2 / 5.8 / 4.3 / 4.1 | 24.9 / 28.4 | 0.6–0.7 |
+| LlamaIndex, through run_agent | 4.5 / 4.2 / 4.0 / 3.8 | 5.0 / 5.2 / 5.0 / 4.6 | 26.7 / 31.9 | 0.6–0.7 |
+| Pydantic AI 2.63.0 | 1.9 / 1.6 / 1.5 / 1.4 | 2.3 / 1.9 / 1.6 / 1.5 | 9.7 / 10.6 | 0.5–0.6 |
+| LangChain 1.4.7 create_agent (on LangGraph) | 1.0 / 1.1 / 1.1 / 1.1 | 1.3 / 1.4 / 1.5 / 1.3 | 7.9 / 8.9 | 2.3–2.5 |
+
+In this scenario a LlamaIndex step takes about 3.6 to 4.5 ms, a Pydantic AI step about 1.4 to 1.9 ms and a LangChain-on-LangGraph step about 1.0 to 1.1 ms; building the LangChain agent (it compiles a graph) takes about 2.3 ms against 0.6 ms for LlamaIndex, once per session. All of them are small against the 751 ms the model took per call. Read with care: it is one scenario, on the CPU, with no tracing, no real tools and no real model; the frameworks do different work around a step (LlamaIndex runs an event workflow with a context that can be saved, LangGraph keeps a state and can checkpoint it), so a faster step is not a better framework; and the figures say nothing about quality, features or memory. The scripted models are not the same code, and a different way of scripting one could move a figure.
 
 ## Embedding models
 
@@ -87,8 +100,8 @@ What the numbers show:
 - In Turkish, `bge-m3` finds the expected section in the top three for 19 of 20 questions, `e5-small` for 18 (17 in the other two ways) and `e5-base` for 16 (16–17). The mean reciprocal rank is 0.87, 0.81 and 0.75.
 - In English, `e5-small` falls to 12 in the top three (12–14), 15 in the top five, and its worst rank is 25 of 28. `e5-base` holds 18 (16–18); `bge-m3` 19 (19–20).
 - A query costs about 2.3 ms with `e5-small`, 6.8 ms with `e5-base` and 22 ms with `bge-m3`. The process peak memory (the model, the runtime and the three runs of embedding) is 676, 928 and 1,344 MB. `bge-m3` was not tried on the deployment platform.
-- The support agent is told to search in Turkish (the tool's description says "query is the question in Turkish"). Of the 233 search queries found in the response cache of the evaluation runs, 3 looked English by a rough pattern. The English run therefore shows the case in which the model passes an English question on as it was written.
-- The `bge-m3` code was checked against Xenova's own export with pooling inside it (`sentence_transformers_quantized.onnx`): on 48 texts the cosine between the two vectors was 1.0000 at the lowest, and 0.67 to 0.74 when mean pooling was used instead, so the check could have failed. Both use the same quantized weights, so it does not measure what quantizing costs against the full model.
+- The support agent is told to search in Turkish (the tool's description says "query is the question in Turkish"), but the instruction is not always followed: the response cache of the evaluation runs holds 175 different search queries, and by a list of common words 155 are Turkish, 15 English, 3 mixed and 2 unclear. The cache does not record which session a query came from, so how often an English-session question stays English was not measured. English queries do reach the search, so the English run shows a real case, not only a possible one.
+- The `bge-m3` code was checked against Xenova's own export with pooling inside it (`sentence_transformers_quantized.onnx`): on 48 texts the cosine between the two vectors was 1.0000 at the lowest, and 0.67 at the lowest (0.74 on average) when mean pooling was used instead, so the check could have failed. Both use the same quantized weights, so it does not measure what quantizing costs against the full model.
 
 ## Limits
 
@@ -96,7 +109,7 @@ What the numbers show:
 - The batch effect of the quantized models is of the size of the differences between the models in places (`e5-base`, first: 13 to 16). The figures are a direction, not a ranking beyond doubt.
 - The English questions are translations of the Turkish ones.
 - Only the product's model (`e5-small`) was run through the whole evaluation: the policy faithfulness of 0.95 and the other end-to-end figures do not say what another embedding model would give.
-- No other agent framework was measured, in search or in the agent loop.
+- Two other agent frameworks (Pydantic AI, and LangChain on LangGraph) were measured, in one scenario of the agent loop and nowhere else; no other framework was measured, and none in search.
 
 ## Traces
 
@@ -113,4 +126,4 @@ The author decided on 2026-10-17 to move to LlamaIndex and remove the direct Chr
 
 ## How to measure again
 
-`task test:model` checks the retrieval numbers of the table of 2026-10-17 with the real model. `task index:compare` repeats the comparison of direct Chroma with LlamaIndex, `task eval:overhead` the measurement of what the framework adds to a step (no model, no key), and `task embed:compare` the comparison of the embedding models (about 970 MB downloaded once; `-- --language en` for the English questions). The old direct Chroma code is in the history before the commit "refactor: search the policies through LlamaIndex"; the comparison script has its own copy of it.
+`task test:model` checks the retrieval numbers of the table of 2026-10-17 with the real model. `task index:compare` repeats the comparison of direct Chroma with LlamaIndex, `task eval:overhead` the measurement of what the framework adds to a step (no model, no key), and `task eval:overhead:compare` the same for LlamaIndex, Pydantic AI and LangChain on LangGraph (the last two are added for the run only), and `task embed:compare` the comparison of the embedding models (about 970 MB downloaded once; `-- --language en` for the English questions). The old direct Chroma code is in the history before the commit "refactor: search the policies through LlamaIndex"; the comparison script has its own copy of it.
