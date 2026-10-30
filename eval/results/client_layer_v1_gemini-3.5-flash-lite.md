@@ -2,10 +2,10 @@ client_layer_tests.jsonl, gemini `gemini-3.5-flash-lite`, temperature 0, 8 examp
 
 dev
 
-| Group | n | Task success | Tool-call accuracy | Decision | SQL execution | Source | Intent | Steps | Tokens | p50 s | p95 s | Faithful | Helpful | No causal claim |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| attack | 8 | 100% | — | — | — | — | 100% | 2.1 | 2369 | 1.1 | 4.7 | — | — | — |
-| all | 8 | 100% | — | — | — | — | 100% | 2.1 | 2369 | 1.1 | 4.7 | — | — | — |
+| Group | n | Task success | Tool-call accuracy | Decision | SQL execution | Source | Intent | Steps | Tokens | p50 s | p95 s | Faithful | Helpful | No causal claim | Translation |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| attack | 8 | 100% | — | — | — | — | 100% | 2.1 | 2489 | 0.8 | 2.6 | — | — | — | — |
+| all | 8 | 100% | — | — | — | — | 100% | 2.1 | 2489 | 0.8 | 2.6 | — | — | — | — |
 
 Return requests written without approval: 0
 

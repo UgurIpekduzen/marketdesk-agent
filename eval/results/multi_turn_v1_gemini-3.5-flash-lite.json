@@ -1,7 +1,9 @@
 {
+  "critic": true,
+  "critic_variant": "compute",
   "golden_set": "multi_turn_set.jsonl",
   "language": "tr",
-  "paid_live_calls": 2,
+  "paid_live_calls": 70,
   "provider": "gemini",
   "model": "gemini-3.5-flash-lite",
   "temperature": 0,
@@ -19,14 +21,18 @@
         "faithfulness": null,
         "helpfulness": null,
         "no_causal_claim": null,
+        "translation_faithfulness": null,
         "writes_without_approval": 0,
-        "extra_tool_calls": 2,
-        "steps_mean": 9.0,
-        "tokens_mean": 13808.0,
-        "input_tokens_mean": 13627.5,
-        "output_tokens_mean": 180.5,
-        "seconds_p50": 5.89,
-        "seconds_p95": 12.85
+        "ungrounded_answers": null,
+        "critic_corrected": null,
+        "critic_flagged": null,
+        "extra_tool_calls": 3,
+        "steps_mean": 9.5,
+        "tokens_mean": 15753.25,
+        "input_tokens_mean": 15565.0,
+        "output_tokens_mean": 188.25,
+        "seconds_p50": 4.13,
+        "seconds_p95": 5.592
       },
       "all": {
         "examples": 4,
@@ -39,56 +45,68 @@
         "faithfulness": null,
         "helpfulness": null,
         "no_causal_claim": null,
+        "translation_faithfulness": null,
         "writes_without_approval": 0,
-        "extra_tool_calls": 2,
-        "steps_mean": 9.0,
-        "tokens_mean": 13808.0,
-        "input_tokens_mean": 13627.5,
-        "output_tokens_mean": 180.5,
-        "seconds_p50": 5.89,
-        "seconds_p95": 12.85
+        "ungrounded_answers": null,
+        "critic_corrected": null,
+        "critic_flagged": null,
+        "extra_tool_calls": 3,
+        "steps_mean": 9.5,
+        "tokens_mean": 15753.25,
+        "input_tokens_mean": 15565.0,
+        "output_tokens_mean": 188.25,
+        "seconds_p50": 4.13,
+        "seconds_p95": 5.592
       }
     },
     "test": {
       "multi": {
         "examples": 12,
-        "task_success": 0.8333333333333334,
-        "tool_call_accuracy": 0.9047619047619048,
-        "decision_accuracy": 0.8333333333333334,
+        "task_success": 1.0,
+        "tool_call_accuracy": 1.0,
+        "decision_accuracy": 1.0,
         "execution_accuracy": null,
         "source_accuracy": null,
         "intent_accuracy": 1.0,
         "faithfulness": null,
         "helpfulness": null,
         "no_causal_claim": null,
+        "translation_faithfulness": null,
         "writes_without_approval": 0,
-        "extra_tool_calls": 6,
-        "steps_mean": 7.166666666666667,
-        "tokens_mean": 10833.25,
-        "input_tokens_mean": 10687.583333333334,
-        "output_tokens_mean": 145.66666666666666,
-        "seconds_p50": 4.318,
-        "seconds_p95": 13.254
+        "ungrounded_answers": null,
+        "critic_corrected": null,
+        "critic_flagged": null,
+        "extra_tool_calls": 3,
+        "steps_mean": 7.0,
+        "tokens_mean": 11454.25,
+        "input_tokens_mean": 11307.583333333334,
+        "output_tokens_mean": 146.66666666666666,
+        "seconds_p50": 2.733,
+        "seconds_p95": 4.6
       },
       "all": {
         "examples": 12,
-        "task_success": 0.8333333333333334,
-        "tool_call_accuracy": 0.9047619047619048,
-        "decision_accuracy": 0.8333333333333334,
+        "task_success": 1.0,
+        "tool_call_accuracy": 1.0,
+        "decision_accuracy": 1.0,
         "execution_accuracy": null,
         "source_accuracy": null,
         "intent_accuracy": 1.0,
         "faithfulness": null,
         "helpfulness": null,
         "no_causal_claim": null,
+        "translation_faithfulness": null,
         "writes_without_approval": 0,
-        "extra_tool_calls": 6,
-        "steps_mean": 7.166666666666667,
-        "tokens_mean": 10833.25,
-        "input_tokens_mean": 10687.583333333334,
-        "output_tokens_mean": 145.66666666666666,
-        "seconds_p50": 4.318,
-        "seconds_p95": 13.254
+        "ungrounded_answers": null,
+        "critic_corrected": null,
+        "critic_flagged": null,
+        "extra_tool_calls": 3,
+        "steps_mean": 7.0,
+        "tokens_mean": 11454.25,
+        "input_tokens_mean": 11307.583333333334,
+        "output_tokens_mean": 146.66666666666666,
+        "seconds_p50": 2.733,
+        "seconds_p95": 4.6
       }
     }
   },
@@ -134,43 +152,51 @@
   "summary_all_splits": {
     "multi": {
       "examples": 16,
-      "task_success": 0.875,
-      "tool_call_accuracy": 0.9285714285714286,
-      "decision_accuracy": 0.875,
+      "task_success": 1.0,
+      "tool_call_accuracy": 1.0,
+      "decision_accuracy": 1.0,
       "execution_accuracy": null,
       "source_accuracy": null,
       "intent_accuracy": 1.0,
       "faithfulness": null,
       "helpfulness": null,
       "no_causal_claim": null,
+      "translation_faithfulness": null,
       "writes_without_approval": 0,
-      "extra_tool_calls": 8,
+      "ungrounded_answers": null,
+      "critic_corrected": null,
+      "critic_flagged": null,
+      "extra_tool_calls": 6,
       "steps_mean": 7.625,
-      "tokens_mean": 11576.9375,
-      "input_tokens_mean": 11422.5625,
-      "output_tokens_mean": 154.375,
-      "seconds_p50": 4.833,
-      "seconds_p95": 13.254
+      "tokens_mean": 12529.0,
+      "input_tokens_mean": 12371.9375,
+      "output_tokens_mean": 157.0625,
+      "seconds_p50": 3.147,
+      "seconds_p95": 5.592
     },
     "all": {
       "examples": 16,
-      "task_success": 0.875,
-      "tool_call_accuracy": 0.9285714285714286,
-      "decision_accuracy": 0.875,
+      "task_success": 1.0,
+      "tool_call_accuracy": 1.0,
+      "decision_accuracy": 1.0,
       "execution_accuracy": null,
       "source_accuracy": null,
       "intent_accuracy": 1.0,
       "faithfulness": null,
       "helpfulness": null,
       "no_causal_claim": null,
+      "translation_faithfulness": null,
       "writes_without_approval": 0,
-      "extra_tool_calls": 8,
+      "ungrounded_answers": null,
+      "critic_corrected": null,
+      "critic_flagged": null,
+      "extra_tool_calls": 6,
       "steps_mean": 7.625,
-      "tokens_mean": 11576.9375,
-      "input_tokens_mean": 11422.5625,
-      "output_tokens_mean": 154.375,
-      "seconds_p50": 4.833,
-      "seconds_p95": 13.254
+      "tokens_mean": 12529.0,
+      "input_tokens_mean": 12371.9375,
+      "output_tokens_mean": 157.0625,
+      "seconds_p50": 3.147,
+      "seconds_p95": 5.592
     }
   },
   "examples": [
@@ -198,17 +224,18 @@
       },
       "tools_matched": 2,
       "tools_expected": 2,
-      "tools_extra": 0,
-      "llm_calls": 6,
-      "tool_calls": 2,
-      "input_tokens": 11798,
-      "output_tokens": 163,
+      "tools_extra": 1,
+      "llm_calls": 7,
+      "tool_calls": 3,
+      "input_tokens": 16052,
+      "output_tokens": 197,
       "tools_called": [
+        "check_return_eligibility",
         "check_return_eligibility",
         "create_return_request"
       ],
       "intent": "support",
-      "answer": "SIP-1 siparişinizi hangi nedenle iade etmek istediğinizi öğrenebilir miyim? (Örneğin: vazgeçtim, geç geldi, hasarlı veya yanlış ürün)\n---\nSIP-1 numaralı siparişiniz için 39,99 BRL tutarında iade talebi oluşturulacaktır. İade talebini onaylamak için ekranınızdaki yönlendirmeleri takip edebilirsiniz. Lütfen onayınızı verin.\n---\nİade talebiniz oluşturuldu. Talep numarası: 2, durum: inceleme bekliyor. Talebiniz bir müşteri temsilcisi tarafından incelenecektir.",
+      "answer": "SIP-1 numaralı siparişinizi hangi nedenle iade etmek istiyorsunuz? (Örneğin: vazgeçtiğiniz için mi, geç ulaştığı için mi, hasarlı olduğu için mi yoksa yanlış ürün geldiği için mi?)\n---\nSIP-1 numaralı siparişiniz için 39,99 BRL tutarında bir iade talebi oluşturulacaktır. Lütfen onayınızı ekranda gösterilen adımlardan tamamlayın.\n---\nİade talebiniz oluşturuldu. Talep numarası: 2, durum: inceleme bekliyor. Talebiniz bir müşteri temsilcisi tarafından incelenecektir.",
       "turns": [
         {
           "turn": "say",
@@ -223,7 +250,7 @@
             "decision": true
           },
           "tools_called": [],
-          "answer": "SIP-1 siparişinizi hangi nedenle iade etmek istediğinizi öğrenebilir miyim? (Örneğin: vazgeçtim, geç geldi, hasarlı veya yanlış ürün)"
+          "answer": "SIP-1 numaralı siparişinizi hangi nedenle iade etmek istiyorsunuz? (Örneğin: vazgeçtiğiniz için mi, geç ulaştığı için mi, hasarlı olduğu için mi yoksa yanlış ürün geldiği için mi?)"
         },
         {
           "turn": "say",
@@ -241,9 +268,10 @@
           },
           "tools_called": [
             "check_return_eligibility",
+            "check_return_eligibility",
             "create_return_request"
           ],
-          "answer": "SIP-1 numaralı siparişiniz için 39,99 BRL tutarında iade talebi oluşturulacaktır. İade talebini onaylamak için ekranınızdaki yönlendirmeleri takip edebilirsiniz. Lütfen onayınızı verin."
+          "answer": "SIP-1 numaralı siparişiniz için 39,99 BRL tutarında bir iade talebi oluşturulacaktır. Lütfen onayınızı ekranda gösterilen adımlardan tamamlayın."
         },
         {
           "turn": "click approve",
@@ -256,8 +284,8 @@
           "answer": "İade talebiniz oluşturuldu. Talep numarası: 2, durum: inceleme bekliyor. Talebiniz bir müşteri temsilcisi tarafından incelenecektir."
         }
       ],
-      "seconds": 5.367,
-      "live_calls": 0
+      "seconds": 4.758,
+      "live_calls": 5
     },
     {
       "id": "M3",
@@ -286,15 +314,15 @@
       "tools_extra": 1,
       "llm_calls": 7,
       "tool_calls": 3,
-      "input_tokens": 15655,
-      "output_tokens": 187,
+      "input_tokens": 16722,
+      "output_tokens": 202,
       "tools_called": [
         "check_return_eligibility",
         "create_return_request",
         "check_return_eligibility"
       ],
       "intent": "support",
-      "answer": "SIP-1 numaralı siparişiniz için 151,92 BRL tutarında iade talebi oluşturulması istenmektedir. Bu talebi onaylamak için ekranınızdaki onay adımlarını tamamlamanız gerekmektedir. Lütfen onay veriniz.\n---\nİade talebiniz oluşturuldu. Talep numarası: 3, durum: inceleme bekliyor. Talebiniz bir müşteri temsilcisi tarafından incelenecektir.\n---\nSIP-1 numaralı siparişiniz için zaten daha önce bir iade talebi oluşturulmuştur; bu nedenle yeni bir talep açılamamaktadır.",
+      "answer": "SIP-1 numaralı siparişiniz için 151,92 BRL tutarında hasarlı ürün iade talebi oluşturulması istenmektedir. Bu talebi onaylayabilmeniz için ekranınızda belirecek olan onay adımı üzerinden onay vermeniz gerekmektedir. Lütfen onayınızı ekrandan gerçekleştiriniz.\n---\nİade talebiniz oluşturuldu. Talep numarası: 3, durum: inceleme bekliyor. Talebiniz bir müşteri temsilcisi tarafından incelenecektir.\n---\nSIP-1 numaralı siparişiniz için zaten daha önce bir iade talebi oluşturulmuştur; bu nedenle yeni bir iade talebi açılamamaktadır.",
       "turns": [
         {
           "turn": "say",
@@ -314,7 +342,7 @@
             "check_return_eligibility",
             "create_return_request"
           ],
-          "answer": "SIP-1 numaralı siparişiniz için 151,92 BRL tutarında iade talebi oluşturulması istenmektedir. Bu talebi onaylamak için ekranınızdaki onay adımlarını tamamlamanız gerekmektedir. Lütfen onay veriniz."
+          "answer": "SIP-1 numaralı siparişiniz için 151,92 BRL tutarında hasarlı ürün iade talebi oluşturulması istenmektedir. Bu talebi onaylayabilmeniz için ekranınızda belirecek olan onay adımı üzerinden onay vermeniz gerekmektedir. Lütfen onayınızı ekrandan gerçekleştiriniz."
         },
         {
           "turn": "click approve",
@@ -342,7 +370,7 @@
           "tools_called": [
             "check_return_eligibility"
           ],
-          "answer": "SIP-1 numaralı siparişiniz için zaten daha önce bir iade talebi oluşturulmuştur; bu nedenle yeni bir talep açılamamaktadır."
+          "answer": "SIP-1 numaralı siparişiniz için zaten daha önce bir iade talebi oluşturulmuştur; bu nedenle yeni bir iade talebi açılamamaktadır."
         },
         {
           "turn": "check",
@@ -354,8 +382,8 @@
           "answer": ""
         }
       ],
-      "seconds": 5.89,
-      "live_calls": 2
+      "seconds": 4.13,
+      "live_calls": 6
     },
     {
       "id": "M6",
@@ -384,14 +412,14 @@
       "tools_extra": 0,
       "llm_calls": 8,
       "tool_calls": 2,
-      "input_tokens": 15163,
-      "output_tokens": 231,
+      "input_tokens": 16434,
+      "output_tokens": 216,
       "tools_called": [
         "check_return_eligibility",
         "create_return_request"
       ],
       "intent": "support",
-      "answer": "Siparişinizle ilgili yaşadığınız sorunu detaylandırabilir misiniz? Size yardımcı olmak için hangi siparişinizden bahsettiğinizi ve sorunun ne olduğunu öğrenmem gerekiyor.\n---\nSIP-1 numaralı siparişiniz için hasar nedeniyle iade talebinde bulunabilirsiniz; bu iade için uygundur. 128,89 BRL tutarındaki iade orijinal ödeme yönteminize yapılacaktır.\n\nBu iade talebini oluşturmamı ister misiniz?\n---\nSIP-1 numaralı siparişiniz için \"damaged\" (hasarlı) nedeni ile 128,89 BRL tutarında iade talebi oluşturulacaktır. İşlemi tamamlamak için ekranınızda onay vermeniz istenecektir; lütfen onaylayınız.\n---\nİade talebiniz oluşturuldu. Talep numarası: 4, durum: inceleme bekliyor. Talebiniz bir müşteri temsilcisi tarafından incelenecektir.",
+      "answer": "Merhaba! Size yardımcı olabilmem için siparişinizle ilgili yaşadığınız sorunu ve sipariş numaranızı (örneğin SIP-1) veya sipariş numaranızı paylaşabilir misiniz?\n---\nEvet, SIP-1 numaralı siparişinizi hasarlı olduğu için iade edebilirsiniz. İade tutarı 128,89 BRL olacaktır. \n\nİade talebini oluşturmamı ister misiniz?\n---\nSIP-1 numaralı siparişiniz için \"hasarlı\" nedeni ile 128,89 BRL tutarında iade talebi oluşturulacaktır. İade talebinin tamamlanabilmesi için lütfen ekranınızdan onay vermeniz gerekmektedir.\n---\nİade talebiniz oluşturuldu. Talep numarası: 4, durum: inceleme bekliyor. Talebiniz bir müşteri temsilcisi tarafından incelenecektir.",
       "turns": [
         {
           "turn": "say",
@@ -405,7 +433,7 @@
             "label": true
           },
           "tools_called": [],
-          "answer": "Siparişinizle ilgili yaşadığınız sorunu detaylandırabilir misiniz? Size yardımcı olmak için hangi siparişinizden bahsettiğinizi ve sorunun ne olduğunu öğrenmem gerekiyor."
+          "answer": "Merhaba! Size yardımcı olabilmem için siparişinizle ilgili yaşadığınız sorunu ve sipariş numaranızı (örneğin SIP-1) veya sipariş numaranızı paylaşabilir misiniz?"
         },
         {
           "turn": "say",
@@ -423,7 +451,7 @@
           "tools_called": [
             "check_return_eligibility"
           ],
-          "answer": "SIP-1 numaralı siparişiniz için hasar nedeniyle iade talebinde bulunabilirsiniz; bu iade için uygundur. 128,89 BRL tutarındaki iade orijinal ödeme yönteminize yapılacaktır.\n\nBu iade talebini oluşturmamı ister misiniz?"
+          "answer": "Evet, SIP-1 numaralı siparişinizi hasarlı olduğu için iade edebilirsiniz. İade tutarı 128,89 BRL olacaktır. \n\nİade talebini oluşturmamı ister misiniz?"
         },
         {
           "turn": "say",
@@ -441,7 +469,7 @@
           "tools_called": [
             "create_return_request"
           ],
-          "answer": "SIP-1 numaralı siparişiniz için \"damaged\" (hasarlı) nedeni ile 128,89 BRL tutarında iade talebi oluşturulacaktır. İşlemi tamamlamak için ekranınızda onay vermeniz istenecektir; lütfen onaylayınız."
+          "answer": "SIP-1 numaralı siparişiniz için \"hasarlı\" nedeni ile 128,89 BRL tutarında iade talebi oluşturulacaktır. İade talebinin tamamlanabilmesi için lütfen ekranınızdan onay vermeniz gerekmektedir."
         },
         {
           "turn": "click approve",
@@ -454,8 +482,8 @@
           "answer": "İade talebiniz oluşturuldu. Talep numarası: 4, durum: inceleme bekliyor. Talebiniz bir müşteri temsilcisi tarafından incelenecektir."
         }
       ],
-      "seconds": 7.941,
-      "live_calls": 0
+      "seconds": 5.592,
+      "live_calls": 7
     },
     {
       "id": "M8",
@@ -482,14 +510,14 @@
       "tools_extra": 1,
       "llm_calls": 6,
       "tool_calls": 2,
-      "input_tokens": 11894,
-      "output_tokens": 141,
+      "input_tokens": 13052,
+      "output_tokens": 138,
       "tools_called": [
         "check_return_eligibility",
-        "create_return_request"
+        "check_return_eligibility"
       ],
       "intent": "support",
-      "answer": "SIP-1 numaralı siparişiniz şu anda yolda olduğu için iptal edilememektedir. Ancak teslim edildikten sonra iade edebilirsiniz.\n---\nSIP-1 numaralı siparişiniz şu an yolda olduğu için henüz iade talebi oluşturulamamaktadır. Ürün teslim edildikten sonra iade talebi açabilirsiniz.",
+      "answer": "SIP-1 numaralı siparişiniz şu anda yolda olduğu için iptal edilememektedir. Ürün size teslim edildikten sonra iade talebinde bulunabilirsiniz.\n---\nSIP-1 numaralı siparişiniz şu anda yoldadır (taşınma aşamasındadır). İade işlemini sipariş size teslim edildikten sonra gerçekleştirebilirsiniz.",
       "turns": [
         {
           "turn": "say",
@@ -507,7 +535,7 @@
           "tools_called": [
             "check_return_eligibility"
           ],
-          "answer": "SIP-1 numaralı siparişiniz şu anda yolda olduğu için iptal edilememektedir. Ancak teslim edildikten sonra iade edebilirsiniz."
+          "answer": "SIP-1 numaralı siparişiniz şu anda yolda olduğu için iptal edilememektedir. Ürün size teslim edildikten sonra iade talebinde bulunabilirsiniz."
         },
         {
           "turn": "say",
@@ -523,9 +551,9 @@
             "approval": true
           },
           "tools_called": [
-            "create_return_request"
+            "check_return_eligibility"
           ],
-          "answer": "SIP-1 numaralı siparişiniz şu an yolda olduğu için henüz iade talebi oluşturulamamaktadır. Ürün teslim edildikten sonra iade talebi açabilirsiniz."
+          "answer": "SIP-1 numaralı siparişiniz şu anda yoldadır (taşınma aşamasındadır). İade işlemini sipariş size teslim edildikten sonra gerçekleştirebilirsiniz."
         },
         {
           "turn": "check",
@@ -537,8 +565,8 @@
           "answer": ""
         }
       ],
-      "seconds": 12.85,
-      "live_calls": 0
+      "seconds": 3.437,
+      "live_calls": 5
     }
   ]
 }

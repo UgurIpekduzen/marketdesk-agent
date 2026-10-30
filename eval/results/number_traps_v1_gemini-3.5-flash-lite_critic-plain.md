@@ -2,10 +2,10 @@ number_traps.jsonl, gemini `gemini-3.5-flash-lite`, temperature 0, 6 examples.
 
 dev
 
-| Group | n | Task success | Tool-call accuracy | Decision | SQL execution | Source | Intent | Steps | Tokens | p50 s | p95 s | Faithful | Helpful | No causal claim |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| ops | 6 | 100% | — | — | — | — | 100% | 9.2 | 17396 | 5.5 | 8.4 | — | — | — |
-| all | 6 | 100% | — | — | — | — | 100% | 9.2 | 17396 | 5.5 | 8.4 | — | — | — |
+| Group | n | Task success | Tool-call accuracy | Decision | SQL execution | Source | Intent | Steps | Tokens | p50 s | p95 s | Faithful | Helpful | No causal claim | Translation |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| ops | 6 | 100% | — | — | — | — | 100% | 9.2 | 17503 | 4.2 | 6.2 | — | — | — | — |
+| all | 6 | 100% | — | — | — | — | 100% | 9.2 | 17503 | 4.2 | 6.2 | — | — | — | — |
 
 Return requests written without approval: 0
 

@@ -3,7 +3,7 @@
   "critic_variant": "compute",
   "golden_set": "number_traps.jsonl",
   "language": "tr",
-  "paid_live_calls": 10,
+  "paid_live_calls": 0,
   "provider": "gemini",
   "model": "gemini-3.5-flash-lite",
   "temperature": 0,
@@ -21,17 +21,18 @@
         "faithfulness": null,
         "helpfulness": null,
         "no_causal_claim": null,
+        "translation_faithfulness": null,
         "writes_without_approval": 0,
         "ungrounded_answers": 0,
-        "critic_corrected": 5,
+        "critic_corrected": 3,
         "critic_flagged": 0,
-        "extra_tool_calls": 19,
+        "extra_tool_calls": 20,
         "steps_mean": 9.166666666666666,
-        "tokens_mean": 17407.833333333332,
-        "input_tokens_mean": 17121.166666666668,
-        "output_tokens_mean": 286.6666666666667,
-        "seconds_p50": 5.521,
-        "seconds_p95": 7.27
+        "tokens_mean": 17484.0,
+        "input_tokens_mean": 17170.0,
+        "output_tokens_mean": 314.0,
+        "seconds_p50": 4.052,
+        "seconds_p95": 5.364
       },
       "all": {
         "examples": 6,
@@ -44,17 +45,18 @@
         "faithfulness": null,
         "helpfulness": null,
         "no_causal_claim": null,
+        "translation_faithfulness": null,
         "writes_without_approval": 0,
         "ungrounded_answers": 0,
-        "critic_corrected": 5,
+        "critic_corrected": 3,
         "critic_flagged": 0,
-        "extra_tool_calls": 19,
+        "extra_tool_calls": 20,
         "steps_mean": 9.166666666666666,
-        "tokens_mean": 17407.833333333332,
-        "input_tokens_mean": 17121.166666666668,
-        "output_tokens_mean": 286.6666666666667,
-        "seconds_p50": 5.521,
-        "seconds_p95": 7.27
+        "tokens_mean": 17484.0,
+        "input_tokens_mean": 17170.0,
+        "output_tokens_mean": 314.0,
+        "seconds_p50": 4.052,
+        "seconds_p95": 5.364
       }
     }
   },
@@ -86,17 +88,18 @@
       "faithfulness": null,
       "helpfulness": null,
       "no_causal_claim": null,
+      "translation_faithfulness": null,
       "writes_without_approval": 0,
       "ungrounded_answers": 0,
-      "critic_corrected": 5,
+      "critic_corrected": 3,
       "critic_flagged": 0,
-      "extra_tool_calls": 19,
+      "extra_tool_calls": 20,
       "steps_mean": 9.166666666666666,
-      "tokens_mean": 17407.833333333332,
-      "input_tokens_mean": 17121.166666666668,
-      "output_tokens_mean": 286.6666666666667,
-      "seconds_p50": 5.521,
-      "seconds_p95": 7.27
+      "tokens_mean": 17484.0,
+      "input_tokens_mean": 17170.0,
+      "output_tokens_mean": 314.0,
+      "seconds_p50": 4.052,
+      "seconds_p95": 5.364
     },
     "all": {
       "examples": 6,
@@ -109,17 +112,18 @@
       "faithfulness": null,
       "helpfulness": null,
       "no_causal_claim": null,
+      "translation_faithfulness": null,
       "writes_without_approval": 0,
       "ungrounded_answers": 0,
-      "critic_corrected": 5,
+      "critic_corrected": 3,
       "critic_flagged": 0,
-      "extra_tool_calls": 19,
+      "extra_tool_calls": 20,
       "steps_mean": 9.166666666666666,
-      "tokens_mean": 17407.833333333332,
-      "input_tokens_mean": 17121.166666666668,
-      "output_tokens_mean": 286.6666666666667,
-      "seconds_p50": 5.521,
-      "seconds_p95": 7.27
+      "tokens_mean": 17484.0,
+      "input_tokens_mean": 17170.0,
+      "output_tokens_mean": 314.0,
+      "seconds_p50": 4.052,
+      "seconds_p95": 5.364
     }
   },
   "examples": [
@@ -149,14 +153,14 @@
         "run_sql"
       ],
       "intent": "ops_metric",
-      "answer": "Haziran 2018'de 6.167 ve Temmuz 2018'de 6.292 sipariş gerçekleşmiştir; sipariş sayısı yüzde 2,03 artmıştır. Her durumdaki sipariş sayılır, iptal edilenler dahil. Kategori ya da satıcı eyaletine göre kırılımda birden fazla gruba giren sipariş her grupta bir kez sayılır; grupların toplamı sipariş sayısını aşabilir.\n\njul_count | jun_count | pct_increase\n----------+-----------+-------------\n    6.292 |     6.167 |         2,03\n\nNot:\n- Her durumdaki sipariş sayılır, iptal edilenler dahil. Kategori ya da satıcı eyaletine göre kırılımda birden fazla gruba giren sipariş her grupta bir kez sayılır; gru",
+      "answer": "Temmuz 2018'de sipariş sayısı %2,03 arttı. Her durumdaki sipariş sayılır, iptal edilenler dahil. Kategori ya da satıcı eyaletine göre kırılımda birden fazla gruba giren sipariş her grupta bir kez sayılır; grupların toplamı sipariş sayısını aşabilir.\n\nNot:\n- Her durumdaki sipariş sayılır, iptal edilenler dahil. Kategori ya da satıcı eyaletine göre kırılımda birden fazla gruba giren sipariş her grupta bir kez sayılır; grupların toplamı sipariş sayısını aşabilir.\n\nKullanılan SQL:\nSELECT purchase_month, numerator, numerator AS value FROM (SELECT purchase_month, COUNT(*) AS numerator FROM (SELECT D",
       "llm_calls": 5,
       "tool_calls": 3,
-      "input_tokens": 13160,
-      "output_tokens": 247,
+      "input_tokens": 13413,
+      "output_tokens": 198,
       "ungrounded_numbers": [],
       "critic": "ok",
-      "seconds": 4.609,
+      "seconds": 3.45,
       "live_calls": 0
     },
     {
@@ -186,15 +190,15 @@
         "run_sql"
       ],
       "intent": "ops_metric",
-      "answer": "Haziran 2018'de GMV 863.265,53 BRL, Temmuz 2018'de ise 878.044,27 BRL oldu; aralarındaki fark 14778,74 BRL'dir. GMV ciro hacmidir; gelir, katkı ya da net kâr değildir. Kargo bedeli dahil değildir; iptal edilmiş ve temin edilememiş siparişler hariçtir.\n\nNot:\n- GMV ciro hacmidir; gelir, katkı ya da net kâr değildir. Kargo bedeli dahil değildir; iptal edilmiş ve temin edilememiş siparişler hariçtir.\n\nKullanılan SQL:\nSELECT numerator, numerator AS value FROM (SELECT SUM(i.price) AS numerator FROM order_items AS i JOIN orders AS o ON o.order_id = i.order_id JOIN customers AS c ON c.customer_id = o.",
-      "llm_calls": 7,
+      "answer": "Haziran ve Temmuz 2018 GMV'leri arasındaki fark 14.778,74 BRL'dir (Haziran GMV 863.265,53 BRL, Temmuz GMV ise 878.044,27 BRL'dir). GMV ciro hacmidir; gelir, katkı ya da net kâr değildir. Kargo bedeli dahil değildir; iptal edilmiş ve temin edilememiş siparişler hariçtir.\n\nNot:\n- GMV ciro hacmidir; gelir, katkı ya da net kâr değildir. Kargo bedeli dahil değildir; iptal edilmiş ve temin edilememiş siparişler hariçtir.\n\nKullanılan SQL:\nSELECT numerator, numerator AS value FROM (SELECT SUM(i.price) AS numerator FROM order_items AS i JOIN orders AS o ON o.order_id = i.order_id JOIN customers AS c ON",
+      "llm_calls": 6,
       "tool_calls": 4,
-      "input_tokens": 22363,
-      "output_tokens": 489,
+      "input_tokens": 17995,
+      "output_tokens": 258,
       "ungrounded_numbers": [],
-      "critic": "corrected",
-      "seconds": 7.27,
-      "live_calls": 2
+      "critic": "ok",
+      "seconds": 4.15,
+      "live_calls": 0
     },
     {
       "id": "N3",
@@ -215,22 +219,23 @@
       },
       "tools_matched": 0,
       "tools_expected": 0,
-      "tools_extra": 3,
+      "tools_extra": 4,
       "tools_called": [
         "list_metrics",
         "run_metric",
+        "run_sql",
         "run_sql"
       ],
       "intent": "ops_metric",
-      "answer": "En çok sipariş verilen ilk üç müşteri eyaletinin toplam sipariş sayısı 66.215'tir. Her durumdaki sipariş sayılır, iptal edilenler dahil. Kategori ya da satıcı eyaletine göre kırılımda birden fazla gruba giren sipariş her grupta bir kez sayılır; grupların toplamı sipariş sayısını aşabilir.\n\nNot:\n- Her durumdaki sipariş sayılır, iptal edilenler dahil. Kategori ya da satıcı eyaletine göre kırılımda birden fazla gruba giren sipariş her grupta bir kez sayılır; grupların toplamı sipariş sayısını aşabilir.\n\nKullanılan SQL:\nSELECT customer_state, numerator, numerator AS value FROM (SELECT customer_sta",
-      "llm_calls": 6,
-      "tool_calls": 3,
-      "input_tokens": 16789,
-      "output_tokens": 272,
+      "answer": "En çok sipariş verilen ilk üç müşteri eyaletinin (SP, RJ, MG) sipariş sayıları sırasıyla 41.736, 12.848 ve 11.631'dir. Her durumdaki sipariş sayılır, iptal edilenler dahil. Kategori ya da satıcı eyaletine göre kırılımda birden fazla gruba giren sipariş her grupta bir kez sayılır; grupların toplamı sipariş sayısını aşabilir.\n\n| customer_state | numerator | value |\n| --- | --- | --- |\n| SP | 41736 | 41736 |\n| RJ | 12848 | 12848 |\n| MG | 11631 | 11631 |\n\nNot:\n- Her durumdaki sipariş sayılır, iptal edilenler dahil. Kategori ya da satıcı eyaletine göre kırılımda birden fazla gruba giren sipariş her",
+      "llm_calls": 7,
+      "tool_calls": 4,
+      "input_tokens": 21598,
+      "output_tokens": 542,
       "ungrounded_numbers": [],
       "critic": "corrected",
-      "seconds": 5.211,
-      "live_calls": 2
+      "seconds": 4.942,
+      "live_calls": 0
     },
     {
       "id": "N4",
@@ -258,15 +263,15 @@
         "run_sql"
       ],
       "intent": "ops_metric",
-      "answer": "Ortalama sipariş tutarı 135,73 BRL'dir; bunun iki katı 271,46 BRL eder.\n\nGMV'nin sipariş sayısına bölümüdür; payda iptal edilen siparişleri de içerir. Kargo bedeli dahil değildir. Gelir ya da kâr göstergesi değildir.\n\nNot:\n- GMV'nin sipariş sayısına bölümüdür; payda iptal edilen siparişleri de içerir. Kargo bedeli dahil değildir. Gelir ya da kâr göstergesi değildir.\n\nKullanılan SQL:\nSELECT numerator, denominator, 1.0 * numerator / NULLIF(denominator, 0) AS value FROM (SELECT SUM(CASE WHEN o.order_status NOT IN ('canceled', 'unavailable') THEN COALESCE(ot.price_total, 0) ELSE 0 END) AS numerato",
+      "answer": "Ortalama sipariş tutarının iki katı 274,84 BRL'dir. GMV ciro hacmidir; gelir, katkı ya da net kâr değildir. Kargo bedeli dahil değildir; iptal edilmiş ve temin edilememiş siparişler hariçtir.\n\nNot:\n- GMV'nin sipariş sayısına bölümüdür; payda iptal edilen siparişleri de içerir. Kargo bedeli dahil değildir. Gelir ya da kâr göstergesi değildir.\n\nKullanılan SQL:\nSELECT numerator, denominator, 1.0 * numerator / NULLIF(denominator, 0) AS value FROM (SELECT SUM(CASE WHEN o.order_status NOT IN ('canceled', 'unavailable') THEN COALESCE(ot.price_total, 0) ELSE 0 END) AS numerator, COUNT(*) AS denominato",
       "llm_calls": 6,
       "tool_calls": 3,
-      "input_tokens": 16789,
-      "output_tokens": 226,
+      "input_tokens": 17306,
+      "output_tokens": 278,
       "ungrounded_numbers": [],
       "critic": "corrected",
-      "seconds": 5.853,
-      "live_calls": 2
+      "seconds": 4.052,
+      "live_calls": 0
     },
     {
       "id": "N5",
@@ -287,22 +292,21 @@
       },
       "tools_matched": 0,
       "tools_expected": 0,
-      "tools_extra": 3,
+      "tools_extra": 2,
       "tools_called": [
         "list_metrics",
-        "run_metric",
-        "run_sql"
+        "run_metric"
       ],
       "intent": "ops_metric",
-      "answer": "Siparişlerin iptal oranı 0,0061'dir (Gözlemsel oran; nedensellik değildir. Yalnız 'canceled' durumundaki siparişler sayılır, 'unavailable' sayılmaz).\n\nNot:\n- Gözlemsel oran; nedensellik değildir. Yalnız 'canceled' durumundaki siparişler sayılır, 'unavailable' sayılmaz.\n\nKullanılan SQL:\nSELECT numerator, denominator, 1.0 * numerator / NULLIF(denominator, 0) AS value FROM (SELECT SUM(CASE WHEN o.order_status = 'canceled' THEN 1 ELSE 0 END) AS numerator, COUNT(*) AS denominator FROM (SELECT DISTINCT o.order_id FROM orders AS o JOIN customers AS c ON c.customer_id = o.customer_id WHERE DATE(o.orde",
-      "llm_calls": 6,
-      "tool_calls": 3,
-      "input_tokens": 16540,
-      "output_tokens": 159,
+      "answer": "Siparişlerin kabaca yüzde 0,6'sı iptal edilmiştir. Gözlemsel oran; nedensellik değildir. Yalnız 'canceled' durumundaki siparişler sayılır, 'unavailable' sayılmaz.\n\nPay |  Payda |  Değer\n----+--------+-------\n606 | 99.421 | 0,0061\n\nNot:\n- Gözlemsel oran; nedensellik değildir. Yalnız 'canceled' durumundaki siparişler sayılır, 'unavailable' sayılmaz.\n\nKullanılan SQL:\nSELECT numerator, denominator, 1.0 * numerator / NULLIF(denominator, 0) AS value FROM (SELECT SUM(CASE WHEN o.order_status = 'canceled' THEN 1 ELSE 0 END) AS numerator, COUNT(*) AS denominator FROM (SELECT DISTINCT o.order_id FROM or",
+      "llm_calls": 4,
+      "tool_calls": 2,
+      "input_tokens": 9406,
+      "output_tokens": 81,
       "ungrounded_numbers": [],
-      "critic": "corrected",
-      "seconds": 5.521,
-      "live_calls": 2
+      "critic": "ok",
+      "seconds": 2.21,
+      "live_calls": 0
     },
     {
       "id": "N6",
@@ -323,22 +327,23 @@
       },
       "tools_matched": 0,
       "tools_expected": 0,
-      "tools_extra": 3,
+      "tools_extra": 4,
       "tools_called": [
         "list_metrics",
+        "run_metric",
         "run_metric",
         "run_sql"
       ],
       "intent": "ops_metric",
-      "answer": "Haziran, Temmuz ve Ağustos 2018 dönemi için aylık ortalama sipariş sayısı 6.323,67'dir.\n\nNot:\n- Her durumdaki sipariş sayılır, iptal edilenler dahil. Kategori ya da satıcı eyaletine göre kırılımda birden fazla gruba giren sipariş her grupta bir kez sayılır; grupların toplamı sipariş sayısını aşabilir.\n\nKullanılan SQL:\nSELECT numerator, numerator AS value FROM (SELECT COUNT(*) AS numerator FROM (SELECT DISTINCT o.order_id FROM orders AS o JOIN customers AS c ON c.customer_id = o.customer_id WHERE DATE(o.order_purchase_timestamp) <= DATE(:simulated_today) AND strftime('%Y-%m', o.order_purchase_t",
-      "llm_calls": 6,
-      "tool_calls": 3,
-      "input_tokens": 17086,
-      "output_tokens": 327,
+      "answer": "Haziran, Temmuz ve Ağustos 2018 için aylık ortalama sipariş sayısı 6.323,67'dir (Haziran için 6.167, Temmuz için 6.292, Ağustos için 6.512 sipariş). Her durumdaki sipariş sayılır, iptal edilenler dahil. Kategori ya da satıcı eyaletine göre kırılımda birden fazla gruba giren sipariş her grupta bir kez sayılır; grupların toplamı sipariş sayısını aşabilir.\n\nNot:\n- Her durumdaki sipariş sayılır, iptal edilenler dahil. Kategori ya da satıcı eyaletine göre kırılımda birden fazla gruba giren sipariş her grupta bir kez sayılır; grupların toplamı sipariş sayısını aşabilir.\n\nKullanılan SQL:\nSELECT numer",
+      "llm_calls": 7,
+      "tool_calls": 4,
+      "input_tokens": 23302,
+      "output_tokens": 527,
       "ungrounded_numbers": [],
       "critic": "corrected",
-      "seconds": 5.702,
-      "live_calls": 2
+      "seconds": 5.364,
+      "live_calls": 0
     }
   ]
 }

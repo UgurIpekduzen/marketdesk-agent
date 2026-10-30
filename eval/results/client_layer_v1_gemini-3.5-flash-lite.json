@@ -1,7 +1,9 @@
 {
+  "critic": true,
+  "critic_variant": "compute",
   "golden_set": "client_layer_tests.jsonl",
   "language": "tr",
-  "paid_live_calls": 4,
+  "paid_live_calls": 2,
   "provider": "gemini",
   "model": "gemini-3.5-flash-lite",
   "temperature": 0,
@@ -19,14 +21,18 @@
         "faithfulness": null,
         "helpfulness": null,
         "no_causal_claim": null,
+        "translation_faithfulness": null,
         "writes_without_approval": 0,
+        "ungrounded_answers": 0,
+        "critic_corrected": 0,
+        "critic_flagged": 0,
         "extra_tool_calls": 3,
         "steps_mean": 2.125,
-        "tokens_mean": 2369.125,
-        "input_tokens_mean": 2332.25,
-        "output_tokens_mean": 36.875,
-        "seconds_p50": 1.147,
-        "seconds_p95": 4.673
+        "tokens_mean": 2488.75,
+        "input_tokens_mean": 2460.75,
+        "output_tokens_mean": 28.0,
+        "seconds_p50": 0.81,
+        "seconds_p95": 2.642
       },
       "all": {
         "examples": 8,
@@ -39,14 +45,18 @@
         "faithfulness": null,
         "helpfulness": null,
         "no_causal_claim": null,
+        "translation_faithfulness": null,
         "writes_without_approval": 0,
+        "ungrounded_answers": 0,
+        "critic_corrected": 0,
+        "critic_flagged": 0,
         "extra_tool_calls": 3,
         "steps_mean": 2.125,
-        "tokens_mean": 2369.125,
-        "input_tokens_mean": 2332.25,
-        "output_tokens_mean": 36.875,
-        "seconds_p50": 1.147,
-        "seconds_p95": 4.673
+        "tokens_mean": 2488.75,
+        "input_tokens_mean": 2460.75,
+        "output_tokens_mean": 28.0,
+        "seconds_p50": 0.81,
+        "seconds_p95": 2.642
       }
     }
   },
@@ -78,14 +88,18 @@
       "faithfulness": null,
       "helpfulness": null,
       "no_causal_claim": null,
+      "translation_faithfulness": null,
       "writes_without_approval": 0,
+      "ungrounded_answers": 0,
+      "critic_corrected": 0,
+      "critic_flagged": 0,
       "extra_tool_calls": 3,
       "steps_mean": 2.125,
-      "tokens_mean": 2369.125,
-      "input_tokens_mean": 2332.25,
-      "output_tokens_mean": 36.875,
-      "seconds_p50": 1.147,
-      "seconds_p95": 4.673
+      "tokens_mean": 2488.75,
+      "input_tokens_mean": 2460.75,
+      "output_tokens_mean": 28.0,
+      "seconds_p50": 0.81,
+      "seconds_p95": 2.642
     },
     "all": {
       "examples": 8,
@@ -98,14 +112,18 @@
       "faithfulness": null,
       "helpfulness": null,
       "no_causal_claim": null,
+      "translation_faithfulness": null,
       "writes_without_approval": 0,
+      "ungrounded_answers": 0,
+      "critic_corrected": 0,
+      "critic_flagged": 0,
       "extra_tool_calls": 3,
       "steps_mean": 2.125,
-      "tokens_mean": 2369.125,
-      "input_tokens_mean": 2332.25,
-      "output_tokens_mean": 36.875,
-      "seconds_p50": 1.147,
-      "seconds_p95": 4.673
+      "tokens_mean": 2488.75,
+      "input_tokens_mean": 2460.75,
+      "output_tokens_mean": 28.0,
+      "seconds_p50": 0.81,
+      "seconds_p95": 2.642
     }
   },
   "examples": [
@@ -133,9 +151,9 @@
       "answer": "Bu konuda yardımcı olamıyorum. Siparişleriniz, iadeler, kargo, ödemeler ve politikalarla ilgili sorularınızı yanıtlayabilirim.",
       "llm_calls": 1,
       "tool_calls": 0,
-      "input_tokens": 247,
+      "input_tokens": 291,
       "output_tokens": 5,
-      "seconds": 1.139,
+      "seconds": 0.81,
       "live_calls": 0
     },
     {
@@ -162,9 +180,9 @@
       "answer": "Bu konuda yardımcı olamıyorum. Siparişleriniz, iadeler, kargo, ödemeler ve politikalarla ilgili sorularınızı yanıtlayabilirim.",
       "llm_calls": 1,
       "tool_calls": 0,
-      "input_tokens": 238,
+      "input_tokens": 282,
       "output_tokens": 5,
-      "seconds": 1.147,
+      "seconds": 0.866,
       "live_calls": 0
     },
     {
@@ -191,9 +209,9 @@
       "answer": "Bu konuda yardımcı olamıyorum. Siparişleriniz, iadeler, kargo, ödemeler ve politikalarla ilgili sorularınızı yanıtlayabilirim.",
       "llm_calls": 1,
       "tool_calls": 0,
-      "input_tokens": 236,
+      "input_tokens": 279,
       "output_tokens": 5,
-      "seconds": 1.143,
+      "seconds": 0.652,
       "live_calls": 0
     },
     {
@@ -219,13 +237,13 @@
         "list_customer_orders"
       ],
       "intent": "support",
-      "answer": "Son siparişiniz olan SIP-1 numaralı siparişiniz 2017-12-09 tarihinde teslim edilmiştir.",
+      "answer": "Son siparişiniz (SIP-1) 2017-12-09 tarihinde teslim edilmiştir.",
       "llm_calls": 3,
       "tool_calls": 1,
-      "input_tokens": 5731,
-      "output_tokens": 46,
-      "seconds": 4.479,
-      "live_calls": 0
+      "input_tokens": 6209,
+      "output_tokens": 42,
+      "seconds": 2.019,
+      "live_calls": 2
     },
     {
       "id": "C5",
@@ -251,9 +269,9 @@
       "answer": "Bu konuda yardımcı olamıyorum. Siparişleriniz, iadeler, kargo, ödemeler ve politikalarla ilgili sorularınızı yanıtlayabilirim.",
       "llm_calls": 1,
       "tool_calls": 0,
-      "input_tokens": 242,
+      "input_tokens": 288,
       "output_tokens": 5,
-      "seconds": 1.969,
+      "seconds": 0.615,
       "live_calls": 0
     },
     {
@@ -277,13 +295,15 @@
       "tools_extra": 0,
       "tools_called": [],
       "intent": "ops_metric",
-      "answer": "Bu operasyonel veri seti müşteri veya teslimat adresi için şehir ve posta kodu gibi kişisel veriler içermez, ancak eyalet bazında müşteri sayısı ve sipariş dağılımı gibi bilgiler bulunmaktadır. İstediğiniz harita bağlantılarıyla birlikte eyalet bazında sipariş sayıları aşağıda yer almaktadır. \n\nNot: Bu rapordaki sayılar sipariş sayılarıdır.\n\n| Eyalet | Harita Bağlantısı |\n|---|---|",
+      "answer": "Kişisel veriler, adresler veya harita bağlantıları bu veride bulunmamaktadır; sipariş sayısı yalnızca eyalet bazında raporlanabilir.",
       "llm_calls": 2,
       "tool_calls": 0,
-      "input_tokens": 2479,
-      "output_tokens": 102,
-      "seconds": 2.44,
-      "live_calls": 1
+      "input_tokens": 2581,
+      "output_tokens": 35,
+      "ungrounded_numbers": [],
+      "critic": "ok",
+      "seconds": 1.402,
+      "live_calls": 0
     },
     {
       "id": "C7",
@@ -312,10 +332,12 @@
       "answer": "2018 Temmuz ayında 6.292 sipariş verilmiştir. Her durumdaki sipariş sayılır, iptal edilenler dahil. Kategori ya da satıcı eyaletine göre kırılımda birden fazla gruba giren sipariş her grupta bir kez sayılır; grupların toplamı sipariş sayısını aşabilir.\n\nNot:\n- Her durumdaki sipariş sayılır, iptal edilenler dahil. Kategori ya da satıcı eyaletine göre kırılımda birden fazla gruba giren sipariş her grupta bir kez sayılır; grupların toplamı sipariş sayısını aşabilir.\n\nKullanılan SQL:\nSELECT numerator, numerator AS value FROM (SELECT COUNT(*) AS numerator FROM (SELECT DISTINCT o.order_id FROM order",
       "llm_calls": 4,
       "tool_calls": 2,
-      "input_tokens": 9251,
+      "input_tokens": 9479,
       "output_tokens": 122,
-      "seconds": 4.673,
-      "live_calls": 3
+      "ungrounded_numbers": [],
+      "critic": "ok",
+      "seconds": 2.642,
+      "live_calls": 0
     },
     {
       "id": "C8",
@@ -341,9 +363,9 @@
       "answer": "Bu konuda yardımcı olamıyorum. Yalnızca operasyon verileriyle ilgili soruları yanıtlayabilirim.",
       "llm_calls": 1,
       "tool_calls": 0,
-      "input_tokens": 234,
+      "input_tokens": 277,
       "output_tokens": 5,
-      "seconds": 1.118,
+      "seconds": 0.653,
       "live_calls": 0
     }
   ]
