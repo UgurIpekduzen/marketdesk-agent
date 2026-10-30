@@ -1,6 +1,7 @@
 """Which embedding model finds the policy sections best, and what does it cost?
 
 Usage:  python eval/embedding_compare.py              every model, results written
+        python eval/embedding_compare.py --language en   the questions in English
         python eval/embedding_compare.py --only NAME  one model, nothing written
         python eval/embedding_compare.py --list       the models
 
@@ -50,6 +51,10 @@ PAD_TOKEN_ID = 1
 # How the sections are embedded: all in one batch, as the policy index is
 # built, in batches of 10, or one at a time.
 BATCHES = ("all", "10", "1")
+# The questions are asked in Turkish (the policies' language) or as their
+# English translations; the results go to a file of their own.
+LANGUAGE_TITLE = {"tr": "", "en": " (asked in English)"}
+RESULT_STEM = {"tr": "embedding_compare_v1", "en": "embedding_compare_en_v1"}
 TOP_SHOWN = 5
 
 
@@ -221,10 +226,24 @@ def measure(spec: ModelSpec, tokenizer, session, sections, questions, batches: s
     }
 
 
-def run_model(name: str) -> dict:
+def question_set(language: str) -> list[tuple]:
+    """(rule, question, expected sections) in Turkish, or the English translations."""
+    from tests.retrieval_questions import QUESTIONS
+    from tests.retrieval_questions_en import QUESTIONS_EN
+
+    if language == "tr":
+        return QUESTIONS
+    return [
+        (rule, english, expected)
+        for (rule, _, expected), english in zip(QUESTIONS, QUESTIONS_EN, strict=True)
+    ]
+
+
+def run_model(name: str, language: str) -> dict:
     """Measure one model in this process; the peak memory is read at the end."""
     from src.knowledge.policy_index import read_sections
-    from tests.retrieval_questions import QUESTIONS
+
+    QUESTIONS = question_set(language)
 
     spec = MODELS[name]
     tokenizer, session = load(spec)
@@ -247,11 +266,20 @@ def run_model(name: str) -> dict:
     }
 
 
-def run_in_own_process(name: str) -> dict:
+def run_in_own_process(name: str, language: str) -> dict:
     with tempfile.TemporaryDirectory() as folder:
         output = Path(folder) / "result.json"
         subprocess.run(
-            [sys.executable, __file__, "--child", name, "--output", str(output)],
+            [
+                sys.executable,
+                __file__,
+                "--child",
+                name,
+                "--language",
+                language,
+                "--output",
+                str(output),
+            ],
             check=True,
         )
         return json.loads(output.read_text(encoding="utf-8"))
@@ -266,10 +294,10 @@ def per_way(run_by_batch: dict, key: str) -> str:
     return values[0] if len(set(values)) == 1 else " / ".join(values)
 
 
-def markdown(results: dict) -> str:
+def markdown(results: dict, language: str = "tr") -> str:
     first = next(iter(results.values()))
     lines = [
-        "# Embedding models on the policy questions",
+        f"# Embedding models on the policy questions{LANGUAGE_TITLE[language]}",
         "",
         (
             f"{first['questions']} questions, {first['sections']} policy sections, "
@@ -303,6 +331,12 @@ def main() -> int:
     parser.add_argument("--list", action="store_true", help="list the models")
     parser.add_argument("--child", choices=list(MODELS), help=argparse.SUPPRESS)
     parser.add_argument("--output", help=argparse.SUPPRESS)
+    parser.add_argument(
+        "--language",
+        choices=list(RESULT_STEM),
+        default="tr",
+        help="ask the questions in Turkish (default) or in English",
+    )
     args = parser.parse_args()
 
     if args.list:
@@ -311,7 +345,8 @@ def main() -> int:
         return 0
     if args.child:
         Path(args.output).write_text(
-            json.dumps(run_model(args.child), ensure_ascii=False), encoding="utf-8"
+            json.dumps(run_model(args.child, args.language), ensure_ascii=False),
+            encoding="utf-8",
         )
         return 0
 
@@ -319,18 +354,19 @@ def main() -> int:
     results = {}
     for name in names:
         print(f"measuring {name} ...", flush=True)
-        results[name] = run_in_own_process(name)
-    print(f"\n{terminal_tables(markdown(results))}")
+        results[name] = run_in_own_process(name, args.language)
+    print(f"\n{terminal_tables(markdown(results, args.language))}")
 
     if not args.only:
+        stem = RESULT_STEM[args.language]
         RESULTS_DIR.mkdir(exist_ok=True)
-        (RESULTS_DIR / "embedding_compare_v1.json").write_text(
+        (RESULTS_DIR / f"{stem}.json").write_text(
             json.dumps(results, ensure_ascii=False, indent=1), encoding="utf-8"
         )
-        (RESULTS_DIR / "embedding_compare_v1.md").write_text(
-            markdown(results), encoding="utf-8"
+        (RESULTS_DIR / f"{stem}.md").write_text(
+            markdown(results, args.language), encoding="utf-8"
         )
-        print("Results written to eval/results/embedding_compare_v1.json and .md")
+        print(f"Results written to eval/results/{stem}.json and .md")
     return 0
 
 

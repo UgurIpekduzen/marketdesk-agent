@@ -180,3 +180,43 @@ def test_report_shows_every_batch_way():
     )
     assert "`r/small` at `" + "x" * 40 + "`" in text
     assert "20 questions, 28 policy sections" in text
+
+
+def test_english_set_matches_the_turkish():
+    from tests.retrieval_questions import QUESTIONS
+    from tests.retrieval_questions_en import QUESTIONS_EN
+
+    english = compare.question_set("en")
+
+    assert len(QUESTIONS_EN) == len(QUESTIONS) == len(english)
+    assert compare.question_set("tr") == QUESTIONS
+    for (rule, _, expected), (en_rule, question, en_expected) in zip(
+        QUESTIONS, english, strict=True
+    ):
+        assert (rule, expected) == (en_rule, en_expected)
+        assert question.isascii() and question.strip()
+
+
+def test_report_title_names_the_language():
+    run = {
+        "dimensions": 2,
+        "first": 1,
+        "top3": 1,
+        "top5": 1,
+        "mrr": 1.0,
+        "worst": 1,
+        "query_ms_p50": 1.0,
+    }
+    results = {
+        "m": {
+            "repo": "r/m",
+            "revision": "x" * 40,
+            "sections": 28,
+            "questions": 20,
+            "peak_memory_mb": 1,
+            "by_batch_size": {"all": run, "10": run, "1": run},
+        }
+    }
+
+    assert "(asked in English)" in compare.markdown(results, "en")
+    assert "(asked in English)" not in compare.markdown(results, "tr")

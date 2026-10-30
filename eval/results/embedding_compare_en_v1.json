@@ -1,0 +1,6404 @@
+{
+ "e5-small": {
+  "repo": "Xenova/multilingual-e5-small",
+  "revision": "761b726dd34fb83930e26aab4e9ac3899aa1fa78",
+  "file": "onnx/model_quantized.onnx",
+  "sections": 28,
+  "questions": 20,
+  "peak_memory_mb": 678,
+  "by_batch_size": {
+   "all": {
+    "dimensions": 384,
+    "first": 7,
+    "top3": 12,
+    "top5": 15,
+    "mrr": 0.515,
+    "worst": 25,
+    "query_ms_p50": 3.7,
+    "query_ms_max": 5.2,
+    "per_question": [
+     {
+      "rule": "R0",
+      "question": "Why is the order I placed after September 2018 not showing up?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 4,
+      "top": [
+       {
+        "section": "cancellation#4",
+        "score": 0.8161
+       },
+       {
+        "section": "returns#4",
+        "score": 0.8134
+       },
+       {
+        "section": "shipping_and_delays#6",
+        "score": 0.81
+       },
+       {
+        "section": "returns#1",
+        "score": 0.8099
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8034
+       }
+      ]
+     },
+     {
+      "rule": "R1",
+      "question": "Can I find out the status of my friend's order?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 25,
+      "top": [
+       {
+        "section": "returns#4",
+        "score": 0.7959
+       },
+       {
+        "section": "shipping_and_delays#6",
+        "score": 0.7858
+       },
+       {
+        "section": "payments_and_refunds#5",
+        "score": 0.7849
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.7815
+       },
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.7815
+       }
+      ]
+     },
+     {
+      "rule": "R2",
+      "question": "My order is still being prepared, can I cancel it?",
+      "expected": [
+       [
+        "cancellation",
+        1
+       ],
+       [
+        "cancellation",
+        2
+       ]
+      ],
+      "rank": 17,
+      "top": [
+       {
+        "section": "cancellation#4",
+        "score": 0.8131
+       },
+       {
+        "section": "returns#4",
+        "score": 0.7933
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.787
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.7861
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7859
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "My order has been shipped, can I cancel it?",
+      "expected": [
+       [
+        "cancellation",
+        3
+       ],
+       [
+        "shipping_and_delays",
+        1
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "cancellation#4",
+        "score": 0.8154
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8008
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.8002
+       },
+       {
+        "section": "returns#4",
+        "score": 0.7954
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.7915
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "The product is still on its way, can I open a return request now?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        1
+       ],
+       [
+        "cancellation",
+        3
+       ]
+      ],
+      "rank": 8,
+      "top": [
+       {
+        "section": "cancellation#4",
+        "score": 0.8143
+       },
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.8103
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8081
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.8081
+       },
+       {
+        "section": "returns#6",
+        "score": 0.8065
+       }
+      ]
+     },
+     {
+      "rule": "R4",
+      "question": "What happens to the money for my cancelled order?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        4
+       ],
+       [
+        "cancellation",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "cancellation#4",
+        "score": 0.809
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7983
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.797
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.7961
+       },
+       {
+        "section": "payments_and_refunds#5",
+        "score": 0.796
+       }
+      ]
+     },
+     {
+      "rule": "R5",
+      "question": "The order shows as delivered but has no delivery date, can I return it?",
+      "expected": [
+       [
+        "returns",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#4",
+        "score": 0.8245
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.8183
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8104
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.807
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8049
+       }
+      ]
+     },
+     {
+      "rule": "R6",
+      "question": "I did not like the product, within how many days can I return it?",
+      "expected": [
+       [
+        "returns",
+        2
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8293
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8237
+       },
+       {
+        "section": "returns#7",
+        "score": 0.8129
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8079
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.8075
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "The product arrived broken, within how many days can I return it?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8311
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8269
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8186
+       },
+       {
+        "section": "returns#7",
+        "score": 0.8129
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.8121
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "I was sent a different product than the one I ordered",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        1
+       ],
+       [
+        "damaged_or_wrong_item",
+        2
+       ],
+       [
+        "damaged_or_wrong_item",
+        3
+       ]
+      ],
+      "rank": 3,
+      "top": [
+       {
+        "section": "cancellation#4",
+        "score": 0.7962
+       },
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.7911
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.7884
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.7865
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7856
+       }
+      ]
+     },
+     {
+      "rule": "R8",
+      "question": "If I return it, do I also get the shipping fee back?",
+      "expected": [
+       [
+        "returns",
+        3
+       ],
+       [
+        "payments_and_refunds",
+        1
+       ],
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.794
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.7925
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.7923
+       },
+       {
+        "section": "returns#4",
+        "score": 0.7908
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.7895
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "The shipment arrived 12 days late, can I get my shipping fee back?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8179
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8177
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8166
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8151
+       },
+       {
+        "section": "returns#4",
+        "score": 0.8135
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "My return period has passed but the delivery was very late, do I have any right?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        4
+       ]
+      ],
+      "rank": 8,
+      "top": [
+       {
+        "section": "returns#4",
+        "score": 0.8092
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8056
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.8039
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8039
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8028
+       }
+      ]
+     },
+     {
+      "rule": "R10",
+      "question": "Why is my 600 BRL return request waiting for senior approval?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        2
+       ],
+       [
+        "returns",
+        6
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.8205
+       },
+       {
+        "section": "returns#6",
+        "score": 0.8123
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.805
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.7985
+       },
+       {
+        "section": "returns#4",
+        "score": 0.7897
+       }
+      ]
+     },
+     {
+      "rule": "R11",
+      "question": "Can I open a second return request for the same order?",
+      "expected": [
+       [
+        "returns",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#5",
+        "score": 0.8229
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.8129
+       },
+       {
+        "section": "returns#6",
+        "score": 0.794
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.7884
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.786
+       }
+      ]
+     },
+     {
+      "rule": "R12",
+      "question": "I paid with a gift card, how is my refund made?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        3
+       ]
+      ],
+      "rank": 5,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.7945
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.7862
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.786
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7856
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.7847
+       }
+      ]
+     },
+     {
+      "rule": "R13",
+      "question": "The seller shipped the product late, what happens in that case?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        5
+       ]
+      ],
+      "rank": 8,
+      "top": [
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8107
+       },
+       {
+        "section": "returns#4",
+        "score": 0.7979
+       },
+       {
+        "section": "returns#2",
+        "score": 0.7946
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.7937
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.7937
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "How many days until the money reaches my account?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        5
+       ]
+      ],
+      "rank": 5,
+      "top": [
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8188
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8116
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8074
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8042
+       },
+       {
+        "section": "payments_and_refunds#5",
+        "score": 0.8037
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Who pays for the return shipping?",
+      "expected": [
+       [
+        "returns",
+        7
+       ]
+      ],
+      "rank": 3,
+      "top": [
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.7795
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.773
+       },
+       {
+        "section": "returns#7",
+        "score": 0.7721
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7706
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.7698
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Can I exchange the product for a new one?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.8026
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.7988
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7929
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.7926
+       },
+       {
+        "section": "returns#2",
+        "score": 0.7906
+       }
+      ]
+     }
+    ]
+   },
+   "10": {
+    "dimensions": 384,
+    "first": 6,
+    "top3": 12,
+    "top5": 14,
+    "mrr": 0.483,
+    "worst": 21,
+    "query_ms_p50": 4.0,
+    "query_ms_max": 5.2,
+    "per_question": [
+     {
+      "rule": "R0",
+      "question": "Why is the order I placed after September 2018 not showing up?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "returns#4",
+        "score": 0.8151
+       },
+       {
+        "section": "returns#1",
+        "score": 0.8145
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.8138
+       },
+       {
+        "section": "shipping_and_delays#6",
+        "score": 0.8129
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8039
+       }
+      ]
+     },
+     {
+      "rule": "R1",
+      "question": "Can I find out the status of my friend's order?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 21,
+      "top": [
+       {
+        "section": "returns#4",
+        "score": 0.7965
+       },
+       {
+        "section": "shipping_and_delays#6",
+        "score": 0.7892
+       },
+       {
+        "section": "payments_and_refunds#5",
+        "score": 0.7882
+       },
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.7864
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.7812
+       }
+      ]
+     },
+     {
+      "rule": "R2",
+      "question": "My order is still being prepared, can I cancel it?",
+      "expected": [
+       [
+        "cancellation",
+        1
+       ],
+       [
+        "cancellation",
+        2
+       ]
+      ],
+      "rank": 12,
+      "top": [
+       {
+        "section": "cancellation#4",
+        "score": 0.8134
+       },
+       {
+        "section": "returns#4",
+        "score": 0.7936
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.788
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.7857
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7853
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "My order has been shipped, can I cancel it?",
+      "expected": [
+       [
+        "cancellation",
+        3
+       ],
+       [
+        "shipping_and_delays",
+        1
+       ]
+      ],
+      "rank": 3,
+      "top": [
+       {
+        "section": "cancellation#4",
+        "score": 0.8161
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.8027
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.7983
+       },
+       {
+        "section": "returns#4",
+        "score": 0.7967
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.7918
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "The product is still on its way, can I open a return request now?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        1
+       ],
+       [
+        "cancellation",
+        3
+       ]
+      ],
+      "rank": 8,
+      "top": [
+       {
+        "section": "cancellation#4",
+        "score": 0.8137
+       },
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.8116
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8086
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.8069
+       },
+       {
+        "section": "returns#6",
+        "score": 0.8061
+       }
+      ]
+     },
+     {
+      "rule": "R4",
+      "question": "What happens to the money for my cancelled order?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        4
+       ],
+       [
+        "cancellation",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "cancellation#4",
+        "score": 0.8104
+       },
+       {
+        "section": "payments_and_refunds#5",
+        "score": 0.7998
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.7975
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7967
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.7958
+       }
+      ]
+     },
+     {
+      "rule": "R5",
+      "question": "The order shows as delivered but has no delivery date, can I return it?",
+      "expected": [
+       [
+        "returns",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#4",
+        "score": 0.8269
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.8177
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8098
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8079
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8047
+       }
+      ]
+     },
+     {
+      "rule": "R6",
+      "question": "I did not like the product, within how many days can I return it?",
+      "expected": [
+       [
+        "returns",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#2",
+        "score": 0.8285
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8271
+       },
+       {
+        "section": "returns#7",
+        "score": 0.8118
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8086
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8066
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "The product arrived broken, within how many days can I return it?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        2
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "returns#2",
+        "score": 0.8315
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8298
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8209
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.8152
+       },
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.8147
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "I was sent a different product than the one I ordered",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        1
+       ],
+       [
+        "damaged_or_wrong_item",
+        2
+       ],
+       [
+        "damaged_or_wrong_item",
+        3
+       ]
+      ],
+      "rank": 3,
+      "top": [
+       {
+        "section": "cancellation#4",
+        "score": 0.7946
+       },
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.7902
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.7876
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7847
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.7832
+       }
+      ]
+     },
+     {
+      "rule": "R8",
+      "question": "If I return it, do I also get the shipping fee back?",
+      "expected": [
+       [
+        "returns",
+        3
+       ],
+       [
+        "payments_and_refunds",
+        1
+       ],
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 8,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.7931
+       },
+       {
+        "section": "returns#4",
+        "score": 0.7921
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7917
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.7916
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.7911
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "The shipment arrived 12 days late, can I get my shipping fee back?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 3,
+      "top": [
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8201
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8192
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.816
+       },
+       {
+        "section": "returns#4",
+        "score": 0.8142
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8139
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "My return period has passed but the delivery was very late, do I have any right?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        4
+       ]
+      ],
+      "rank": 7,
+      "top": [
+       {
+        "section": "returns#4",
+        "score": 0.8105
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8041
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8036
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8031
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8005
+       }
+      ]
+     },
+     {
+      "rule": "R10",
+      "question": "Why is my 600 BRL return request waiting for senior approval?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        2
+       ],
+       [
+        "returns",
+        6
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.8197
+       },
+       {
+        "section": "returns#6",
+        "score": 0.8098
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.8048
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.8022
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.7904
+       }
+      ]
+     },
+     {
+      "rule": "R11",
+      "question": "Can I open a second return request for the same order?",
+      "expected": [
+       [
+        "returns",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#5",
+        "score": 0.8211
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.8102
+       },
+       {
+        "section": "returns#6",
+        "score": 0.7916
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.7883
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.7878
+       }
+      ]
+     },
+     {
+      "rule": "R12",
+      "question": "I paid with a gift card, how is my refund made?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        3
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.7892
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.7889
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.787
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.7864
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.785
+       }
+      ]
+     },
+     {
+      "rule": "R13",
+      "question": "The seller shipped the product late, what happens in that case?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        5
+       ]
+      ],
+      "rank": 7,
+      "top": [
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8108
+       },
+       {
+        "section": "returns#4",
+        "score": 0.7974
+       },
+       {
+        "section": "returns#2",
+        "score": 0.7969
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.7928
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.7926
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "How many days until the money reaches my account?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        5
+       ]
+      ],
+      "rank": 4,
+      "top": [
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8166
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8102
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8094
+       },
+       {
+        "section": "payments_and_refunds#5",
+        "score": 0.8082
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8021
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Who pays for the return shipping?",
+      "expected": [
+       [
+        "returns",
+        7
+       ]
+      ],
+      "rank": 4,
+      "top": [
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.7783
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.7741
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.7739
+       },
+       {
+        "section": "returns#7",
+        "score": 0.7691
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7685
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Can I exchange the product for a new one?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.8045
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.7968
+       },
+       {
+        "section": "returns#2",
+        "score": 0.7952
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.7942
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7936
+       }
+      ]
+     }
+    ]
+   },
+   "1": {
+    "dimensions": 384,
+    "first": 8,
+    "top3": 14,
+    "top5": 15,
+    "mrr": 0.572,
+    "worst": 14,
+    "query_ms_p50": 2.9,
+    "query_ms_max": 4.4,
+    "per_question": [
+     {
+      "rule": "R0",
+      "question": "Why is the order I placed after September 2018 not showing up?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#1",
+        "score": 0.8167
+       },
+       {
+        "section": "returns#4",
+        "score": 0.8155
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.8139
+       },
+       {
+        "section": "shipping_and_delays#6",
+        "score": 0.8112
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8056
+       }
+      ]
+     },
+     {
+      "rule": "R1",
+      "question": "Can I find out the status of my friend's order?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 14,
+      "top": [
+       {
+        "section": "returns#4",
+        "score": 0.7967
+       },
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.7878
+       },
+       {
+        "section": "shipping_and_delays#6",
+        "score": 0.7854
+       },
+       {
+        "section": "payments_and_refunds#5",
+        "score": 0.7845
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.7814
+       }
+      ]
+     },
+     {
+      "rule": "R2",
+      "question": "My order is still being prepared, can I cancel it?",
+      "expected": [
+       [
+        "cancellation",
+        1
+       ],
+       [
+        "cancellation",
+        2
+       ]
+      ],
+      "rank": 10,
+      "top": [
+       {
+        "section": "cancellation#4",
+        "score": 0.8135
+       },
+       {
+        "section": "returns#4",
+        "score": 0.7928
+       },
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.7893
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.7863
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.785
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "My order has been shipped, can I cancel it?",
+      "expected": [
+       [
+        "cancellation",
+        3
+       ],
+       [
+        "shipping_and_delays",
+        1
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "cancellation#4",
+        "score": 0.8152
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8007
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.7989
+       },
+       {
+        "section": "returns#4",
+        "score": 0.7963
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.791
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "The product is still on its way, can I open a return request now?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        1
+       ],
+       [
+        "cancellation",
+        3
+       ]
+      ],
+      "rank": 8,
+      "top": [
+       {
+        "section": "cancellation#4",
+        "score": 0.8153
+       },
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.8146
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.806
+       },
+       {
+        "section": "returns#6",
+        "score": 0.8054
+       },
+       {
+        "section": "returns#4",
+        "score": 0.8046
+       }
+      ]
+     },
+     {
+      "rule": "R4",
+      "question": "What happens to the money for my cancelled order?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        4
+       ],
+       [
+        "cancellation",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "cancellation#4",
+        "score": 0.8093
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7972
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.7971
+       },
+       {
+        "section": "payments_and_refunds#5",
+        "score": 0.7965
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.794
+       }
+      ]
+     },
+     {
+      "rule": "R5",
+      "question": "The order shows as delivered but has no delivery date, can I return it?",
+      "expected": [
+       [
+        "returns",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#4",
+        "score": 0.827
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.8168
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8111
+       },
+       {
+        "section": "returns#7",
+        "score": 0.8065
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8055
+       }
+      ]
+     },
+     {
+      "rule": "R6",
+      "question": "I did not like the product, within how many days can I return it?",
+      "expected": [
+       [
+        "returns",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#2",
+        "score": 0.829
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8289
+       },
+       {
+        "section": "returns#7",
+        "score": 0.8137
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8092
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8077
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "The product arrived broken, within how many days can I return it?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8313
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8309
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8212
+       },
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.8138
+       },
+       {
+        "section": "returns#7",
+        "score": 0.8128
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "I was sent a different product than the one I ordered",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        1
+       ],
+       [
+        "damaged_or_wrong_item",
+        2
+       ],
+       [
+        "damaged_or_wrong_item",
+        3
+       ]
+      ],
+      "rank": 3,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.7962
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.7955
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.7855
+       },
+       {
+        "section": "returns#4",
+        "score": 0.785
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7831
+       }
+      ]
+     },
+     {
+      "rule": "R8",
+      "question": "If I return it, do I also get the shipping fee back?",
+      "expected": [
+       [
+        "returns",
+        3
+       ],
+       [
+        "payments_and_refunds",
+        1
+       ],
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "returns#4",
+        "score": 0.794
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.7919
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7918
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.7915
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.7912
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "The shipment arrived 12 days late, can I get my shipping fee back?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8225
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8184
+       },
+       {
+        "section": "returns#2",
+        "score": 0.817
+       },
+       {
+        "section": "returns#4",
+        "score": 0.8137
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8131
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "My return period has passed but the delivery was very late, do I have any right?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        4
+       ]
+      ],
+      "rank": 10,
+      "top": [
+       {
+        "section": "returns#4",
+        "score": 0.8089
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.804
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8035
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8024
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8009
+       }
+      ]
+     },
+     {
+      "rule": "R10",
+      "question": "Why is my 600 BRL return request waiting for senior approval?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        2
+       ],
+       [
+        "returns",
+        6
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.8196
+       },
+       {
+        "section": "returns#6",
+        "score": 0.8116
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.8035
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.8001
+       },
+       {
+        "section": "returns#4",
+        "score": 0.7915
+       }
+      ]
+     },
+     {
+      "rule": "R11",
+      "question": "Can I open a second return request for the same order?",
+      "expected": [
+       [
+        "returns",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#5",
+        "score": 0.8298
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.8112
+       },
+       {
+        "section": "returns#6",
+        "score": 0.7915
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.7913
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.7883
+       }
+      ]
+     },
+     {
+      "rule": "R12",
+      "question": "I paid with a gift card, how is my refund made?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        3
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.7926
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.7898
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.7866
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.7856
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.7847
+       }
+      ]
+     },
+     {
+      "rule": "R13",
+      "question": "The seller shipped the product late, what happens in that case?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        5
+       ]
+      ],
+      "rank": 8,
+      "top": [
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8135
+       },
+       {
+        "section": "returns#4",
+        "score": 0.7992
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.794
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.7939
+       },
+       {
+        "section": "returns#2",
+        "score": 0.7934
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "How many days until the money reaches my account?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        5
+       ]
+      ],
+      "rank": 4,
+      "top": [
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8148
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8113
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8112
+       },
+       {
+        "section": "payments_and_refunds#5",
+        "score": 0.8051
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.804
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Who pays for the return shipping?",
+      "expected": [
+       [
+        "returns",
+        7
+       ]
+      ],
+      "rank": 3,
+      "top": [
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.7798
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.7741
+       },
+       {
+        "section": "returns#7",
+        "score": 0.7731
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.7717
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7712
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Can I exchange the product for a new one?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.8075
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.7955
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.7954
+       },
+       {
+        "section": "returns#5",
+        "score": 0.7934
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7909
+       }
+      ]
+     }
+    ]
+   }
+  }
+ },
+ "e5-base": {
+  "repo": "Xenova/multilingual-e5-base",
+  "revision": "1ec9243030a27d1a115d5c340572074c125b58b2",
+  "file": "onnx/model_quantized.onnx",
+  "sections": 28,
+  "questions": 20,
+  "peak_memory_mb": 921,
+  "by_batch_size": {
+   "all": {
+    "dimensions": 768,
+    "first": 11,
+    "top3": 18,
+    "top5": 19,
+    "mrr": 0.722,
+    "worst": 14,
+    "query_ms_p50": 7.0,
+    "query_ms_max": 8.2,
+    "per_question": [
+     {
+      "rule": "R0",
+      "question": "Why is the order I placed after September 2018 not showing up?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#1",
+        "score": 0.7953
+       },
+       {
+        "section": "returns#4",
+        "score": 0.7859
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.773
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7723
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.7709
+       }
+      ]
+     },
+     {
+      "rule": "R1",
+      "question": "Can I find out the status of my friend's order?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "returns#5",
+        "score": 0.761
+       },
+       {
+        "section": "returns#1",
+        "score": 0.7592
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7568
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.7523
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.7522
+       }
+      ]
+     },
+     {
+      "rule": "R2",
+      "question": "My order is still being prepared, can I cancel it?",
+      "expected": [
+       [
+        "cancellation",
+        1
+       ],
+       [
+        "cancellation",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "cancellation#1",
+        "score": 0.7812
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.7751
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.7741
+       },
+       {
+        "section": "returns#1",
+        "score": 0.766
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.7635
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "My order has been shipped, can I cancel it?",
+      "expected": [
+       [
+        "cancellation",
+        3
+       ],
+       [
+        "shipping_and_delays",
+        1
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "cancellation#1",
+        "score": 0.7865
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.785
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.7823
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.7776
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.7685
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "The product is still on its way, can I open a return request now?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        1
+       ],
+       [
+        "cancellation",
+        3
+       ]
+      ],
+      "rank": 3,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7795
+       },
+       {
+        "section": "returns#5",
+        "score": 0.773
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.764
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.7615
+       },
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.7604
+       }
+      ]
+     },
+     {
+      "rule": "R4",
+      "question": "What happens to the money for my cancelled order?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        4
+       ],
+       [
+        "cancellation",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "cancellation#4",
+        "score": 0.7903
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.7812
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.773
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7725
+       },
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.7718
+       }
+      ]
+     },
+     {
+      "rule": "R5",
+      "question": "The order shows as delivered but has no delivery date, can I return it?",
+      "expected": [
+       [
+        "returns",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#4",
+        "score": 0.7984
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.7892
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.7861
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.7856
+       },
+       {
+        "section": "returns#1",
+        "score": 0.7841
+       }
+      ]
+     },
+     {
+      "rule": "R6",
+      "question": "I did not like the product, within how many days can I return it?",
+      "expected": [
+       [
+        "returns",
+        2
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8021
+       },
+       {
+        "section": "returns#2",
+        "score": 0.7937
+       },
+       {
+        "section": "returns#7",
+        "score": 0.7727
+       },
+       {
+        "section": "cancellation#5",
+        "score": 0.7684
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.7671
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "The product arrived broken, within how many days can I return it?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8109
+       },
+       {
+        "section": "returns#2",
+        "score": 0.7954
+       },
+       {
+        "section": "returns#7",
+        "score": 0.7774
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.7772
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.7767
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "I was sent a different product than the one I ordered",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        1
+       ],
+       [
+        "damaged_or_wrong_item",
+        2
+       ],
+       [
+        "damaged_or_wrong_item",
+        3
+       ]
+      ],
+      "rank": 3,
+      "top": [
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.7589
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.758
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.7573
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7561
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.7522
+       }
+      ]
+     },
+     {
+      "rule": "R8",
+      "question": "If I return it, do I also get the shipping fee back?",
+      "expected": [
+       [
+        "returns",
+        3
+       ],
+       [
+        "payments_and_refunds",
+        1
+       ],
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 5,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7771
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.7738
+       },
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.769
+       },
+       {
+        "section": "returns#7",
+        "score": 0.7672
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.7664
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "The shipment arrived 12 days late, can I get my shipping fee back?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.7815
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.7808
+       },
+       {
+        "section": "returns#2",
+        "score": 0.7804
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.7782
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.7775
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "My return period has passed but the delivery was very late, do I have any right?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        4
+       ]
+      ],
+      "rank": 14,
+      "top": [
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.7931
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.7901
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.7894
+       },
+       {
+        "section": "returns#4",
+        "score": 0.7872
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.7827
+       }
+      ]
+     },
+     {
+      "rule": "R10",
+      "question": "Why is my 600 BRL return request waiting for senior approval?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        2
+       ],
+       [
+        "returns",
+        6
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.7991
+       },
+       {
+        "section": "returns#6",
+        "score": 0.7825
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7771
+       },
+       {
+        "section": "returns#5",
+        "score": 0.7637
+       },
+       {
+        "section": "payments_and_refunds#5",
+        "score": 0.7559
+       }
+      ]
+     },
+     {
+      "rule": "R11",
+      "question": "Can I open a second return request for the same order?",
+      "expected": [
+       [
+        "returns",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#5",
+        "score": 0.8104
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7868
+       },
+       {
+        "section": "returns#1",
+        "score": 0.7724
+       },
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.7676
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.7661
+       }
+      ]
+     },
+     {
+      "rule": "R12",
+      "question": "I paid with a gift card, how is my refund made?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        3
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.8013
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.788
+       },
+       {
+        "section": "payments_and_refunds#5",
+        "score": 0.7859
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7712
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.7712
+       }
+      ]
+     },
+     {
+      "rule": "R13",
+      "question": "The seller shipped the product late, what happens in that case?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#5",
+        "score": 0.7724
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.77
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.7694
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.7596
+       },
+       {
+        "section": "returns#4",
+        "score": 0.7584
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "How many days until the money reaches my account?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#5",
+        "score": 0.7846
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.7676
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.7676
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.7654
+       },
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.7648
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Who pays for the return shipping?",
+      "expected": [
+       [
+        "returns",
+        7
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#7",
+        "score": 0.754
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.7519
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7518
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.7492
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.7418
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Can I exchange the product for a new one?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        5
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.7737
+       },
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.7621
+       },
+       {
+        "section": "returns#2",
+        "score": 0.7542
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7513
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.7487
+       }
+      ]
+     }
+    ]
+   },
+   "10": {
+    "dimensions": 768,
+    "first": 11,
+    "top3": 18,
+    "top5": 18,
+    "mrr": 0.713,
+    "worst": 11,
+    "query_ms_p50": 7.5,
+    "query_ms_max": 12.4,
+    "per_question": [
+     {
+      "rule": "R0",
+      "question": "Why is the order I placed after September 2018 not showing up?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#1",
+        "score": 0.7971
+       },
+       {
+        "section": "returns#4",
+        "score": 0.7886
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.7766
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7729
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.7721
+       }
+      ]
+     },
+     {
+      "rule": "R1",
+      "question": "Can I find out the status of my friend's order?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#1",
+        "score": 0.7622
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.7554
+       },
+       {
+        "section": "returns#5",
+        "score": 0.7553
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7534
+       },
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.7503
+       }
+      ]
+     },
+     {
+      "rule": "R2",
+      "question": "My order is still being prepared, can I cancel it?",
+      "expected": [
+       [
+        "cancellation",
+        1
+       ],
+       [
+        "cancellation",
+        2
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "cancellation#4",
+        "score": 0.7772
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.777
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.7695
+       },
+       {
+        "section": "returns#1",
+        "score": 0.7664
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.7652
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "My order has been shipped, can I cancel it?",
+      "expected": [
+       [
+        "cancellation",
+        3
+       ],
+       [
+        "shipping_and_delays",
+        1
+       ]
+      ],
+      "rank": 3,
+      "top": [
+       {
+        "section": "cancellation#4",
+        "score": 0.7854
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.782
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.78
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.7781
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.7696
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "The product is still on its way, can I open a return request now?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        1
+       ],
+       [
+        "cancellation",
+        3
+       ]
+      ],
+      "rank": 6,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7738
+       },
+       {
+        "section": "returns#5",
+        "score": 0.7736
+       },
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.764
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.7632
+       },
+       {
+        "section": "returns#7",
+        "score": 0.7628
+       }
+      ]
+     },
+     {
+      "rule": "R4",
+      "question": "What happens to the money for my cancelled order?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        4
+       ],
+       [
+        "cancellation",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "cancellation#4",
+        "score": 0.7912
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.7824
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.7766
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.776
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7754
+       }
+      ]
+     },
+     {
+      "rule": "R5",
+      "question": "The order shows as delivered but has no delivery date, can I return it?",
+      "expected": [
+       [
+        "returns",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#4",
+        "score": 0.8087
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.7898
+       },
+       {
+        "section": "returns#1",
+        "score": 0.7887
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.7876
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.784
+       }
+      ]
+     },
+     {
+      "rule": "R6",
+      "question": "I did not like the product, within how many days can I return it?",
+      "expected": [
+       [
+        "returns",
+        2
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.7989
+       },
+       {
+        "section": "returns#2",
+        "score": 0.7864
+       },
+       {
+        "section": "returns#7",
+        "score": 0.7798
+       },
+       {
+        "section": "cancellation#5",
+        "score": 0.7724
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.7707
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "The product arrived broken, within how many days can I return it?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8066
+       },
+       {
+        "section": "returns#2",
+        "score": 0.7883
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.7812
+       },
+       {
+        "section": "returns#7",
+        "score": 0.781
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.7768
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "I was sent a different product than the one I ordered",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        1
+       ],
+       [
+        "damaged_or_wrong_item",
+        2
+       ],
+       [
+        "damaged_or_wrong_item",
+        3
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "cancellation#4",
+        "score": 0.7619
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.7603
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7581
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.7564
+       },
+       {
+        "section": "returns#7",
+        "score": 0.7523
+       }
+      ]
+     },
+     {
+      "rule": "R8",
+      "question": "If I return it, do I also get the shipping fee back?",
+      "expected": [
+       [
+        "returns",
+        3
+       ],
+       [
+        "payments_and_refunds",
+        1
+       ],
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 3,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7714
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.7713
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.7704
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.7701
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.7698
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "The shipment arrived 12 days late, can I get my shipping fee back?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.7871
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.7835
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.7815
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.7815
+       },
+       {
+        "section": "returns#2",
+        "score": 0.7796
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "My return period has passed but the delivery was very late, do I have any right?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        4
+       ]
+      ],
+      "rank": 11,
+      "top": [
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.7932
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.7905
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.786
+       },
+       {
+        "section": "returns#4",
+        "score": 0.7851
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.7834
+       }
+      ]
+     },
+     {
+      "rule": "R10",
+      "question": "Why is my 600 BRL return request waiting for senior approval?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        2
+       ],
+       [
+        "returns",
+        6
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.7953
+       },
+       {
+        "section": "returns#6",
+        "score": 0.7795
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.778
+       },
+       {
+        "section": "returns#5",
+        "score": 0.7639
+       },
+       {
+        "section": "returns#7",
+        "score": 0.7519
+       }
+      ]
+     },
+     {
+      "rule": "R11",
+      "question": "Can I open a second return request for the same order?",
+      "expected": [
+       [
+        "returns",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#5",
+        "score": 0.8025
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7986
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.7773
+       },
+       {
+        "section": "returns#1",
+        "score": 0.7692
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.7653
+       }
+      ]
+     },
+     {
+      "rule": "R12",
+      "question": "I paid with a gift card, how is my refund made?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        3
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.7969
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.7897
+       },
+       {
+        "section": "payments_and_refunds#5",
+        "score": 0.7807
+       },
+       {
+        "section": "returns#7",
+        "score": 0.7718
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.77
+       }
+      ]
+     },
+     {
+      "rule": "R13",
+      "question": "The seller shipped the product late, what happens in that case?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#5",
+        "score": 0.7775
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.7698
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.7675
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.7648
+       },
+       {
+        "section": "returns#4",
+        "score": 0.761
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "How many days until the money reaches my account?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#5",
+        "score": 0.7865
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.7686
+       },
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.7669
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.7653
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.7648
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Who pays for the return shipping?",
+      "expected": [
+       [
+        "returns",
+        7
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#7",
+        "score": 0.756
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.7547
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.7539
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.75
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.7498
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Can I exchange the product for a new one?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        5
+       ]
+      ],
+      "rank": 3,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.7678
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7608
+       },
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.7587
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.7513
+       },
+       {
+        "section": "returns#2",
+        "score": 0.7506
+       }
+      ]
+     }
+    ]
+   },
+   "1": {
+    "dimensions": 768,
+    "first": 12,
+    "top3": 16,
+    "top5": 18,
+    "mrr": 0.735,
+    "worst": 7,
+    "query_ms_p50": 6.9,
+    "query_ms_max": 8.7,
+    "per_question": [
+     {
+      "rule": "R0",
+      "question": "Why is the order I placed after September 2018 not showing up?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#1",
+        "score": 0.806
+       },
+       {
+        "section": "returns#4",
+        "score": 0.7787
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.7775
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.775
+       },
+       {
+        "section": "shipping_and_delays#6",
+        "score": 0.7739
+       }
+      ]
+     },
+     {
+      "rule": "R1",
+      "question": "Can I find out the status of my friend's order?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#1",
+        "score": 0.7678
+       },
+       {
+        "section": "returns#5",
+        "score": 0.7608
+       },
+       {
+        "section": "returns#6",
+        "score": 0.755
+       },
+       {
+        "section": "cancellation#5",
+        "score": 0.7548
+       },
+       {
+        "section": "returns#7",
+        "score": 0.7535
+       }
+      ]
+     },
+     {
+      "rule": "R2",
+      "question": "My order is still being prepared, can I cancel it?",
+      "expected": [
+       [
+        "cancellation",
+        1
+       ],
+       [
+        "cancellation",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "cancellation#1",
+        "score": 0.7784
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.7759
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.7744
+       },
+       {
+        "section": "returns#1",
+        "score": 0.7702
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.7655
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "My order has been shipped, can I cancel it?",
+      "expected": [
+       [
+        "cancellation",
+        3
+       ],
+       [
+        "shipping_and_delays",
+        1
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "cancellation#4",
+        "score": 0.7846
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.7837
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.7824
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.7819
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.7702
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "The product is still on its way, can I open a return request now?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        1
+       ],
+       [
+        "cancellation",
+        3
+       ]
+      ],
+      "rank": 5,
+      "top": [
+       {
+        "section": "returns#5",
+        "score": 0.783
+       },
+       {
+        "section": "returns#6",
+        "score": 0.7729
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7719
+       },
+       {
+        "section": "returns#1",
+        "score": 0.7636
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.763
+       }
+      ]
+     },
+     {
+      "rule": "R4",
+      "question": "What happens to the money for my cancelled order?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        4
+       ],
+       [
+        "cancellation",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "cancellation#4",
+        "score": 0.7939
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.7845
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.7766
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.7722
+       },
+       {
+        "section": "returns#1",
+        "score": 0.772
+       }
+      ]
+     },
+     {
+      "rule": "R5",
+      "question": "The order shows as delivered but has no delivery date, can I return it?",
+      "expected": [
+       [
+        "returns",
+        4
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.7933
+       },
+       {
+        "section": "returns#4",
+        "score": 0.7929
+       },
+       {
+        "section": "returns#1",
+        "score": 0.7921
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.7883
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.788
+       }
+      ]
+     },
+     {
+      "rule": "R6",
+      "question": "I did not like the product, within how many days can I return it?",
+      "expected": [
+       [
+        "returns",
+        2
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.7942
+       },
+       {
+        "section": "returns#2",
+        "score": 0.7843
+       },
+       {
+        "section": "returns#7",
+        "score": 0.7832
+       },
+       {
+        "section": "cancellation#5",
+        "score": 0.7748
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.7689
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "The product arrived broken, within how many days can I return it?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8031
+       },
+       {
+        "section": "returns#2",
+        "score": 0.7827
+       },
+       {
+        "section": "returns#7",
+        "score": 0.7813
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.781
+       },
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.7792
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "I was sent a different product than the one I ordered",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        1
+       ],
+       [
+        "damaged_or_wrong_item",
+        2
+       ],
+       [
+        "damaged_or_wrong_item",
+        3
+       ]
+      ],
+      "rank": 5,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.7593
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.7591
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.7575
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.753
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.7523
+       }
+      ]
+     },
+     {
+      "rule": "R8",
+      "question": "If I return it, do I also get the shipping fee back?",
+      "expected": [
+       [
+        "returns",
+        3
+       ],
+       [
+        "payments_and_refunds",
+        1
+       ],
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 6,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7779
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.7738
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.7726
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.7725
+       },
+       {
+        "section": "returns#7",
+        "score": 0.7707
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "The shipment arrived 12 days late, can I get my shipping fee back?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.7913
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.7862
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.7826
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.7801
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.7782
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "My return period has passed but the delivery was very late, do I have any right?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        4
+       ]
+      ],
+      "rank": 7,
+      "top": [
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.7947
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.7879
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.7848
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.7836
+       },
+       {
+        "section": "returns#3",
+        "score": 0.7806
+       }
+      ]
+     },
+     {
+      "rule": "R10",
+      "question": "Why is my 600 BRL return request waiting for senior approval?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        2
+       ],
+       [
+        "returns",
+        6
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.792
+       },
+       {
+        "section": "returns#6",
+        "score": 0.7827
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7801
+       },
+       {
+        "section": "returns#5",
+        "score": 0.769
+       },
+       {
+        "section": "payments_and_refunds#5",
+        "score": 0.7563
+       }
+      ]
+     },
+     {
+      "rule": "R11",
+      "question": "Can I open a second return request for the same order?",
+      "expected": [
+       [
+        "returns",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#5",
+        "score": 0.8127
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7986
+       },
+       {
+        "section": "returns#1",
+        "score": 0.7775
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.7732
+       },
+       {
+        "section": "returns#6",
+        "score": 0.7727
+       }
+      ]
+     },
+     {
+      "rule": "R12",
+      "question": "I paid with a gift card, how is my refund made?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        3
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.7964
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.7871
+       },
+       {
+        "section": "payments_and_refunds#5",
+        "score": 0.7789
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.7745
+       },
+       {
+        "section": "returns#7",
+        "score": 0.7703
+       }
+      ]
+     },
+     {
+      "rule": "R13",
+      "question": "The seller shipped the product late, what happens in that case?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#5",
+        "score": 0.7803
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.773
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.77
+       },
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.7653
+       },
+       {
+        "section": "shipping_and_delays#6",
+        "score": 0.7593
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "How many days until the money reaches my account?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#5",
+        "score": 0.7817
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.7691
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.7674
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.7653
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.7651
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Who pays for the return shipping?",
+      "expected": [
+       [
+        "returns",
+        7
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#7",
+        "score": 0.7632
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.7606
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.7511
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.7502
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7488
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Can I exchange the product for a new one?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.7814
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.7669
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7535
+       },
+       {
+        "section": "returns#2",
+        "score": 0.7504
+       },
+       {
+        "section": "returns#5",
+        "score": 0.7483
+       }
+      ]
+     }
+    ]
+   }
+  }
+ },
+ "bge-m3": {
+  "repo": "Xenova/bge-m3",
+  "revision": "4de13258303883538bd53b696b452bf8099f0858",
+  "file": "onnx/model_quantized.onnx",
+  "sections": 28,
+  "questions": 20,
+  "peak_memory_mb": 1340,
+  "by_batch_size": {
+   "all": {
+    "dimensions": 1024,
+    "first": 17,
+    "top3": 19,
+    "top5": 19,
+    "mrr": 0.892,
+    "worst": 6,
+    "query_ms_p50": 21.7,
+    "query_ms_max": 26.3,
+    "per_question": [
+     {
+      "rule": "R0",
+      "question": "Why is the order I placed after September 2018 not showing up?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#1",
+        "score": 0.5844
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.5387
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.5016
+       },
+       {
+        "section": "returns#6",
+        "score": 0.496
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.4942
+       }
+      ]
+     },
+     {
+      "rule": "R1",
+      "question": "Can I find out the status of my friend's order?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#1",
+        "score": 0.5896
+       },
+       {
+        "section": "returns#6",
+        "score": 0.5602
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.5387
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.5298
+       },
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.5289
+       }
+      ]
+     },
+     {
+      "rule": "R2",
+      "question": "My order is still being prepared, can I cancel it?",
+      "expected": [
+       [
+        "cancellation",
+        1
+       ],
+       [
+        "cancellation",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "cancellation#1",
+        "score": 0.7056
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.6402
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.6267
+       },
+       {
+        "section": "cancellation#2",
+        "score": 0.6218
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.6043
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "My order has been shipped, can I cancel it?",
+      "expected": [
+       [
+        "cancellation",
+        3
+       ],
+       [
+        "shipping_and_delays",
+        1
+       ]
+      ],
+      "rank": 3,
+      "top": [
+       {
+        "section": "cancellation#1",
+        "score": 0.6927
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.6664
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.6551
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.6462
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.6388
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "The product is still on its way, can I open a return request now?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        1
+       ],
+       [
+        "cancellation",
+        3
+       ]
+      ],
+      "rank": 6,
+      "top": [
+       {
+        "section": "returns#5",
+        "score": 0.6263
+       },
+       {
+        "section": "returns#6",
+        "score": 0.6236
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.6157
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.6108
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.6088
+       }
+      ]
+     },
+     {
+      "rule": "R4",
+      "question": "What happens to the money for my cancelled order?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        4
+       ],
+       [
+        "cancellation",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.6696
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.6413
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.5979
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.581
+       },
+       {
+        "section": "returns#1",
+        "score": 0.5801
+       }
+      ]
+     },
+     {
+      "rule": "R5",
+      "question": "The order shows as delivered but has no delivery date, can I return it?",
+      "expected": [
+       [
+        "returns",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#4",
+        "score": 0.6586
+       },
+       {
+        "section": "returns#1",
+        "score": 0.6542
+       },
+       {
+        "section": "returns#2",
+        "score": 0.646
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.6386
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.6294
+       }
+      ]
+     },
+     {
+      "rule": "R6",
+      "question": "I did not like the product, within how many days can I return it?",
+      "expected": [
+       [
+        "returns",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#2",
+        "score": 0.6976
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.6928
+       },
+       {
+        "section": "cancellation#5",
+        "score": 0.5922
+       },
+       {
+        "section": "returns#7",
+        "score": 0.5885
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.5832
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "The product arrived broken, within how many days can I return it?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.6753
+       },
+       {
+        "section": "returns#2",
+        "score": 0.6643
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.5902
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.5806
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.5697
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "I was sent a different product than the one I ordered",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        1
+       ],
+       [
+        "damaged_or_wrong_item",
+        2
+       ],
+       [
+        "damaged_or_wrong_item",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.5683
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.5579
+       },
+       {
+        "section": "returns#2",
+        "score": 0.5491
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.547
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.5452
+       }
+      ]
+     },
+     {
+      "rule": "R8",
+      "question": "If I return it, do I also get the shipping fee back?",
+      "expected": [
+       [
+        "returns",
+        3
+       ],
+       [
+        "payments_and_refunds",
+        1
+       ],
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.6223
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.6127
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.6063
+       },
+       {
+        "section": "returns#3",
+        "score": 0.6044
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.5999
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "The shipment arrived 12 days late, can I get my shipping fee back?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.6909
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.6518
+       },
+       {
+        "section": "returns#2",
+        "score": 0.6411
+       },
+       {
+        "section": "shipping_and_delays#5",
+        "score": 0.6197
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.612
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "My return period has passed but the delivery was very late, do I have any right?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        4
+       ]
+      ],
+      "rank": 3,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.6794
+       },
+       {
+        "section": "returns#2",
+        "score": 0.6725
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.6604
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.6462
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.6288
+       }
+      ]
+     },
+     {
+      "rule": "R10",
+      "question": "Why is my 600 BRL return request waiting for senior approval?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        2
+       ],
+       [
+        "returns",
+        6
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.6487
+       },
+       {
+        "section": "returns#6",
+        "score": 0.6042
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.5137
+       },
+       {
+        "section": "returns#5",
+        "score": 0.5
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.492
+       }
+      ]
+     },
+     {
+      "rule": "R11",
+      "question": "Can I open a second return request for the same order?",
+      "expected": [
+       [
+        "returns",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#5",
+        "score": 0.692
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.632
+       },
+       {
+        "section": "returns#1",
+        "score": 0.5908
+       },
+       {
+        "section": "returns#6",
+        "score": 0.5887
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.5352
+       }
+      ]
+     },
+     {
+      "rule": "R12",
+      "question": "I paid with a gift card, how is my refund made?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.6953
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.6773
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.5937
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.5887
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.5719
+       }
+      ]
+     },
+     {
+      "rule": "R13",
+      "question": "The seller shipped the product late, what happens in that case?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#5",
+        "score": 0.6409
+       },
+       {
+        "section": "returns#2",
+        "score": 0.6185
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.5839
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.5808
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.5598
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "How many days until the money reaches my account?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#5",
+        "score": 0.6035
+       },
+       {
+        "section": "returns#2",
+        "score": 0.5736
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.5715
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.5694
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.5631
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Who pays for the return shipping?",
+      "expected": [
+       [
+        "returns",
+        7
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#7",
+        "score": 0.5804
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.5602
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.5586
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.546
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.5412
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Can I exchange the product for a new one?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.5669
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.5511
+       },
+       {
+        "section": "returns#2",
+        "score": 0.5397
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.539
+       },
+       {
+        "section": "returns#5",
+        "score": 0.5384
+       }
+      ]
+     }
+    ]
+   },
+   "10": {
+    "dimensions": 1024,
+    "first": 14,
+    "top3": 20,
+    "top5": 20,
+    "mrr": 0.817,
+    "worst": 3,
+    "query_ms_p50": 21.7,
+    "query_ms_max": 24.8,
+    "per_question": [
+     {
+      "rule": "R0",
+      "question": "Why is the order I placed after September 2018 not showing up?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#1",
+        "score": 0.5751
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.5365
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.4937
+       },
+       {
+        "section": "returns#6",
+        "score": 0.493
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.4854
+       }
+      ]
+     },
+     {
+      "rule": "R1",
+      "question": "Can I find out the status of my friend's order?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#1",
+        "score": 0.5788
+       },
+       {
+        "section": "returns#6",
+        "score": 0.5461
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.5419
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.5364
+       },
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.5315
+       }
+      ]
+     },
+     {
+      "rule": "R2",
+      "question": "My order is still being prepared, can I cancel it?",
+      "expected": [
+       [
+        "cancellation",
+        1
+       ],
+       [
+        "cancellation",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "cancellation#1",
+        "score": 0.6991
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.6425
+       },
+       {
+        "section": "cancellation#2",
+        "score": 0.6231
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.6224
+       },
+       {
+        "section": "returns#5",
+        "score": 0.5983
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "My order has been shipped, can I cancel it?",
+      "expected": [
+       [
+        "cancellation",
+        3
+       ],
+       [
+        "shipping_and_delays",
+        1
+       ]
+      ],
+      "rank": 3,
+      "top": [
+       {
+        "section": "cancellation#1",
+        "score": 0.6826
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.6676
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.6545
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.6373
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.6354
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "The product is still on its way, can I open a return request now?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        1
+       ],
+       [
+        "cancellation",
+        3
+       ]
+      ],
+      "rank": 3,
+      "top": [
+       {
+        "section": "returns#5",
+        "score": 0.6246
+       },
+       {
+        "section": "returns#6",
+        "score": 0.6165
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.6061
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.6046
+       },
+       {
+        "section": "returns#1",
+        "score": 0.6011
+       }
+      ]
+     },
+     {
+      "rule": "R4",
+      "question": "What happens to the money for my cancelled order?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        4
+       ],
+       [
+        "cancellation",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.6575
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.644
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.584
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.5788
+       },
+       {
+        "section": "cancellation#5",
+        "score": 0.5758
+       }
+      ]
+     },
+     {
+      "rule": "R5",
+      "question": "The order shows as delivered but has no delivery date, can I return it?",
+      "expected": [
+       [
+        "returns",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#4",
+        "score": 0.6633
+       },
+       {
+        "section": "returns#1",
+        "score": 0.6397
+       },
+       {
+        "section": "returns#2",
+        "score": 0.6395
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.6306
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.6278
+       }
+      ]
+     },
+     {
+      "rule": "R6",
+      "question": "I did not like the product, within how many days can I return it?",
+      "expected": [
+       [
+        "returns",
+        2
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.691
+       },
+       {
+        "section": "returns#2",
+        "score": 0.6874
+       },
+       {
+        "section": "cancellation#5",
+        "score": 0.6028
+       },
+       {
+        "section": "returns#7",
+        "score": 0.5872
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.5742
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "The product arrived broken, within how many days can I return it?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.6686
+       },
+       {
+        "section": "returns#2",
+        "score": 0.6513
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.5778
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.5758
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.5739
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "I was sent a different product than the one I ordered",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        1
+       ],
+       [
+        "damaged_or_wrong_item",
+        2
+       ],
+       [
+        "damaged_or_wrong_item",
+        3
+       ]
+      ],
+      "rank": 3,
+      "top": [
+       {
+        "section": "cancellation#4",
+        "score": 0.5627
+       },
+       {
+        "section": "returns#5",
+        "score": 0.5622
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.5555
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.542
+       },
+       {
+        "section": "returns#2",
+        "score": 0.536
+       }
+      ]
+     },
+     {
+      "rule": "R8",
+      "question": "If I return it, do I also get the shipping fee back?",
+      "expected": [
+       [
+        "returns",
+        3
+       ],
+       [
+        "payments_and_refunds",
+        1
+       ],
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.6248
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.6203
+       },
+       {
+        "section": "returns#3",
+        "score": 0.6022
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.5976
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.5917
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "The shipment arrived 12 days late, can I get my shipping fee back?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.6845
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.6488
+       },
+       {
+        "section": "returns#2",
+        "score": 0.6392
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.6114
+       },
+       {
+        "section": "shipping_and_delays#5",
+        "score": 0.6098
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "My return period has passed but the delivery was very late, do I have any right?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        4
+       ]
+      ],
+      "rank": 3,
+      "top": [
+       {
+        "section": "returns#2",
+        "score": 0.6745
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.6718
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.6633
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.6409
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.6235
+       }
+      ]
+     },
+     {
+      "rule": "R10",
+      "question": "Why is my 600 BRL return request waiting for senior approval?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        2
+       ],
+       [
+        "returns",
+        6
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.642
+       },
+       {
+        "section": "returns#6",
+        "score": 0.6059
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.5175
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.493
+       },
+       {
+        "section": "returns#5",
+        "score": 0.4925
+       }
+      ]
+     },
+     {
+      "rule": "R11",
+      "question": "Can I open a second return request for the same order?",
+      "expected": [
+       [
+        "returns",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#5",
+        "score": 0.6876
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.6216
+       },
+       {
+        "section": "returns#6",
+        "score": 0.5829
+       },
+       {
+        "section": "returns#1",
+        "score": 0.5799
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.5404
+       }
+      ]
+     },
+     {
+      "rule": "R12",
+      "question": "I paid with a gift card, how is my refund made?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.6923
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.6726
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.5871
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.5863
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.5819
+       }
+      ]
+     },
+     {
+      "rule": "R13",
+      "question": "The seller shipped the product late, what happens in that case?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#5",
+        "score": 0.6375
+       },
+       {
+        "section": "returns#2",
+        "score": 0.6137
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.5796
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.5747
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.5569
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "How many days until the money reaches my account?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#5",
+        "score": 0.6086
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.5814
+       },
+       {
+        "section": "returns#2",
+        "score": 0.577
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.5649
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.561
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Who pays for the return shipping?",
+      "expected": [
+       [
+        "returns",
+        7
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.571
+       },
+       {
+        "section": "returns#7",
+        "score": 0.5686
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.5631
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.5393
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.5386
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Can I exchange the product for a new one?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.5717
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.5439
+       },
+       {
+        "section": "returns#5",
+        "score": 0.5405
+       },
+       {
+        "section": "returns#2",
+        "score": 0.5352
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.5308
+       }
+      ]
+     }
+    ]
+   },
+   "1": {
+    "dimensions": 1024,
+    "first": 17,
+    "top3": 19,
+    "top5": 19,
+    "mrr": 0.892,
+    "worst": 6,
+    "query_ms_p50": 21.3,
+    "query_ms_max": 24.5,
+    "per_question": [
+     {
+      "rule": "R0",
+      "question": "Why is the order I placed after September 2018 not showing up?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#1",
+        "score": 0.5746
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.5415
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.4937
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.4936
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.4935
+       }
+      ]
+     },
+     {
+      "rule": "R1",
+      "question": "Can I find out the status of my friend's order?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#1",
+        "score": 0.5789
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.554
+       },
+       {
+        "section": "returns#6",
+        "score": 0.5504
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.5371
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.5333
+       }
+      ]
+     },
+     {
+      "rule": "R2",
+      "question": "My order is still being prepared, can I cancel it?",
+      "expected": [
+       [
+        "cancellation",
+        1
+       ],
+       [
+        "cancellation",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "cancellation#1",
+        "score": 0.7061
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.6515
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.6305
+       },
+       {
+        "section": "cancellation#2",
+        "score": 0.6204
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.6056
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "My order has been shipped, can I cancel it?",
+      "expected": [
+       [
+        "cancellation",
+        3
+       ],
+       [
+        "shipping_and_delays",
+        1
+       ]
+      ],
+      "rank": 3,
+      "top": [
+       {
+        "section": "cancellation#1",
+        "score": 0.6975
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.6764
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.663
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.6492
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.6442
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "The product is still on its way, can I open a return request now?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        1
+       ],
+       [
+        "cancellation",
+        3
+       ]
+      ],
+      "rank": 6,
+      "top": [
+       {
+        "section": "returns#5",
+        "score": 0.6308
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.6177
+       },
+       {
+        "section": "returns#6",
+        "score": 0.617
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.6159
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.6141
+       }
+      ]
+     },
+     {
+      "rule": "R4",
+      "question": "What happens to the money for my cancelled order?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        4
+       ],
+       [
+        "cancellation",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.6692
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.6541
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.6005
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.5807
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.5805
+       }
+      ]
+     },
+     {
+      "rule": "R5",
+      "question": "The order shows as delivered but has no delivery date, can I return it?",
+      "expected": [
+       [
+        "returns",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#4",
+        "score": 0.6659
+       },
+       {
+        "section": "returns#2",
+        "score": 0.6461
+       },
+       {
+        "section": "returns#1",
+        "score": 0.64
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.6379
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.627
+       }
+      ]
+     },
+     {
+      "rule": "R6",
+      "question": "I did not like the product, within how many days can I return it?",
+      "expected": [
+       [
+        "returns",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#2",
+        "score": 0.69
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.6885
+       },
+       {
+        "section": "cancellation#5",
+        "score": 0.6017
+       },
+       {
+        "section": "returns#7",
+        "score": 0.593
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.5836
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "The product arrived broken, within how many days can I return it?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.6777
+       },
+       {
+        "section": "returns#2",
+        "score": 0.6571
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.593
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.5778
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.5775
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "I was sent a different product than the one I ordered",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        1
+       ],
+       [
+        "damaged_or_wrong_item",
+        2
+       ],
+       [
+        "damaged_or_wrong_item",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.5751
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.5599
+       },
+       {
+        "section": "returns#5",
+        "score": 0.5573
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.554
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.552
+       }
+      ]
+     },
+     {
+      "rule": "R8",
+      "question": "If I return it, do I also get the shipping fee back?",
+      "expected": [
+       [
+        "returns",
+        3
+       ],
+       [
+        "payments_and_refunds",
+        1
+       ],
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.6321
+       },
+       {
+        "section": "returns#3",
+        "score": 0.6079
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.6073
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.6039
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.6037
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "The shipment arrived 12 days late, can I get my shipping fee back?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.6948
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.6514
+       },
+       {
+        "section": "returns#2",
+        "score": 0.6343
+       },
+       {
+        "section": "shipping_and_delays#5",
+        "score": 0.6191
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.6007
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "My return period has passed but the delivery was very late, do I have any right?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        4
+       ]
+      ],
+      "rank": 3,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.6802
+       },
+       {
+        "section": "returns#2",
+        "score": 0.6714
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.6619
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.65
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.6339
+       }
+      ]
+     },
+     {
+      "rule": "R10",
+      "question": "Why is my 600 BRL return request waiting for senior approval?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        2
+       ],
+       [
+        "returns",
+        6
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.6386
+       },
+       {
+        "section": "returns#6",
+        "score": 0.6004
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.5313
+       },
+       {
+        "section": "returns#5",
+        "score": 0.4945
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.4853
+       }
+      ]
+     },
+     {
+      "rule": "R11",
+      "question": "Can I open a second return request for the same order?",
+      "expected": [
+       [
+        "returns",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#5",
+        "score": 0.6984
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.6256
+       },
+       {
+        "section": "returns#1",
+        "score": 0.5942
+       },
+       {
+        "section": "returns#6",
+        "score": 0.577
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.5447
+       }
+      ]
+     },
+     {
+      "rule": "R12",
+      "question": "I paid with a gift card, how is my refund made?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.6894
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.6765
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.5947
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.5836
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.5794
+       }
+      ]
+     },
+     {
+      "rule": "R13",
+      "question": "The seller shipped the product late, what happens in that case?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#5",
+        "score": 0.6368
+       },
+       {
+        "section": "returns#2",
+        "score": 0.613
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.5846
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.5845
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.564
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "How many days until the money reaches my account?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#5",
+        "score": 0.6034
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.5768
+       },
+       {
+        "section": "returns#2",
+        "score": 0.5754
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.5658
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.5645
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Who pays for the return shipping?",
+      "expected": [
+       [
+        "returns",
+        7
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#7",
+        "score": 0.5789
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.5688
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.5558
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.5463
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.5381
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Can I exchange the product for a new one?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.583
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.551
+       },
+       {
+        "section": "returns#5",
+        "score": 0.5422
+       },
+       {
+        "section": "returns#7",
+        "score": 0.541
+       },
+       {
+        "section": "returns#2",
+        "score": 0.5405
+       }
+      ]
+     }
+    ]
+   }
+  }
+ }
+}
