@@ -200,6 +200,11 @@ tasks:
     cmds:
       - "{{.RUN}} uv run python eval/embedding_compare.py {{.CLI_ARGS}}"
 
+  index:compare:
+    desc: Compare the policy search through LlamaIndex with direct Chroma on the retrieval questions (same vectors; needs the embedding model, no API key); `-- --runs N` for more timing runs
+    cmds:
+      - "{{.RUN}} uv run python eval/index_compare.py {{.CLI_ARGS}}"
+
   trace:examples:
     desc: Send example traces of every error kind to the tracing target, with the stand-in model (no model calls); `-- --target phoenix` for Phoenix
     cmds:
