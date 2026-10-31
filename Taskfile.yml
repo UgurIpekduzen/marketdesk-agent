@@ -89,6 +89,14 @@ tasks:
     cmds:
       - "{{.COMPOSE_ALL}} rm -sf {{.CLI_ARGS}}"
 
+  size:
+    desc: Show disk use of the project folders, images and volumes
+    cmds:
+      - du -sh .
+      - du -sh data policies/index eval/cache 2>/dev/null || true
+      - "{{.COMPOSE_ALL}} config --images | sed 's/@.*//' | xargs -r -n1 docker image ls --format '{{`{{.Repository}}:{{.Tag}}\t{{.Size}}`}}'"
+      - docker system df -v | grep '^marketdesk_' || true
+
   clean:
     desc: Delete containers and volumes (installed dependencies, Phoenix traces)
     prompt: This deletes all containers, the dependency volume and the Phoenix trace volume. Continue?
