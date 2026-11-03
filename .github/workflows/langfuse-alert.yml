@@ -1,0 +1,33 @@
+# A Langfuse alert changed its severity: one run, on the Actions tab, for each
+# change. Langfuse sends a repository_dispatch event with the alert in
+# client_payload.
+#
+# This first version writes the whole payload to the run summary, to see its
+# shape. Run summaries of a public repository are public: replace it with the
+# alert's name, severity and value before the repository is opened.
+
+name: langfuse-alert
+
+on:
+  repository_dispatch:
+    types: [langfuse-alert]
+
+permissions:
+  contents: read
+
+jobs:
+  record:
+    runs-on: ubuntu-24.04
+    steps:
+      # The payload goes through an environment variable, never straight into
+      # the script: its text is data, not code.
+      - name: Write the payload to the run summary
+        env:
+          PAYLOAD: ${{ toJSON(github.event.client_payload) }}
+        run: |
+          {
+            echo '### Langfuse alert'
+            echo '```json'
+            printf '%s\n' "$PAYLOAD"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
