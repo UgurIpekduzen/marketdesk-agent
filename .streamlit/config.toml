@@ -13,6 +13,12 @@ toolbarMode = "minimal"
 # The framework's defaults, written down so that turning them off shows.
 enableXsrfProtection = true
 enableCORS = true
+# The page keeps objects that live as long as the process (the call budget,
+# the session pool). The file watcher loads a module again when its file
+# changes, and the old objects then belong to classes the new code does not
+# know, so a visitor cannot open a session. Nothing is edited on the server:
+# a push restarts the app.
+fileWatcherType = "none"
 
 [browser]
 # The framework sends usage statistics to its makers by default. The page

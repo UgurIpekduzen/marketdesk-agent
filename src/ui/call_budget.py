@@ -20,7 +20,7 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
 )
 from llama_index.core.llms.function_calling import FunctionCallingLLM
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, SkipValidation
 
 from src.failures import BUDGET_MARK
 
@@ -69,7 +69,10 @@ class CountedLLM(FunctionCallingLLM):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     inner: FunctionCallingLLM = Field(exclude=True)
-    budget: CallBudget = Field(exclude=True)
+    # Not checked at run time: the page keeps one budget for the whole process,
+    # and a module loaded a second time has a new CallBudget class that would
+    # refuse the old budget. The model only calls take().
+    budget: SkipValidation[CallBudget] = Field(exclude=True)
 
     @classmethod
     def class_name(cls) -> str:

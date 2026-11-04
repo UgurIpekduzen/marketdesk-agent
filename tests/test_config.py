@@ -100,6 +100,14 @@ def test_page_hides_errors_keeps_protections():
     assert settings["server"]["enableCORS"] is True
 
 
+def test_page_does_not_load_modules_again_while_running():
+    settings = tomllib.loads(
+        (PROJECT_ROOT / ".streamlit" / "config.toml").read_text(encoding="utf-8")
+    )
+
+    assert settings["server"]["fileWatcherType"] == "none"
+
+
 def test_the_page_sends_no_usage_statistics():
     settings = tomllib.loads(
         (PROJECT_ROOT / ".streamlit" / "config.toml").read_text(encoding="utf-8")

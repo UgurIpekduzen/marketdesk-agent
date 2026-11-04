@@ -5,7 +5,13 @@ import threading
 import pytest
 
 from src.failures import DAILY_BUDGET, failure_code
-from src.ui.call_budget import WINDOW_SECONDS, CallBudget, CallBudgetReached
+from src.ui.call_budget import (
+    WINDOW_SECONDS,
+    CallBudget,
+    CallBudgetReached,
+    CountedLLM,
+)
+from tests.fakes import FakeLLM
 
 
 class Clock:
@@ -78,3 +84,23 @@ def test_used_up_budget_has_own_failure_code():
         budget.take()
 
     assert failure_code(refused.value) == DAILY_BUDGET
+
+
+def test_counted_model_takes_any_budget_that_can_take_a_call():
+    # The page keeps one budget for the whole process. If the page framework
+    # loads this module again, that budget belongs to the old class and an
+    # isinstance check against the new one fails, so a visitor could not open
+    # a session. The model needs only the budget's take(), nothing else.
+    class BudgetOfAnOldClass:
+        def __init__(self) -> None:
+            self.taken = 0
+
+        def take(self) -> None:
+            self.taken += 1
+
+    old = BudgetOfAnOldClass()
+    model = CountedLLM(inner=FakeLLM(script=["ok"]), budget=old)
+
+    model.chat([])
+
+    assert old.taken == 1
