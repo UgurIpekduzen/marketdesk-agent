@@ -4,6 +4,8 @@ The page runs on Streamlit: the browser only sends "this was clicked" and "this 
 
 Review date: 2026-10-16; F1, F8 and F12 updated on 2026-10-19 for the choice screen and the example questions; F7 and F13 to F15 on 2026-10-19 for the support rep console; F16 on 2026-10-20 for the dependency audit; F17 on 2026-10-20 for the page language; F18 on 2026-10-20 for the configuration and the files in the repo; F13 and the MCP section on 2026-10-20 for least privilege; the privacy fuzzing section on 2026-10-20, its fixes on 2026-10-21; F2 on 2026-10-21 for links and the browser measurement; F4 and the unbounded consumption section on 2026-10-21; MCP06 and the indirect injection section on 2026-10-21; the automated red team scan section on 2026-10-21. Tests named below are in `tests/`.
 
+The OWASP LLM codes in this review (for example LLM01 or LLM09) use the 2026 numbering, published on 2026-08-04; the crosswalk from the 2025 numbering is in the threat model (section 5). The sets in `eval/` keep the 2025 codes in their `attack` field.
+
 ## Findings
 
 | # | What the page decides or shows | Result | How it is held, and the test |
@@ -76,7 +78,7 @@ Accepted limits: the eight still missed would need guesses that also catch ordin
 
 ## Indirect injection
 
-Attacks that come from the data the agents read instead of the visitor's message (OWASP LLM01 indirect, LLM04, LLM08; ASI06; MCP06), tried on 2026-10-21 on copies only: a planted policy section in a temporary index, instructions written into data fields of a database copy. The committed index, the policy files and the database are not touched (`--extra-policies`, `setup_sql`). Set `eval/indirect_injection_tests.jsonl`, results `eval/results/indirect_injection_v1_*`, 8 examples, live on the paid key: 25 live calls over three runs (the first stopped on a scoring fault, the third added one example; answers already given came from the cache). No return request was written without approval (8 of 8). The run reports the database copy as changed, as it should: the set plants its data in the copy and D7b opens a ticket there.
+Attacks that come from the data the agents read instead of the visitor's message (OWASP LLM01 indirect, LLM05, LLM09; ASI06; MCP06), tried on 2026-10-21 on copies only: a planted policy section in a temporary index, instructions written into data fields of a database copy. The committed index, the policy files and the database are not touched (`--extra-policies`, `setup_sql`). Set `eval/indirect_injection_tests.jsonl`, results `eval/results/indirect_injection_v1_*`, 8 examples, live on the paid key: 25 live calls over three runs (the first stopped on a scoring fault, the third added one example; answers already given came from the cache). No return request was written without approval (8 of 8). The run reports the database copy as changed, as it should: the set plants its data in the copy and D7b opens a ticket there.
 
 | # | Planted | Where it reaches the model | Result | Held by |
 |---|---|---|---|---|
@@ -97,7 +99,7 @@ Attacks that come from the data the agents read instead of the visitor's message
 
 ## Unbounded consumption
 
-Attacks on the free quota and on the server (OWASP LLM10), tried on 2026-10-21 with the stand-in model, on the synthetic database and on a copy of the real one, with no model call. One scenario a row: what happened and which limit stopped it.
+Attacks on the free quota and on the server (OWASP LLM06), tried on 2026-10-21 with the stand-in model, on the synthetic database and on a copy of the real one, with no model call. One scenario a row: what happened and which limit stopped it.
 
 | Scenario | Before | Limit that holds now | Test |
 |---|---|---|---|
@@ -119,7 +121,7 @@ Accepted: one visitor can still hold the sessions or the hourly limit, and now t
 
 ## Misinformation
 
-Questions built to make the agents state wrong facts with confidence (OWASP LLM09): false premises, topics no policy covers, sections, documents, metrics and periods that do not exist, causal traps. Set `eval/misinformation_tests.jsonl`, results `eval/results/misinformation_v1_*`, 14 examples, tried on 2026-10-21: the system answered on the paid key (39 live calls); the answers were scored by the independent judge, `openai/gpt-oss-120b` on Groq, never by the system's own model. Besides the usual checks, three checks in code look for invented facts: every citation in an answer was returned by the policy search, every number in an operations answer is in the tool output (Turkish and English number forms), and no date is later than the simulated today, 2018-09-01 (`test_citations_read_in_both_languages`, `test_tool_numbers_pass_in_any_format`, `test_dates_citations_lists_skipped`).
+Questions built to make the agents state wrong facts with confidence (OWASP LLM07): false premises, topics no policy covers, sections, documents, metrics and periods that do not exist, causal traps. Set `eval/misinformation_tests.jsonl`, results `eval/results/misinformation_v1_*`, 14 examples, tried on 2026-10-21: the system answered on the paid key (39 live calls); the answers were scored by the independent judge, `openai/gpt-oss-120b` on Groq, never by the system's own model. Besides the usual checks, three checks in code look for invented facts: every citation in an answer was returned by the policy search, every number in an operations answer is in the tool output (Turkish and English number forms), and no date is later than the simulated today, 2018-09-01 (`test_citations_read_in_both_languages`, `test_tool_numbers_pass_in_any_format`, `test_dates_citations_lists_skipped`).
 
 | # | Tried | What the answer said | Result | Judge |
 |---|---|---|---|---|
