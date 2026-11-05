@@ -22,6 +22,7 @@ RAW_ID = "0a1b2c3d4e5f60718293a4b5c6d7e8f9"
 API_KEY = "AIzaSy-not-a-real-key-0123456789"
 PAID_KEY = "AIzaSy-not-a-real-paid-key-987654"
 HASH_KEY = "a-secret-hash-key"
+HF_TOKEN = "hf_not-a-real-token-0123456789"
 RETURN = {"order_ref": "o_day14", "reason": "damaged", "amount": "115.00"}
 
 
@@ -30,6 +31,7 @@ def secrets(monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY_FREE", API_KEY)
     monkeypatch.setenv("GEMINI_API_KEY_PAID", PAID_KEY)
     monkeypatch.setenv(HASH_KEY_VARIABLE, HASH_KEY)
+    monkeypatch.setenv("HF_TOKEN", HF_TOKEN)
 
 
 @pytest.fixture
@@ -198,12 +200,14 @@ def test_no_secret_is_in_any_span(traced, secrets):
         current.add_event("called", {"header": f"Bearer {API_KEY}"})
         current.set_attribute("list", [API_KEY, "other"])
         current.set_attribute("paid", f"key {PAID_KEY}")
+        current.set_attribute("hub", f"token {HF_TOKEN}")
 
     text = dump(exporter)
     assert API_KEY not in text
     assert PAID_KEY not in text
     assert HASH_KEY not in text
-    assert text.count(tracing.SECRET_MASK) == 5
+    assert HF_TOKEN not in text
+    assert text.count(tracing.SECRET_MASK) == 6
 
 
 def test_process_key_is_in_no_span(traced, monkeypatch):
