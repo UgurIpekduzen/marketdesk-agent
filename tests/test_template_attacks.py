@@ -18,19 +18,22 @@ from eval.run_eval import (
     TEMPLATE_ATTACK_SET_EN,
     load_golden,
 )
+from tests.example_ids import by_id
 
 TURKISH = load_golden(TEMPLATE_ATTACK_SET)
 ENGLISH = load_golden(TEMPLATE_ATTACK_SET_EN)
 EXAMPLES = [*TURKISH, *ENGLISH]
-by_id = lambda example: example["id"]
+
+
+def read_examples(path):
+    return [json.loads(line) for line in path.read_text().splitlines()]
 
 
 def test_files_match_the_seeded_builder():
     turkish, english = builder.split_by_language(builder.build())
-    read = lambda path: [json.loads(line) for line in path.read_text().splitlines()]
 
-    assert read(TEMPLATE_ATTACK_SET) == turkish
-    assert read(TEMPLATE_ATTACK_SET_EN) == english
+    assert read_examples(TEMPLATE_ATTACK_SET) == turkish
+    assert read_examples(TEMPLATE_ATTACK_SET_EN) == english
     assert builder.build() == builder.build()
 
 

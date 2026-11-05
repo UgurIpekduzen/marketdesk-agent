@@ -145,17 +145,19 @@ def test_baseline_is_the_product_model():
     assert small.revision == config.EMBEDDING_MODEL_REVISION
 
 
+def run_of_report_shows_every_batch_way(first, top3):
+    return {
+        "dimensions": 384,
+        "first": first,
+        "top3": top3,
+        "top5": 18,
+        "mrr": 0.8,
+        "worst": 8,
+        "query_ms_p50": 2.5,
+    }
+
+
 def test_report_shows_every_batch_way():
-    def run(first, top3):
-        return {
-            "dimensions": 384,
-            "first": first,
-            "top3": top3,
-            "top5": 18,
-            "mrr": 0.8,
-            "worst": 8,
-            "query_ms_p50": 2.5,
-        }
 
     results = {
         "e5-small": {
@@ -165,9 +167,9 @@ def test_report_shows_every_batch_way():
             "questions": 20,
             "peak_memory_mb": 651,
             "by_batch_size": {
-                "all": run(14, 18),
-                "10": run(14, 17),
-                "1": run(15, 17),
+                "all": run_of_report_shows_every_batch_way(14, 18),
+                "10": run_of_report_shows_every_batch_way(14, 17),
+                "1": run_of_report_shows_every_batch_way(15, 17),
             },
         }
     }

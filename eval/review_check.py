@@ -1,7 +1,7 @@
 """The hand check of the translations of review quotes.
 
-Usage:  python eval/review_check.py              write the sheet to fill in
-        python eval/review_check.py --agreement   count the filled-in sheet
+Usage:  python -m eval.review_check              write the sheet to fill in
+        python -m eval.review_check --agreement   count the filled-in sheet
 
 The Review Insight Agent quotes Portuguese reviews with a translation. A
 judge model scores each translation; the person who cannot read Portuguese
@@ -19,11 +19,6 @@ import json
 import sys
 from itertools import zip_longest
 from pathlib import Path
-
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-# Run as a plain script, Python only searches the eval/ folder for imports.
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
 
 from eval.judge_check import YES, agreement  # noqa: F401  (agreement is used by main)
 from eval.run_eval import RESULTS_DIR, REVIEW_INSIGHT_SET, result_name
@@ -74,6 +69,7 @@ def sheet_rows(results: dict) -> list[dict]:
 
 
 def write_sheet(path: Path, lines: list[dict]) -> None:
+    """Write the rows to the CSV sheet for checking by hand."""
     with path.open("w", encoding="utf-8", newline="") as sheet:
         writer = csv.DictWriter(sheet, fieldnames=COLUMNS)
         writer.writeheader()
@@ -81,6 +77,7 @@ def write_sheet(path: Path, lines: list[dict]) -> None:
 
 
 def main() -> int:
+    """Run the command line entry point."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--agreement", action="store_true")
     parser.add_argument("--sheet", type=Path)

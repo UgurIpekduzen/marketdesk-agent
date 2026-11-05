@@ -8,6 +8,7 @@ from eval.run_eval import GOLDEN_SET, load_golden
 from src.knowledge.policy_index import read_sections
 from src.orchestrator import Intent
 from src.rules.returns import DecisionCode, ReturnReason
+from tests.example_ids import by_id
 
 EXAMPLES = load_golden()
 CUSTOMER_EXAMPLES = [
@@ -30,10 +31,6 @@ CITATIONS = {section.citation for section in read_sections()}
 
 def of_group(group):
     return [example for example in EXAMPLES if example["group"] == group]
-
-
-def by_id(example):
-    return example["id"]
 
 
 def test_file_is_one_json_object_per_line():

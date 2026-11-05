@@ -5,6 +5,7 @@ No network: Langfuse is a stand-in that answers pages of observations.
 
 import ast
 import base64
+import functools
 import http.server
 import io
 import json
@@ -19,7 +20,7 @@ import pytest
 from scripts import trace_dashboard
 from src import messages, messages_en, tracing_dashboard
 from src.tracing_dashboard import (
-    DashboardUnavailable,
+    DashboardUnavailableError,
     ErrorCount,
     count_errors,
     credentials,
@@ -138,39 +139,54 @@ def test_the_keys_go_in_one_header_only():
     assert "pk-1" not in request.full_url and "sk-2" not in request.full_url
 
 
+def endless_of_reading_stops_at_the_limit(calls, request, timeout=None):
+    calls.append(request)
+    return Page({"data": [span("message")] * 100, "meta": {"cursor": "again"}})
+
+
 def test_reading_stops_at_the_limit():
     calls = []
 
-    def endless(request, timeout=None):
-        calls.append(request)
-        return Page({"data": [span("message")] * 100, "meta": {"cursor": "again"}})
-
-    found = fetch_observations("pk", "sk", 250, "https://x.test", endless)
+    found = fetch_observations(
+        "pk",
+        "sk",
+        250,
+        "https://x.test",
+        functools.partial(endless_of_reading_stops_at_the_limit, calls),
+    )
 
     assert len(found) == 250
     assert len(calls) == 3
 
 
-def test_refusal_gives_status_only():
-    def refuse(request, timeout=None):
-        raise urllib.error.HTTPError(
-            request.full_url, 401, "secret sk-2 was wrong", {}, io.BytesIO(b"sk-2")
-        )
+def refuse_of_refusal_gives_status_only(request, timeout=None):
+    raise urllib.error.HTTPError(
+        request.full_url, 401, "secret sk-2 was wrong", {}, io.BytesIO(b"sk-2")
+    )
 
-    with pytest.raises(DashboardUnavailable) as raised:
-        fetch_observations("pk", "sk-2", 10, "https://x.test", refuse)
+
+def test_refusal_gives_status_only():
+
+    with pytest.raises(DashboardUnavailableError) as raised:
+        fetch_observations(
+            "pk", "sk-2", 10, "https://x.test", refuse_of_refusal_gives_status_only
+        )
 
     assert raised.value.code == "REQUEST_FAILED"
     assert raised.value.status == 401
     assert "sk-2" not in str(raised.value)
 
 
-def test_unreachable_is_told_apart():
-    def down(request, timeout=None):
-        raise urllib.error.URLError("no route to host")
+def down_of_unreachable_is_told_apart(request, timeout=None):
+    raise urllib.error.URLError("no route to host")
 
-    with pytest.raises(DashboardUnavailable) as raised:
-        fetch_observations("pk", "sk", 10, "https://x.test", down)
+
+def test_unreachable_is_told_apart():
+
+    with pytest.raises(DashboardUnavailableError) as raised:
+        fetch_observations(
+            "pk", "sk", 10, "https://x.test", down_of_unreachable_is_told_apart
+        )
 
     assert raised.value.code == "UNREACHABLE"
 
@@ -181,7 +197,7 @@ def test_keys_come_from_environment():
         "b",
     )
     for environment in ({}, {"LANGFUSE_PUBLIC_KEY": "a"}, {"LANGFUSE_SECRET_KEY": "b"}):
-        with pytest.raises(DashboardUnavailable) as raised:
+        with pytest.raises(DashboardUnavailableError) as raised:
             credentials(environment)
         assert raised.value.code == "KEYS_MISSING"
 
@@ -279,7 +295,7 @@ def test_command_failure_writes_nothing(monkeypatch, tmp_path, capsys):
 
 
 def test_failure_survives_pickling():
-    failure = DashboardUnavailable("REQUEST_FAILED", 401)
+    failure = DashboardUnavailableError("REQUEST_FAILED", 401)
 
     kept = pickle.loads(pickle.dumps(failure))
 
@@ -289,53 +305,65 @@ def test_failure_survives_pickling():
 # --- The keys stay on the address they were meant for ----------------------
 
 
+def opener_of_http_is_refused_unsent(sent, request, timeout=None):
+    sent.append(request)
+    return Page({"data": [], "meta": {}})
+
+
 def test_http_is_refused_unsent():
     sent = []
 
-    def opener(request, timeout=None):
-        sent.append(request)
-        return Page({"data": [], "meta": {}})
-
-    with pytest.raises(DashboardUnavailable) as raised:
-        fetch_observations("pk", "sk", 10, "http://x.test", opener)
+    with pytest.raises(DashboardUnavailableError) as raised:
+        fetch_observations(
+            "pk",
+            "sk",
+            10,
+            "http://x.test",
+            functools.partial(opener_of_http_is_refused_unsent, sent),
+        )
 
     assert raised.value.code == "INSECURE_URL"
     assert sent == []
 
 
 def test_https_message_in_both_languages():
-    failure = DashboardUnavailable("INSECURE_URL")
+    failure = DashboardUnavailableError("INSECURE_URL")
 
     assert "https://" in tracing_dashboard.failure_text(messages, failure)
     assert "https://" in tracing_dashboard.failure_text(messages_en, failure)
 
 
+class TargetHandler(http.server.BaseHTTPRequestHandler):
+    """The server a redirect points to; its server keeps the Authorization it saw."""
+
+    def do_GET(self):
+        self.server.reached.append(self.headers.get("Authorization"))
+        self.send_response(200)
+        self.send_header("Content-Length", "2")
+        self.end_headers()
+        self.wfile.write(b"{}")
+
+    def log_message(self, *args):
+        pass
+
+
+class RedirectHandler(http.server.BaseHTTPRequestHandler):
+    """Answers every request with a redirect to the target's port."""
+
+    def do_GET(self):
+        self.send_response(302)
+        self.send_header("Location", f"http://127.0.0.1:{self.server.target_port}/")
+        self.end_headers()
+
+    def log_message(self, *args):
+        pass
+
+
 def test_redirect_is_not_followed():
-    reached = []
-
-    class Target(http.server.BaseHTTPRequestHandler):
-        def do_GET(self):
-            reached.append(self.headers.get("Authorization"))
-            self.send_response(200)
-            self.send_header("Content-Length", "2")
-            self.end_headers()
-            self.wfile.write(b"{}")
-
-        def log_message(self, *args):
-            pass
-
-    target = http.server.HTTPServer(("127.0.0.1", 0), Target)
-
-    class Redirector(http.server.BaseHTTPRequestHandler):
-        def do_GET(self):
-            self.send_response(302)
-            self.send_header("Location", f"http://127.0.0.1:{target.server_port}/")
-            self.end_headers()
-
-        def log_message(self, *args):
-            pass
-
-    redirector = http.server.HTTPServer(("127.0.0.1", 0), Redirector)
+    target = http.server.HTTPServer(("127.0.0.1", 0), TargetHandler)
+    target.reached = []
+    redirector = http.server.HTTPServer(("127.0.0.1", 0), RedirectHandler)
+    redirector.target_port = target.server_port
     for server in (target, redirector):
         threading.Thread(target=server.serve_forever, daemon=True).start()
     request = urllib.request.Request(
@@ -351,7 +379,7 @@ def test_redirect_is_not_followed():
         redirector.shutdown()
 
     assert raised.value.code == 302
-    assert reached == []
+    assert target.reached == []
 
 
 def test_kinds_ordered_by_total():
@@ -424,7 +452,7 @@ def test_axes_named_in_page_language():
 
 
 def codes_the_code_can_emit() -> set[str]:
-    """Every error code the tools and the failures can put on a span, read from the code."""
+    """Every error code that tools and failures can put on a span, in the code."""
     root = Path(__file__).resolve().parent.parent / "src"
     codes = set()
     for path in root.rglob("*.py"):

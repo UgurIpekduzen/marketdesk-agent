@@ -1,9 +1,9 @@
 """Which embedding model finds the policy sections best, and what does it cost?
 
-Usage:  python eval/embedding_compare.py              every model, results written
-        python eval/embedding_compare.py --language en   the questions in English
-        python eval/embedding_compare.py --only NAME  one model, nothing written
-        python eval/embedding_compare.py --list       the models
+Usage:  python -m eval.embedding_compare              every model, results written
+        python -m eval.embedding_compare --language en   the questions in English
+        python -m eval.embedding_compare --only NAME  one model, nothing written
+        python -m eval.embedding_compare --list       the models
 
 The questions are the ones tests/test_retrieval.py asks of the real index: for
 each, the rank of the best expected section among all 28 (1 = first). Every
@@ -36,11 +36,9 @@ from pathlib import Path
 
 import numpy as np
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
 from eval.terminal_table import terminal_tables
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 RESULTS_DIR = PROJECT_ROOT / "eval" / "results"
 MODEL_FILE = "onnx/model_quantized.onnx"
@@ -60,6 +58,8 @@ TOP_SHOWN = 5
 
 @dataclass(frozen=True)
 class ModelSpec:
+    """One embedding model: where it comes from, its pinned revision and pooling."""
+
     name: str
     repo: str
     revision: str  # the commit that pins the exact files
@@ -164,28 +164,34 @@ def count_found(ranks: list[int]) -> dict:
 # --- One model ------------------------------------------------------------------
 
 
+def fetch(spec: ModelSpec, filename: str) -> str:
+    """The path of one file of the model, downloaded once."""
+    # Imported here so that the ranking code can be tested without it.
+    from huggingface_hub import hf_hub_download
+
+    return hf_hub_download(spec.repo, filename, revision=spec.revision)
+
+
 def load(spec: ModelSpec):
+    """Load the tokenizer and the ONNX session of a model."""
     # Imported here so that the ranking code can be tested without them.
     import onnxruntime
-    from huggingface_hub import hf_hub_download
     from tokenizers import Tokenizer
 
-    def fetch(filename: str) -> str:
-        return hf_hub_download(spec.repo, filename, revision=spec.revision)
-
-    tokenizer = Tokenizer.from_file(fetch(TOKENIZER_FILE))
+    tokenizer = Tokenizer.from_file(fetch(spec, TOKENIZER_FILE))
     tokenizer.enable_padding(pad_id=PAD_TOKEN_ID, pad_token=PAD_TOKEN)
     tokenizer.enable_truncation(max_length=MAX_TOKENS)
     options = onnxruntime.SessionOptions()
     # As in the product: no memory kept for the largest batch seen.
     options.enable_cpu_mem_arena = False
     session = onnxruntime.InferenceSession(
-        fetch(MODEL_FILE), options, providers=["CPUExecutionProvider"]
+        fetch(spec, MODEL_FILE), options, providers=["CPUExecutionProvider"]
     )
     return tokenizer, session
 
 
 def measure(spec: ModelSpec, tokenizer, session, sections, questions, batches: str):
+    """Measure size, speed, memory and retrieval quality of one model."""
     # The questions are shared with the retrieval tests, so that the two
     # cannot drift apart.
     keys = [(section.file, section.number) for section in sections]
@@ -243,13 +249,13 @@ def run_model(name: str, language: str) -> dict:
     """Measure one model in this process; the peak memory is read at the end."""
     from src.knowledge.policy_index import read_sections
 
-    QUESTIONS = question_set(language)
+    questions = question_set(language)
 
     spec = MODELS[name]
     tokenizer, session = load(spec)
     sections = read_sections()
     runs = {
-        batches: measure(spec, tokenizer, session, sections, QUESTIONS, batches)
+        batches: measure(spec, tokenizer, session, sections, questions, batches)
         for batches in BATCHES
     }
     return {
@@ -257,7 +263,7 @@ def run_model(name: str, language: str) -> dict:
         "revision": spec.revision,
         "file": MODEL_FILE,
         "sections": len(sections),
-        "questions": len(QUESTIONS),
+        "questions": len(questions),
         # ru_maxrss is in kilobytes on Linux.
         "peak_memory_mb": round(
             resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024
@@ -267,6 +273,7 @@ def run_model(name: str, language: str) -> dict:
 
 
 def run_in_own_process(name: str, language: str) -> dict:
+    """Measure one model in a fresh process, so memory figures do not mix."""
     with tempfile.TemporaryDirectory() as folder:
         output = Path(folder) / "result.json"
         subprocess.run(
@@ -295,6 +302,7 @@ def per_way(run_by_batch: dict, key: str) -> str:
 
 
 def markdown(results: dict, language: str = "tr") -> str:
+    """The results as a markdown report."""
     first = next(iter(results.values()))
     lines = [
         f"# Embedding models on the policy questions{LANGUAGE_TITLE[language]}",
@@ -306,15 +314,20 @@ def markdown(results: dict, language: str = "tr") -> str:
             "in batches of 10 / one at a time."
         ),
         "",
-        "| Model | Vector | First | Top 3 | Top 5 | MRR | Worst rank | Query p50 (ms) | Peak memory (MB) |",
+        (
+            "| Model | Vector | First | Top 3 | Top 5 | MRR | Worst rank "
+            "| Query p50 (ms) | Peak memory (MB) |"
+        ),
         "|---|---|---|---|---|---|---|---|---|",
     ]
     for name, result in results.items():
         runs = result["by_batch_size"]
         lines.append(
             f"| {name} | {runs[BATCHES[0]]['dimensions']} "
-            f"| {per_way(runs, 'first')} | {per_way(runs, 'top3')} | {per_way(runs, 'top5')} "
-            f"| {per_way(runs, 'mrr')} | {per_way(runs, 'worst')} | {per_way(runs, 'query_ms_p50')} | {result['peak_memory_mb']} |"
+            f"| {per_way(runs, 'first')} | {per_way(runs, 'top3')} "
+            f"| {per_way(runs, 'top5')} "
+            f"| {per_way(runs, 'mrr')} | {per_way(runs, 'worst')} "
+            f"| {per_way(runs, 'query_ms_p50')} | {result['peak_memory_mb']} |"
         )
     lines += ["", "## Revisions", ""]
     for name, result in results.items():
@@ -326,6 +339,7 @@ def markdown(results: dict, language: str = "tr") -> str:
 
 
 def main() -> int:
+    """Run the command line entry point."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--only", choices=list(MODELS), help="one model")
     parser.add_argument("--list", action="store_true", help="list the models")

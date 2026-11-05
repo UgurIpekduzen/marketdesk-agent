@@ -51,16 +51,39 @@ class ReviewFilters:
 
 
 def pseudonym(row_number: int) -> str:
-    """The name a review has in an answer; not its id."""
+    """The name a review has in an answer; not its id.
+
+    Args:
+        row_number (int): The number of the review in the sample.
+
+    Returns:
+        The name the review has in an answer.
+    """
     return f"R-{row_number:06d}"
 
 
 def error(code: str, message: str) -> dict:
+    """An error result in the shape the tools return.
+
+    Args:
+        code (str): A fixed error code.
+        message (str): What the model is told.
+
+    Returns:
+        The error result.
+    """
     return {"error": code, "message": message}
 
 
 def categories(conn: sqlite3.Connection) -> list[str]:
-    """The English names of the product categories."""
+    """The English names of the product categories.
+
+    Args:
+        conn (sqlite3.Connection): A connection to the database.
+
+    Returns:
+        The English category names.
+    """
     return [
         row[0]
         for row in conn.execute(
@@ -74,7 +97,14 @@ def categories(conn: sqlite3.Connection) -> list[str]:
 
 
 def where_clause(filters: ReviewFilters) -> tuple[str, dict]:
-    """The conditions of the filters, with their values bound."""
+    """The conditions of the filters, with their values bound.
+
+    Args:
+        filters (ReviewFilters): The review filters.
+
+    Returns:
+        The SQL conditions and the values bound to them.
+    """
     conditions = [
         "DATE(r.review_creation_date) <= DATE(:today)",
         "DATE(o.order_purchase_timestamp) <= DATE(:today)",
@@ -111,7 +141,15 @@ def where_clause(filters: ReviewFilters) -> tuple[str, dict]:
 
 
 def one_line(title: str | None, message: str | None) -> str:
-    """The title and the message as one line of text, cut at the limit."""
+    """The title and the message as one line of text, cut at the limit.
+
+    Args:
+        title (str | None): The review title.
+        message (str | None): The review message.
+
+    Returns:
+        Both as one line, cut at the length limit.
+    """
     parts = [part.strip() for part in (title, message) if part and part.strip()]
     text = " ".join(" — ".join(parts).split())
     return text[: config.REVIEW_MAX_CHARS]
@@ -128,6 +166,16 @@ def fetch_reviews(
     The answer holds how many reviews matched, how many were handed out, how
     many were left out for the personal data they held, the SQL that chose
     them and the reviews: pseudonym, score and text.
+
+    Args:
+        conn (sqlite3.Connection): A connection to the database.
+        filters (ReviewFilters): The review filters.
+        max_reviews (int | None): The sample size; the configured size when None, and
+            never above it.
+        today (date): The simulated today; later reviews are left out.
+
+    Returns:
+        The sample with its counts and the SQL used, or an error result.
     """
     limit = min(max_reviews or config.REVIEW_MAX, config.REVIEW_MAX)
     if limit < 1:

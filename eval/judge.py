@@ -3,8 +3,8 @@
 Three scores, each between 0 and 1:
 
 - faithfulness of a policy answer: the share of its claims that the policy
-  documents the question is about support (DeepEval's FaithfulnessMetric; a claim the documents
-  say nothing about counts as unsupported);
+  documents the question is about support (DeepEval's FaithfulnessMetric; a
+  claim the documents say nothing about counts as unsupported);
 - helpfulness of a policy answer: does it answer the question, or say
   plainly that the policy does not cover it;
 - no causal or profit claim in an operations answer: metrics here are
@@ -113,6 +113,7 @@ class PolicyFaithfulnessTemplate(FaithfulnessTemplate):
 
     @staticmethod
     def generate_claims(**kwargs) -> str:
+        """The claims prompt with the project's note put in front."""
         return CLAIMS_NOTE + FaithfulnessTemplate.generate_claims(**kwargs)
 
 
@@ -146,12 +147,16 @@ VERDICT_SCORES = {"faithful": 1.0, "partly": 0.5, "wrong": 0.0}
 
 
 class QuoteVerdict(BaseModel):
+    """The judge's verdict on one translated review quote."""
+
     review_id: str
     verdict: str
     reason: str = ""
 
 
 class TranslationVerdicts(BaseModel):
+    """The verdicts for all quotes of one theme."""
+
     verdicts: list[QuoteVerdict]
 
 
@@ -172,9 +177,11 @@ class JudgeModel(DeepEvalBaseLLM):
         self.calls = 0
 
     def load_model(self) -> GuardedLLM:
+        """The guarded model the judge calls."""
         return self._llm
 
     def get_model_name(self) -> str:
+        """The name of the judge model."""
         return self._name or config.JUDGE_MODEL
 
     async def _ask(self, prompt: str) -> str:
@@ -183,6 +190,7 @@ class JudgeModel(DeepEvalBaseLLM):
         return response.message.content or ""
 
     async def a_generate(self, prompt: str, schema=None):
+        """Ask the judge model; parse the reply into the schema when one is given."""
         text = await self._ask(prompt)
         if schema is None:
             return text
@@ -193,6 +201,7 @@ class JudgeModel(DeepEvalBaseLLM):
             return parse_json(await self._ask(prompt + JSON_REMINDER), schema)
 
     def generate(self, prompt: str, schema=None):
+        """Synchronous form of a_generate."""
         return asyncio.run(self.a_generate(prompt, schema))
 
 
@@ -217,6 +226,8 @@ def in_language(steps: list[str], language: Language) -> list[str]:
 
 
 class Judge:
+    """Scores answers with the judge metrics, through the guard and the cache."""
+
     def __init__(
         self,
         provider_llm: FunctionCallingLLM,

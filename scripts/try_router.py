@@ -1,6 +1,6 @@
 """Run example messages through the router with the real model.
 
-Usage:  python scripts/try_router.py [--db data/marketdesk.db] [--pause 10]
+Usage:  python -m scripts.try_router [--db data/marketdesk.db] [--pause 10]
 
 This calls the model provider, so it uses free-tier quota and needs the API
 key in the environment. It is not a test: it prints how each message was
@@ -17,9 +17,6 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-# Run as a plain script, Python only searches the scripts/ folder for imports.
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
 from scripts.try_support_agent import build_database
 from src.knowledge.embedding import load_embedder
 from src.knowledge.policy_index import PolicyIndex
@@ -33,6 +30,8 @@ DEFAULT_DB_PATH = Path("data/marketdesk.db")
 
 @dataclass(frozen=True)
 class Scenario:
+    """One example message, the session it is sent in and the intent expected."""
+
     session: SessionType
     message: str
     intent: Intent
@@ -70,6 +69,7 @@ SCENARIOS = (
 
 
 async def ask_as_customer(message: str, db_path: Path, index: PolicyIndex):
+    """Send a message through the router in a customer session."""
     customer = real_shaped(synthetic_data.ALICE)
     async with OrdersClient(db_path, customer) as orders:
         router = await Orchestrator.for_customer(orders, customer, index)
@@ -77,6 +77,7 @@ async def ask_as_customer(message: str, db_path: Path, index: PolicyIndex):
 
 
 async def ask_as_ops(message: str, db_path: Path):
+    """Send a message through the router in an operations session."""
     router = Orchestrator.for_ops(db_path)
     try:
         return await router.ask(message)
@@ -85,6 +86,7 @@ async def ask_as_ops(message: str, db_path: Path):
 
 
 def main() -> int:
+    """Run the command line entry point."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--db", type=Path, default=DEFAULT_DB_PATH)
     parser.add_argument(

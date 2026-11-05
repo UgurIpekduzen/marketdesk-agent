@@ -1,5 +1,7 @@
 """Tests for data/download.py. No network: kagglehub is replaced by a fake."""
 
+import functools
+
 import pytest
 
 from data import download as download_module
@@ -55,15 +57,24 @@ def test_dataset_is_pinned_to_a_version():
     assert "/versions/" in download_module.DATASET
 
 
+def fake_download_of_fetch_downloads_to_given_folder(
+    asked, fake_dataset, handle, output_dir=None
+):
+    asked.append(output_dir)
+    return str(fake_dataset)
+
+
 def test_fetch_downloads_to_given_folder(fake_dataset, tmp_path, monkeypatch):
     folder = tmp_path / "demo"
     asked = []
 
-    def fake_download(handle, output_dir=None):
-        asked.append(output_dir)
-        return str(fake_dataset)
-
-    monkeypatch.setattr(download_module.kagglehub, "dataset_download", fake_download)
+    monkeypatch.setattr(
+        download_module.kagglehub,
+        "dataset_download",
+        functools.partial(
+            fake_download_of_fetch_downloads_to_given_folder, asked, fake_dataset
+        ),
+    )
 
     assert download_module.fetch(folder) == fake_dataset
     assert asked == [str(folder)]

@@ -1,6 +1,6 @@
 """Run three simple baselines on the golden set, to compare the system with.
 
-Usage:  python eval/baselines.py [--db data/marketdesk.db] [--only P1,O2]
+Usage:  python -m eval.baselines [--db data/marketdesk.db] [--only P1,O2]
                                  [--pause 12] [--no-cache] [--show-test]
                                  [--judge]
 
@@ -29,11 +29,6 @@ import tempfile
 import time
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-# Run as a plain script, Python only searches the eval/ folder for imports.
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
 from llama_index.core.llms import ChatMessage
 
 import config
@@ -42,9 +37,9 @@ from eval.live_bar import LiveBar
 from eval.llm_cache import (
     DEFAULT_CACHE_DIR,
     CachedLLM,
-    DailyQuotaUsedUp,
-    LiveCallLimitReached,
-    NoPaidCredit,
+    DailyQuotaUsedUpError,
+    LiveCallLimitReachedError,
+    NoPaidCreditError,
 )
 from eval.run_eval import (
     DEFAULT_DB_PATH,
@@ -140,6 +135,7 @@ def policy_text(sections: list) -> str:
 
 
 def all_sections() -> list[dict]:
+    """Every policy section as a dict, for the baseline that reads all of them."""
     return [
         {
             "citation": section.citation,
@@ -180,6 +176,7 @@ def made_up(answer: str, today: str) -> bool:
 
 
 def golden_rows(db_path: Path | str, example: dict) -> list:
+    """Run the example's golden SQL and return its rows."""
     conn = connect_read_only(db_path)
     try:
         return [list(row) for row in conn.execute(example["golden_sql"])]
@@ -200,6 +197,7 @@ async def complete(llm: CachedLLM, system: str, question: str) -> tuple[str, int
 
 
 def score_policy(example: dict, answer: str) -> dict:
+    """Score a policy answer against the example's expectations."""
     expected = example["expected"]
     checks = {
         "text": scoring.contains_all(answer, expected.get("must_contain", []))
@@ -218,6 +216,7 @@ def score_policy(example: dict, answer: str) -> dict:
 
 
 def score_support(example: dict, answer: str, today: str) -> dict:
+    """Score a support answer against the example's expectations."""
     expected = example["expected"]
     invented = made_up(answer, today)
     checks = {
@@ -232,6 +231,7 @@ def score_support(example: dict, answer: str, today: str) -> dict:
 
 
 def score_sql(example: dict, db_path: Path | str, answer: str) -> dict:
+    """Run the SQL in the answer and compare its rows with the golden rows."""
     sql = extract_sql(answer)
     result = run_sql(db_path, sql, allowed_tables=RAW_TABLES)
     matched = "rows" in result and scoring.execution_match(
@@ -253,6 +253,7 @@ async def run_example(
     index: PolicyIndex,
     llm: CachedLLM,
 ) -> dict:
+    """Run one example through one baseline and score it."""
     today = config.SIMULATED_TODAY.isoformat()
     question = example["question"].replace("{order}", ORDER_ALIAS)
     if baseline == "B2":
@@ -354,17 +355,12 @@ def run(
 def summarise(rows: list[dict]) -> dict:
     """The numbers of one row of the comparison table."""
 
-    def check_rate(name: str) -> float | None:
-        return scoring.rate(
-            [row["checks"][name] for row in rows if name in row["checks"]]
-        )
-
     seconds = [row["seconds"] for row in rows]
     return {
         "examples": len(rows),
         "task_success": scoring.rate([row["success"] for row in rows]),
-        "execution_accuracy": check_rate("execution"),
-        "source_accuracy": check_rate("source"),
+        "execution_accuracy": scoring.check_rate(rows, "execution"),
+        "source_accuracy": scoring.check_rate(rows, "source"),
         "made_up_rate": scoring.rate(
             [row["made_up"] for row in rows if "made_up" in row]
         ),
@@ -413,6 +409,7 @@ def final_rows(results_path: Path) -> dict:
 
 
 def markdown_table(summary: dict) -> str:
+    """The summary as a markdown table."""
     lines = [
         (
             "| System · group | n | Task success | SQL execution | Source "
@@ -437,6 +434,7 @@ def markdown_table(summary: dict) -> str:
 
 
 def main() -> int:
+    """Run the command line entry point."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--db", type=Path, default=DEFAULT_DB_PATH)
     parser.add_argument("--golden", type=Path, default=GOLDEN_SET)
@@ -490,7 +488,11 @@ def main() -> int:
                 judge=judge,
                 bar=bar,
             )
-        except (DailyQuotaUsedUp, LiveCallLimitReached, NoPaidCredit) as stop:
+        except (
+            DailyQuotaUsedUpError,
+            LiveCallLimitReachedError,
+            NoPaidCreditError,
+        ) as stop:
             print(f"\nStopped: {stop}")
             return 3
         finally:

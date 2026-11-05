@@ -77,6 +77,20 @@ def test_other_seeds_pick_other_questions(identity):
     assert len(picks) > 1
 
 
+def place_of_english_examples_translate_turkish(question, catalog):
+    pools = [
+        *catalog.EXAMPLE_QUESTIONS_BY_SITUATION.values(),
+        catalog.EXAMPLE_QUESTIONS_GENERAL,
+        catalog.EXAMPLE_QUESTIONS_POLICY,
+        catalog.EXAMPLE_QUESTIONS_OPS,
+    ]
+    return next(
+        (number, pool.index(question))
+        for number, pool in enumerate(pools)
+        if question in pool
+    )
+
+
 @pytest.mark.parametrize("identity", [("customer", "window_passed"), ("ops",)])
 def test_english_examples_translate_turkish(identity):
     """The same seed picks the same places in both pools, so an English page
@@ -84,19 +98,6 @@ def test_english_examples_translate_turkish(identity):
     turkish = pick_examples(identity, random.Random(3))
     english = pick_examples(identity, random.Random(3), Language.EN)
 
-    def place(question, catalog):
-        pools = [
-            *catalog.EXAMPLE_QUESTIONS_BY_SITUATION.values(),
-            catalog.EXAMPLE_QUESTIONS_GENERAL,
-            catalog.EXAMPLE_QUESTIONS_POLICY,
-            catalog.EXAMPLE_QUESTIONS_OPS,
-        ]
-        return next(
-            (number, pool.index(question))
-            for number, pool in enumerate(pools)
-            if question in pool
-        )
-
-    assert [place(q, messages) for q in turkish] == [
-        place(q, messages_en) for q in english
-    ]
+    assert [
+        place_of_english_examples_translate_turkish(q, messages) for q in turkish
+    ] == [place_of_english_examples_translate_turkish(q, messages_en) for q in english]

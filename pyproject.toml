@@ -42,6 +42,11 @@ override-dependencies = ["click>=8.4.2"]
 # An application, not a library: nothing to build or install as a package.
 package = false
 
+[tool.ruff.lint]
+# PEP 8: the style rules of pycodestyle (E, W) and the naming rules (N), on top
+# of ruff's defaults.
+extend-select = ["E", "W", "N"]
+
 [tool.pytest.ini_options]
 # Lets tests import top-level modules and folders (config, data, scripts, src).
 pythonpath = ["."]

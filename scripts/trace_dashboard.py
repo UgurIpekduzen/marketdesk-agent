@@ -13,9 +13,6 @@ import argparse
 import sys
 from pathlib import Path
 
-# Run as a plain script, Python only searches the scripts/ folder for imports.
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
 import config
 from src import tracing_dashboard
 from src.i18n import DEFAULT_LANGUAGE, Language, catalog
@@ -24,9 +21,12 @@ DEFAULT_OUTPUT = Path(__file__).resolve().parent.parent / "data" / "error_tracin
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run the command line entry point."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
-        "--lang", choices=[l.value for l in Language], default=DEFAULT_LANGUAGE.value
+        "--lang",
+        choices=[language.value for language in Language],
+        default=DEFAULT_LANGUAGE.value,
     )
     parser.add_argument(
         "--newest", type=int, default=config.TRACING_DASHBOARD_OBSERVATIONS
@@ -37,7 +37,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         public, secret = tracing_dashboard.credentials()
         observations = tracing_dashboard.fetch_observations(public, secret, args.newest)
-    except tracing_dashboard.DashboardUnavailable as failure:
+    except tracing_dashboard.DashboardUnavailableError as failure:
         print(tracing_dashboard.failure_text(texts, failure), file=sys.stderr)
         return 1
     rows = tracing_dashboard.count_errors(observations)

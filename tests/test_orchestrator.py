@@ -5,6 +5,7 @@ agent's part, in script order. So a script starts with a class name.
 """
 
 import asyncio
+import functools
 import json
 import logging
 
@@ -40,14 +41,16 @@ def fake():
     return FakeLLM()
 
 
+def run_of_as_customer(synthetic_db_path, fake_policy_index, fake, scenario):
+    return with_customer_router(synthetic_db_path, fake_policy_index, fake, scenario)
+
+
 @pytest.fixture
 def as_customer(synthetic_db_path, fake_policy_index, fake):
-    def run(scenario):
-        return with_customer_router(
-            synthetic_db_path, fake_policy_index, fake, scenario
-        )
 
-    return run
+    return functools.partial(
+        run_of_as_customer, synthetic_db_path, fake_policy_index, fake
+    )
 
 
 @pytest.fixture
@@ -189,6 +192,12 @@ def test_customer_out_of_scope_is_refused(as_customer, fake):
     assert len(fake.requests) == 1
 
 
+async def scenario_of_approval_works_through_router(router):
+    answer = await router.ask("o_day14 hasarlı geldi, iade istiyorum.")
+    summary = router.approval_summary(answer.awaiting_approval)
+    return answer, summary, await router.approve()
+
+
 def test_approval_works_through_router(as_customer, fake, synthetic_db_path):
     fake.script = [
         "support",
@@ -201,12 +210,7 @@ def test_approval_works_through_router(as_customer, fake, synthetic_db_path):
         "Onayınız istenecek.",
     ]
 
-    async def scenario(router):
-        answer = await router.ask("o_day14 hasarlı geldi, iade istiyorum.")
-        summary = router.approval_summary(answer.awaiting_approval)
-        return answer, summary, await router.approve()
-
-    answer, summary, shown = as_customer(scenario)
+    answer, summary, shown = as_customer(scenario_of_approval_works_through_router)
 
     assert answer.awaiting_approval["order"] == "SIP-1"
     assert "İade tutarı: 115,00 BRL" in summary
@@ -416,13 +420,14 @@ def test_figure_question_stays_with_ops(ops_router, fake):
     assert "summarize_reviews" not in tools_offered(fake.requests[1])
 
 
+async def scenario_of_customer_has_no_review_agent(router):
+    return await router.ask("Mobilyada müşteriler neden şikâyet ediyor?")
+
+
 def test_customer_has_no_review_agent(as_customer, fake):
     fake.script = ["review_insight"]
 
-    async def scenario(router):
-        return await router.ask("Mobilyada müşteriler neden şikâyet ediyor?")
-
-    answer = as_customer(scenario)
+    answer = as_customer(scenario_of_customer_has_no_review_agent)
 
     assert answer.refused
     assert answer.display == messages.ROUTER_OPS_NOT_ALLOWED
@@ -430,14 +435,15 @@ def test_customer_has_no_review_agent(as_customer, fake):
     assert len(fake.requests) == 1
 
 
+async def scenario_of_fooled_classifier_gives_no_review(router):
+    await router.ask("Yorumları özetle.")
+    return await router.ask("Merhaba")
+
+
 def test_fooled_classifier_gives_no_review(as_customer, fake):
     fake.script = ["review_insight", "support", "Merhaba."]
 
-    async def scenario(router):
-        await router.ask("Yorumları özetle.")
-        return await router.ask("Merhaba")
-
-    as_customer(scenario)
+    as_customer(scenario_of_fooled_classifier_gives_no_review)
 
     for request in fake.requests:
         assert not tools_offered(request) & {"summarize_reviews", "report_themes"}

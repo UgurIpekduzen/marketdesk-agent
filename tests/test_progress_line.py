@@ -37,14 +37,20 @@ def pytest_configure(config):
 NONE = {"passed": 0, "failed": 0, "xfailed": 0}
 
 
-def test_bar_fills_with_share_done():
-    def start(done, total):
-        return progress_line(done, total, NONE, 0, "", 200).split("  ✓")[0]
+def start_of_bar_fills_with_share_done(done, total):
+    return progress_line(done, total, NONE, 0, "", 200).split("  ✓")[0]
 
-    assert start(0, 4) == "[0/4] ░░░░░░░░░░   0%"
-    assert start(1, 4) == "[1/4] ██░░░░░░░░  25%"
-    assert start(1234, 2125) == "[1234/2125] ██████░░░░  58%"
-    assert start(2125, 2125) == "[2125/2125] ██████████ 100%"
+
+def test_bar_fills_with_share_done():
+
+    assert start_of_bar_fills_with_share_done(0, 4) == "[0/4] ░░░░░░░░░░   0%"
+    assert start_of_bar_fills_with_share_done(1, 4) == "[1/4] ██░░░░░░░░  25%"
+    assert (
+        start_of_bar_fills_with_share_done(1234, 2125) == "[1234/2125] ██████░░░░  58%"
+    )
+    assert (
+        start_of_bar_fills_with_share_done(2125, 2125) == "[2125/2125] ██████████ 100%"
+    )
 
 
 def test_line_shows_counts_time_and_file():

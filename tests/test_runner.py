@@ -18,17 +18,19 @@ async def echo(text: str) -> str:
     return text
 
 
-def run(script, message="merhaba", customer=None):
-    async def scenario():
-        agent = FunctionAgent(
-            name="trial",
-            tools=[FunctionTool.from_defaults(async_fn=echo)],
-            llm=FakeLLM(script=script),
-            system_prompt="system",
-        )
-        return await run_agent(agent, Context(agent), message, customer)
+async def scenario_of_run(script, message, customer):
+    agent = FunctionAgent(
+        name="trial",
+        tools=[FunctionTool.from_defaults(async_fn=echo)],
+        llm=FakeLLM(script=script),
+        system_prompt="system",
+    )
+    return await run_agent(agent, Context(agent), message, customer)
 
-    return asyncio.run(scenario())
+
+def run(script, message="merhaba", customer=None):
+
+    return asyncio.run(scenario_of_run(script, message, customer))
 
 
 def test_answer_and_counts():

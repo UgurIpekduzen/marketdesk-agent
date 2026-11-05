@@ -1,6 +1,6 @@
 """Send example traces of every error kind to the tracing target.
 
-Usage:  python scripts/trace_examples.py [--target langfuse|phoenix]
+Usage:  python -m scripts.trace_examples [--target langfuse|phoenix]
 
 Fills a tracing tool with one trace per kind of error the project marks
 (a refused message, the step and tool limits, a quota or busy provider, a rejected or
@@ -14,12 +14,8 @@ no model call, no API quota, no Olist data.
 import argparse
 import asyncio
 import shutil
-import sys
 import tempfile
 from pathlib import Path
-
-# Run as a plain script, Python only searches the scripts/ folder for imports.
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import config
 from scripts import load_sqlite
@@ -119,6 +115,7 @@ async def run_examples(db_path: Path, index: PolicyIndex) -> None:
 
 
 def main() -> None:
+    """Run the command line entry point."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--target", choices=["langfuse", "phoenix"], default="langfuse")
     target = parser.parse_args().target

@@ -248,7 +248,10 @@ UI_ERROR_FULL = (
     'minutes with the "New chat" button.'
 )
 UI_ERROR_TOO_LONG = "Your message is too long; please write at most {limit} characters."
-UI_ERROR_APPROVAL_WAITING = "Approve or decline the return request on the screen first; then you can write a new message."
+UI_ERROR_APPROVAL_WAITING = (
+    "Approve or decline the return request on the screen first; "
+    "then you can write a new message."
+)
 UI_ERROR_QUESTION_LIMIT = (
     "The demo is very busy right now: the question limit for this hour has "
     "been reached. Please try again a little later."
@@ -322,15 +325,27 @@ EXAMPLE_QUESTIONS_POLICY = [
 EXAMPLE_QUESTIONS_OPS = [
     "Which are the 5 product categories with the highest GMV?",
     "What is the average review score by month in 2018?",
-    "Among customer states with at least 300 orders, which 5 have the highest cancellation rate?",
+    (
+        "Among customer states with at least 300 orders, "
+        "which 5 have the highest cancellation rate?"
+    ),
     "What is the number of orders by month in 2018?",
     "What was the late delivery rate in the state of SP in July 2018?",
-    "Among categories with at least 100 orders, which 5 have the highest late delivery rate?",
+    (
+        "Among categories with at least 100 orders, "
+        "which 5 have the highest late delivery rate?"
+    ),
     "What is the GMV of August 2018?",
-    "Among states with at least 500 orders, which 3 have the highest cancellation rate?",
+    (
+        "Among states with at least 500 orders, "
+        "which 3 have the highest cancellation rate?"
+    ),
     "In how many different orders was each payment type used?",
     "What are the order counts by month in 2018 in the states of SP and RJ?",
-    "What do customers who give 1 or 2 points in the furniture category complain about most in their reviews?",
+    (
+        "What do customers who give 1 or 2 points in the furniture category "
+        "complain about most in their reviews?"
+    ),
     "What do customers who give 5 points praise most in their reviews?",
     "What do customers write about delivery in the health and beauty category?",
 ]

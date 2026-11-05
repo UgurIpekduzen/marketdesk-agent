@@ -26,6 +26,7 @@ recognised, and neither is a name written inside a review text. The
 privacy fuzzing in the security review lists the forms still missed.
 """
 
+import functools
 import logging
 import re
 import unicodedata
@@ -66,7 +67,14 @@ ZERO_WIDTH = dict.fromkeys(map(ord, "\u200b\u200c\u200d\u2060\ufeff"))
 
 
 def normalised(text: str) -> str:
-    """The text with compatibility forms made plain and zero-width marks out."""
+    """The text with compatibility forms made plain and zero-width marks out.
+
+    Args:
+        text (str): Any text.
+
+    Returns:
+        The text in plain form.
+    """
     return unicodedata.normalize("NFKC", text).translate(ZERO_WIDTH)
 
 
@@ -76,6 +84,12 @@ def folded(text: str) -> tuple[str, list[int]]:
     Returns the folded text and, for each of its characters, the position
     of the character it came from, so a match can be replaced in the text
     itself, which keeps its accents.
+
+    Args:
+        text (str): Any text.
+
+    Returns:
+        The folded text and, for each of its letters, the position in the original.
     """
     letters, origin = [], []
     for position, character in enumerate(text):
@@ -112,57 +126,78 @@ class Redactor:
         ]
 
     def redact(self, text: str) -> tuple[str, Counter]:
-        """Return the cleaned text and how many values of each kind it held."""
+        """Return the cleaned text and how many values of each kind it held.
+
+        Args:
+            text (str): The text to clean.
+
+        Returns:
+            The cleaned text and a count of the values replaced, by kind.
+        """
         found: Counter = Counter()
-
-        def replace_id(match: re.Match) -> str:
-            found["id"] += 1
-            if self._alias_for is None:
-                return MASK
-            return self._alias_for(match.group().lower())
-
-        def replace_email(match: re.Match) -> str:
-            found["email"] += 1
-            return EMAIL_MASK
-
-        def checked(kind: str, mask: str, check: Callable[[str], bool]):
-            """Replace a candidate only when its check digits hold."""
-
-            def replace(match: re.Match) -> str:
-                if not check(match.group()):
-                    return match.group()
-                found[kind] += 1
-                return mask
-
-            return replace
-
-        def replace_url(match: re.Match) -> str:
-            found["url"] += 1
-            return URL_MASK
-
-        def replace_phone(match: re.Match) -> str:
-            if not looks_like_phone(match.group()):
-                return match.group()
-            found["phone"] += 1
-            return PHONE_MASK
-
         text = normalised(text)
-        text = URL_PATTERN.sub(replace_url, text)
-        text = RAW_ID_PATTERN.sub(replace_id, text)
-        text = EMAIL_PATTERN.sub(replace_email, text)
+        text = URL_PATTERN.sub(
+            functools.partial(self._mask, found, "url", URL_MASK), text
+        )
+        text = RAW_ID_PATTERN.sub(functools.partial(self._replace_id, found), text)
+        text = EMAIL_PATTERN.sub(
+            functools.partial(self._mask, found, "email", EMAIL_MASK), text
+        )
         # Before phone numbers, which would take a grouped number first.
-        text = IBAN_CANDIDATE.sub(checked("iban", IBAN_MASK, is_iban), text)
+        text = IBAN_CANDIDATE.sub(
+            functools.partial(self._checked, found, "iban", IBAN_MASK, is_iban), text
+        )
         # Brazilian tax numbers, before the card number that a CNPJ could pass for.
-        text = CNPJ_CANDIDATE.sub(checked("cnpj", CNPJ_MASK, is_cnpj), text)
-        text = CPF_CANDIDATE.sub(checked("cpf", CPF_MASK, is_cpf), text)
-        text = CARD_CANDIDATE.sub(checked("card", CARD_MASK, is_card), text)
-        text = TCKN_CANDIDATE.sub(checked("tckn", TCKN_MASK, is_tckn), text)
-        text = PHONE_CANDIDATE.sub(replace_phone, text)
+        text = CNPJ_CANDIDATE.sub(
+            functools.partial(self._checked, found, "cnpj", CNPJ_MASK, is_cnpj), text
+        )
+        text = CPF_CANDIDATE.sub(
+            functools.partial(self._checked, found, "cpf", CPF_MASK, is_cpf), text
+        )
+        text = CARD_CANDIDATE.sub(
+            functools.partial(self._checked, found, "card", CARD_MASK, is_card), text
+        )
+        text = TCKN_CANDIDATE.sub(
+            functools.partial(self._checked, found, "tckn", TCKN_MASK, is_tckn), text
+        )
+        text = PHONE_CANDIDATE.sub(functools.partial(self._phone, found), text)
         for pattern, mask in self._known:
             text, count = self._replace_known(text, pattern, mask)
             if count:
                 found[mask.strip("[]")] += count
         return text, found
+
+    def _replace_id(self, found: Counter, match: re.Match) -> str:
+        found["id"] += 1
+        if self._alias_for is None:
+            return MASK
+        return self._alias_for(match.group().lower())
+
+    @staticmethod
+    def _mask(found: Counter, kind: str, mask: str, match: re.Match) -> str:
+        found[kind] += 1
+        return mask
+
+    @staticmethod
+    def _checked(
+        found: Counter,
+        kind: str,
+        mask: str,
+        check: Callable[[str], bool],
+        match: re.Match,
+    ) -> str:
+        """Replace a candidate only when its check digits hold."""
+        if not check(match.group()):
+            return match.group()
+        found[kind] += 1
+        return mask
+
+    @staticmethod
+    def _phone(found: Counter, match: re.Match) -> str:
+        if not looks_like_phone(match.group()):
+            return match.group()
+        found["phone"] += 1
+        return PHONE_MASK
 
     @staticmethod
     def _replace_known(text: str, pattern: re.Pattern, mask: str) -> tuple[str, int]:
@@ -177,7 +212,15 @@ class Redactor:
         return text, len(spans)
 
     def redact_value(self, value: object, found: Counter) -> object:
-        """Clean every string inside nested dicts and lists."""
+        """Clean every string inside nested dicts and lists.
+
+        Args:
+            value (object): A string, or dicts and lists holding strings.
+            found (Counter): The counts are added here.
+
+        Returns:
+            The same structure with every string cleaned.
+        """
         if isinstance(value, str):
             cleaned, counts = self.redact(value)
             found.update(counts)
@@ -190,12 +233,23 @@ class Redactor:
 
 
 def findings_summary(found: Counter) -> str:
-    """What was replaced, as kinds and counts: "email=1 phone=2"."""
+    """What was replaced, as kinds and counts: "email=1 phone=2".
+
+    Args:
+        found (Counter): Counts by kind.
+
+    Returns:
+        The counts as text.
+    """
     return " ".join(f"{kind}={count}" for kind, count in sorted(found.items()))
 
 
 def log_findings(found: Counter) -> None:
-    """Log what was replaced: kinds and counts, never the values."""
+    """Log what was replaced: kinds and counts, never the values.
+
+    Args:
+        found (Counter): Counts by kind; nothing is logged when empty.
+    """
     if found:
         logger.warning(
             "outbound guard replaced personal data: %s", findings_summary(found)

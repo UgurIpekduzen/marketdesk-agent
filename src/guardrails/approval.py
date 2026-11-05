@@ -34,10 +34,15 @@ class Approvals:
 
     @property
     def awaiting(self) -> ReturnAction | None:
+        """The action waiting for the person's answer, if any."""
         return self._awaiting
 
     def request(self, action: ReturnAction) -> None:
-        """Remember the action a person now has to decide on."""
+        """Remember the action a person now has to decide on.
+
+        Args:
+            action (ReturnAction): The action the person has to decide on.
+        """
         self._awaiting = action
 
     def approve(self) -> str:
@@ -61,6 +66,13 @@ class Approvals:
         """Use up a token; True only if it was issued for exactly this action.
 
         A token is gone after one try, whether it fitted or not.
+
+        Args:
+            token (str | None): The approval token, or None.
+            action (ReturnAction): The action about to be done.
+
+        Returns:
+            True only if the token was issued for exactly this action.
         """
         if token is None:
             return False

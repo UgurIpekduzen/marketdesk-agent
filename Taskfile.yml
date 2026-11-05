@@ -167,22 +167,22 @@ tasks:
   data:download:
     desc: Download the Olist dataset
     cmds:
-      - "{{.RUN}} uv run python data/download.py"
+      - "{{.RUN}} uv run python -m data.download"
 
   data:load:
     desc: Load the CSV files into SQLite (data/marketdesk.db)
     cmds:
-      - "{{.RUN}} uv run python scripts/load_sqlite.py --db data/marketdesk.db"
+      - "{{.RUN}} uv run python -m scripts.load_sqlite --db data/marketdesk.db"
 
   data:demo:
     desc: Build the demo database the deployed page builds on its first start (all orders, no geolocation), unless one exists
     cmds:
-      - "{{.RUN}} uv run python scripts/build_demo_db.py --db {{.CLI_ARGS | default \"data/marketdesk.db\"}}"
+      - "{{.RUN}} uv run python -m scripts.build_demo_db --db {{.CLI_ARGS | default \"data/marketdesk.db\"}}"
 
   data:smoke:
     desc: Verify the downloaded data and the database against the expected numbers
     cmds:
-      - "{{.RUN}} uv run python scripts/smoke.py --db data/marketdesk.db"
+      - "{{.RUN}} uv run python -m scripts.smoke --db data/marketdesk.db"
 
   data:
     desc: Download, load and verify the dataset
@@ -196,49 +196,49 @@ tasks:
   index:build:
     desc: Build the policy index in policies/index (run after changing a policy or the embedding model)
     cmds:
-      - "{{.RUN}} uv run python scripts/build_policy_index.py"
+      - "{{.RUN}} uv run python -m scripts.build_policy_index"
 
   embed:check:
     desc: Load the real embedding model and search the policy sections (needs the network once)
     cmds:
-      - "{{.RUN}} uv run python scripts/check_embedding.py"
+      - "{{.RUN}} uv run python -m scripts.check_embedding"
 
   embed:compare:
     desc: Compare embedding models (e5-small, e5-base, bge-m3) on the policy questions, each in its own process; downloads about 970 MB once, runs on the CPU, needs no API key; `-- --only NAME` for one model, `-- --list` names them
     cmds:
-      - "{{.RUN}} uv run python eval/embedding_compare.py {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.embedding_compare {{.CLI_ARGS}}"
 
   index:compare:
     desc: Compare the policy search through LlamaIndex with direct Chroma on the retrieval questions (same vectors; needs the embedding model, no API key); `-- --runs N` for more timing runs
     cmds:
-      - "{{.RUN}} uv run python eval/index_compare.py {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.index_compare {{.CLI_ARGS}}"
 
   trace:examples:
     desc: Send example traces of every error kind to the tracing target, with the stand-in model (no model calls); `-- --target phoenix` for Phoenix
     cmds:
-      - "{{.RUN}} uv run python scripts/trace_examples.py {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m scripts.trace_examples {{.CLI_ARGS}}"
 
   trace:dashboard:
     desc: Count the error kinds of the Langfuse traces, print them and write data/error_tracing.html (no server; keys from .env); `-- --lang en --newest 5000`
     cmds:
-      - "{{.RUN}} uv run python scripts/trace_dashboard.py {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m scripts.trace_dashboard {{.CLI_ARGS}}"
 
   # --- Agents ------------------------------------------------------------
 
   agent:check:
     desc: Run the example questions through the Support Agent with the real model (uses LLM quota)
     cmds:
-      - "{{.RUN}} uv run python scripts/try_support_agent.py {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m scripts.try_support_agent {{.CLI_ARGS}}"
 
   agent:check:ops:
     desc: Run example operations questions through the Ops Data Agent with the real model (uses LLM quota)
     cmds:
-      - "{{.RUN}} uv run python scripts/try_ops_agent.py {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m scripts.try_ops_agent {{.CLI_ARGS}}"
 
   agent:check:router:
     desc: Run example messages through the router with the real model (uses LLM quota)
     cmds:
-      - "{{.RUN}} uv run python scripts/try_router.py {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m scripts.try_router {{.CLI_ARGS}}"
 
   chat:
     desc: Chat with an agent (uses LLM quota); pass --demo, --customer <id> or --ops after --
@@ -250,74 +250,74 @@ tasks:
   env:hash-key:
     desc: Write a secret key for the id hashes into .env, unless it has one (the key is not printed)
     cmds:
-      - "{{.RUN}} uv run python scripts/set_hash_key.py {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m scripts.set_hash_key {{.CLI_ARGS}}"
 
   eval:
     desc: Run the full evaluation (uses LLM free-tier quota)
     cmds:
-      - "{{.RUN}} uv run python eval/run_eval.py {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval {{.CLI_ARGS}}"
 
   eval:redteam:
     desc: Run the automated red team scan with DeepTeam; attacker and judge on Groq (uses Groq and LLM quota); `-- --pilot` for one vulnerability, `-- --multi-turn` for attacks over several messages (with a shorter crescendo prompt), `-- --ops-only` for the operations session alone, `-- --seed N` to repeat the random choice of attacks, `-- --paid` for the paid Gemini key
     cmds:
-      - "{{.RUN}} uv run python eval/red_team.py {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.red_team {{.CLI_ARGS}}"
 
   eval:report:
     desc: Write the final report from the results files (no model calls)
     cmds:
-      - "{{.RUN}} uv run python eval/report.py"
+      - "{{.RUN}} uv run python -m eval.report"
 
   eval:all:
     desc: Run the golden set, the baselines, the attack set, the same two in English, the multi-turn set, the attack sets of the red teaming and the number traps with and without the critic (indirect injection, client layer, misinformation, inter-agent, human trust, several messages), then write the final report (uses LLM free-tier quota); `-- --paid` finishes every run on the paid key
     cmds:
-      - "{{.RUN}} uv run python eval/run_eval.py --judge {{.CLI_ARGS}}"
-      - "{{.RUN}} uv run python eval/baselines.py --judge {{.CLI_ARGS}}"
-      - "{{.RUN}} uv run python eval/run_eval.py --golden eval/injection_tests.jsonl {{.CLI_ARGS}}"
-      - "{{.RUN}} uv run python eval/run_eval.py --golden eval/golden_set_en.jsonl --judge {{.CLI_ARGS}}"
-      - "{{.RUN}} uv run python eval/run_eval.py --golden eval/injection_tests_en.jsonl {{.CLI_ARGS}}"
-      - "{{.RUN}} uv run python eval/run_eval.py --golden eval/multi_turn_set.jsonl {{.CLI_ARGS}}"
-      - "{{.RUN}} uv run python eval/run_eval.py --golden eval/indirect_injection_tests.jsonl --extra-policies eval/poisoned_policies {{.CLI_ARGS}}"
-      - "{{.RUN}} uv run python eval/run_eval.py --golden eval/client_layer_tests.jsonl {{.CLI_ARGS}}"
-      - "{{.RUN}} uv run python eval/run_eval.py --golden eval/misinformation_tests.jsonl --judge --independent-judge {{.CLI_ARGS}}"
-      - "{{.RUN}} uv run python eval/run_eval.py --golden eval/inter_agent_tests.jsonl {{.CLI_ARGS}}"
-      - "{{.RUN}} uv run python eval/run_eval.py --golden eval/human_trust_tests.jsonl {{.CLI_ARGS}}"
-      - "{{.RUN}} uv run python eval/run_eval.py --golden eval/multi_turn_attacks.jsonl {{.CLI_ARGS}}"
-      - "{{.RUN}} uv run python eval/run_eval.py --golden eval/template_attacks.jsonl {{.CLI_ARGS}}"
-      - "{{.RUN}} uv run python eval/run_eval.py --golden eval/template_attacks_en.jsonl {{.CLI_ARGS}}"
-      - "{{.RUN}} uv run python eval/run_eval.py --golden eval/review_insight_tests.jsonl --judge --independent-judge {{.CLI_ARGS}}"
-      - "{{.RUN}} uv run python eval/run_eval.py --golden eval/number_traps.jsonl {{.CLI_ARGS}}"
-      - "{{.RUN}} uv run python eval/run_eval.py --golden eval/number_traps.jsonl --no-critic {{.CLI_ARGS}}"
-      - "{{.RUN}} uv run python eval/run_eval.py --judge --no-critic {{.CLI_ARGS}}"
-      - "{{.RUN}} uv run python eval/run_eval.py --golden eval/misinformation_tests.jsonl --judge --independent-judge --no-critic {{.CLI_ARGS}}"
-      - "{{.RUN}} uv run python eval/run_eval.py --golden eval/number_traps.jsonl --critic-variant plain {{.CLI_ARGS}}"
-      - "{{.RUN}} uv run python eval/run_eval.py --judge --critic-variant plain {{.CLI_ARGS}}"
-      - "{{.RUN}} uv run python eval/run_eval.py --golden eval/misinformation_tests.jsonl --judge --independent-judge --critic-variant plain {{.CLI_ARGS}}"
-      - "{{.RUN}} uv run python eval/report.py"
+      - "{{.RUN}} uv run python -m eval.run_eval --judge {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.baselines --judge {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/injection_tests.jsonl {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/golden_set_en.jsonl --judge {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/injection_tests_en.jsonl {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/multi_turn_set.jsonl {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/indirect_injection_tests.jsonl --extra-policies eval/poisoned_policies {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/client_layer_tests.jsonl {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/misinformation_tests.jsonl --judge --independent-judge {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/inter_agent_tests.jsonl {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/human_trust_tests.jsonl {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/multi_turn_attacks.jsonl {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/template_attacks.jsonl {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/template_attacks_en.jsonl {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/review_insight_tests.jsonl --judge --independent-judge {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/number_traps.jsonl {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/number_traps.jsonl --no-critic {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --judge --no-critic {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/misinformation_tests.jsonl --judge --independent-judge --no-critic {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/number_traps.jsonl --critic-variant plain {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --judge --critic-variant plain {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/misinformation_tests.jsonl --judge --independent-judge --critic-variant plain {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.report"
 
   eval:multi:
     desc: Run the multi-turn conversations, with approve and decline clicks made in code (uses LLM free-tier quota)
     cmds:
-      - "{{.RUN}} uv run python eval/run_eval.py --golden eval/multi_turn_set.jsonl {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/multi_turn_set.jsonl {{.CLI_ARGS}}"
 
   eval:build-multi:
     desc: Write eval/multi_turn_set.jsonl from its flows and the test sentences (no model calls)
     cmds:
-      - "{{.RUN}} uv run python eval/build_multi_turn.py"
+      - "{{.RUN}} uv run python -m eval.build_multi_turn"
 
   eval:build-en:
     desc: Write the English golden and attack sets from the Turkish ones and eval/translations_en.json (no model calls)
     cmds:
-      - "{{.RUN}} uv run python eval/build_english_sets.py"
+      - "{{.RUN}} uv run python -m eval.build_english_sets"
 
   eval:overhead:
     desc: Measure what the agent framework adds to a step, with a stand-in model that answers at once (no model calls, no API key); `-- --runs N` for more runs per row
     cmds:
-      - "{{.RUN}} uv run python eval/framework_overhead.py {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.framework_overhead {{.CLI_ARGS}}"
 
   eval:overhead:compare:
     desc: Measure what LlamaIndex, Pydantic AI and LangChain (on LangGraph) each add to a step, with a scripted model that answers at once (no model calls, no API key); the last two are added for this run only and are not dependencies of the project; `-- --runs N` for more runs per row
     cmds:
-      - "{{.RUN}} uv run --with pydantic-ai-slim==2.63.0 --with langchain==1.4.7 python eval/framework_compare.py {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run --with pydantic-ai-slim==2.63.0 --with langchain==1.4.7 python -m eval.framework_compare {{.CLI_ARGS}}"
 
   vector:compare:
     desc: Compare vector stores (SimpleVectorStore, Chroma, FAISS, sqlite-vec) on install size and time, memory, search time and metadata filter, each in its own clean environment; needs the network, no API key, takes about 15 minutes; `-- --runs N` for more runs per figure
@@ -327,24 +327,24 @@ tasks:
   eval:mutations:
     desc: Break each guard on purpose and check that the tests notice (no model calls); `-- --live` also runs the attack sets with the model on each broken guard (uses LLM quota, `-- --live --paid` to finish on the paid key); `-- --list` names the guards
     cmds:
-      - "{{.RUN}} uv run python eval/mutations.py {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.mutations {{.CLI_ARGS}}"
 
   eval:build-templates:
     desc: Write eval/template_attacks.jsonl and eval/template_attacks_en.jsonl, attacks made from templates (a payload, a framing, an encoding and a language crossed with a fixed seed; no model calls)
     cmds:
-      - "{{.RUN}} uv run python eval/build_template_attacks.py"
+      - "{{.RUN}} uv run python -m eval.build_template_attacks"
 
   eval:judge-check:
     desc: Write the sheet for checking the judge's scores by hand; `-- --agreement` counts the filled-in sheet
     cmds:
-      - "{{.RUN}} uv run python eval/judge_check.py {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.judge_check {{.CLI_ARGS}}"
 
   eval:review-check:
     desc: Write the sheet for checking the translations of review quotes by hand; `-- --agreement` counts the filled-in sheet
     cmds:
-      - "{{.RUN}} uv run python eval/review_check.py {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.review_check {{.CLI_ARGS}}"
 
   eval:baselines:
     desc: Run the baselines B0, B1 and B2 on the golden set (uses LLM free-tier quota)
     cmds:
-      - "{{.RUN}} uv run python eval/baselines.py {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.baselines {{.CLI_ARGS}}"

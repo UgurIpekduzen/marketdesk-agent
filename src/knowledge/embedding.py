@@ -38,17 +38,33 @@ class Tokenizer(Protocol):
 
 
 class Embedder:
+    """Turns texts into vectors with the quantized ONNX model."""
+
     def __init__(self, session: Session, tokenizer: Tokenizer) -> None:
         self._session = session
         self._tokenizer = tokenizer
         self._input_names = {model_input.name for model_input in session.get_inputs()}
 
     def embed_queries(self, texts: list[str]) -> np.ndarray:
-        """Embed questions; one row of unit length per text."""
+        """Embed questions; one row of unit length per text.
+
+        Args:
+            texts (list[str]): The questions.
+
+        Returns:
+            One unit-length row per text.
+        """
         return self._embed([QUERY_PREFIX + text for text in texts])
 
     def embed_passages(self, texts: list[str]) -> np.ndarray:
-        """Embed texts to be searched; one row of unit length per text."""
+        """Embed texts to be searched; one row of unit length per text.
+
+        Args:
+            texts (list[str]): The texts to be searched.
+
+        Returns:
+            One unit-length row per text.
+        """
         return self._embed([PASSAGE_PREFIX + text for text in texts])
 
     def _embed(self, texts: list[str]) -> np.ndarray:
@@ -69,21 +85,34 @@ class Embedder:
         return text_vectors / np.linalg.norm(text_vectors, axis=1, keepdims=True)
 
 
+def fetch_model_file(filename: str) -> str:
+    """The path of one file of the embedding model, downloaded if needed.
+
+    Args:
+        filename (str): The file in the model repository.
+
+    Returns:
+        The local path of the file.
+    """
+    # Imported here so that code using only Embedder never loads it.
+    from huggingface_hub import hf_hub_download
+
+    return hf_hub_download(
+        config.EMBEDDING_MODEL_REPO,
+        filename,
+        revision=config.EMBEDDING_MODEL_REVISION,
+    )
+
+
 def load_embedder() -> Embedder:
     """Download the model if needed and load it. Needs the network once."""
     # Imported here so that code using only Embedder never loads them.
     import onnxruntime
-    from huggingface_hub import hf_hub_download
     from tokenizers import Tokenizer as HubTokenizer
 
-    def fetch(filename: str) -> str:
-        return hf_hub_download(
-            config.EMBEDDING_MODEL_REPO,
-            filename,
-            revision=config.EMBEDDING_MODEL_REVISION,
-        )
-
-    tokenizer = HubTokenizer.from_file(fetch(config.EMBEDDING_TOKENIZER_FILE))
+    tokenizer = HubTokenizer.from_file(
+        fetch_model_file(config.EMBEDDING_TOKENIZER_FILE)
+    )
     tokenizer.enable_padding(pad_id=PAD_TOKEN_ID, pad_token=PAD_TOKEN)
     tokenizer.enable_truncation(max_length=config.EMBEDDING_MAX_TOKENS)
     options = onnxruntime.SessionOptions()
@@ -91,6 +120,8 @@ def load_embedder() -> Embedder:
     # seen: embedding 28 long passages left 1,141 MB in use instead of 496.
     options.enable_cpu_mem_arena = False
     session = onnxruntime.InferenceSession(
-        fetch(config.EMBEDDING_MODEL_FILE), options, providers=["CPUExecutionProvider"]
+        fetch_model_file(config.EMBEDDING_MODEL_FILE),
+        options,
+        providers=["CPUExecutionProvider"],
     )
     return Embedder(session, tokenizer)

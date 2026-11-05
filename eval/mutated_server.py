@@ -13,6 +13,7 @@ from eval.mutations import apply
 
 
 def main(name: str) -> None:
+    """Run the order server with the named guard switched off."""
     with ExitStack() as stack:
         apply(name, stack)
         from src.mcp_server import server

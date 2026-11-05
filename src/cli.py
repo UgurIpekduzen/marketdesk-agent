@@ -7,9 +7,9 @@ Usage:  python -m src.cli --customer <customer_unique_id>
 Who is signed in, and as what, is chosen when the program starts, the way a
 login would, and never comes from what is typed into the chat. Every message
 goes through the router: a customer session can reach the Support Agent, an
-operations session (--ops) the Ops Data Agent, and nothing else. When the Support Agent asks to open a return request, the
-request is shown and the person answers e (yes) or h (no); only then does
-code write it.
+operations session (--ops) the Ops Data Agent, and nothing else. When the
+Support Agent asks to open a return request, the request is shown and the
+person answers e (yes) or h (no); only then does code write it.
 """
 
 import argparse
@@ -41,7 +41,15 @@ async def chat(
     write: Callable[[str], None] = print,
     banner: str = messages.CHAT_BANNER,
 ) -> None:
-    """Run the conversation until the person leaves."""
+    """Run the conversation until the person leaves.
+
+    Args:
+        agent (Orchestrator | SupportAgent | OpsAgent): The agent or router that
+            answers.
+        read (Callable[[str], str]): Reads a line from the person.
+        write (Callable[[str], None]): Shows text to the person.
+        banner (str): The text shown first.
+    """
     write(banner)
     while True:
         try:
@@ -77,7 +85,14 @@ async def chat(
 
 
 def demo_customer(conn: sqlite3.Connection) -> str:
-    """The customer with the most orders: a convenient one to try things on."""
+    """The customer with the most orders: a convenient one to try things on.
+
+    Args:
+        conn (sqlite3.Connection): A connection to the database.
+
+    Returns:
+        The customer_unique_id of the customer with the most orders.
+    """
     return conn.execute(
         "SELECT customer_unique_id FROM customers GROUP BY customer_unique_id "
         "ORDER BY COUNT(*) DESC, customer_unique_id LIMIT 1"
@@ -85,7 +100,12 @@ def demo_customer(conn: sqlite3.Connection) -> str:
 
 
 async def run(db_path: Path, customer: str) -> None:
-    """Start the order server for the customer and chat until they leave."""
+    """Start the order server for the customer and chat until they leave.
+
+    Args:
+        db_path (Path): The database file.
+        customer (str): The customer_unique_id to sign in as.
+    """
     policy_index = PolicyIndex(load_embedder())
     async with OrdersClient(db_path, customer) as orders:
         router = await Orchestrator.for_customer(orders, customer, policy_index)
@@ -93,7 +113,11 @@ async def run(db_path: Path, customer: str) -> None:
 
 
 async def run_ops(db_path: Path) -> None:
-    """Chat as operations staff until the person leaves."""
+    """Chat as operations staff until the person leaves.
+
+    Args:
+        db_path (Path): The database file.
+    """
     router = Orchestrator.for_ops(db_path)
     try:
         await chat(router, banner=messages.CHAT_BANNER_OPS)
@@ -102,6 +126,14 @@ async def run_ops(db_path: Path) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Parse the command line and start the chosen session.
+
+    Args:
+        argv (list[str] | None): The arguments; the process arguments when None.
+
+    Returns:
+        The exit code.
+    """
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     who = parser.add_mutually_exclusive_group(required=True)
     who.add_argument("--customer", help="customer_unique_id to sign in as")
@@ -123,6 +155,14 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def sign_in_and_chat(args: argparse.Namespace) -> int:
+    """Start the chat for the chosen customer, demo customer or operations session.
+
+    Args:
+        args (argparse.Namespace): The parsed command line.
+
+    Returns:
+        The exit code.
+    """
     if args.ops:
         asyncio.run(run_ops(args.db))
         return 0

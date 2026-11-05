@@ -47,19 +47,38 @@ CREATE TABLE IF NOT EXISTS {TICKETS_TABLE} (
 
 def clean_summary(summary: str, session: Session) -> str:
     """A summary as it may be kept, logged and shown: personal data masked
-    (raw ids as [id], not as the session's aliases) and cut."""
+    (raw ids as [id], not as the session's aliases) and cut.
+
+    Args:
+        summary (str): The summary the model wrote.
+        session (Session): The session, for the personal values to mask.
+
+    Returns:
+        The summary with personal data masked, cut at the length limit.
+    """
     redactor = Redactor(known_values=session.personal_values)
     return redactor.redact(summary.strip())[0][:MAX_SUMMARY_LENGTH]
 
 
 def ensure_tickets_table(conn: sqlite3.Connection) -> None:
-    """Create the tickets table unless the database has it."""
+    """Create the tickets table unless the database has it.
+
+    Args:
+        conn (sqlite3.Connection): A connection to the database.
+    """
     with conn:
         conn.execute(TICKETS_TABLE_SQL)
 
 
 def ticket_number(ticket_id: int) -> str:
-    """The number a person reads: ESC-12."""
+    """The number a person reads: ESC-12.
+
+    Args:
+        ticket_id (int): The ticket's id.
+
+    Returns:
+        The number a person reads.
+    """
     return f"{TICKET_PREFIX}{ticket_id}"
 
 

@@ -1,6 +1,6 @@
 """Run example operations questions through the Ops Data Agent with the real model.
 
-Usage:  python scripts/try_ops_agent.py [--db data/marketdesk.db]
+Usage:  python -m scripts.try_ops_agent [--db data/marketdesk.db]
                                         [--only 7,9] [--pause 20]
 
 This calls the model provider, so it uses free-tier quota and needs the API
@@ -17,9 +17,6 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-# Run as a plain script, Python only searches the scripts/ folder for imports.
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
 import config
 from src.agents.ops import OpsAgent
 
@@ -28,6 +25,8 @@ DEFAULT_DB_PATH = Path("data/marketdesk.db")
 
 @dataclass(frozen=True)
 class Scenario:
+    """One example question for the Ops Data Agent and the tools it should call."""
+
     key: str
     title: str
     message: str
@@ -125,6 +124,7 @@ def checks(scenario: Scenario, reply) -> list[str]:
 
 
 async def run_scenario(scenario: Scenario, db_path: Path) -> dict:
+    """Run one question through the agent and report what happened."""
     agent = OpsAgent(db_path)
     try:
         started = time.perf_counter()
@@ -136,6 +136,7 @@ async def run_scenario(scenario: Scenario, db_path: Path) -> dict:
 
 
 def main() -> int:
+    """Run the command line entry point."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--db", type=Path, default=DEFAULT_DB_PATH)
     parser.add_argument("--provider", default=config.LLM_PROVIDER)
@@ -191,7 +192,8 @@ def main() -> int:
     print("Summary")
     for key, verdict, calls, tokens, seconds in summary:
         print(
-            f"  {key:>3}  {calls} calls  {tokens:>7} tokens  {seconds:5.1f} s  {verdict}"
+            f"  {key:>3}  {calls} calls  {tokens:>7} tokens  "
+            f"{seconds:5.1f} s  {verdict}"
         )
     passed = sum(verdict == "ok" for _, verdict, *_ in summary)
     print(

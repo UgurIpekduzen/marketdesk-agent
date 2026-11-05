@@ -2,8 +2,9 @@
 
 A check in code, no model: every number the answer states must be a number
 some tool returned for this question (rounded as written, or a share
-written as a percentage, or the number of rows a result holds), apart from dates, years, citations and numbers
-the question itself holds. The check is `src.grounding.ungrounded_numbers`,
+written as a percentage, or the number of rows a result holds), apart from
+dates, years, citations and numbers the question itself holds. The check is
+`src.grounding.ungrounded_numbers`,
 the one the evaluation scores answers with.
 
 What it cannot see: numbers that are in the tool output but attached to the
@@ -38,7 +39,15 @@ def correction_request(numbers: list[str], variant: str | None = None) -> str:
 
     variant is the wording; the one in use (config) unless named. An agent
     without run_sql asks for the first wording, which does not send the
-    model to it."""
+    model to it.
+
+    Args:
+        numbers (list[str]): The numbers in the answer that no tool returned.
+        variant (str | None): The wording to use; the configured variant when None.
+
+    Returns:
+        The message that asks the model to correct its answer.
+    """
     wording = CORRECTIONS[variant or config.CRITIC_CORRECTION_VARIANT]
     return wording.format(numbers=", ".join(numbers))
 
@@ -46,7 +55,18 @@ def correction_request(numbers: list[str], variant: str | None = None) -> str:
 def unsupported(
     text: str, tool_results: list[tuple[str, object]], question: str
 ) -> list[str]:
-    """The numbers in the answer that no tool of this question returned."""
+    """The numbers in the answer that no tool of this question returned.
+
+    Args:
+        text (str): The model's answer.
+        tool_results (list[tuple[str, object]]): The (tool name, result) pairs of this
+            question.
+        question (str): The person's question; numbers they typed themselves are not
+            counted.
+
+    Returns:
+        The numbers in the answer that no tool returned.
+    """
     return ungrounded_numbers(text, tool_results, question)
 
 
@@ -64,6 +84,18 @@ async def review(
 
     Returns the text to show and the status (ok, corrected or flagged). The
     cost of a correction is added to the run's log.
+
+    Args:
+        agent: The agent that wrote the answer.
+        context: Its conversation context.
+        question (str): The person's question.
+        text (str): The agent's answer.
+        log: The run log; correction runs are added to it.
+        language (Language): The session's language.
+        variant (str | None): The correction wording; the configured variant when None.
+
+    Returns:
+        The final text and the check's status.
     """
     numbers = unsupported(text, log.tool_results, question)
     status = OK

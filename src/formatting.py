@@ -27,7 +27,14 @@ MAX_TEXT_ROWS = 50
 
 def column_headers(language: Language = DEFAULT_LANGUAGE) -> dict[str, str]:
     """Headers of a result table: the dimensions by name, and the columns
-    every metric result has."""
+    every metric result has.
+
+    Args:
+        language (Language): The session's language.
+
+    Returns:
+        The header text for each column name.
+    """
     texts = catalog(language)
     return {
         **texts.UI_TABLE_DIMENSIONS,
@@ -39,7 +46,15 @@ def column_headers(language: Language = DEFAULT_LANGUAGE) -> dict[str, str]:
 
 def with_separators(text: str, language: Language = DEFAULT_LANGUAGE) -> str:
     """Python's separators turned into the reader's: 1,234.5 stays as it is
-    in English and becomes 1.234,5 in Turkish."""
+    in English and becomes 1.234,5 in Turkish.
+
+    Args:
+        text (str): A number written with Python's separators.
+        language (Language): The session's language.
+
+    Returns:
+        The number with the separators of the language.
+    """
     if language == Language.EN:
         return text
     return text.replace(",", "\0").replace(".", ",").replace("\0", ".")
@@ -53,6 +68,14 @@ def format_number(
 
     A whole number keeps no decimals. Otherwise two decimals, or four below
     1, where rates live and two would round them away.
+
+    Args:
+        value (float): The number.
+        whole (bool): True to show no decimals.
+        language (Language): The session's language.
+
+    Returns:
+        The formatted number.
     """
     if whole:
         return with_separators(f"{round(value):,}", language)
@@ -63,12 +86,27 @@ def format_amount(amount: str, language: Language = DEFAULT_LANGUAGE) -> str:
     """A money amount, always with two decimals: 1.250,00 (1,250.00).
 
     Read as a Decimal, not a float, so no cent is lost on the way.
+
+    Args:
+        amount (str): A decimal string.
+        language (Language): The session's language.
+
+    Returns:
+        The amount with two decimals.
     """
     return with_separators(f"{Decimal(amount):,.2f}", language)
 
 
 def format_money(amount: str, language: Language = DEFAULT_LANGUAGE) -> str:
-    """A money amount with its currency: 1.250,00 BRL (1,250.00 BRL)."""
+    """A money amount with its currency: 1.250,00 BRL (1,250.00 BRL).
+
+    Args:
+        amount (str): A decimal string.
+        language (Language): The session's language.
+
+    Returns:
+        The amount with the currency.
+    """
     return catalog(language).MONEY.format(amount=format_amount(amount, language))
 
 
@@ -80,6 +118,13 @@ def readable_table(table: dict, language: Language = DEFAULT_LANGUAGE) -> dict:
     out. For each numeric column it says whether it holds whole numbers,
     decided here on the raw values: the page's table library turns a whole
     column with a gap into decimals.
+
+    Args:
+        table (dict): A table with columns, rows and number flags.
+        language (Language): The session's language.
+
+    Returns:
+        The table with readable headers.
     """
     columns = list(table["columns"])
     rows = [list(row) for row in table["rows"]]
@@ -107,8 +152,31 @@ def worth_a_table(table: dict) -> bool:
 
     A single value is said in the sentence; a table of one cell would only
     repeat it.
+
+    Args:
+        table (dict): A table with columns and rows.
+
+    Returns:
+        True when it has more than one row or column.
     """
     return len(table["rows"]) > 1 or len(table["columns"]) > 1
+
+
+def table_line(table: dict, widths: list[int], texts: list[str]) -> str:
+    """One line of a table drawn as text: numbers right-aligned, the rest left.
+
+    Args:
+        table (dict): The table, for its columns and number flags.
+        widths (list[int]): The width of each column.
+        texts (list[str]): The text of each cell of this line.
+
+    Returns:
+        The line, without trailing spaces.
+    """
+    return " | ".join(
+        text.rjust(width) if header in table["numbers"] else text.ljust(width)
+        for text, width, header in zip(texts, widths, table["columns"], strict=True)
+    ).rstrip()
 
 
 def table_text(table: dict, language: Language = DEFAULT_LANGUAGE) -> str:
@@ -116,6 +184,13 @@ def table_text(table: dict, language: Language = DEFAULT_LANGUAGE) -> str:
 
     Numbers are written like everywhere else and aligned right; a long
     table is cut, and says how many rows it left out.
+
+    Args:
+        table (dict): A readable table.
+        language (Language): The session's language.
+
+    Returns:
+        The table as plain text.
     """
     shown = table["rows"][:MAX_TEXT_ROWS]
     cells = [
@@ -134,14 +209,11 @@ def table_text(table: dict, language: Language = DEFAULT_LANGUAGE) -> str:
         for position, header in enumerate(table["columns"])
     ]
 
-    def line(texts: list[str]) -> str:
-        return " | ".join(
-            text.rjust(width) if header in table["numbers"] else text.ljust(width)
-            for text, width, header in zip(texts, widths, table["columns"], strict=True)
-        ).rstrip()
-
-    lines = [line(table["columns"]), "-+-".join("-" * width for width in widths)]
-    lines += [line(row) for row in cells]
+    lines = [
+        table_line(table, widths, table["columns"]),
+        "-+-".join("-" * width for width in widths),
+    ]
+    lines += [table_line(table, widths, row) for row in cells]
     left_out = len(table["rows"]) - len(shown)
     if left_out:
         lines.append(catalog(language).TABLE_ROWS_LEFT_OUT.format(count=left_out))
@@ -154,6 +226,12 @@ def readable_sql(query: str) -> str:
     Only for reading: the query that ran is the one given. The parser that
     checks queries lays it out; a query it cannot read (a failed attempt)
     is shown as it is.
+
+    Args:
+        query (str): A SQL query.
+
+    Returns:
+        The query with one clause per line; unchanged when it cannot be parsed.
     """
     try:
         return sqlglot.transpile(query, read="sqlite", write="sqlite", pretty=True)[0]
@@ -167,6 +245,14 @@ def how_computed(computation: dict, language: Language = DEFAULT_LANGUAGE) -> st
     computation holds what the ops agent passed to run_metric: metric,
     filters, group_by and ranking. Written from the call itself, so it says
     what was computed whatever the answer says.
+
+    Args:
+        computation (dict): One metric call: metric, grouping, filters, period and
+            ranking.
+        language (Language): The session's language.
+
+    Returns:
+        The call described in words.
     """
     metric = load_semantic_layer().metrics[computation["metric"]]
     messages = catalog(language)
@@ -224,7 +310,15 @@ SELLER_REPORT_FIELDS = (
 
 def seller_report_table(report: dict, language: Language = DEFAULT_LANGUAGE) -> dict:
     """The seller report's rows as a readable table (same shape as
-    readable_table's): headers in the language, the late rate as a percentage."""
+    readable_table's): headers in the language, the late rate as a percentage.
+
+    Args:
+        report (dict): The seller report.
+        language (Language): The session's language.
+
+    Returns:
+        The report's rows as a readable table.
+    """
     headers = catalog(language).SELLER_REPORT_COLUMNS
     rows = [
         [
@@ -249,7 +343,14 @@ def seller_report_table(report: dict, language: Language = DEFAULT_LANGUAGE) -> 
 
 def report_computation(source: dict) -> dict:
     """One metric call of the report as how_computed reads it: the sellers
-    of the table are not listed, the line says they are the filter."""
+    of the table are not listed, the line says they are the filter.
+
+    Args:
+        source (dict): One metric call behind the report.
+
+    Returns:
+        The call in the shape how_computed reads.
+    """
     return {
         "metric": source["metric"],
         "filters": {k: v for k, v in source["filters"].items() if k != "seller_key"},
@@ -263,7 +364,15 @@ def seller_report_sources(
     report: dict, language: Language = DEFAULT_LANGUAGE
 ) -> list[tuple[str, str]]:
     """For each metric behind the report: how it was computed, in words, and
-    the SQL that ran."""
+    the SQL that ran.
+
+    Args:
+        report (dict): The seller report.
+        language (Language): The session's language.
+
+    Returns:
+        For each metric behind the report, how it was computed and its SQL.
+    """
     lines = []
     for source in report["sources"]:
         words = how_computed(report_computation(source), language)

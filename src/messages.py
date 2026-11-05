@@ -366,7 +366,10 @@ UI_ERROR_FULL = (
     'sonra "Yeni sohbet" düğmesiyle tekrar deneyin.'
 )
 UI_ERROR_TOO_LONG = "Mesajınız çok uzun; lütfen en fazla {limit} karakterle yazın."
-UI_ERROR_APPROVAL_WAITING = "Önce ekrandaki iade talebini onaylayın ya da reddedin; sonra yeni mesaj yazabilirsiniz."
+UI_ERROR_APPROVAL_WAITING = (
+    "Önce ekrandaki iade talebini onaylayın ya da reddedin; "
+    "sonra yeni mesaj yazabilirsiniz."
+)
 UI_ERROR_QUESTION_LIMIT = (
     "Demo şu an çok yoğun: bu saat için soru sınırına ulaşıldı. Lütfen biraz "
     "sonra tekrar deneyin."
@@ -432,22 +435,37 @@ EXAMPLE_QUESTIONS_POLICY = [
     "Kargoya verilmiş bir siparişi iptal edebilir miyim?",
     "İade süremi kaçırdım, geç teslimat için yine de kargo ücretimi isteyebilir miyim?",
     "Hasarlı ürün için iade talebi nasıl açılır, kim onaylar?",
-    "Siparişimin bir kısmını hediye çekiyle ödedim, iade olursa param nasıl geri ödenir?",
+    (
+        "Siparişimin bir kısmını hediye çekiyle ödedim, "
+        "iade olursa param nasıl geri ödenir?"
+    ),
     "Henüz kargoya verilmemiş bir sipariş nasıl iptal edilir?",
     "İade edilen para hesabıma kaç günde geçer?",
 ]
 EXAMPLE_QUESTIONS_OPS = [
     "GMV'si en yüksek 5 ürün kategorisi hangileri?",
     "2018 yılında aylara göre ortalama yorum puanı nedir?",
-    "En az 300 siparişi olan müşteri eyaletleri arasında iptal oranı en yüksek 5'i hangileri?",
+    (
+        "En az 300 siparişi olan müşteri eyaletleri arasında "
+        "iptal oranı en yüksek 5'i hangileri?"
+    ),
     "2018 yılında aylara göre sipariş sayısı nedir?",
     "2018 Temmuz'da SP eyaletinde geç teslim oranı neydi?",
-    "En az 100 siparişi olan kategoriler arasında geç teslim oranı en yüksek 5'i hangileri?",
+    (
+        "En az 100 siparişi olan kategoriler arasında "
+        "geç teslim oranı en yüksek 5'i hangileri?"
+    ),
     "2018 Ağustos ayının GMV'si ne kadar?",
-    "En az 500 siparişi olan eyaletler arasında iptal oranı en yüksek 3 eyalet hangisi?",
+    (
+        "En az 500 siparişi olan eyaletler arasında "
+        "iptal oranı en yüksek 3 eyalet hangisi?"
+    ),
     "Her ödeme türü kaç farklı siparişte kullanılmış?",
     "2018 yılında SP ve RJ eyaletlerinde aylara göre sipariş sayıları nedir?",
-    "Mobilya kategorisinde 1 ve 2 puan veren müşteriler yorumlarında en çok neden şikâyet ediyor?",
+    (
+        "Mobilya kategorisinde 1 ve 2 puan veren müşteriler "
+        "yorumlarında en çok neden şikâyet ediyor?"
+    ),
     "5 puan veren müşteriler yorumlarında en çok neyi övüyor?",
     "Sağlık ve güzellik kategorisinde müşteriler teslimat hakkında ne yazıyor?",
 ]

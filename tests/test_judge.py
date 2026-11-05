@@ -8,6 +8,7 @@ and the scores come back in the shape the runner expects.
 import json
 
 import pytest
+from pydantic import BaseModel, ValidationError
 
 from eval import judge as judge_module
 from eval.judge import Judge, JudgeModel
@@ -51,42 +52,37 @@ def test_judge_answers_through_the_guard():
     assert fake.requests[0]["tools"] == []
 
 
+class ScoreVerdict(BaseModel):
+    score: int
+
+
+class ReasonVerdict(BaseModel):
+    reason: str
+
+
 def test_judge_reads_fenced_json():
-    from pydantic import BaseModel
-
-    class Verdict(BaseModel):
-        score: int
-
     model = JudgeModel(FakeLLM(script=['```json\n{"score": 7}\n```']))
 
-    assert model.generate("puanla", schema=Verdict).score == 7
+    assert model.generate("puanla", schema=ScoreVerdict).score == 7
 
 
 def test_non_json_is_asked_once_more():
-    from pydantic import BaseModel
-
-    class Verdict(BaseModel):
-        reason: str
-
     broken = '{"reason": "Cevap "14 gün" diyor."}'
     fake = FakeLLM(script=[broken, '{"reason": "Cevap 14 gün diyor."}'])
     model = JudgeModel(fake)
 
-    assert model.generate("puanla", schema=Verdict).reason == "Cevap 14 gün diyor."
+    assert (
+        model.generate("puanla", schema=ReasonVerdict).reason == "Cevap 14 gün diyor."
+    )
     assert model.calls == 2
     assert "not valid JSON" in sent(fake, 1)
 
 
 def test_broken_answer_is_an_error():
-    from pydantic import BaseModel, ValidationError
-
-    class Verdict(BaseModel):
-        reason: str
-
     model = JudgeModel(FakeLLM(script=["{bozuk", "{yine bozuk"]))
 
     with pytest.raises(ValidationError):
-        model.generate("puanla", schema=Verdict)
+        model.generate("puanla", schema=ReasonVerdict)
 
 
 def test_judge_model_name_from_settings(monkeypatch):

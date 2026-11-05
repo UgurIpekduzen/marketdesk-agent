@@ -1,6 +1,7 @@
 """Tests for how numbers and money are written for the reader."""
 
 import pytest
+import sqlglot
 
 from src import messages, messages_en
 from src.formatting import (
@@ -84,16 +85,28 @@ def test_long_table_says_rows_left_out():
     assert lines[-1] == messages.TABLE_ROWS_LEFT_OUT.format(count=7)
 
 
+def readable_of_a_single_value_is_not_worth_a_table(columns, rows):
+    return readable_table({"columns": columns, "rows": rows})
+
+
 def test_a_single_value_is_not_worth_a_table():
-    def readable(columns, rows):
-        return readable_table({"columns": columns, "rows": rows})
 
     # A plain total: the repeated numerator goes, one cell is left.
-    assert not worth_a_table(readable(["numerator", "value"], [[29, 29]]))
-    assert worth_a_table(
-        readable(["numerator", "denominator", "value"], [[5, 20, 0.25]])
+    assert not worth_a_table(
+        readable_of_a_single_value_is_not_worth_a_table(
+            ["numerator", "value"], [[29, 29]]
+        )
     )
-    assert worth_a_table(readable(["state", "value"], [["SP", 1], ["RJ", 2]]))
+    assert worth_a_table(
+        readable_of_a_single_value_is_not_worth_a_table(
+            ["numerator", "denominator", "value"], [[5, 20, 0.25]]
+        )
+    )
+    assert worth_a_table(
+        readable_of_a_single_value_is_not_worth_a_table(
+            ["state", "value"], [["SP", 1], ["RJ", 2]]
+        )
+    )
 
 
 QUERY = (
@@ -114,12 +127,9 @@ def test_query_has_one_clause_per_line():
 
 
 def test_laid_out_query_parses_the_same():
-    import sqlglot
+    laid_out = sqlglot.parse_one(readable_sql(QUERY), read="sqlite")
 
-    def tree(sql):
-        return sqlglot.parse_one(sql, read="sqlite")
-
-    assert tree(readable_sql(QUERY)) == tree(QUERY)
+    assert laid_out == sqlglot.parse_one(QUERY, read="sqlite")
 
 
 def test_unparsable_query_is_shown_as_is():

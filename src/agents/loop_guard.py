@@ -36,6 +36,8 @@ TOOL_LIMIT = {
 
 
 class LoopGuard:
+    """Counts tool calls in one message and stops repeats and runaway loops."""
+
     def __init__(
         self,
         max_identical_calls: int = MAX_IDENTICAL_CALLS,
@@ -50,7 +52,15 @@ class LoopGuard:
         self._calls.clear()
 
     def refusal(self, tool_name: str, arguments: dict) -> dict | None:
-        """Count this call; the error to answer instead, or None to run it."""
+        """Count this call; the error to answer instead, or None to run it.
+
+        Args:
+            tool_name (str): The tool the model wants to call.
+            arguments (dict): Its arguments.
+
+        Returns:
+            The error to answer instead of running the tool, or None to run it.
+        """
         # Sorted keys, so the order the model wrote the arguments in is irrelevant.
         key = (tool_name, json.dumps(arguments, sort_keys=True, default=str))
         self._calls[key] += 1

@@ -1,6 +1,7 @@
 """Tests for the evaluation runner: on the synthetic database, with a
 stand-in model."""
 
+import functools
 import json
 import sqlite3
 
@@ -87,28 +88,33 @@ GOOD_SCRIPT = [
 ]
 
 
+def run_examples_of_run(
+    calls, tmp_path, synthetic_db_path, fake_policy_index, examples, script, watch=None
+):
+    calls.append(None)
+    llm = CachedLLM(
+        inner=FakeLLM(script=list(script)),
+        cache_dir=tmp_path / f"cache-{len(calls)}",
+    )
+    rows = run_eval.run(
+        examples,
+        synthetic_db_path,
+        fake_policy_index,
+        llm,
+        report=lambda line: None,
+        watch=watch,
+    )
+    return rows, llm
+
+
 @pytest.fixture
 def run(synthetic_db_path, fake_policy_index, tmp_path):
     """Run examples with a scripted model. Every call gets an empty cache."""
     calls = []
 
-    def run_examples(examples, script, watch=None):
-        calls.append(None)
-        llm = CachedLLM(
-            inner=FakeLLM(script=list(script)),
-            cache_dir=tmp_path / f"cache-{len(calls)}",
-        )
-        rows = run_eval.run(
-            examples,
-            synthetic_db_path,
-            fake_policy_index,
-            llm,
-            report=lambda line: None,
-            watch=watch,
-        )
-        return rows, llm
-
-    return run_examples
+    return functools.partial(
+        run_examples_of_run, calls, tmp_path, synthetic_db_path, fake_policy_index
+    )
 
 
 def test_good_run_scores_all_as_success(run):
@@ -175,7 +181,9 @@ def test_wrong_number_fails_execution(run):
             (
                 "run_sql",
                 {
-                    "query": "SELECT COUNT(*) FROM v_orders WHERE order_status = 'delivered'"
+                    "query": (
+                        "SELECT COUNT(*) FROM v_orders WHERE order_status = 'delivered'"
+                    )
                 },
             )
         ],
@@ -239,23 +247,31 @@ def test_empty_selection_is_an_error(run):
         run([broken], GOOD_SCRIPT[:4])
 
 
+def run_once_of_second_run_comes_from_the_cache(
+    tmp_path, synthetic_db_path, fake_policy_index, script
+):
+    fake = FakeLLM(script=script)
+    llm = CachedLLM(inner=fake, cache_dir=tmp_path / "cache")
+    rows = run_eval.run(
+        [OPS_EXAMPLE],
+        synthetic_db_path,
+        fake_policy_index,
+        llm,
+        report=lambda _: None,
+    )
+    return rows, llm, fake
+
+
 def test_second_run_comes_from_the_cache(
     synthetic_db_path, fake_policy_index, tmp_path
 ):
-    def run_once(script):
-        fake = FakeLLM(script=script)
-        llm = CachedLLM(inner=fake, cache_dir=tmp_path / "cache")
-        rows = run_eval.run(
-            [OPS_EXAMPLE],
-            synthetic_db_path,
-            fake_policy_index,
-            llm,
-            report=lambda _: None,
-        )
-        return rows, llm, fake
 
-    first_rows, first_llm, _ = run_once(list(GOOD_SCRIPT[4:7]))
-    second_rows, second_llm, second_fake = run_once(["the cache was not used"])
+    first_rows, first_llm, _ = run_once_of_second_run_comes_from_the_cache(
+        tmp_path, synthetic_db_path, fake_policy_index, list(GOOD_SCRIPT[4:7])
+    )
+    second_rows, second_llm, second_fake = run_once_of_second_run_comes_from_the_cache(
+        tmp_path, synthetic_db_path, fake_policy_index, ["the cache was not used"]
+    )
 
     assert (first_llm.live_calls, second_llm.live_calls) == (3, 0)
     assert second_llm.hits == 3
@@ -968,14 +984,21 @@ def test_an_invented_citation_is_named():
 # --- The independent judge ----------------------------------------------------
 
 
+def build_of_independent_judge_has_own_provider(
+    built, provider=None, model=None, paid=False, reasoning_effort=None
+):
+    built.append((provider, model, paid, reasoning_effort))
+    return FakeLLM()
+
+
 def test_independent_judge_has_own_provider(monkeypatch, tmp_path):
     built = []
 
-    def build(provider=None, model=None, paid=False, reasoning_effort=None):
-        built.append((provider, model, paid, reasoning_effort))
-        return FakeLLM()
-
-    monkeypatch.setattr(run_eval, "build_provider_llm", build)
+    monkeypatch.setattr(
+        run_eval,
+        "build_provider_llm",
+        functools.partial(build_of_independent_judge_has_own_provider, built),
+    )
 
     judge = run_eval.build_judge(tmp_path, paid=True, independent=True)
 

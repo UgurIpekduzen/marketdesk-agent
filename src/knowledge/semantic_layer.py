@@ -67,6 +67,8 @@ PURCHASED_BY_TODAY = "DATE(o.order_purchase_timestamp) <= DATE(:simulated_today)
 
 @dataclass(frozen=True)
 class Dimension:
+    """A column a metric can be grouped or filtered by."""
+
     name: str
     description: str
     level: str
@@ -75,6 +77,8 @@ class Dimension:
 
 @dataclass(frozen=True)
 class Metric:
+    """A metric defined in metrics.yaml: its filter, numerator and denominator."""
+
     name: str
     description: str
     grain: str
@@ -89,14 +93,32 @@ class Metric:
     join: str | None = None
 
     def description_in(self, language: Language) -> str:
+        """The description in the given language.
+
+        Args:
+            language (Language): The session's language.
+
+        Returns:
+            The description.
+        """
         return self.description_en if language == Language.EN else self.description
 
     def caveat_in(self, language: Language) -> str:
+        """The caveat in the given language.
+
+        Args:
+            language (Language): The session's language.
+
+        Returns:
+            The caveat.
+        """
         return self.caveat_en if language == Language.EN else self.caveat
 
 
 @dataclass(frozen=True)
 class SemanticLayer:
+    """The dimensions and metrics loaded from metrics.yaml."""
+
     dimensions: dict[str, Dimension]
     metrics: dict[str, Metric]
 
@@ -108,7 +130,17 @@ VALUE = "value"
 
 
 def parse_semantic_layer(text: str) -> SemanticLayer:
-    """Read and check the definitions; raise ValueError on the first fault."""
+    """Read and check the definitions; raise ValueError on the first fault.
+
+    Args:
+        text (str): The contents of metrics.yaml.
+
+    Returns:
+        The dimensions and metrics.
+
+    Raises:
+        ValueError: A definition is wrong.
+    """
     data = yaml.safe_load(text)
 
     dimensions = {}
@@ -181,6 +213,15 @@ def list_metrics() -> dict:
 
 
 def error(code: str, message: str) -> dict:
+    """An error result in the shape the tools return.
+
+    Args:
+        code (str): A fixed error code.
+        message (str): What the model is told.
+
+    Returns:
+        The error result.
+    """
     return {"error": code, "message": message}
 
 
@@ -190,6 +231,14 @@ def build_filters(
     """Turn the filters into SQL conditions and the values bound to them.
 
     Returns an error answer instead when a filter is not allowed.
+
+    Args:
+        metric (Metric): The metric asked for.
+        layer (SemanticLayer): The semantic layer.
+        filters (dict): The filters the model gave.
+
+    Returns:
+        The SQL conditions and bound values, or an error result.
     """
     conditions: list[str] = []
     params: dict[str, str] = {}
@@ -238,7 +287,21 @@ def build_sql(
     order: str | None = None,
     limit: int = MAX_ROWS,
 ) -> str:
-    """Build the SQL of a metric from its template."""
+    """Build the SQL of a metric from its template.
+
+    Args:
+        metric (Metric): The metric asked for.
+        layer (SemanticLayer): The semantic layer.
+        group_by (list[str]): The dimensions to group by.
+        filter_conditions (list[str]): The SQL conditions of the filters.
+        filtered (list[str]): The dimensions the filters use.
+        with_min_count (bool): True to drop groups below a minimum count.
+        order (str | None): The order of the rows, if any.
+        limit (int): The most rows to return.
+
+    Returns:
+        The SQL text.
+    """
     select_dimensions = [
         f"{layer.dimensions[name].expression} AS {name}" for name in group_by
     ]

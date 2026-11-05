@@ -7,16 +7,18 @@ every answer besides the judge.
 """
 
 import asyncio
+import functools
 import importlib
 import inspect
 import io
 import os
+import random
 import sys
 
 import pytest
 import requests
 
-from eval import red_team
+from eval import deepteam_loader, red_team
 from eval.live_bar import LiveBar
 from eval.llm_cache import CachedLLM
 from eval.terminal_table import terminal_tables
@@ -47,9 +49,9 @@ def test_telemetry_is_off_and_never_started():
 def test_reporting_libraries_refuse_to_work():
     import deepteam.telemetry
 
-    with pytest.raises(red_team.TelemetryBlocked):
+    with pytest.raises(deepteam_loader.TelemetryBlockedError):
         deepteam.telemetry.sentry_sdk.init(dsn="x")
-    with pytest.raises(red_team.TelemetryBlocked):
+    with pytest.raises(deepteam_loader.TelemetryBlockedError):
         deepteam.telemetry.Posthog(project_api_key="x")
 
 
@@ -57,6 +59,10 @@ def test_stand_ins_gone_after_deepteam_loads():
     """Other libraries still find no posthog and leave their telemetry off."""
     assert "sentry_sdk" not in sys.modules
     assert "posthog" not in sys.modules
+
+
+def offline_of_telemetry_off_sends_nothing(*args, **kwargs):
+    raise requests.RequestException("offline in tests")
 
 
 def test_telemetry_off_sends_nothing(monkeypatch):
@@ -69,32 +75,39 @@ def test_telemetry_off_sends_nothing(monkeypatch):
     monkeypatch.delenv("DEEPTEAM_TELEMETRY_OPT_OUT")
 
     # The public address lookup comes first; the test does not go online.
-    def offline(*args, **kwargs):
-        raise requests.RequestException("offline in tests")
 
-    monkeypatch.setattr(requests, "get", offline)
+    monkeypatch.setattr(requests, "get", offline_of_telemetry_off_sends_nothing)
     try:
-        with red_team.telemetry_locked_out(), pytest.raises(red_team.TelemetryBlocked):
+        with (
+            deepteam_loader.telemetry_locked_out(),
+            pytest.raises(deepteam_loader.TelemetryBlockedError),
+        ):
             importlib.reload(deepteam.telemetry)
         assert trace.get_tracer_provider() is provider_before
     finally:
         monkeypatch.setenv("DEEPTEAM_TELEMETRY_OPT_OUT", "YES")
-        with red_team.telemetry_locked_out():
+        with deepteam_loader.telemetry_locked_out():
             importlib.reload(deepteam.telemetry)
+
+
+class RecordingRedTeamer:
+    """Stands in for DeepTeam's RedTeamer: it remembers how it was set up and run."""
+
+    def __init__(self, seen, **kwargs):
+        self.seen = seen
+        seen["setup"] = kwargs
+
+    def red_team(self, **kwargs):
+        self.seen["run"] = kwargs
+        return type("Assessment", (), {"test_cases": []})()
 
 
 def test_scan_uploads_nothing_runs_serially(monkeypatch):
     seen = {}
 
-    class FakeRedTeamer:
-        def __init__(self, **kwargs):
-            seen["setup"] = kwargs
-
-        def red_team(self, **kwargs):
-            seen["run"] = kwargs
-            return type("Assessment", (), {"test_cases": []})()
-
-    monkeypatch.setattr(red_team, "RedTeamer", FakeRedTeamer)
+    monkeypatch.setattr(
+        red_team, "RedTeamer", functools.partial(RecordingRedTeamer, seen)
+    )
     attacker = object.__new__(red_team.JudgeModel)
     judge = object.__new__(red_team.JudgeModel)
 
@@ -140,15 +153,9 @@ def test_multi_turn_uses_our_attacker():
 def test_prepared_attack_is_passed_as_is(monkeypatch):
     seen = {}
 
-    class FakeRedTeamer:
-        def __init__(self, **kwargs):
-            pass
-
-        def red_team(self, **kwargs):
-            seen["attacks"] = kwargs["attacks"]
-            return type("Assessment", (), {"test_cases": []})()
-
-    monkeypatch.setattr(red_team, "RedTeamer", FakeRedTeamer)
+    monkeypatch.setattr(
+        red_team, "RedTeamer", functools.partial(RecordingRedTeamer, seen)
+    )
     attacker = object.__new__(red_team.JudgeModel)
     set_up = red_team.multi_turn_attacks(attacker, pilot=True)[0]
 
@@ -161,7 +168,7 @@ def test_prepared_attack_is_passed_as_is(monkeypatch):
         [set_up],
     )
 
-    assert seen["attacks"] == [set_up]
+    assert seen["run"]["attacks"] == [set_up]
 
 
 def test_every_setting_is_one_deepteam_takes():
@@ -183,6 +190,13 @@ def test_every_setting_is_one_deepteam_takes():
 # --- The attacker and judge model -----------------------------------------------
 
 
+def fake_provider_of_attacker_judge_use_guard_and_cache(
+    asked, provider=None, model=None, paid=False, temperature=None
+):
+    asked.append((provider, model))
+    return FakeLLM()
+
+
 @pytest.mark.parametrize(
     "name",
     [red_team.config.REDTEAM_ATTACKER_MODEL, red_team.config.REDTEAM_JUDGE_MODEL],
@@ -190,11 +204,11 @@ def test_every_setting_is_one_deepteam_takes():
 def test_attacker_judge_use_guard_and_cache(monkeypatch, tmp_path, name):
     asked = []
 
-    def fake_provider(provider=None, model=None, paid=False, temperature=None):
-        asked.append((provider, model))
-        return FakeLLM()
-
-    monkeypatch.setattr(red_team, "build_provider_llm", fake_provider)
+    monkeypatch.setattr(
+        red_team,
+        "build_provider_llm",
+        functools.partial(fake_provider_of_attacker_judge_use_guard_and_cache, asked),
+    )
 
     model = red_team.redteam_model(name, tmp_path)
 
@@ -309,6 +323,14 @@ def test_multi_turn_replays_from_cache(synthetic_db_path, fake_policy_index, tmp
     assert first in str(fake.requests[-1]["messages"])
 
 
+def user_turn(text):
+    return red_team.RTTurn(role="user", content=text)
+
+
+def parameter_names(function):
+    return list(inspect.signature(function).parameters)
+
+
 def test_multi_turn_counts_conversations(
     synthetic_db_path, fake_policy_index, tmp_path
 ):
@@ -327,16 +349,15 @@ def test_multi_turn_counts_conversations(
         multi_turn=True,
     )
     target.expected = bar.total = 2
-    user = lambda text: red_team.RTTurn(role="user", content=text)
 
     asyncio.run(target("Merhaba."))
     asyncio.run(
         target(
             "Devam.",
             [
-                user("Merhaba."),
+                user_turn("Merhaba."),
                 red_team.RTTurn(role="assistant", content="Bir."),
-                user("Devam."),
+                user_turn("Devam."),
             ],
         )
     )
@@ -375,17 +396,19 @@ def test_failed_check_shows_in_progress(tmp_path):
     )
 
 
+class OneAttackPerTypeRedTeamer:
+    def __init__(self, **kwargs):
+        pass
+
+    def red_team(self, **kwargs):
+        return type("Assessment", (), {"test_cases": []})()
+
+
 def test_scan_expects_one_attack_per_type(
     monkeypatch,
 ):
-    class FakeRedTeamer:
-        def __init__(self, **kwargs):
-            pass
 
-        def red_team(self, **kwargs):
-            return type("Assessment", (), {"test_cases": []})()
-
-    monkeypatch.setattr(red_team, "RedTeamer", FakeRedTeamer)
+    monkeypatch.setattr(red_team, "RedTeamer", OneAttackPerTypeRedTeamer)
     model = object.__new__(red_team.JudgeModel)
     target = red_team.Target("ops", "db", llm=None)
 
@@ -543,11 +566,11 @@ def test_daily_limit_stops_provider_calls(tmp_path):
     )
 
     for _ in range(3):
-        with pytest.raises(red_team.DailyQuotaUsedUp, match="tomorrow"):
+        with pytest.raises(red_team.DailyQuotaUsedUpError, match="tomorrow"):
             asyncio.run(model._ask("Write an attack."))
 
     assert provider.calls == 1
-    assert isinstance(model.stopped, red_team.DailyQuotaUsedUp)
+    assert isinstance(model.stopped, red_team.DailyQuotaUsedUpError)
 
 
 def test_call_limit_stops_the_target(synthetic_db_path, fake_policy_index, tmp_path):
@@ -557,29 +580,36 @@ def test_call_limit_stops_the_target(synthetic_db_path, fake_policy_index, tmp_p
     )
 
     for attack in ("first", "second"):
-        with pytest.raises(red_team.LiveCallLimitReached):
+        with pytest.raises(red_team.LiveCallLimitReachedError):
             asyncio.run(target(attack))
 
-    assert isinstance(target.stopped, red_team.LiveCallLimitReached)
+    assert isinstance(target.stopped, red_team.LiveCallLimitReachedError)
     assert target.checks == {}
 
 
 def test_first_blown_fuse_stops_the_scan():
     fine = type("Fuse", (), {"stopped": None})()
-    blown = type("Fuse", (), {"stopped": red_team.NoPaidCredit("no credit")})()
+    blown = type("Fuse", (), {"stopped": red_team.NoPaidCreditError("no credit")})()
 
     assert red_team.first_stop((fine, fine)) is None
     assert red_team.first_stop((fine, blown)) is blown.stopped
 
 
+def fake_provider_of_only_attacker_answers_are_limited(
+    asked, provider=None, model=None, paid=False, temperature=None, **kw
+):
+    asked.append(kw)
+    return FakeLLM()
+
+
 def test_only_attacker_answers_are_limited(monkeypatch, tmp_path):
     asked = []
 
-    def fake_provider(provider=None, model=None, paid=False, temperature=None, **kw):
-        asked.append(kw)
-        return FakeLLM()
-
-    monkeypatch.setattr(red_team, "build_provider_llm", fake_provider)
+    monkeypatch.setattr(
+        red_team,
+        "build_provider_llm",
+        functools.partial(fake_provider_of_only_attacker_answers_are_limited, asked),
+    )
 
     red_team.redteam_model("attacker", tmp_path, is_attacker=True)
     red_team.redteam_model("judge", tmp_path)
@@ -625,14 +655,21 @@ def test_pilot_tries_one_case():
 # --- Another attacker, to compare ------------------------------------------------
 
 
+def fake_provider_of_other_provider_attacker_gets_key(
+    asked, provider=None, model=None, paid=False, temperature=None
+):
+    asked.append((provider, model, paid, temperature))
+    return FakeLLM()
+
+
 def test_other_provider_attacker_gets_key(monkeypatch, tmp_path):
     asked = []
 
-    def fake_provider(provider=None, model=None, paid=False, temperature=None):
-        asked.append((provider, model, paid, temperature))
-        return FakeLLM()
-
-    monkeypatch.setattr(red_team, "build_provider_llm", fake_provider)
+    monkeypatch.setattr(
+        red_team,
+        "build_provider_llm",
+        functools.partial(fake_provider_of_other_provider_attacker_gets_key, asked),
+    )
 
     red_team.redteam_model(
         "gemini-3.8-flash", tmp_path, temperature=0.7, provider="gemini", paid=True
@@ -687,63 +724,69 @@ def test_results_name_attacker_and_provider():
 # --- Repeatable scans, the operations session alone, the short crescendo -------
 
 
-def test_seeded_scan_repeats_its_picks(monkeypatch):
-    import random
+class PicksRedTeamer:
+    """Stands in for RedTeamer: it records three draws of DeepTeam's own generator."""
 
+    def __init__(self, attack_simulator, picks, **kwargs):
+        self.attack_simulator = attack_simulator
+        self.picks = picks
+
+    def red_team(self, **kwargs):
+        self.picks.append([self.attack_simulator.random.random() for _ in range(3)])
+        return type("Assessment", (), {"test_cases": []})()
+
+
+def scan_with_seed(monkeypatch, attack_simulator, model, seed):
+    monkeypatch.setattr(attack_simulator, "random", random)
+    target = red_team.Target("ops", "db", llm=None)
+    red_team.scan(
+        target,
+        red_team.OPS_VULNERABILITIES,
+        red_team.OPS_PURPOSE,
+        model,
+        model,
+        red_team.ATTACKS,
+        seed,
+    )
+
+
+def test_seeded_scan_repeats_its_picks(monkeypatch):
     from deepteam.attacks.attack_simulator import attack_simulator
 
     # DeepTeam's own picks, after the scan has given it its generator.
     monkeypatch.setattr(attack_simulator, "random", random)
     picks = []
 
-    class FakeRedTeamer:
-        def __init__(self, **kwargs):
-            pass
-
-        def red_team(self, **kwargs):
-            picks.append([attack_simulator.random.random() for _ in range(3)])
-            return type("Assessment", (), {"test_cases": []})()
-
-    monkeypatch.setattr(red_team, "RedTeamer", FakeRedTeamer)
+    monkeypatch.setattr(
+        red_team,
+        "RedTeamer",
+        functools.partial(PicksRedTeamer, attack_simulator, picks),
+    )
     model = object.__new__(red_team.JudgeModel)
 
-    def run(seed):
-        monkeypatch.setattr(attack_simulator, "random", random)
-        target = red_team.Target("ops", "db", llm=None)
-        red_team.scan(
-            target,
-            red_team.OPS_VULNERABILITIES,
-            red_team.OPS_PURPOSE,
-            model,
-            model,
-            red_team.ATTACKS,
-            seed,
-        )
-
-    run(7)
+    scan_with_seed(monkeypatch, attack_simulator, model, 7)
     # Something else draws from the shared state in between, as a retry does.
     [random.random() for _ in range(5)]
-    run(7)
-    run(8)
+    scan_with_seed(monkeypatch, attack_simulator, model, 7)
+    scan_with_seed(monkeypatch, attack_simulator, model, 8)
 
     assert picks[0] == picks[1]
     assert picks[0] != picks[2]
 
 
-def test_no_seed_leaves_random_state_alone(monkeypatch):
-    import random
+class NoSeedRedTeamer:
+    def __init__(self, **kwargs):
+        pass
 
+    def red_team(self, **kwargs):
+        return type("Assessment", (), {"test_cases": []})()
+
+
+def test_no_seed_leaves_random_state_alone(monkeypatch):
     from deepteam.attacks.attack_simulator import attack_simulator
 
-    class FakeRedTeamer:
-        def __init__(self, **kwargs):
-            pass
-
-        def red_team(self, **kwargs):
-            return type("Assessment", (), {"test_cases": []})()
-
     monkeypatch.setattr(attack_simulator, "random", random)
-    monkeypatch.setattr(red_team, "RedTeamer", FakeRedTeamer)
+    monkeypatch.setattr(red_team, "RedTeamer", NoSeedRedTeamer)
     model = object.__new__(red_team.JudgeModel)
 
     red_team.scan(
@@ -795,8 +838,7 @@ def test_short_crescendo_prompt_keeps_fields():
         Template.crescendo_system_prompt = original
 
     assert len(short_text) < len(long_text) / 4
-    names = lambda function: list(inspect.signature(function).parameters)
-    assert names(red_team.short_crescendo_prompt) == names(original)
+    assert parameter_names(red_team.short_crescendo_prompt) == parameter_names(original)
     # What the attack's JSON reader needs and what it fills in.
     for key in (
         "generated_question",
@@ -881,45 +923,56 @@ def test_summary_splits_refusal_from_failure():
     assert result["errors"] == 3
 
 
+def run_of_customer_judge_knows_the_orders(
+    judge, session, purpose, vulnerabilities, allowed
+):
+    target = red_team.Target(session, "db", llm=None)
+    red_team.scan(
+        target,
+        vulnerabilities,
+        purpose,
+        judge,
+        judge,
+        red_team.ATTACKS,
+        None,
+        allowed,
+    )
+
+
+class SystemPromptRedTeamer:
+    """Stands in for RedTeamer: it records the system prompt of the first judge."""
+
+    def __init__(self, seen, **kwargs):
+        self.seen = seen
+
+    def red_team(self, **kwargs):
+        # DeepTeam's BOLA judge reads this when it is made.
+        self.seen.append(
+            kwargs["vulnerabilities"][0].evaluation_model.get_system_prompt()
+        )
+        return type("Assessment", (), {"test_cases": []})()
+
+
 def test_customer_judge_knows_the_orders(
     monkeypatch,
 ):
     seen = []
 
-    class FakeRedTeamer:
-        def __init__(self, **kwargs):
-            pass
-
-        def red_team(self, **kwargs):
-            # DeepTeam's BOLA judge reads this when it is made.
-            seen.append(
-                kwargs["vulnerabilities"][0].evaluation_model.get_system_prompt()
-            )
-            return type("Assessment", (), {"test_cases": []})()
-
-    monkeypatch.setattr(red_team, "RedTeamer", FakeRedTeamer)
+    monkeypatch.setattr(
+        red_team, "RedTeamer", functools.partial(SystemPromptRedTeamer, seen)
+    )
     judge = red_team.redteam_model("m", ".")
 
-    def run(session, purpose, vulnerabilities, allowed):
-        target = red_team.Target(session, "db", llm=None)
-        red_team.scan(
-            target,
-            vulnerabilities,
-            purpose,
-            judge,
-            judge,
-            red_team.ATTACKS,
-            None,
-            allowed,
-        )
-
-    run(
+    run_of_customer_judge_knows_the_orders(
+        judge,
         "customer",
         red_team.CUSTOMER_PURPOSE,
         red_team.CUSTOMER_VULNERABILITIES,
         red_team.CUSTOMER_ENTITIES,
     )
-    run("ops", red_team.OPS_PURPOSE, red_team.OPS_VULNERABILITIES, "")
+    run_of_customer_judge_knows_the_orders(
+        judge, "ops", red_team.OPS_PURPOSE, red_team.OPS_VULNERABILITIES, ""
+    )
 
     for alias in ("SIP-1", "SIP-2", "SIP-3"):
         assert alias in seen[0]

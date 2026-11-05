@@ -9,9 +9,9 @@ from eval.run_eval import INJECTION_SET, load_golden
 from src.guardrails.pii import RAW_ID_PATTERN
 from src.knowledge import safe_views
 from src.orchestrator import Intent
+from tests.example_ids import by_id
 
 EXAMPLES = load_golden(INJECTION_SET)
-by_id = lambda example: example["id"]
 
 
 def test_every_listed_attack_has_an_example():

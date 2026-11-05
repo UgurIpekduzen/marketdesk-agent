@@ -83,12 +83,14 @@ def test_english_ops_prompt_asks_english(synthetic_db_path):
 # --- Order server: amounts written for the customer ------------------------
 
 
-def call_server(db_path, language, name, arguments):
-    async def run():
-        async with OrdersClient(db_path, ALICE, language) as orders:
-            return await orders.call(name, arguments)
+async def run_of_call_server(db_path, language, name, arguments):
+    async with OrdersClient(db_path, ALICE, language) as orders:
+        return await orders.call(name, arguments)
 
-    return asyncio.run(run())
+
+def call_server(db_path, language, name, arguments):
+
+    return asyncio.run(run_of_call_server(db_path, language, name, arguments))
 
 
 def test_english_server_formats_amounts(synthetic_db_path):
@@ -186,19 +188,27 @@ def test_turkish_ops_gets_metrics_as_listed(synthetic_db_path):
 # --- Router and support agent ---------------------------------------------
 
 
-def test_english_router_refuses_in_english(synthetic_db_path):
-    async def run():
-        router = Orchestrator.for_ops(
-            synthetic_db_path, FakeLLM(script=["out_of_scope"]), Language.EN
-        )
-        try:
-            return await router.ask("Write me a poem")
-        finally:
-            router.close()
+async def run_of_english_router_refuses_in_english(synthetic_db_path):
+    router = Orchestrator.for_ops(
+        synthetic_db_path, FakeLLM(script=["out_of_scope"]), Language.EN
+    )
+    try:
+        return await router.ask("Write me a poem")
+    finally:
+        router.close()
 
-    answer = asyncio.run(run())
+
+def test_english_router_refuses_in_english(synthetic_db_path):
+
+    answer = asyncio.run(run_of_english_router_refuses_in_english(synthetic_db_path))
 
     assert answer.display == messages_en.ROUTER_OUT_OF_SCOPE_OPS
+
+
+async def scenario_of_english_approval_texts(agent):
+    reply = await agent.ask("o_day14 arrived damaged, I want to return it.")
+    summary = agent.approval_summary(reply.awaiting_approval)
+    return summary, await agent.decline(), await agent.approve()
 
 
 def test_english_approval_texts(synthetic_db_path, fake_policy_index):
@@ -214,13 +224,12 @@ def test_english_approval_texts(synthetic_db_path, fake_policy_index):
         ]
     )
 
-    async def scenario(agent):
-        reply = await agent.ask("o_day14 arrived damaged, I want to return it.")
-        summary = agent.approval_summary(reply.awaiting_approval)
-        return summary, await agent.decline(), await agent.approve()
-
     summary, declined, nothing = with_agent(
-        synthetic_db_path, fake_policy_index, fake, scenario, language=Language.EN
+        synthetic_db_path,
+        fake_policy_index,
+        fake,
+        scenario_of_english_approval_texts,
+        language=Language.EN,
     )
 
     assert summary == (
@@ -236,15 +245,20 @@ def test_english_approval_texts(synthetic_db_path, fake_policy_index):
     )
 
 
+async def scenario_of_english_router_tells_agent_language(router):
+    await router.ask("Hello")
+    return router.language
+
+
 def test_english_router_tells_agent_language(synthetic_db_path, fake_policy_index):
     fake = FakeLLM(script=["support", "Hello."])
 
-    async def scenario(router):
-        await router.ask("Hello")
-        return router.language
-
     language = with_customer_router(
-        synthetic_db_path, fake_policy_index, fake, scenario, language=Language.EN
+        synthetic_db_path,
+        fake_policy_index,
+        fake,
+        scenario_of_english_router_tells_agent_language,
+        language=Language.EN,
     )
 
     assert language == Language.EN

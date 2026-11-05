@@ -12,6 +12,7 @@ are wired through the same build path and run this check again.
 """
 
 import asyncio
+import functools
 import re
 import sqlite3
 
@@ -49,12 +50,14 @@ def realistic_db(synthetic_db, synthetic_db_path):
     conn.close()
 
 
-def run_agent(llm, tools, message):
-    async def run():
-        agent = FunctionAgent(tools=tools, llm=llm, system_prompt=SYSTEM_PROMPT)
-        return await agent.run(message, max_iterations=8)
+async def run_of_run_agent(tools, llm, message):
+    agent = FunctionAgent(tools=tools, llm=llm, system_prompt=SYSTEM_PROMPT)
+    return await agent.run(message, max_iterations=8)
 
-    return str(asyncio.run(run()))
+
+def run_agent(llm, tools, message):
+
+    return str(asyncio.run(run_of_run_agent(tools, llm, message)))
 
 
 def tool_results(fake):
@@ -75,52 +78,104 @@ def assert_nothing_personal_was_sent(fake):
     assert ZIP_PREFIX not in sent
 
 
+class CustomerToolkit:
+    """The tools of a customer session, as plain functions the model may call."""
+
+    def __init__(self, session, conn, policy_index):
+        self.session = session
+        self.conn = conn
+        self.policy_index = policy_index
+
+    def get_order_status_tool(self, order_ref: str) -> dict:
+        """Return the status of one order of the current customer."""
+        return get_order_status(self.session, self.conn, order_ref)
+
+    def list_customer_orders_tool(
+        self, limit: int = 5, status: str | None = None
+    ) -> dict:
+        """List the current customer's orders."""
+        return list_customer_orders(self.session, self.conn, limit, status)
+
+    def check_return_eligibility_tool(self, order_ref: str, reason: str) -> dict:
+        """Decide whether an order can be returned."""
+        return check_return_eligibility(self.session, self.conn, order_ref, reason)
+
+    def create_return_request_tool(
+        self, order_ref: str, reason: str, amount: str
+    ) -> dict:
+        """Open a return request."""
+        return create_return_request(self.session, self.conn, order_ref, reason, amount)
+
+    def search_policies_tool(self, query: str, k: int = 5) -> dict:
+        """Search the policy documents."""
+        return search_policies(self.policy_index, query, k)
+
+    def escalate_to_human_tool(self, summary: str, priority: str = "normal") -> dict:
+        """Hand the case over to a person."""
+        return escalate_to_human(self.session, self.conn, summary, priority)
+
+    def tools(self) -> list[FunctionTool]:
+        return [
+            FunctionTool.from_defaults(
+                function, name=function.__name__.removesuffix("_tool")
+            )
+            for function in (
+                self.get_order_status_tool,
+                self.list_customer_orders_tool,
+                self.check_return_eligibility_tool,
+                self.create_return_request_tool,
+                self.search_policies_tool,
+                self.escalate_to_human_tool,
+            )
+        ]
+
+
 @pytest.fixture
 def customer(realistic_db, fake_policy_index):
     """A customer session, its tools, and the stand-in model behind the guard."""
     conn, _ = realistic_db
     session = open_session(conn, real_shaped(ALICE))
     fake = FakeLLM()
-
-    def get_order_status_tool(order_ref: str) -> dict:
-        """Return the status of one order of the current customer."""
-        return get_order_status(session, conn, order_ref)
-
-    def list_customer_orders_tool(limit: int = 5, status: str | None = None) -> dict:
-        """List the current customer's orders."""
-        return list_customer_orders(session, conn, limit, status)
-
-    def check_return_eligibility_tool(order_ref: str, reason: str) -> dict:
-        """Decide whether an order can be returned."""
-        return check_return_eligibility(session, conn, order_ref, reason)
-
-    def create_return_request_tool(order_ref: str, reason: str, amount: str) -> dict:
-        """Open a return request."""
-        return create_return_request(session, conn, order_ref, reason, amount)
-
-    def search_policies_tool(query: str, k: int = 5) -> dict:
-        """Search the policy documents."""
-        return search_policies(fake_policy_index, query, k)
-
-    def escalate_to_human_tool(summary: str, priority: str = "normal") -> dict:
-        """Hand the case over to a person."""
-        return escalate_to_human(session, conn, summary, priority)
-
-    tools = [
-        FunctionTool.from_defaults(
-            function, name=function.__name__.removesuffix("_tool")
-        )
-        for function in (
-            get_order_status_tool,
-            list_customer_orders_tool,
-            check_return_eligibility_tool,
-            create_return_request_tool,
-            search_policies_tool,
-            escalate_to_human_tool,
-        )
-    ]
+    tools = CustomerToolkit(session, conn, fake_policy_index).tools()
     llm = GuardedLLM(inner=fake, redactor=session.redactor())
     return session, tools, llm, fake
+
+
+class OpsToolkit:
+    """The tools of an operations session."""
+
+    def __init__(self, conn, db_path):
+        self.conn = conn
+        self.db_path = db_path
+
+    def list_metrics_tool(self) -> dict:
+        """List the metrics."""
+        return list_metrics()
+
+    def run_metric_tool(
+        self,
+        metric_name: str,
+        filters: dict | None = None,
+        group_by: list | None = None,
+    ) -> dict:
+        """Compute a metric."""
+        return run_metric(self.conn, metric_name, filters, group_by)
+
+    def run_sql_tool(self, query: str) -> dict:
+        """Run a read-only SELECT."""
+        return run_sql(self.db_path, query)
+
+    def tools(self) -> list[FunctionTool]:
+        return [
+            FunctionTool.from_defaults(
+                function, name=function.__name__.removesuffix("_tool")
+            )
+            for function in (
+                self.list_metrics_tool,
+                self.run_metric_tool,
+                self.run_sql_tool,
+            )
+        ]
 
 
 @pytest.fixture
@@ -128,27 +183,7 @@ def ops(realistic_db):
     """An operations session: no customer, so ids are masked, not aliased."""
     conn, db_path = realistic_db
     fake = FakeLLM()
-
-    def list_metrics_tool() -> dict:
-        """List the metrics."""
-        return list_metrics()
-
-    def run_metric_tool(
-        metric_name: str, filters: dict | None = None, group_by: list | None = None
-    ) -> dict:
-        """Compute a metric."""
-        return run_metric(conn, metric_name, filters, group_by)
-
-    def run_sql_tool(query: str) -> dict:
-        """Run a read-only SELECT."""
-        return run_sql(db_path, query)
-
-    tools = [
-        FunctionTool.from_defaults(
-            function, name=function.__name__.removesuffix("_tool")
-        )
-        for function in (list_metrics_tool, run_metric_tool, run_sql_tool)
-    ]
+    tools = OpsToolkit(conn, db_path).tools()
     return tools, GuardedLLM(inner=fake, redactor=Redactor()), fake
 
 
@@ -271,7 +306,9 @@ def test_escalation(customer):
             (
                 "escalate_to_human",
                 {
-                    "summary": "SIP-1: teslim tarihi kayıtlı değil, müşteri iade istiyor."
+                    "summary": (
+                        "SIP-1: teslim tarihi kayıtlı değil, müşteri iade istiyor."
+                    )
                 },
             )
         ],
@@ -340,7 +377,8 @@ def test_free_sql_question(ops):
             (
                 "run_sql",
                 {
-                    "query": "SELECT i.product_category_en, COUNT(DISTINCT o.order_key) "
+                    "query": "SELECT i.product_category_en, "
+                    "COUNT(DISTINCT o.order_key) "
                     "AS orders FROM v_orders AS o JOIN v_order_items AS i "
                     "ON i.order_key = o.order_key GROUP BY 1 "
                     "HAVING COUNT(DISTINCT o.order_key) >= 10 ORDER BY 2 DESC LIMIT 5"
@@ -392,18 +430,33 @@ def test_sql_injection_attempt(ops):
 # --- The Support Agent itself, with its order tools over MCP ------------
 
 
+def run_of_support(db_path, fake_policy_index, fake, scenario):
+    return with_agent(
+        db_path, fake_policy_index, fake, scenario, customer=real_shaped(ALICE)
+    )
+
+
 @pytest.fixture
 def support(realistic_db, fake_policy_index):
     """Runs a scenario with the project's Support Agent and a stand-in model."""
     _, db_path = realistic_db
     fake = FakeLLM()
 
-    def run(scenario):
-        return with_agent(
-            db_path, fake_policy_index, fake, scenario, customer=real_shaped(ALICE)
-        )
+    return (
+        functools.partial(run_of_support, db_path, fake_policy_index, fake),
+        fake,
+        db_path,
+    )
 
-    return run, fake, db_path
+
+async def scenario_of_return_flow_with_approval(order_id, agent):
+    reply = await agent.ask(
+        f"{order_id} hasarlı geldi, Campinas 13010'a gönderilmişti. İade istiyorum."
+    )
+    summary = agent.approval_summary(reply.awaiting_approval)
+    shown = await agent.approve()
+    await agent.ask("Teşekkürler.")
+    return summary, shown
 
 
 def test_return_flow_with_approval(support):
@@ -421,16 +474,9 @@ def test_return_flow_with_approval(support):
         "Rica ederim.",
     ]
 
-    async def scenario(agent):
-        reply = await agent.ask(
-            f"{order_id} hasarlı geldi, Campinas 13010'a gönderilmişti. İade istiyorum."
-        )
-        summary = agent.approval_summary(reply.awaiting_approval)
-        shown = await agent.approve()
-        await agent.ask("Teşekkürler.")
-        return summary, shown
-
-    summary, shown = run(scenario)
+    summary, shown = run(
+        functools.partial(scenario_of_return_flow_with_approval, order_id)
+    )
 
     assert "SIP-1" in summary
     assert "Talep numarası: 3" in shown
@@ -495,24 +541,39 @@ def test_raw_id_in_tool_argument_is_masked(support):
 # --- The guard as the last line -----------------------------------------
 
 
+def leaky_tool_of_leaky_tool_never_reaches_provider(
+    order_id, session, order_ref: str
+) -> dict:
+    """A broken tool: returns exactly what must never be sent."""
+    return {
+        "order_id": order_id,
+        "customer_unique_id": session.customer_unique_id,
+        "customer_city": CITY.title(),
+        "customer_zip_code_prefix": ZIP_PREFIX,
+        "contact": "ayse@example.com, +90 532 123 45 67",
+        "status": "delivered",
+    }
+
+
 def test_leaky_tool_never_reaches_provider(customer):
     session, _, llm, fake = customer
     order_id = real_shaped("o_day14")
 
-    def leaky_tool(order_ref: str) -> dict:
-        """A broken tool: returns exactly what must never be sent."""
-        return {
-            "order_id": order_id,
-            "customer_unique_id": session.customer_unique_id,
-            "customer_city": CITY.title(),
-            "customer_zip_code_prefix": ZIP_PREFIX,
-            "contact": "ayse@example.com, +90 532 123 45 67",
-            "status": "delivered",
-        }
-
     fake.script = [[("leaky_tool", {"order_ref": "SIP-1"})], "Teslim edildi."]
 
-    run_agent(llm, [FunctionTool.from_defaults(leaky_tool)], "Siparişim nerede?")
+    run_agent(
+        llm,
+        [
+            FunctionTool.from_defaults(
+                functools.partial(
+                    leaky_tool_of_leaky_tool_never_reaches_provider, order_id, session
+                ),
+                name="leaky_tool",
+                description="A broken tool: returns exactly what must never be sent.",
+            )
+        ],
+        "Siparişim nerede?",
+    )
 
     result = tool_results(fake)[0]
     assert "delivered" in result
@@ -524,17 +585,30 @@ def test_leaky_tool_never_reaches_provider(customer):
     assert_nothing_personal_was_sent(fake)
 
 
+def leaky_tool_of_same_run_leaks_without_the_guard(session, order_ref: str) -> dict:
+    """A broken tool: returns exactly what must never be sent."""
+    return {"customer_unique_id": session.customer_unique_id, "city": CITY}
+
+
 def test_same_run_leaks_without_the_guard(customer):
     # Shows that the check above can fail: the agent talks to the model directly.
     session, _, _, fake = customer
 
-    def leaky_tool(order_ref: str) -> dict:
-        """A broken tool: returns exactly what must never be sent."""
-        return {"customer_unique_id": session.customer_unique_id, "city": CITY}
-
     fake.script = [[("leaky_tool", {"order_ref": "SIP-1"})], "Teslim edildi."]
 
-    run_agent(fake, [FunctionTool.from_defaults(leaky_tool)], "Siparişim nerede?")
+    run_agent(
+        fake,
+        [
+            FunctionTool.from_defaults(
+                functools.partial(
+                    leaky_tool_of_same_run_leaks_without_the_guard, session
+                ),
+                name="leaky_tool",
+                description="A broken tool: returns exactly what must never be sent.",
+            )
+        ],
+        "Siparişim nerede?",
+    )
 
     assert RAW_ID_PATTERN.findall(fake.sent_text()) != []
     assert CITY in fake.sent_text()

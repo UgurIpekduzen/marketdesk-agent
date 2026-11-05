@@ -57,6 +57,8 @@ NOT_EMBEDDED = ["file", "number", "rules"]
 
 @dataclass(frozen=True)
 class Section:
+    """One numbered section of a policy document."""
+
     file: str  # file name without .md, for example "returns"
     document: str  # the document's title
     number: int
@@ -66,21 +68,31 @@ class Section:
 
     @property
     def id(self) -> str:
+        """Stable id of the section: file name and number."""
         return f"{self.file}#{self.number}"
 
     @property
     def citation(self) -> str:
+        """The citation shown to the person: document title and section number."""
         return messages.POLICY_CITATION.format(
             document=self.document, number=self.number
         )
 
     @property
     def embedding_text(self) -> str:
+        """The text that is embedded: title, heading and body."""
         return f"{self.document}: {self.heading}\n{self.text}"
 
 
 def read_sections(policies_dir: Path = POLICIES_DIR) -> list[Section]:
-    """Split every policy document into its numbered sections."""
+    """Split every policy document into its numbered sections.
+
+    Args:
+        policies_dir (Path): The folder with the policy documents.
+
+    Returns:
+        Every numbered section of every document.
+    """
     sections = []
     for path in sorted(policies_dir.glob("*.md")):
         introduction, *parts = SECTION_START.split(path.read_text(encoding="utf-8"))
@@ -103,7 +115,14 @@ def read_sections(policies_dir: Path = POLICIES_DIR) -> list[Section]:
 
 
 def source_hash(sections: list[Section]) -> str:
-    """A fingerprint of everything the stored vectors depend on."""
+    """A fingerprint of everything the stored vectors depend on.
+
+    Args:
+        sections (list[Section]): The policy sections.
+
+    Returns:
+        A hash of the sections and the embedding model.
+    """
     content = {
         "sections": [asdict(section) for section in sections],
         "model": [
@@ -117,7 +136,14 @@ def source_hash(sections: list[Section]) -> str:
 
 
 def section_metadata(section: Section) -> dict:
-    """What is stored next to a section's vector (Chroma takes flat values)."""
+    """What is stored next to a section's vector (Chroma takes flat values).
+
+    Args:
+        section (Section): A policy section.
+
+    Returns:
+        The values stored next to its vector.
+    """
     return {
         "file": section.file,
         "document": section.document,
@@ -128,7 +154,16 @@ def section_metadata(section: Section) -> dict:
 
 
 def search_result(text: str, metadata: dict, distance: float) -> dict:
-    """One search result, as the policy tool returns it."""
+    """One search result, as the policy tool returns it.
+
+    Args:
+        text (str): The section text.
+        metadata (dict): The metadata stored with the section.
+        distance (float): The cosine distance of the section from the query.
+
+    Returns:
+        The result in the shape the policy tool returns.
+    """
     return {
         "citation": messages.POLICY_CITATION.format(
             document=metadata["document"], number=metadata["number"]
@@ -144,6 +179,14 @@ def search_result(text: str, metadata: dict, distance: float) -> dict:
 
 
 def chroma_client(path: Path) -> chromadb.ClientAPI:
+    """Open a persistent Chroma client at the path, with telemetry off.
+
+    Args:
+        path (Path): The folder of the index.
+
+    Returns:
+        The Chroma client.
+    """
     return chromadb.PersistentClient(
         path=str(path), settings=chromadb.Settings(anonymized_telemetry=False)
     )
@@ -174,6 +217,14 @@ class E5Embedding(BaseEmbedding):
 
 
 def section_node(section: Section) -> TextNode:
+    """Make the LlamaIndex node that stores one section.
+
+    Args:
+        section (Section): A policy section.
+
+    Returns:
+        The node that stores it.
+    """
     return TextNode(
         id_=section.id,
         text=section.text,
@@ -190,7 +241,16 @@ def build_index(
     index_dir: Path = INDEX_DIR,
     policies_dir: Path = POLICIES_DIR,
 ) -> int:
-    """Embed every section and write the index from scratch."""
+    """Embed every section and write the index from scratch.
+
+    Args:
+        embedder (Embedder): The model that embeds the sections.
+        index_dir (Path): Where the index is written.
+        policies_dir (Path): The folder with the policy documents.
+
+    Returns:
+        The number of sections written.
+    """
     sections = read_sections(policies_dir)
     # Built in a new folder and then moved into place: Chroma remembers the
     # folders it has opened in this process, so writing over an old index
@@ -236,13 +296,22 @@ class PolicyIndex:
 
     @property
     def source_hash(self) -> str:
+        """Hash of the policy files the index was built from."""
         return self._collection.metadata["source_hash"]
 
     def __len__(self) -> int:
         return self._collection.count()
 
     def search(self, query: str, k: int) -> list[dict]:
-        """The k sections closest to the query, best first."""
+        """The k sections closest to the query, best first.
+
+        Args:
+            query (str): The question.
+            k (int): How many sections to return at most.
+
+        Returns:
+            The closest sections, best first.
+        """
         retriever = self._index.as_retriever(similarity_top_k=min(k, len(self)))
         return [
             # ChromaVectorStore gives exp(-distance) as the score; the distance

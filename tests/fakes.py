@@ -27,6 +27,14 @@ from llama_index.core.tools import ToolSelection
 from pydantic import Field
 
 
+async def stream_of_astream_chat(response):
+    yield response
+
+
+async def stream_of_astream_complete(response):
+    yield response
+
+
 class FakeLLM(FunctionCallingLLM):
     script: list = Field(default_factory=list)
     # Every request, as the provider would receive it.
@@ -82,10 +90,7 @@ class FakeLLM(FunctionCallingLLM):
     async def astream_chat(self, messages, **kwargs):
         response = self._answer(messages, **kwargs)
 
-        async def stream():
-            yield response
-
-        return stream()
+        return stream_of_astream_chat(response)
 
     def complete(self, prompt, formatted=False, **kwargs):
         self.requests.append({"prompt": prompt})
@@ -100,10 +105,7 @@ class FakeLLM(FunctionCallingLLM):
     async def astream_complete(self, prompt, formatted=False, **kwargs):
         response = self.complete(prompt, formatted, **kwargs)
 
-        async def stream():
-            yield response
-
-        return stream()
+        return stream_of_astream_complete(response)
 
     def _prepare_chat_with_tools(
         self, tools, user_msg=None, chat_history=None, **kwargs

@@ -6,6 +6,7 @@ the loop limits and the log. Whether the real model asks a clarifying
 question or declines politely is checked with `task agent:check`, not here.
 """
 
+import functools
 import logging
 import sqlite3
 
@@ -40,16 +41,17 @@ def fake():
     return FakeLLM()
 
 
+def run_scenario_of_run(synthetic_db_path, fake_policy_index, fake, scenario, **kwargs):
+    return with_agent(synthetic_db_path, fake_policy_index, fake, scenario, **kwargs)
+
+
 @pytest.fixture
 def run(synthetic_db_path, fake_policy_index, fake):
     """Run a scenario with the agent; returns what the scenario returns."""
 
-    def run_scenario(scenario, **kwargs):
-        return with_agent(
-            synthetic_db_path, fake_policy_index, fake, scenario, **kwargs
-        )
-
-    return run_scenario
+    return functools.partial(
+        run_scenario_of_run, synthetic_db_path, fake_policy_index, fake
+    )
 
 
 @pytest.fixture
@@ -316,6 +318,11 @@ def test_personal_values_come_masked(run, fake):
 # --- Human approval -------------------------------------------------------
 
 
+async def scenario_of_request_waits_for_approval(agent):
+    reply = await agent.ask("o_day14 hasarlı geldi, iade etmek istiyorum.")
+    return reply, agent.approval_summary(reply.awaiting_approval)
+
+
 def test_request_waits_for_approval(run, fake, synthetic_db_path):
     fake.script = [
         [("check_return_eligibility", {"order_ref": "o_day14", "reason": "damaged"})],
@@ -328,11 +335,7 @@ def test_request_waits_for_approval(run, fake, synthetic_db_path):
         "115,00 BRL tutarındaki iade için onayınız istenecek.",
     ]
 
-    async def scenario(agent):
-        reply = await agent.ask("o_day14 hasarlı geldi, iade etmek istiyorum.")
-        return reply, agent.approval_summary(reply.awaiting_approval)
-
-    reply, summary = run(scenario)
+    reply, summary = run(scenario_of_request_waits_for_approval)
 
     assert tool_results(fake)[1]["error"] == "APPROVAL_REQUIRED"
     assert reply.awaiting_approval == {
@@ -352,16 +355,19 @@ def test_request_waits_for_approval(run, fake, synthetic_db_path):
     )
 
 
+async def scenario_of_approval_writes_one_row_no_model(fake, agent):
+    await agent.ask("o_day14 hasarlı geldi, iade etmek istiyorum.")
+    calls_before = len(fake.requests)
+    shown = await agent.approve()
+    return shown, len(fake.requests) - calls_before
+
+
 def test_approval_writes_one_row_no_model(run, fake, synthetic_db_path):
     fake.script = [[RETURN_CALL], "Onayınız istenecek."]
 
-    async def scenario(agent):
-        await agent.ask("o_day14 hasarlı geldi, iade etmek istiyorum.")
-        calls_before = len(fake.requests)
-        shown = await agent.approve()
-        return shown, len(fake.requests) - calls_before
-
-    shown, model_calls_for_the_write = run(scenario)
+    shown, model_calls_for_the_write = run(
+        functools.partial(scenario_of_approval_writes_one_row_no_model, fake)
+    )
 
     assert shown == (
         "İade talebiniz oluşturuldu. Talep numarası: 3, durum: inceleme bekliyor. "
@@ -372,15 +378,16 @@ def test_approval_writes_one_row_no_model(run, fake, synthetic_db_path):
     assert model_calls_for_the_write == 0
 
 
+async def scenario_of_declining_writes_nothing(agent):
+    await agent.ask("o_day14 hasarlı geldi, iade etmek istiyorum.")
+    shown = await agent.decline()
+    return shown, (await agent.ask("Tamam.")).awaiting_approval
+
+
 def test_declining_writes_nothing(run, fake, synthetic_db_path):
     fake.script = [[RETURN_CALL], "Onayınız istenecek.", "Peki."]
 
-    async def scenario(agent):
-        await agent.ask("o_day14 hasarlı geldi, iade etmek istiyorum.")
-        shown = await agent.decline()
-        return shown, (await agent.ask("Tamam.")).awaiting_approval
-
-    shown, pending_afterwards = run(scenario)
+    shown, pending_afterwards = run(scenario_of_declining_writes_nothing)
 
     assert shown == messages.APPROVAL_DECLINED
     assert pending_afterwards is None
@@ -418,15 +425,16 @@ def last_customer_text(request: dict) -> str:
     return request["messages"][-1]["blocks"][0]["text"]
 
 
+async def scenario_of_outcome_is_in_the_instructions(agent):
+    await agent.ask("o_day14 hasarlı geldi, iade etmek istiyorum.")
+    await agent.approve()
+    await agent.ask("Teşekkürler.")
+
+
 def test_outcome_is_in_the_instructions(run, fake):
     fake.script = [[RETURN_CALL], "Onayınız istenecek.", "Rica ederim."]
 
-    async def scenario(agent):
-        await agent.ask("o_day14 hasarlı geldi, iade etmek istiyorum.")
-        await agent.approve()
-        await agent.ask("Teşekkürler.")
-
-    run(scenario)
+    run(scenario_of_outcome_is_in_the_instructions)
 
     told = instructions(fake.requests[-1])
     assert told.startswith(system_prompt())
@@ -440,6 +448,13 @@ def test_outcome_is_in_the_instructions(run, fake):
     assert last_customer_text(fake.requests[-1]) == "Teşekkürler."
 
 
+async def scenario_of_record_grows_with_every_click(agent):
+    await agent.ask("o_day14 hasarlı geldi, iade etmek istiyorum.")
+    await agent.decline()
+    await agent.ask("Tamam.")
+    await agent.ask("Başka bir sorum var.")
+
+
 def test_record_grows_with_every_click(run, fake):
     fake.script = [
         [RETURN_CALL],
@@ -448,13 +463,7 @@ def test_record_grows_with_every_click(run, fake):
         "Buyurun.",
     ]
 
-    async def scenario(agent):
-        await agent.ask("o_day14 hasarlı geldi, iade etmek istiyorum.")
-        await agent.decline()
-        await agent.ask("Tamam.")
-        await agent.ask("Başka bir sorum var.")
-
-    run(scenario)
+    run(scenario_of_record_grows_with_every_click)
 
     told = instructions(fake.requests[-1])
     assert told.endswith(
@@ -463,14 +472,15 @@ def test_record_grows_with_every_click(run, fake):
     assert last_customer_text(fake.requests[-1]) == "Başka bir sorum var."
 
 
+async def scenario_of_record_present_from_the_start(agent):
+    await agent.ask("o_day14 hasarlı geldi, iade etmek istiyorum.")
+    await agent.ask("Kaç gün sürer?")
+
+
 def test_record_present_from_the_start(run, fake):
     fake.script = [[RETURN_CALL], "Onayınız istenecek.", "Peki."]
 
-    async def scenario(agent):
-        await agent.ask("o_day14 hasarlı geldi, iade etmek istiyorum.")
-        await agent.ask("Kaç gün sürer?")
-
-    run(scenario)
+    run(scenario_of_record_present_from_the_start)
 
     # The same instructions on every turn, until a click changes them.
     assert {instructions(request) for request in fake.requests} == {
@@ -515,24 +525,30 @@ def test_typed_system_note_marked_as_theirs(run, fake):
     )
 
 
+async def scenario_of_approval_that_fails_is_reported(synthetic_db_path, agent):
+    await agent.ask("o_day14 hasarlı geldi, iade etmek istiyorum.")
+    # Someone else opens a request for the order before the customer says yes.
+    conn = sqlite3.connect(synthetic_db_path)
+    with conn:
+        conn.execute(
+            "INSERT INTO return_requests (order_id, customer_unique_id, reason, "
+            "refund_amount, status, created_at) VALUES "
+            "('o_day14', ?, 'damaged', 115.0, 'PENDING_REVIEW', "
+            "'2018-09-01 00:00:00')",
+            (ALICE,),
+        )
+    conn.close()
+    return await agent.approve()
+
+
 def test_approval_that_fails_is_reported(run, fake, synthetic_db_path):
     fake.script = [[RETURN_CALL], "Onayınız istenecek."]
 
-    async def scenario(agent):
-        await agent.ask("o_day14 hasarlı geldi, iade etmek istiyorum.")
-        # Someone else opens a request for the order before the customer says yes.
-        conn = sqlite3.connect(synthetic_db_path)
-        with conn:
-            conn.execute(
-                "INSERT INTO return_requests (order_id, customer_unique_id, reason, "
-                "refund_amount, status, created_at) VALUES "
-                "('o_day14', ?, 'damaged', 115.0, 'PENDING_REVIEW', '2018-09-01 00:00:00')",
-                (ALICE,),
-            )
-        conn.close()
-        return await agent.approve()
-
-    shown = run(scenario)
+    shown = run(
+        functools.partial(
+            scenario_of_approval_that_fails_is_reported, synthetic_db_path
+        )
+    )
 
     assert shown == messages.RETURN_REQUEST_NOT_CREATED.format(
         reason=messages.DUPLICATE_REQUEST
@@ -540,11 +556,13 @@ def test_approval_that_fails_is_reported(run, fake, synthetic_db_path):
     assert request_count(synthetic_db_path) == 3
 
 
-def test_approve_without_pending_writes_none(run, synthetic_db_path):
-    async def scenario(agent):
-        return await agent.approve()
+async def scenario_of_approve_without_pending_writes_none(agent):
+    return await agent.approve()
 
-    shown = run(scenario)
+
+def test_approve_without_pending_writes_none(run, synthetic_db_path):
+
+    shown = run(scenario_of_approve_without_pending_writes_none)
 
     assert shown == messages.RETURN_REQUEST_NOT_CREATED.format(
         reason=messages.NOTHING_PENDING

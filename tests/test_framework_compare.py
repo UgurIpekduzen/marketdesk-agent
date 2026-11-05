@@ -30,13 +30,14 @@ def test_wrapped_run_makes_the_calls_asked():
         assert made == model_calls
 
 
+async def play_of_light_stand_in_records_nothing(agent, context):
+    await agent.run("hello", ctx=context, max_iterations=config.MAX_STEPS)
+
+
 def test_light_stand_in_records_nothing():
     agent, context = compare.llama_agent(3)
 
-    async def play():
-        await agent.run("hello", ctx=context, max_iterations=config.MAX_STEPS)
-
-    asyncio.run(play())
+    asyncio.run(play_of_light_stand_in_records_nothing(agent, context))
 
     assert agent.llm.requests == []
     assert agent.llm.script == []
@@ -51,19 +52,19 @@ def test_measure_gives_a_summary():
 
 
 def test_pydantic_run_makes_the_calls_asked():
-    pytest.importorskip("pydantic_ai")
+    framework_pydantic = pytest.importorskip("eval.framework_pydantic")
 
     for model_calls in MODEL_CALLS:
-        _, _, made = asyncio.run(compare.pydantic_run(model_calls))
+        _, _, made = asyncio.run(framework_pydantic.pydantic_run(model_calls))
 
         assert made == model_calls
 
 
 def test_langchain_run_makes_the_calls_asked():
-    pytest.importorskip("langchain")
+    framework_langchain = pytest.importorskip("eval.framework_langchain")
 
     for model_calls in MODEL_CALLS:
-        _, _, made = asyncio.run(compare.langchain_run(model_calls))
+        _, _, made = asyncio.run(framework_langchain.langchain_run(model_calls))
 
         assert made == model_calls
 

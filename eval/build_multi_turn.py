@@ -1,6 +1,6 @@
 """Build the multi-turn set from the flows below and the test sentences.
 
-Usage:  python eval/build_multi_turn.py
+Usage:  python -m eval.build_multi_turn
 
 The dev examples (M1, M3, M6, M8) are written here. The customer messages of
 the test examples (M2, M4, M5, M7) come unchanged from
@@ -77,6 +77,7 @@ def shipped(offset: int) -> str:
 
 
 def check(reason: str) -> dict:
+    """A scripted check_return_eligibility call for the first alias."""
     return {
         "name": "check_return_eligibility",
         "args": {"order_ref": "SIP-1", "reason": reason},
@@ -84,6 +85,7 @@ def check(reason: str) -> dict:
 
 
 def create(reason: str) -> dict:
+    """A scripted create_return_request call for the first alias."""
     return {
         "name": "create_return_request",
         "args": {"order_ref": "SIP-1", "reason": reason, "amount": "{refund_amount}"},
@@ -113,6 +115,7 @@ def written(count: int, status: str | None = None, reason: str | None = None) ->
 
 
 def dev_examples() -> list[dict]:
+    """The development flows of the multi-turn set."""
     return [
         {
             "id": "M1",
@@ -398,6 +401,7 @@ def build(sentences: dict) -> str:
 
 
 def main() -> None:
+    """Run the command line entry point."""
     text = build(json.loads(SENTENCES.read_text(encoding="utf-8")))
     MULTI_TURN_SET.write_text(text, encoding="utf-8")
     print(f"{text.count(chr(10))} examples written to {MULTI_TURN_SET.name}")

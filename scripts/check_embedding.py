@@ -1,6 +1,6 @@
 """Load the real embedding model and show that it works.
 
-Usage:  python scripts/check_embedding.py
+Usage:  python -m scripts.check_embedding
 
 Downloads the model on first use, so it needs the network once. It is not
 part of the unit tests for that reason. It embeds the sections of the policy
@@ -11,10 +11,6 @@ the process uses.
 import resource
 import sys
 import time
-from pathlib import Path
-
-# Run as a plain script, Python only searches the scripts/ folder for imports.
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import config
 from src.knowledge.embedding import load_embedder
@@ -29,10 +25,12 @@ QUESTIONS = (
 
 
 def peak_memory_mb() -> float:
+    """Peak memory of this process, in MB."""
     return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024
 
 
 def main() -> int:
+    """Run the command line entry point."""
     started = time.perf_counter()
     embedder = load_embedder()
     print(f"Model: {config.EMBEDDING_MODEL_REPO} / {config.EMBEDDING_MODEL_FILE}")

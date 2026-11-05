@@ -6,7 +6,7 @@ import threading
 import pytest
 
 from src.ui.chat_session import ChatSession
-from src.ui.session_pool import SessionLimitReached, SessionPool
+from src.ui.session_pool import SessionLimitReachedError, SessionPool
 from tests.fakes import FakeLLM
 from tests.synthetic_data import ALICE
 from tests.test_chat_session import child_processes
@@ -68,7 +68,7 @@ def test_full_pool_refuses_new_sessions(clock):
     pool.open(lambda: StandIn(clock))
     started = []
 
-    with pytest.raises(SessionLimitReached):
+    with pytest.raises(SessionLimitReachedError):
         pool.open(lambda: started.append(1) or StandIn(clock))
 
     assert started == []
@@ -96,14 +96,15 @@ def test_closed_session_frees_its_place(clock):
     assert pool.open_count == 1
 
 
+def fail_of_failed_start_takes_no_place():
+    raise OSError("server did not start")
+
+
 def test_failed_start_takes_no_place(clock):
     pool = SessionPool(idle_seconds=900, max_open=1, clock=clock)
 
-    def fail():
-        raise OSError("server did not start")
-
     with pytest.raises(OSError):
-        pool.open(fail)
+        pool.open(fail_of_failed_start_takes_no_place)
 
     assert pool.open_count == 0
     pool.open(lambda: StandIn(clock))

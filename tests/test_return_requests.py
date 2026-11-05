@@ -194,18 +194,20 @@ def test_numeric_amount_is_accepted(synthetic_db, alice):
     assert answer["refund_amount"] == "115.00"
 
 
-def test_write_touches_only_requests_table(synthetic_db, alice):
-    def snapshot():
-        return {
-            table: synthetic_db.execute(f"SELECT * FROM {table}").fetchall()
-            for table in OTHER_TABLES
-        }
+def snapshot_of_write_touches_only_requests_table(synthetic_db):
+    return {
+        table: synthetic_db.execute(f"SELECT * FROM {table}").fetchall()
+        for table in OTHER_TABLES
+    }
 
-    before = snapshot()
+
+def test_write_touches_only_requests_table(synthetic_db, alice):
+
+    before = snapshot_of_write_touches_only_requests_table(synthetic_db)
 
     approve_and_create(alice, synthetic_db, "o_day14", "damaged", "115.00")
 
-    assert snapshot() == before
+    assert snapshot_of_write_touches_only_requests_table(synthetic_db) == before
     assert synthetic_db.total_changes == 1
 
 

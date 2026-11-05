@@ -51,11 +51,15 @@ ROUTER_REFUSED = "ROUTER_REFUSED"
 
 
 class SessionType(StrEnum):
+    """The kinds of session: a customer or an operations user."""
+
     CUSTOMER = "customer"
     OPS = "ops"
 
 
 class Intent(StrEnum):
+    """What the router decides a message is about."""
+
     SUPPORT = "support"
     OPS_METRIC = "ops_metric"
     REVIEW_INSIGHT = "review_insight"
@@ -121,15 +125,25 @@ class Answer:
 
     @property
     def refused(self) -> bool:
+        """True when no agent answered."""
         return self.reply is None
 
     @property
     def awaiting_approval(self) -> dict | None:
+        """The request waiting for the person's approval, if any."""
         return getattr(self.reply, "awaiting_approval", None)
 
 
 def parse_intent(text: str, default: Intent) -> Intent:
-    """Read the classifier's answer; anything unclear becomes the default."""
+    """Read the classifier's answer; anything unclear becomes the default.
+
+    Args:
+        text (str): The classifier's answer.
+        default (Intent): The intent to use when the answer is unclear.
+
+    Returns:
+        The intent.
+    """
     words = text.strip().lower().replace("`", "").replace('"', "").split()
     if words and words[0].strip(".:,") in Intent:
         return Intent(words[0].strip(".:,"))
@@ -137,6 +151,8 @@ def parse_intent(text: str, default: Intent) -> Intent:
 
 
 class Orchestrator:
+    """Routes a message to the right agent for the session type."""
+
     def __init__(
         self,
         session_type: SessionType,
@@ -173,6 +189,17 @@ class Orchestrator:
         """A router for a signed-in customer: the Support Agent and no other.
 
         The order server must have been started in the same language.
+
+        Args:
+            orders (OrdersClient): The connection to the customer's order server.
+            customer_unique_id (str): The signed-in customer.
+            policy_index (PolicyIndex): The policy index to search.
+            provider_llm (FunctionCallingLLM | None): The model; the configured one when
+                None.
+            language (Language): The session's language.
+
+        Returns:
+            The router.
         """
         provider_llm = provider_llm or build_provider_llm()
         agent = await SupportAgent.create(
@@ -189,7 +216,17 @@ class Orchestrator:
         language: Language = DEFAULT_LANGUAGE,
     ) -> Self:
         """A router for operations staff: the Ops Data Agent and the Review
-        Insight Agent, and no other."""
+        Insight Agent, and no other.
+
+        Args:
+            db_path (Path | str): The database file.
+            provider_llm (FunctionCallingLLM | None): The model; the configured one when
+                None.
+            language (Language): The session's language.
+
+        Returns:
+            The router.
+        """
         provider_llm = provider_llm or build_provider_llm()
         agent = OpsAgent(db_path, provider_llm, language)
         reviews = ReviewInsightAgent(db_path, provider_llm, language)
@@ -203,12 +240,20 @@ class Orchestrator:
         )
 
     def close(self) -> None:
+        """Close the agents that hold a database connection."""
         for agent in self._agents.values():
             if isinstance(agent, OpsAgent | ReviewInsightAgent):
                 agent.close()
 
     async def classify(self, message: str) -> tuple[Intent, RunLog]:
-        """Ask the model which class the message belongs to."""
+        """Ask the model which class the message belongs to.
+
+        Args:
+            message (str): The person's message.
+
+        Returns:
+            The intent and the log of the classifying call.
+        """
         default = DEFAULT_INTENT[self.session_type]
         context = ""
         if self._previous is not None:
@@ -234,7 +279,14 @@ class Orchestrator:
         return parse_intent(response.message.content or "", default), log
 
     async def ask(self, message: str) -> Answer:
-        """Classify the message, then pass it on or refuse it."""
+        """Classify the message, then pass it on or refuse it.
+
+        Args:
+            message (str): The person's message.
+
+        Returns:
+            The answer, or a refusal when the message does not belong in this session.
+        """
         # One span for the whole message, so the router's call and the
         # agent's run are one trace, found by its class and its error.
         with tracing.span(
@@ -278,6 +330,14 @@ class Orchestrator:
     # --- Human approval, passed on to the Support Agent --------------------
 
     def approval_summary(self, pending: dict) -> str:
+        """Text describing the request the person has to approve.
+
+        Args:
+            pending (dict): The request waiting for approval.
+
+        Returns:
+            The text the person is asked to approve.
+        """
         return self._agent.approval_summary(pending)
 
     async def approval_waiting(self) -> bool:
@@ -286,7 +346,17 @@ class Orchestrator:
         return waiting is not None and await waiting()
 
     async def approve(self, card: dict | None = None) -> str:
+        """Write the request the person approved.
+
+        Args:
+            card (dict | None): The card the person approved; the last one shown when
+                None.
+
+        Returns:
+            The text to show after the request was written.
+        """
         return await self._agent.approve(card)
 
     async def decline(self) -> str:
+        """Drop the request the person declined."""
         return await self._agent.decline()

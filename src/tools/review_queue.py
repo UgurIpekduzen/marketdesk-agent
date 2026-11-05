@@ -45,12 +45,14 @@ DECIDED_SHOWN = 20
 PRIORITY_ORDER = "CASE priority WHEN 'high' THEN 0 WHEN 'normal' THEN 1 ELSE 2 END"
 
 
-class NotARepSession(PermissionError):
+class NotARepSessionError(PermissionError):
     """A queue was asked for outside the support rep session."""
 
 
 @dataclass(frozen=True)
 class RequestRow:
+    """One return request as the support rep sees it."""
+
     request_id: int
     order_key: str  # hash of the order id
     customer_key: str  # hash of the customer, as on the tickets
@@ -62,6 +64,8 @@ class RequestRow:
 
 @dataclass(frozen=True)
 class TicketRow:
+    """One escalation ticket as the support rep sees it."""
+
     ticket_id: int
     number: str
     customer_key: str
@@ -71,9 +75,11 @@ class TicketRow:
 
 
 class ReviewQueue:
+    """The support rep's queue of requests and tickets, held by that session only."""
+
     def __init__(self, db_path: Path | str, identity: tuple) -> None:
         if tuple(identity) != REP_IDENTITY:
-            raise NotARepSession(identity[0] if identity else None)
+            raise NotARepSessionError(identity[0] if identity else None)
         self._db_path = db_path
         # A database built before tickets were kept gets the table, on a
         # connection of its own: the console's connections may not create it.
@@ -118,7 +124,15 @@ class ReviewQueue:
                 status=status,
                 created_at=created_at,
             )
-            for request_id, order_id, customer, reason, amount, status, created_at in rows
+            for (
+                request_id,
+                order_id,
+                customer,
+                reason,
+                amount,
+                status,
+                created_at,
+            ) in rows
         ]
 
     def waiting_requests(self) -> list[RequestRow]:
@@ -153,7 +167,15 @@ class ReviewQueue:
     # --- Deciding -----------------------------------------------------------
 
     def decide(self, request_id: int, decision: str) -> dict:
-        """Approve or reject a request that waits for review."""
+        """Approve or reject a request that waits for review.
+
+        Args:
+            request_id (int): The request.
+            decision (str): Approve or reject.
+
+        Returns:
+            The request and its new status, or an error result.
+        """
         if decision not in DECISIONS:
             return {
                 "error": "INVALID_DECISION",
@@ -202,12 +224,20 @@ class ReviewQueue:
         return {"error": "ALREADY_DECIDED", "message": messages.REVIEW_ALREADY_DECIDED}
 
     def close_ticket(self, ticket_id: int) -> dict:
-        """Close an open ticket."""
+        """Close an open ticket.
+
+        Args:
+            ticket_id (int): The ticket.
+
+        Returns:
+            The result of closing it.
+        """
         conn = self._connect()
         try:
             with conn:
                 changed = conn.execute(
-                    f"UPDATE {TICKETS_TABLE} SET status = ? WHERE id = ? AND status = ?",
+                    f"UPDATE {TICKETS_TABLE} SET status = ? "
+                    "WHERE id = ? AND status = ?",
                     (TICKET_CLOSED, ticket_id, TICKET_OPEN),
                 ).rowcount
             exists = conn.execute(

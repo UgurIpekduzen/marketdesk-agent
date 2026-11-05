@@ -189,7 +189,7 @@ def error_counts() -> tuple:
     try:
         public, secret = tracing_dashboard.credentials()
         observations = tracing_dashboard.fetch_observations(public, secret)
-    except tracing_dashboard.DashboardUnavailable as failure:
+    except tracing_dashboard.DashboardUnavailableError as failure:
         return 0, [], failure
     return len(observations), tracing_dashboard.count_errors(observations), None
 
@@ -489,17 +489,17 @@ def draw_answer(view: AnswerView) -> None:
         st.info(caveat)
 
 
+def sql_window(heading: str, queries: list[str]) -> None:
+    st.caption(heading)
+    for query in queries:
+        st.code(readable_sql(query), language="sql", wrap_lines=True)
+
+
 def show_sql(heading: str, queries: list[str]) -> None:
     """The SQL in a wide window, where a long query has room to be read."""
-
     # Made here, so that its title is in the page's language.
-    @st.dialog(page_texts().UI_SQL_DIALOG_TITLE, width="large")
-    def window() -> None:
-        st.caption(heading)
-        for query in queries:
-            st.code(readable_sql(query), language="sql", wrap_lines=True)
-
-    window()
+    window = st.dialog(page_texts().UI_SQL_DIALOG_TITLE, width="large")(sql_window)
+    window(heading, queries)
 
 
 def draw_steps(view: AnswerView) -> None:

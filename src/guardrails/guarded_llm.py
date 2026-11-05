@@ -42,10 +42,12 @@ class GuardedLLM(FunctionCallingLLM):
 
     @classmethod
     def class_name(cls) -> str:
+        """Name used by LlamaIndex for this model class."""
         return "GuardedLLM"
 
     @property
     def metadata(self) -> LLMMetadata:
+        """Metadata of the wrapped model."""
         return self.inner.metadata
 
     # --- Cleaning --------------------------------------------------------
@@ -77,21 +79,61 @@ class GuardedLLM(FunctionCallingLLM):
     # --- Chat: the calls an agent makes ----------------------------------
 
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        """Clean the messages, then chat with the wrapped model.
+
+        Args:
+            messages (Sequence[ChatMessage]): The messages to send; personal data in
+                them is replaced first.
+            **kwargs: Passed on to the wrapped model.
+
+        Returns:
+            The wrapped model's response.
+        """
         return self.inner.chat(self._clean_messages(messages), **kwargs)
 
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
+        """Clean the messages, then chat with the wrapped model (async).
+
+        Args:
+            messages (Sequence[ChatMessage]): The messages to send; personal data in
+                them is replaced first.
+            **kwargs: Passed on to the wrapped model.
+
+        Returns:
+            The wrapped model's response.
+        """
         return await self.inner.achat(self._clean_messages(messages), **kwargs)
 
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> Generator[ChatResponse, None, None]:
+        """Clean the messages, then stream a chat reply from the wrapped model.
+
+        Args:
+            messages (Sequence[ChatMessage]): The messages to send; personal data in
+                them is replaced first.
+            **kwargs: Passed on to the wrapped model.
+
+        Returns:
+            A generator of response pieces.
+        """
         return self.inner.stream_chat(self._clean_messages(messages), **kwargs)
 
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> AsyncGenerator[ChatResponse, None]:
+        """Clean the messages, then stream a chat reply (async).
+
+        Args:
+            messages (Sequence[ChatMessage]): The messages to send; personal data in
+                them is replaced first.
+            **kwargs: Passed on to the wrapped model.
+
+        Returns:
+            An async generator of response pieces.
+        """
         return await self.inner.astream_chat(self._clean_messages(messages), **kwargs)
 
     # --- Plain completion ------------------------------------------------
@@ -99,21 +141,61 @@ class GuardedLLM(FunctionCallingLLM):
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
+        """Clean the prompt, then complete it with the wrapped model.
+
+        Args:
+            prompt (str): The prompt; personal data in it is replaced first.
+            formatted (bool): True when the prompt already has the model's format.
+            **kwargs: Passed on to the wrapped model.
+
+        Returns:
+            The wrapped model's response.
+        """
         return self.inner.complete(self._clean_text(prompt), formatted, **kwargs)
 
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
+        """Clean the prompt, then complete it with the wrapped model (async).
+
+        Args:
+            prompt (str): The prompt; personal data in it is replaced first.
+            formatted (bool): True when the prompt already has the model's format.
+            **kwargs: Passed on to the wrapped model.
+
+        Returns:
+            The wrapped model's response.
+        """
         return await self.inner.acomplete(self._clean_text(prompt), formatted, **kwargs)
 
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> Generator[CompletionResponse, None, None]:
+        """Clean the prompt, then stream the completion.
+
+        Args:
+            prompt (str): The prompt; personal data in it is replaced first.
+            formatted (bool): True when the prompt already has the model's format.
+            **kwargs: Passed on to the wrapped model.
+
+        Returns:
+            A generator of response pieces.
+        """
         return self.inner.stream_complete(self._clean_text(prompt), formatted, **kwargs)
 
     async def astream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> AsyncGenerator[CompletionResponse, None]:
+        """Clean the prompt, then stream the completion (async).
+
+        Args:
+            prompt (str): The prompt; personal data in it is replaced first.
+            formatted (bool): True when the prompt already has the model's format.
+            **kwargs: Passed on to the wrapped model.
+
+        Returns:
+            An async generator of response pieces.
+        """
         return await self.inner.astream_complete(
             self._clean_text(prompt), formatted, **kwargs
         )
@@ -132,6 +214,15 @@ class GuardedLLM(FunctionCallingLLM):
         return self.inner._validate_chat_with_tools_response(*args, **kwargs)
 
     def get_tool_calls_from_response(self, *args: Any, **kwargs: Any) -> list:
+        """Read the tool calls from a response, as the wrapped model does.
+
+        Args:
+            *args: Passed on to the wrapped model.
+            **kwargs: Passed on to the wrapped model.
+
+        Returns:
+            The tool calls in the response.
+        """
         return self.inner.get_tool_calls_from_response(*args, **kwargs)
 
 
@@ -158,6 +249,23 @@ def build_provider_llm(
     reasoning model on Groq thinks before it answers. temperature, when
     given, replaces config.LLM_TEMPERATURE. max_tokens, when given, limits
     the length of an answer; without it the provider decides.
+
+    Args:
+        provider (str | None): The provider; the one in config.py when None.
+        model (str | None): The model name; the one in config.py when None.
+        paid (bool): True to use the paid key (Gemini only, for evaluation runs).
+        reasoning_effort (str | None): How much the model reasons, for providers that
+            support it.
+        temperature (float | None): The sampling temperature; the provider's default
+            when None.
+        max_tokens (int | None): The longest reply; the provider's default when None.
+
+    Returns:
+        The provider's model, not yet behind the guard.
+
+    Raises:
+        ValueError: The provider is unknown, or the paid key is asked for a provider
+            that has none.
     """
     if provider is None or model is None:
         provider, model = configured_model()
@@ -197,7 +305,14 @@ def build_provider_llm(
 
 
 def build_judge_provider_llm(paid: bool = False) -> FunctionCallingLLM:
-    """The provider's model that scores answers in the evaluation."""
+    """The provider's model that scores answers in the evaluation.
+
+    Args:
+        paid (bool): True to use the paid key.
+
+    Returns:
+        The model the judge calls.
+    """
     return build_provider_llm(config.JUDGE_PROVIDER, config.JUDGE_MODEL, paid)
 
 
@@ -206,5 +321,11 @@ def build_llm(redactor: Redactor | None = None) -> GuardedLLM:
 
     Pass the session's redactor in a customer session; without one, ids are
     masked instead of being replaced by aliases.
+
+    Args:
+        redactor (Redactor | None): The redactor to use; a new one when None.
+
+    Returns:
+        The model behind the guard.
     """
     return GuardedLLM(inner=build_provider_llm(), redactor=redactor or Redactor())

@@ -1,6 +1,6 @@
 """Run the example questions through the Support Agent with the real model.
 
-Usage:  python scripts/try_support_agent.py [--provider gemini] [--model NAME]
+Usage:  python -m scripts.try_support_agent [--provider gemini] [--model NAME]
                                             [--only 1,5] [--pause 20]
 
 This calls the model provider, so it uses free-tier quota and needs the API
@@ -20,9 +20,6 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-# Run as a plain script, Python only searches the scripts/ folder for imports.
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
 import config
 from scripts import load_sqlite
 from src.agents.support import SupportAgent
@@ -36,6 +33,8 @@ from tests.test_load_sqlite import write_raw
 
 @dataclass(frozen=True)
 class Scenario:
+    """One example question and the tools the Support Agent should or must not call."""
+
     key: str
     title: str
     message: str
@@ -128,6 +127,7 @@ SCENARIOS = (
 
 
 def build_database(folder: Path) -> Path:
+    """Build the synthetic database in the folder."""
     raw_dir = write_raw(folder / "raw", synthetic_data.build_rows())
     db_path = folder / "synthetic.db"
     load_sqlite.build_database(raw_dir, db_path, config.SIMULATED_TODAY)
@@ -165,6 +165,7 @@ def checks(
 
 
 def return_request_count(db_path: Path) -> int:
+    """The number of stored return requests."""
     conn = sqlite3.connect(db_path)
     try:
         return conn.execute("SELECT COUNT(*) FROM return_requests").fetchone()[0]
@@ -173,6 +174,7 @@ def return_request_count(db_path: Path) -> int:
 
 
 async def run_scenario(scenario: Scenario, db_path: Path, index: PolicyIndex) -> dict:
+    """Run one question through the agent and report what happened."""
     customer = real_shaped(synthetic_data.ALICE)
     before = return_request_count(db_path)
     # A new order server, and so a new session, for every scenario.
@@ -195,6 +197,7 @@ async def run_scenario(scenario: Scenario, db_path: Path, index: PolicyIndex) ->
 
 
 def main() -> int:
+    """Run the command line entry point."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--provider", default=config.LLM_PROVIDER)
     parser.add_argument("--model", default=config.LLM_MODEL)
@@ -256,7 +259,8 @@ def main() -> int:
     print("Summary")
     for key, verdict, calls, tokens_in, tokens_out, seconds in summary:
         print(
-            f"  {key:>3}  {calls} calls  {tokens_in:>6}+{tokens_out:<5} tokens  {seconds:5.1f} s  {verdict}"
+            f"  {key:>3}  {calls} calls  {tokens_in:>6}+{tokens_out:<5} tokens  "
+            f"{seconds:5.1f} s  {verdict}"
         )
     passed = sum(verdict == "ok" for _, verdict, *_ in summary)
     print(

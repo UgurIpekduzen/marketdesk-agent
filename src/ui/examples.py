@@ -25,6 +25,14 @@ def pick_examples(
     situation and two policy questions; an analyst gets four metric
     questions, in the session's language. The generator is passed in, so a
     test can seed it.
+
+    Args:
+        identity (tuple): ("customer", situation) or ("ops",).
+        rng (random.Random): The random source.
+        language (Language): The session's language.
+
+    Returns:
+        The example questions.
     """
     messages = catalog(language)
     if identity[0] == "ops":

@@ -1,6 +1,6 @@
 """The final report: the system against the baselines and the targets.
 
-Usage:  python eval/report.py
+Usage:  python -m eval.report
 
 Reads the results files that the runs wrote (the golden set, the baselines,
 the attack set and the attack sets of the red teaming) and writes one
@@ -11,11 +11,6 @@ It calls no model: run `task eval:all` to produce everything from scratch.
 import json
 import sys
 from pathlib import Path
-
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-# Run as a plain script, Python only searches the eval/ folder for imports.
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
 
 import config
 from eval.judge_check import agreement
@@ -83,6 +78,7 @@ CRITIC_SETS = {
 
 
 def load(path: Path) -> dict:
+    """Read a results file; an empty dict when it does not exist."""
     return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
 
 
@@ -127,6 +123,7 @@ def comparison_table(golden: dict, baselines: dict) -> str:
 
 
 def verdict(value: float | None, least: float) -> str:
+    """Whether a value reaches its target."""
     if value is None:
         return "not measured"
     return "met" if value >= least else "NOT met"
@@ -230,6 +227,7 @@ def cost_per_task(overall: dict) -> float | None:
 
 
 def cost_text(overall: dict) -> str:
+    """The cost per task as text."""
     cost = cost_per_task(overall)
     if cost is None:
         return (
@@ -243,6 +241,7 @@ def cost_text(overall: dict) -> str:
 
 
 def split_line(golden: dict) -> str:
+    """One line with the results of each split of the golden set."""
     parts = []
     for split, groups in golden.get("summary", {}).items():
         numbers = groups["all"]
@@ -395,6 +394,7 @@ def build_report(
     attack_sets: dict[str, dict] | None = None,
     critic_runs: dict[str, list[tuple[str, dict]]] | None = None,
 ) -> str:
+    """Assemble the final report from the results files."""
     overall = golden.get("summary_all_splits", {}).get("all", {})
     gain = semantic_layer_gain(golden, baselines)
     held = sum(pair[0] for pair in injection.get("attack_rates", {}).values())
@@ -453,8 +453,8 @@ def build_report(
         + "\n".join(
             [
                 (
-                    f"- Golden set: {split_line(golden)} examples passed. Only the test "
-                    "split was held out while the system was worked on."
+                    f"- Golden set: {split_line(golden)} examples passed. "
+                    "Only the test split was held out while the system was worked on."
                 ),
                 "- Faithfulness and helpfulness are scored by a judge model"
                 + (f" (`{judge}`)" if judge else "")
@@ -467,9 +467,10 @@ def build_report(
                     f"{'yes' if injection.get('database_unchanged') else 'no'}."
                 ),
                 (
-                    "- B0 is one model call with the full policy text, B1 with the five "
-                    "closest sections, B2 writes SQL from the raw schema. A baseline's "
-                    "task success is its own rule; see the baselines results file."
+                    "- B0 is one model call with the full policy text, B1 with the "
+                    "five closest sections, B2 writes SQL from the raw schema. "
+                    "A baseline's task success is its own rule; see the baselines "
+                    "results file."
                 ),
             ]
         ),
@@ -478,6 +479,7 @@ def build_report(
 
 
 def main() -> int:
+    """Run the command line entry point."""
     model = configured_model()[1]
     golden = load(RESULTS_DIR / f"{result_name(GOLDEN_SET, model)}.json")
     if not golden:

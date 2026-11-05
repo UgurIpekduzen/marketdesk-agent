@@ -119,25 +119,50 @@ MAX_NAME_CHARS = 60
 
 
 def folded(text: str) -> str:
-    """Lower case without accents, spaces made single."""
+    """Lower case without accents, spaces made single.
+
+    Args:
+        text (str): Any text.
+
+    Returns:
+        The text in lower case, without accents, with single spaces.
+    """
     plain = unicodedata.normalize("NFKD", text.lower())
     plain = "".join(char for char in plain if not unicodedata.combining(char))
     return " ".join(plain.split())
 
 
 def error(code: str, message: str) -> dict:
+    """An error result in the shape the tools return.
+
+    Args:
+        code (str): A fixed error code.
+        message (str): What the model is told.
+
+    Returns:
+        The error result.
+    """
     return {"error": code, "message": message}
 
 
 @dataclass(frozen=True)
 class Theme:
+    """A review theme with its keywords and example quotes."""
+
     name: str
     keywords: tuple[str, ...]
     quotes: tuple[tuple[str, str, str], ...]  # (review_id, Portuguese, translation)
 
 
 def parse_themes(themes_json: str) -> list[Theme] | dict:
-    """The themes the model sent as JSON, or an error answer for the model."""
+    """The themes the model sent as JSON, or an error answer for the model.
+
+    Args:
+        themes_json (str): The themes as JSON text.
+
+    Returns:
+        The themes, or an error result.
+    """
     try:
         data = json.loads(themes_json)
     except (TypeError, ValueError):
@@ -203,6 +228,13 @@ def whole_sentences(review: str, quote: str) -> bool:
     It must be word for word (case, accents and spacing aside) and begin and
     end where a sentence does: a quote that starts after "Não" or ends before
     "mas" can say the opposite of the review.
+
+    Args:
+        review (str): The review text.
+        quote (str): The quote the model gave.
+
+    Returns:
+        True when the quote is whole sentences of the review.
     """
     marked = folded(SENTENCE_MARK.sub(" | ", review))
     wanted = folded(quote).strip(" " + BOUNDARY)
@@ -225,7 +257,15 @@ def whole_sentences(review: str, quote: str) -> bool:
 
 
 def mentions(text: str, keyword: str) -> bool:
-    """Whether a word of the text starts with the keyword."""
+    """Whether a word of the text starts with the keyword.
+
+    Args:
+        text (str): A review.
+        keyword (str): A theme keyword.
+
+    Returns:
+        True when a word of the text starts with the keyword.
+    """
     return re.search(rf"\b{re.escape(folded(keyword))}", folded(text)) is not None
 
 
@@ -234,6 +274,13 @@ def verify_themes(sample: dict[str, str], themes_json: str) -> dict:
 
     Returns the verified themes with their counts, or an error answer that
     names the first problem, for the model to correct.
+
+    Args:
+        sample (dict[str, str]): The sampled reviews: id to text.
+        themes_json (str): The themes the model found, as JSON text.
+
+    Returns:
+        The themes that passed, with counts, or an error result.
     """
     parsed = parse_themes(themes_json)
     if isinstance(parsed, dict):

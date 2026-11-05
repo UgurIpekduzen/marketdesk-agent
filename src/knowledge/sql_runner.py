@@ -25,14 +25,21 @@ from pathlib import Path
 import config
 from src import messages
 from src.knowledge.safe_views import ALLOWED_VIEWS
-from src.knowledge.sql_validator import SqlRejected, validate
+from src.knowledge.sql_validator import SqlRejectedError, validate
 
 # How many SQLite instructions run between two looks at the deadline.
 PROGRESS_STEPS = 1000
 
 
 def connect_read_only(db_path: Path | str) -> sqlite3.Connection:
-    """Open the database so that nothing can be written or attached."""
+    """Open the database so that nothing can be written or attached.
+
+    Args:
+        db_path (Path | str): The database file.
+
+    Returns:
+        A connection that cannot write or attach.
+    """
     conn = sqlite3.connect(f"file:{Path(db_path).as_posix()}?mode=ro", uri=True)
     conn.setlimit(sqlite3.SQLITE_LIMIT_ATTACHED, 0)
     # No value longer than this can be made, by a function or otherwise.
@@ -44,15 +51,43 @@ def connect_read_only(db_path: Path | str) -> sqlite3.Connection:
 
 
 def result_bytes(rows: list[list]) -> int:
-    """How many characters of text and bytes of blobs the rows hold."""
+    """How many characters of text and bytes of blobs the rows hold.
+
+    Args:
+        rows (list[list]): The result rows.
+
+    Returns:
+        The characters of text and bytes of blobs.
+    """
     return sum(
         len(value) for row in rows for value in row if isinstance(value, str | bytes)
     )
 
 
 def existing_names(conn: sqlite3.Connection) -> tuple[str, ...]:
-    """Names of everything in the database: tables, views and indexes."""
+    """Names of everything in the database: tables, views and indexes.
+
+    Args:
+        conn (sqlite3.Connection): A connection to the database.
+
+    Returns:
+        The names of tables, views and indexes.
+    """
     return tuple(row[0] for row in conn.execute("SELECT name FROM sqlite_master"))
+
+
+class Deadline:
+    """The time a query may take; SQLite asks every few steps whether it is over."""
+
+    def __init__(self, seconds: float) -> None:
+        self.at = time.monotonic() + seconds
+        self.timed_out = False
+
+    def passed(self) -> bool:
+        """True once the time is up; SQLite stops the running query on a true value."""
+        # A true value makes SQLite stop the running query.
+        self.timed_out = time.monotonic() > self.at
+        return self.timed_out
 
 
 def run_sql(
@@ -83,7 +118,7 @@ def run_sql(
             sql = validate(
                 query, existing_names(conn), allowed_tables, max_rows=max_rows
             )
-        except SqlRejected as rejected:
+        except SqlRejectedError as rejected:
             return {
                 "error": "SQL_REJECTED",
                 "reason": rejected.code,
@@ -93,16 +128,8 @@ def run_sql(
                 ),
             }
 
-        deadline = time.monotonic() + timeout_seconds
-        timed_out = False
-
-        def past_deadline() -> bool:
-            # A true value makes SQLite stop the running query.
-            nonlocal timed_out
-            timed_out = time.monotonic() > deadline
-            return timed_out
-
-        conn.set_progress_handler(past_deadline, PROGRESS_STEPS)
+        deadline = Deadline(timeout_seconds)
+        conn.set_progress_handler(deadline.passed, PROGRESS_STEPS)
         try:
             cursor = conn.execute(sql)
             columns = [column[0] for column in cursor.description]
@@ -115,7 +142,7 @@ def run_sql(
                     "sql": sql,
                 }
         except sqlite3.Error as failure:
-            if timed_out:
+            if deadline.timed_out:
                 return {
                     "error": "SQL_TIMEOUT",
                     "message": messages.SQL_TIMEOUT.format(seconds=timeout_seconds),

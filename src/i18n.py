@@ -12,6 +12,8 @@ from src import messages, messages_en
 
 
 class Language(StrEnum):
+    """The languages a session can use."""
+
     TR = "tr"
     EN = "en"
 
@@ -27,6 +29,12 @@ def from_locale(locale: str | None) -> Language:
 
     English for any English locale, Turkish for everything else: Turkish is
     the system's first language, and a browser in a third language gets it.
+
+    Args:
+        locale (str | None): A browser locale such as en-US, or None.
+
+    Returns:
+        English for an English locale, the default language otherwise.
     """
     if locale and locale.strip().lower().split("-")[0].split("_")[0] == "en":
         return Language.EN
@@ -34,5 +42,12 @@ def from_locale(locale: str | None) -> Language:
 
 
 def catalog(language: Language) -> ModuleType:
-    """The user-facing strings of a language, under the same names."""
+    """The user-facing strings of a language, under the same names.
+
+    Args:
+        language (Language): A language.
+
+    Returns:
+        The module with that language's strings.
+    """
     return CATALOGS[Language(language)]

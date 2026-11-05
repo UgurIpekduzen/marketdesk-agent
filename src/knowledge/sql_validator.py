@@ -63,7 +63,7 @@ FAN_OUT_PAIR = ("v_order_items", "v_order_payments")
 ALLOWED_EXTRA_FUNCTIONS = ("julianday", "datetime", "time", "unixepoch", "total")
 
 
-class SqlRejected(Exception):
+class SqlRejectedError(Exception):
     """A query that failed a check. code is fixed; detail names the culprit."""
 
     def __init__(self, code: str, detail: str = "") -> None:
@@ -73,14 +73,34 @@ class SqlRejected(Exception):
 
 
 def is_select(node: exp.Expression) -> bool:
+    """True for a SELECT or a set operation such as UNION.
+
+    Args:
+        node (exp.Expression): A parsed expression.
+
+    Returns:
+        True for a SELECT or a set operation.
+    """
     return isinstance(node, (exp.Select, exp.SetOperation))
 
 
 def parse_single_statement(query: str) -> exp.Expression:
+    """Parse the query and require exactly one statement.
+
+    Args:
+        query (str): The SQL text.
+
+    Returns:
+        The parsed statement.
+
+    Raises:
+        SqlRejectedError: The text does not parse, or holds no statement or more than
+            one.
+    """
     try:
         statements = sqlglot.parse(query, read=DIALECT)
     except errors.SqlglotError as error:
-        raise SqlRejected("PARSE_ERROR", str(error).splitlines()[0]) from error
+        raise SqlRejectedError("PARSE_ERROR", str(error).splitlines()[0]) from error
     # A trailing ";" or comment leaves an empty statement behind.
     statements = [
         statement
@@ -88,9 +108,9 @@ def parse_single_statement(query: str) -> exp.Expression:
         if statement is not None and not isinstance(statement, exp.Semicolon)
     ]
     if not statements:
-        raise SqlRejected("EMPTY_QUERY")
+        raise SqlRejectedError("EMPTY_QUERY")
     if len(statements) > 1:
-        raise SqlRejected("MULTIPLE_STATEMENTS")
+        raise SqlRejectedError("MULTIPLE_STATEMENTS")
     return statements[0]
 
 
@@ -99,12 +119,22 @@ def check_tree(
     allowed_tables: tuple[str, ...],
     reserved_names: tuple[str, ...],
 ) -> None:
+    """Reject anything but a SELECT on allowed tables and names.
+
+    Args:
+        tree (exp.Expression): The parsed statement.
+        allowed_tables (tuple[str, ...]): The tables it may read.
+        reserved_names (tuple[str, ...]): Names it may not use.
+
+    Raises:
+        SqlRejectedError: The statement is not a plain SELECT on allowed tables.
+    """
     if not is_select(tree):
-        raise SqlRejected("NOT_A_SELECT", tree.key.upper())
+        raise SqlRejectedError("NOT_A_SELECT", tree.key.upper())
 
     for node in tree.walk():
         if isinstance(node, FORBIDDEN_NODES):
-            raise SqlRejected("FORBIDDEN_STATEMENT", node.key.upper())
+            raise SqlRejectedError("FORBIDDEN_STATEMENT", node.key.upper())
 
     # A CTE may not take the name of anything that exists in the database:
     # outside the CTE's reach the same name would mean the real table.
@@ -113,26 +143,26 @@ def check_tree(
     for cte in tree.find_all(exp.CTE):
         name = cte.alias.lower()
         if not is_select(cte.this):
-            raise SqlRejected("FORBIDDEN_STATEMENT", cte.this.key.upper())
+            raise SqlRejectedError("FORBIDDEN_STATEMENT", cte.this.key.upper())
         if name in reserved or name.startswith("sqlite_"):
-            raise SqlRejected("TABLE_NOT_ALLOWED", cte.alias)
+            raise SqlRejectedError("TABLE_NOT_ALLOWED", cte.alias)
         cte_names.add(name)
 
     allowed = {name.lower() for name in allowed_tables} | cte_names
     for table in tree.find_all(exp.Table):
         if not isinstance(table.this, exp.Identifier):
             # A function used as a table, such as pragma_table_info(...).
-            raise SqlRejected("TABLE_NOT_ALLOWED", table.sql(dialect=DIALECT))
+            raise SqlRejectedError("TABLE_NOT_ALLOWED", table.sql(dialect=DIALECT))
         if table.db or table.catalog or table.name.lower() not in allowed:
-            raise SqlRejected("TABLE_NOT_ALLOWED", table.sql(dialect=DIALECT))
+            raise SqlRejectedError("TABLE_NOT_ALLOWED", table.sql(dialect=DIALECT))
 
     for function in tree.find_all(exp.Anonymous):
         if function.name.lower() not in ALLOWED_EXTRA_FUNCTIONS:
-            raise SqlRejected("FUNCTION_NOT_ALLOWED", function.name)
+            raise SqlRejectedError("FUNCTION_NOT_ALLOWED", function.name)
     # Known to the parser, so not caught above, and not for a reader of data:
     # it tells the version of the engine.
     if tree.find(exp.CurrentVersion):
-        raise SqlRejected("FUNCTION_NOT_ALLOWED", "sqlite_version")
+        raise SqlRejectedError("FUNCTION_NOT_ALLOWED", "sqlite_version")
 
     check_no_fan_out(tree)
 
@@ -143,15 +173,29 @@ def check_no_fan_out(tree: exp.Expression) -> None:
     Each part of a query (the main query, a subquery, a CTE) is looked at on
     its own: items and payments may both appear in a query when they are
     kept apart, each in a subquery of its own or one in an IN (SELECT ...).
+
+    Args:
+        tree (exp.Expression): The parsed statement.
+
+    Raises:
+        SqlRejectedError: Items and payments are read in the same place.
     """
     for scope in traverse_scope(tree):
         names = {table.name.lower() for table in scope.tables}
         if all(view in names for view in FAN_OUT_PAIR):
-            raise SqlRejected("JOIN_FANS_OUT", " and ".join(FAN_OUT_PAIR))
+            raise SqlRejectedError("JOIN_FANS_OUT", " and ".join(FAN_OUT_PAIR))
 
 
 def with_row_limit(tree: exp.Expression, max_rows: int) -> exp.Expression:
-    """Keep a LIMIT from 0 to max_rows; set max_rows in every other case."""
+    """Keep a LIMIT from 0 to max_rows; set max_rows in every other case.
+
+    Args:
+        tree (exp.Expression): The parsed statement.
+        max_rows (int): The most rows allowed.
+
+    Returns:
+        The statement with a LIMIT of at most max_rows.
+    """
     limit = tree.args.get("limit")
     if limit is not None:
         count = limit.expression
@@ -170,10 +214,22 @@ def validate(
     allowed_tables: tuple[str, ...] = ALLOWED_VIEWS,
     max_rows: int = config.SQL_MAX_ROWS,
 ) -> str:
-    """Return the SQL to run for a query, or raise SqlRejected.
+    """Return the SQL to run for a query, or raise SqlRejectedError.
 
     reserved_names are the names of everything that exists in the database
     (tables, views, indexes); a CTE may not reuse one of them.
+
+    Args:
+        query (str): The SQL text.
+        reserved_names (tuple[str, ...]): Names it may not use.
+        allowed_tables (tuple[str, ...]): The tables it may read.
+        max_rows (int): The most rows allowed.
+
+    Returns:
+        The SQL to run.
+
+    Raises:
+        SqlRejectedError: The query breaks a rule.
     """
     tree = parse_single_statement(query)
     check_tree(tree, allowed_tables, reserved_names)

@@ -145,6 +145,14 @@ def create_return_request(
 
 
 def duplicate_request(order: str) -> dict:
+    """The result for an order that already has an open request.
+
+    Args:
+        order (str): The order's alias.
+
+    Returns:
+        The error result.
+    """
     return {
         "error": "DUPLICATE_REQUEST",
         "message": messages.DUPLICATE_REQUEST,

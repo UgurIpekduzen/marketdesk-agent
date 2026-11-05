@@ -1,6 +1,7 @@
 """Tests for the chat page, run without a browser: the real page script on
 the synthetic database, with a stand-in model."""
 
+import functools
 import json
 import shutil
 import sqlite3
@@ -31,22 +32,34 @@ RETURN = {"order_ref": "o_day14", "reason": "damaged", "amount": "115.00"}
 RETURN_SCRIPT = ["support", [("create_return_request", RETURN)], "Onayınız istenecek."]
 
 
-@pytest.fixture
-def open_page(monkeypatch, synthetic_db_path, fake_policy_index):
-    """Open the page on the synthetic database with a scripted model."""
-    pages = []
+class PageOpener:
+    """Opens the page on the synthetic database with a scripted model.
 
-    def start(script=(), customer=ALICE, role=messages.UI_START_CUSTOMER):
+    observations is what the traces of Langfuse hold, for the rep console.
+    """
+
+    def __init__(self, monkeypatch, synthetic_db_path, fake_policy_index, pages):
+        self.monkeypatch = monkeypatch
+        self.synthetic_db_path = synthetic_db_path
+        self.fake_policy_index = fake_policy_index
+        self.pages = pages
+        self.observations = []
+
+    def __call__(self, script=(), customer=ALICE, role=messages.UI_START_CUSTOMER):
         """role is the start button clicked on the choice screen; None stays there."""
         fake = FakeLLM(script=list(script))
-        monkeypatch.setattr(resources, "db_path", lambda: Path(synthetic_db_path))
-        monkeypatch.setattr(resources, "load_policy_index", lambda: fake_policy_index)
+        self.monkeypatch.setattr(
+            resources, "db_path", lambda: Path(self.synthetic_db_path)
+        )
+        self.monkeypatch.setattr(
+            resources, "load_policy_index", lambda: self.fake_policy_index
+        )
         # The page's sessions count their calls around the model they build.
-        monkeypatch.setattr("src.ui.chat_session.build_provider_llm", lambda: fake)
-        monkeypatch.setattr("src.orchestrator.build_provider_llm", lambda: fake)
+        self.monkeypatch.setattr("src.ui.chat_session.build_provider_llm", lambda: fake)
+        self.monkeypatch.setattr("src.orchestrator.build_provider_llm", lambda: fake)
         if customer:
             # One known customer, so the scripts can name their orders.
-            monkeypatch.setattr(
+            self.monkeypatch.setattr(
                 resources,
                 "load_demo_customers",
                 lambda path: [
@@ -59,22 +72,27 @@ def open_page(monkeypatch, synthetic_db_path, fake_policy_index):
             )
         # The rep console reads the error counts of the traces: no network, the
         # tests say which observations Langfuse holds.
-        monkeypatch.setattr(
+        self.monkeypatch.setattr(
             tracing_dashboard, "credentials", lambda *a, **k: ("pk", "sk")
         )
-        monkeypatch.setattr(
-            tracing_dashboard, "fetch_observations", lambda *a, **k: start.observations
+        self.monkeypatch.setattr(
+            tracing_dashboard, "fetch_observations", lambda *a, **k: self.observations
         )
         st.cache_resource.clear()
         st.cache_data.clear()
         page = AppTest.from_file(APP, default_timeout=60).run()
-        pages.append(page)
+        self.pages.append(page)
         if role:
             page = click(page, role)
         return page
 
-    start.observations = []
-    yield start
+
+@pytest.fixture
+def open_page(monkeypatch, synthetic_db_path, fake_policy_index):
+    """Open the page on the synthetic database with a scripted model."""
+    pages = []
+    opener = PageOpener(monkeypatch, synthetic_db_path, fake_policy_index, pages)
+    yield opener
     for page in pages:
         if "session" in page.session_state:
             page.session_state["session"].close()
@@ -100,6 +118,14 @@ def send_crafted(page, monkeypatch, widget_id, **value):
     return send_crafted_states(page, monkeypatch, {widget_id: value})
 
 
+def with_crafted_of_send_crafted_states(tree, original, values, crafted):
+    states = original(tree)
+    kept = [widget for widget in states.widgets if widget.id not in values]
+    del states.widgets[:]
+    states.widgets.extend([*kept, *crafted])
+    return states
+
+
 def send_crafted_states(page, monkeypatch, values: dict):
     """send_crafted for several widgets in one run: {widget id: value}."""
     crafted = []
@@ -115,14 +141,13 @@ def send_crafted_states(page, monkeypatch, values: dict):
     tree_type = type(page._tree)
     original = tree_type.get_widget_states
 
-    def with_crafted(tree):
-        states = original(tree)
-        kept = [widget for widget in states.widgets if widget.id not in values]
-        del states.widgets[:]
-        states.widgets.extend([*kept, *crafted])
-        return states
-
-    monkeypatch.setattr(tree_type, "get_widget_states", with_crafted)
+    monkeypatch.setattr(
+        tree_type,
+        "get_widget_states",
+        functools.partialmethod(
+            with_crafted_of_send_crafted_states, original, values, crafted
+        ),
+    )
     try:
         return page.run()
     finally:
@@ -252,19 +277,24 @@ def test_ops_enters_without_customers(open_page, monkeypatch):
     assert labels(page) == [messages.UI_START_OPS, messages.UI_START_REP]
 
 
+def build_of_a_missing_database_is_built_once(builds, synthetic, path):
+    builds.append(path)
+    shutil.copy(synthetic, path)
+    return True
+
+
 def test_a_missing_database_is_built_once(open_page, monkeypatch, tmp_path):
     open_page()
     target = tmp_path / "built.db"
     synthetic = resources.db_path()
     builds = []
 
-    def build(path):
-        builds.append(path)
-        shutil.copy(synthetic, path)
-        return True
-
     monkeypatch.setattr(resources, "db_path", lambda: target)
-    monkeypatch.setattr(resources, "build_database", build)
+    monkeypatch.setattr(
+        resources,
+        "build_database",
+        functools.partial(build_of_a_missing_database_is_built_once, builds, synthetic),
+    )
 
     page = AppTest.from_file(APP, default_timeout=60).run()
     page.run()
@@ -297,16 +327,21 @@ def test_page_resumes_after_pause(open_page, monkeypatch):
     assert page.chat_input
 
 
+def fail_of_unbuildable_database_is_explained(attempts, path):
+    attempts.append(path)
+    raise OSError("network is down")
+
+
 def test_unbuildable_database_is_explained(open_page, monkeypatch):
     open_page()
     attempts = []
 
-    def fail(path):
-        attempts.append(path)
-        raise OSError("network is down")
-
     monkeypatch.setattr(resources, "db_path", lambda: Path("no/such.db"))
-    monkeypatch.setattr(resources, "build_database", fail)
+    monkeypatch.setattr(
+        resources,
+        "build_database",
+        functools.partial(fail_of_unbuildable_database_is_explained, attempts),
+    )
 
     page = AppTest.from_file(APP, default_timeout=60).run()
 
@@ -500,6 +535,14 @@ def test_decline_writes_nothing_and_says_so(open_page, synthetic_db_path):
     assert messages.APPROVAL_DECLINED in shown(page)
 
 
+def approve_and_look_of_card_is_gone_before_choice_is_sent(
+    waiting_when_sent, approve, *card
+):
+    # Runs inside the page run, as the real click does.
+    waiting_when_sent.append(st.session_state.pending)
+    return approve(*card)
+
+
 def test_card_is_gone_before_choice_is_sent(open_page):
     page = open_page(RETURN_SCRIPT)
     page = ask(page, "o_day14 hasarlı geldi, iade istiyorum")
@@ -507,12 +550,11 @@ def test_card_is_gone_before_choice_is_sent(open_page):
     approve = session.approve
     waiting_when_sent = []
 
-    def approve_and_look(*card):
-        # Runs inside the page run, as the real click does.
-        waiting_when_sent.append(st.session_state.pending)
-        return approve(*card)
-
-    session.approve = approve_and_look
+    session.approve = functools.partial(
+        approve_and_look_of_card_is_gone_before_choice_is_sent,
+        waiting_when_sent,
+        approve,
+    )
 
     page = click(page, messages.UI_APPROVE)
 
@@ -877,12 +919,18 @@ def test_tracing_tab_says_no_error(open_page):
     assert messages.DASH_NO_ERRORS in [info.value for info in page.info]
 
 
+def refuse_of_tracing_failure_spares_the_queue(*args, **kwargs):
+    raise tracing_dashboard.DashboardUnavailableError("REQUEST_FAILED", 401)
+
+
 def test_tracing_failure_spares_the_queue(open_page, monkeypatch):
-    def refuse(*args, **kwargs):
-        raise tracing_dashboard.DashboardUnavailable("REQUEST_FAILED", 401)
 
     page = open_page(role=messages.UI_START_REP)
-    monkeypatch.setattr(tracing_dashboard, "fetch_observations", refuse)
+    monkeypatch.setattr(
+        tracing_dashboard,
+        "fetch_observations",
+        refuse_of_tracing_failure_spares_the_queue,
+    )
     st.cache_data.clear()
 
     page = click(page, messages.UI_TRACING_LOAD)
@@ -1146,13 +1194,17 @@ def test_gone_approve_button_writes_nothing(open_page, monkeypatch, synthetic_db
 # --- When something fails ----------------------------------------------------
 
 
+async def out_of_quota_of_exhausted_quota_has_no_traceback(self, message):
+    raise RuntimeError("429 RESOURCE_EXHAUSTED: quota exceeded for the day")
+
+
 def test_exhausted_quota_has_no_traceback(open_page, monkeypatch):
     page = open_page(["support"])
 
-    async def out_of_quota(self, message):
-        raise RuntimeError("429 RESOURCE_EXHAUSTED: quota exceeded for the day")
-
-    monkeypatch.setattr("src.orchestrator.Orchestrator.ask", out_of_quota)
+    monkeypatch.setattr(
+        "src.orchestrator.Orchestrator.ask",
+        out_of_quota_of_exhausted_quota_has_no_traceback,
+    )
     page = ask(page, "Merhaba")
 
     assert not page.exception

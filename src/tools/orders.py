@@ -48,7 +48,14 @@ NOT_FOUND = {"error": "NOT_FOUND", "message": messages.ORDER_NOT_FOUND}
 
 
 def day_text(timestamp: str | None) -> str | None:
-    """Turn a stored timestamp into a calendar day such as 2018-08-25."""
+    """Turn a stored timestamp into a calendar day such as 2018-08-25.
+
+    Args:
+        timestamp (str | None): A stored timestamp, or None.
+
+    Returns:
+        The calendar day as text, or None.
+    """
     day = to_calendar_day(timestamp)
     return day.isoformat() if day else None
 
@@ -56,7 +63,16 @@ def day_text(timestamp: str | None) -> str | None:
 def read_items(
     conn: sqlite3.Connection, order_id: str, language: Language = DEFAULT_LANGUAGE
 ) -> list[dict]:
-    """Read the items of an order: category, price and freight, no ids."""
+    """Read the items of an order: category, price and freight, no ids.
+
+    Args:
+        conn (sqlite3.Connection): A connection to the database.
+        order_id (str): The order.
+        language (Language): The session's language.
+
+    Returns:
+        The items with category, price and freight.
+    """
     rows = conn.execute(
         "SELECT COALESCE(t.product_category_name_english, p.product_category_name), "
         "i.price, i.freight_value "
@@ -83,7 +99,14 @@ def read_items(
 
 
 def items_total(items: list[dict]) -> str:
-    """Add up price and freight over all items."""
+    """Add up price and freight over all items.
+
+    Args:
+        items (list[dict]): The order's items.
+
+    Returns:
+        The sum of price and freight.
+    """
     amounts = (Decimal(item["price"]) + Decimal(item["freight"]) for item in items)
     return str(sum(amounts, Decimal("0.00")))
 
@@ -99,7 +122,8 @@ def get_order_status(
     order_ref is the order alias from an earlier answer (for example SIP-1)
     or the order number the customer wrote. Dates are calendar days and
     amounts are in BRL; each amount has a _text field that writes it for
-    the customer (for example "133,14 BRL"). If the customer has no such order the result is
+    the customer (for example "133,14 BRL"). If the customer has no such order the \
+result is
     {"error": "NOT_FOUND", "message": ...}.
     """
     row = conn.execute(

@@ -77,7 +77,8 @@ def test_late_rate_matches_the_metric(synthetic_db_path, synthetic_db):
         synthetic_db_path,
         "SELECT AVG(DATE(order_delivered_customer_date) > "
         "DATE(order_estimated_delivery_date)) FROM v_orders "
-        "WHERE order_status = 'delivered' AND order_delivered_customer_date IS NOT NULL "
+        "WHERE order_status = 'delivered' "
+        "AND order_delivered_customer_date IS NOT NULL "
         "AND DATE(order_delivered_customer_date) <= '2018-09-01'",
     )
     metric = run_metric(synthetic_db, "late_delivery_rate")

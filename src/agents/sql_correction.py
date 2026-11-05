@@ -20,6 +20,8 @@ LIMIT_REACHED = {
 
 
 class SqlCorrectionLimit:
+    """Limits how often a failed SQL query may be corrected in one question."""
+
     def __init__(self, max_corrections: int = config.SQL_MAX_CORRECTIONS) -> None:
         # The first attempt plus the corrections.
         self._max_failures = max_corrections + 1
@@ -36,7 +38,13 @@ class SqlCorrectionLimit:
 
     @property
     def corrections_left(self) -> int:
+        """How many more corrections are allowed."""
         return max(self._max_failures - len(self.failed_queries), 0)
 
     def record_failure(self, query: str) -> None:
+        """Remember a query that failed.
+
+        Args:
+            query (str): The query that failed.
+        """
         self.failed_queries.append(query)

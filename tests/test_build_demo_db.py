@@ -1,6 +1,7 @@
 """Tests for scripts/build_demo_db.py. No network: the download is replaced
 by a folder of tiny synthetic CSV files."""
 
+import functools
 import sqlite3
 
 import pytest
@@ -9,16 +10,19 @@ from scripts import build_demo_db
 from tests.test_load_sqlite import write_raw
 
 
+def fetch_of_fake_fetch(folders, output_dir):
+    folders.append(output_dir)
+    return write_raw(output_dir / "csv")
+
+
 @pytest.fixture
 def fake_fetch(monkeypatch):
     """Stand in for the download: write the CSV files into the given folder."""
     folders = []
 
-    def fetch(output_dir):
-        folders.append(output_dir)
-        return write_raw(output_dir / "csv")
-
-    monkeypatch.setattr(build_demo_db.download, "fetch", fetch)
+    monkeypatch.setattr(
+        build_demo_db.download, "fetch", functools.partial(fetch_of_fake_fetch, folders)
+    )
     return folders
 
 
@@ -62,11 +66,15 @@ def test_an_existing_database_is_left_alone(fake_fetch, tmp_path):
     assert db_path.read_bytes() == b"already here"
 
 
-def test_failed_download_leaves_no_database(monkeypatch, tmp_path):
-    def fail(output_dir):
-        raise OSError("network is down")
+def fail_of_failed_download_leaves_no_database(output_dir):
+    raise OSError("network is down")
 
-    monkeypatch.setattr(build_demo_db.download, "fetch", fail)
+
+def test_failed_download_leaves_no_database(monkeypatch, tmp_path):
+
+    monkeypatch.setattr(
+        build_demo_db.download, "fetch", fail_of_failed_download_leaves_no_database
+    )
     db_path = tmp_path / "marketdesk.db"
 
     with pytest.raises(OSError, match="network is down"):

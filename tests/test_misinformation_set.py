@@ -16,9 +16,9 @@ from eval.run_eval import MISINFORMATION_SET, RESULT_PREFIXES, load_golden
 from src.guardrails.pii import RAW_ID_PATTERN
 from src.knowledge.policy_index import read_sections
 from src.orchestrator import Intent
+from tests.example_ids import by_id
 
 EXAMPLES = load_golden(MISINFORMATION_SET)
-by_id = lambda example: example["id"]
 CUSTOMER = [example for example in EXAMPLES if example["session"] == "customer"]
 OPS = [example for example in EXAMPLES if example["session"] == "ops"]
 

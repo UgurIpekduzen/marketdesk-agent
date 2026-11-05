@@ -32,6 +32,8 @@ import config
 
 
 class DecisionCode(StrEnum):
+    """The outcome codes of the rule engine."""
+
     NOT_FOUND = "NOT_FOUND"
     NOT_DELIVERED_CANCELLABLE = "NOT_DELIVERED_CANCELLABLE"
     IN_TRANSIT = "IN_TRANSIT"
@@ -43,6 +45,8 @@ class DecisionCode(StrEnum):
 
 
 class ReturnReason(StrEnum):
+    """The reasons a person can give for a return."""
+
     CHANGED_MIND = "changed_mind"
     LATE = "late"
     DAMAGED = "damaged"
@@ -50,6 +54,8 @@ class ReturnReason(StrEnum):
 
 
 class RequestStatus(StrEnum):
+    """The states of a stored return request."""
+
     PENDING_REVIEW = "PENDING_REVIEW"
     PENDING_SENIOR = "PENDING_SENIOR"
     APPROVED = "APPROVED"
@@ -115,6 +121,8 @@ class OrderFacts:
 
 @dataclass(frozen=True)
 class ReturnDecision:
+    """The rule engine's decision with the rule, the day count and the amounts."""
+
     code: DecisionCode
     # The rule that decided, for example "R6". A missing order and a foreign
     # one both say "R1".
@@ -138,17 +146,38 @@ class ReturnDecision:
 
 
 def to_money(value: Decimal) -> Decimal:
-    """Round an amount to two decimal places."""
+    """Round an amount to two decimal places.
+
+    Args:
+        value (Decimal): An amount.
+
+    Returns:
+        The amount rounded half up to two decimals.
+    """
     return value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
 def sum_money(values: list[float]) -> Decimal:
-    """Add amounts stored as REAL without carrying float error into the sum."""
+    """Add amounts stored as REAL without carrying float error into the sum.
+
+    Args:
+        values (list[float]): Amounts stored as REAL.
+
+    Returns:
+        Their sum, without float error.
+    """
     return to_money(sum((Decimal(str(value)) for value in values), ZERO))
 
 
 def to_calendar_day(text: str | None) -> date | None:
-    """Turn a stored timestamp into its calendar day; empty or NULL is None."""
+    """Turn a stored timestamp into its calendar day; empty or NULL is None.
+
+    Args:
+        text (str | None): A stored timestamp, empty or None.
+
+    Returns:
+        The calendar day, or None.
+    """
     if not text:
         return None
     return date.fromisoformat(text[:10])
@@ -161,6 +190,14 @@ def load_order_facts(
 
     An order that does not exist and an order of another customer both give
     None, from the same query, so the caller cannot tell them apart (R0, R1).
+
+    Args:
+        conn (sqlite3.Connection): A connection to the database.
+        order_id (str): The order.
+        customer_unique_id (str): The customer the order must belong to.
+
+    Returns:
+        The facts the rules need, or None when there is no such order for this customer.
     """
     row = conn.execute(
         "SELECT o.order_status, o.order_delivered_customer_date, "
@@ -213,7 +250,17 @@ def evaluate(
     reason: ReturnReason,
     today: date = config.SIMULATED_TODAY,
 ) -> ReturnDecision:
-    """Decide whether the order can be returned for the given reason."""
+    """Decide whether the order can be returned for the given reason.
+
+    Args:
+        facts (OrderFacts | None): The order's facts, or None when there is no such
+            order.
+        reason (ReturnReason): The reason for the return.
+        today (date): The simulated today.
+
+    Returns:
+        The decision.
+    """
     # Step 1 (R0, R1).
     if facts is None:
         return ReturnDecision(DecisionCode.NOT_FOUND, "R1")
@@ -297,7 +344,21 @@ def check_return(
     reason: str,
     today: date = config.SIMULATED_TODAY,
 ) -> ReturnDecision:
-    """Load the order and decide. Raises ValueError for an unknown reason."""
+    """Load the order and decide. Raises ValueError for an unknown reason.
+
+    Args:
+        conn (sqlite3.Connection): A connection to the database.
+        order_id (str): The order.
+        customer_unique_id (str): The customer the order must belong to.
+        reason (str): The reason for the return.
+        today (date): The simulated today.
+
+    Returns:
+        The decision.
+
+    Raises:
+        ValueError: The reason is unknown.
+    """
     return evaluate(
         load_order_facts(conn, order_id, customer_unique_id),
         ReturnReason(reason),

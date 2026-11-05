@@ -1,5 +1,6 @@
 """Tests for the support rep's review queue: decisions made in code only."""
 
+import functools
 import hashlib
 import logging
 import sqlite3
@@ -14,7 +15,7 @@ from src.tools.escalation import TICKETS_TABLE, escalate_to_human
 from src.tools.review_queue import (
     DECIDED_SHOWN,
     REP_IDENTITY,
-    NotARepSession,
+    NotARepSessionError,
     ReviewQueue,
 )
 from src.tools.session import Session
@@ -74,7 +75,7 @@ def queue(synthetic_db_path):
     "identity", [("customer", "recent_delivery"), ("ops",), (), ("rep", "x"), ("REP",)]
 )
 def test_only_the_rep_session_gets_a_queue(synthetic_db_path, identity):
-    with pytest.raises(NotARepSession):
+    with pytest.raises(NotARepSessionError):
         ReviewQueue(synthetic_db_path, identity)
 
 
@@ -254,17 +255,23 @@ def test_console_may_change_only_status(queue, synthetic_db_path, sql):
 # --- Several reps at once --------------------------------------------------------
 
 
+def decide_of_decide_all_at_once(start, answers, queue, request_id, index, decision):
+    start.wait()
+    answers[index] = queue.decide(request_id, decision)
+
+
 def decide_all_at_once(queue, request_id, decisions):
     """Every decision made at the same moment, each on a thread of its own."""
     start = threading.Barrier(len(decisions))
     answers = [None] * len(decisions)
 
-    def decide(index, decision):
-        start.wait()
-        answers[index] = queue.decide(request_id, decision)
-
     threads = [
-        threading.Thread(target=decide, args=(index, decision))
+        threading.Thread(
+            target=functools.partial(
+                decide_of_decide_all_at_once, start, answers, queue, request_id
+            ),
+            args=(index, decision),
+        )
         for index, decision in enumerate(decisions)
     ]
     for thread in threads:
@@ -299,17 +306,30 @@ def test_senior_request_survives_many_clicks(queue, synthetic_db_path):
     assert status_of(synthetic_db_path, request_id) == SENIOR
 
 
+def close_of_ticket_closed_once_by_many_reps(start, answers, queue, ticket_id, index):
+    start.wait()
+    answers[index] = queue.close_ticket(ticket_id)
+
+
 def test_ticket_closed_once_by_many_reps(queue, synthetic_db_path):
     ticket = add_ticket(synthetic_db_path)
     ticket_id = int(str(ticket).split("-")[-1])
     start = threading.Barrier(8)
     answers = [None] * 8
 
-    def close(index):
-        start.wait()
-        answers[index] = queue.close_ticket(ticket_id)
-
-    threads = [threading.Thread(target=close, args=(i,)) for i in range(8)]
+    threads = [
+        threading.Thread(
+            target=functools.partial(
+                close_of_ticket_closed_once_by_many_reps,
+                start,
+                answers,
+                queue,
+                ticket_id,
+            ),
+            args=(i,),
+        )
+        for i in range(8)
+    ]
     for thread in threads:
         thread.start()
     for thread in threads:

@@ -42,14 +42,16 @@ def agent(synthetic_db_path, fake):
     ops.close()
 
 
-def ask(agent, *questions):
-    async def run():
-        reply = None
-        for question in questions:
-            reply = await agent.ask(question)
-        return reply
+async def run_of_ask(questions, agent):
+    reply = None
+    for question in questions:
+        reply = await agent.ask(question)
+    return reply
 
-    return asyncio.run(run())
+
+def ask(agent, *questions):
+
+    return asyncio.run(run_of_ask(questions, agent))
 
 
 def tool_results(fake):
@@ -288,12 +290,20 @@ def test_failed_calls_record_no_computation(agent, fake):
     assert reply.computations == []
 
 
-def test_same_caveat_is_shown_once(agent, fake):
-    call = lambda state: (
+def cancel_rate_call(state):
+    """The scripted model's request for the cancel rate of one state."""
+    return (
         "run_metric",
         {"metric_name": "cancel_rate", "customer_state": [state]},
     )
-    fake.script = [[call("SP")], [call("RJ")], "İptal oranları."]
+
+
+def test_same_caveat_is_shown_once(agent, fake):
+    fake.script = [
+        [cancel_rate_call("SP")],
+        [cancel_rate_call("RJ")],
+        "İptal oranları.",
+    ]
 
     reply = ask(agent, "SP ve RJ iptal oranları?")
 

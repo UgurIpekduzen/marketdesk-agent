@@ -49,7 +49,7 @@ def test_results_named_for_both_critic_modes():
     )
 
 
-class Intent_:
+class FakeIntent:
     def __init__(self, value):
         self.value = value
 
@@ -71,7 +71,7 @@ class Reply:
 class Answer:
     def __init__(self, intent, text, critic=None):
         self.display = text
-        self.intent = Intent_(intent)
+        self.intent = FakeIntent(intent)
         self.reply = Reply(text, critic)
         self.router_log = Log([])
         self.awaiting_approval = None

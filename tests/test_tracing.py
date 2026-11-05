@@ -1,6 +1,7 @@
 """Tests for tracing: what a run records, and that nothing personal or
 secret leaves with it. A stand-in model, no network."""
 
+import functools
 import importlib
 
 import pytest
@@ -34,19 +35,20 @@ def secrets(monkeypatch):
     monkeypatch.setenv("HF_TOKEN", HF_TOKEN)
 
 
+def start_of_traced(exporters, target="phoenix"):
+    exporter = InMemorySpanExporter()
+    tracing.setup_tracing(target, exporter=exporter, batch=False)
+    exporters.append(exporter)
+    return exporter
+
+
 @pytest.fixture
 def traced(monkeypatch):
     """Switch tracing on with an exporter that keeps the spans in memory."""
     monkeypatch.setattr(tracing, "_personal_values", {})
     exporters = []
 
-    def start(target="phoenix"):
-        exporter = InMemorySpanExporter()
-        tracing.setup_tracing(target, exporter=exporter, batch=False)
-        exporters.append(exporter)
-        return exporter
-
-    yield start
+    yield functools.partial(start_of_traced, exporters)
     tracing.shutdown_tracing()
 
 
@@ -122,16 +124,22 @@ def test_refused_write_is_on_the_tool_span(
     )
 
 
+async def scenario_of_approval_and_decline_have_spans(agent):
+    await agent.ask("o_day14 hasarlı geldi, iade istiyorum")
+    await agent.approve()
+    await agent.decline()
+
+
 def test_approval_and_decline_have_spans(traced, synthetic_db_path, fake_policy_index):
     exporter = traced()
 
-    async def scenario(agent):
-        await agent.ask("o_day14 hasarlı geldi, iade istiyorum")
-        await agent.approve()
-        await agent.decline()
-
     fake = FakeLLM(script=[[("create_return_request", RETURN)], "Onayınız istenecek."])
-    with_agent(synthetic_db_path, fake_policy_index, fake, scenario)
+    with_agent(
+        synthetic_db_path,
+        fake_policy_index,
+        fake,
+        scenario_of_approval_and_decline_have_spans,
+    )
 
     approved, declined = spans_named(exporter, "human approval")
     assert approved.attributes["marketdesk.answer"] == "approved"

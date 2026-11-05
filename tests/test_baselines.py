@@ -1,5 +1,6 @@
 """Tests for the baselines: on the synthetic database, with a stand-in model."""
 
+import functools
 import json
 
 import pytest
@@ -24,24 +25,29 @@ GOOD_SCRIPT = [
 EXAMPLES = [SUPPORT_EXAMPLE, OPS_EXAMPLE, POLICY_EXAMPLE]
 
 
+def run_baselines_of_run(
+    tmp_path, synthetic_db_path, fake_policy_index, examples, script, **options
+):
+    fake = FakeLLM(script=list(script))
+    llm = CachedLLM(inner=fake, cache_dir=tmp_path / "cache")
+    rows = baselines.run(
+        examples,
+        synthetic_db_path,
+        fake_policy_index,
+        llm,
+        report=options.pop("report", lambda line: None),
+        **options,
+    )
+    return rows, fake
+
+
 @pytest.fixture
 def run(synthetic_db_path, fake_policy_index, tmp_path):
     """Run the baselines with a scripted model; returns rows and the model."""
 
-    def run_baselines(examples, script, **options):
-        fake = FakeLLM(script=list(script))
-        llm = CachedLLM(inner=fake, cache_dir=tmp_path / "cache")
-        rows = baselines.run(
-            examples,
-            synthetic_db_path,
-            fake_policy_index,
-            llm,
-            report=options.pop("report", lambda line: None),
-            **options,
-        )
-        return rows, fake
-
-    return run_baselines
+    return functools.partial(
+        run_baselines_of_run, tmp_path, synthetic_db_path, fake_policy_index
+    )
 
 
 def system_prompt(fake: FakeLLM, call: int) -> str:

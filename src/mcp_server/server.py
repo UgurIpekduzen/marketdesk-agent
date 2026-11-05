@@ -5,8 +5,9 @@ Start it with:  python -m src.mcp_server.server
 One server process serves one signed-in customer. The application starts
 it with the customer, the database and the page's language in environment
 variables, and the process keeps the session for as long as it lives: who
-the customer is, the order aliases, and the approval of a return request. None of that is ever
-an argument of a tool, so the model cannot supply or change it.
+the customer is, the order aliases, and the approval of a return request.
+None of that is ever an argument of a tool, so the model cannot supply or
+change it.
 
 Two groups of tools:
 
@@ -66,6 +67,8 @@ server = MCPServer(SERVER_NAME)
 
 @dataclass
 class State:
+    """What the server holds for its one session."""
+
     session: Session
     conn: sqlite3.Connection
     simulated_today: date
@@ -93,14 +96,28 @@ def state() -> State:
 
 def connect_for_order_server(db_path: str) -> sqlite3.Connection:
     """The server's connection: it reads anything and writes only new return
-    requests and tickets, so a fault in a tool cannot touch other data."""
+    requests and tickets, so a fault in a tool cannot touch other data.
+
+    Args:
+        db_path (str): The database file.
+
+    Returns:
+        A connection that may insert only into the writable tables.
+    """
     conn = sqlite3.connect(db_path)
     ensure_tickets_table(conn)
     return restrict_writes(conn, inserts=WRITABLE_TABLES)
 
 
 def describe(function) -> str:
-    """The description the model reads: the wrapped function's docstring."""
+    """The description the model reads: the wrapped function's docstring.
+
+    Args:
+        function: A tool function with a docstring.
+
+    Returns:
+        The docstring, dedented, as the tool's description.
+    """
     return inspect.cleandoc(function.__doc__)
 
 

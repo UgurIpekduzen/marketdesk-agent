@@ -1,8 +1,8 @@
 """Do the tests and the attack sets notice when a guard is switched off?
 
-Usage:  python eval/mutations.py                 the unit tests, for every guard
-        python eval/mutations.py --only NAME     one guard
-        python eval/mutations.py --list          the guards and what breaks
+Usage:  python -m eval.mutations                 the unit tests, for every guard
+        python -m eval.mutations --only NAME     one guard
+        python -m eval.mutations --list          the guards and what breaks
 
 A set of attacks that passes tells nothing if it would pass without the guard
 too. So each guard is broken on purpose, in the running process and never in
@@ -17,6 +17,7 @@ imported by the application.
 """
 
 import argparse
+import functools
 import json
 import os
 import subprocess
@@ -29,6 +30,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from unittest import mock
 
+from mcp.client.stdio import StdioServerParameters
+
+from src import messages
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 RESULTS_DIR = PROJECT_ROOT / "eval" / "results"
 MUTATION_VARIABLE = "MARKETDESK_MUTATION"
@@ -38,6 +43,8 @@ CONTROL = "control_nothing_broken"
 
 @dataclass(frozen=True)
 class Mutation:
+    """One guard to switch off, and the tests that should notice."""
+
     name: str
     breaks: str  # what is switched off, in a sentence
     patch: Callable[[ExitStack], None]
@@ -53,6 +60,7 @@ class Mutation:
 
 
 def patch_attr(stack: ExitStack, target, name: str, value) -> None:
+    """Replace an attribute for as long as the stack is open."""
     stack.enter_context(mock.patch.object(target, name, value))
 
 
@@ -63,45 +71,44 @@ def approval_off(stack: ExitStack) -> None:
     patch_attr(stack, Approvals, "consume", lambda self, token, action: True)
 
 
+def leaking(original, session, conn, order_ref, *args, **kwargs):
+    """The answer of the order tool, but with a different message when the order
+    exists and belongs to somebody else."""
+    answer = original(session, conn, order_ref, *args, **kwargs)
+    if answer.get("error") == "NOT_FOUND":
+        exists = conn.execute(
+            "SELECT 1 FROM orders WHERE order_id = ?",
+            (session.order_id_for(order_ref),),
+        ).fetchone()
+        if exists:
+            return {
+                "error": "NOT_FOUND",
+                "message": messages.ORDER_NOT_FOUND + " (it is another customer's)",
+            }
+    return answer
+
+
 def existence_leak(stack: ExitStack) -> None:
     """An order of another customer answers differently from a missing one."""
-    import sqlite3
-
-    from src import messages
     from src.mcp_server import server as server_module
     from src.tools import orders
 
-    original = orders.get_order_status
+    leak = functools.partial(leaking, orders.get_order_status)
+    patch_attr(stack, orders, "get_order_status", leak)
+    patch_attr(stack, server_module, "get_order_status", leak)
 
-    def leaking(session, conn, order_ref, *args, **kwargs):
-        answer = original(session, conn, order_ref, *args, **kwargs)
-        if answer.get("error") == "NOT_FOUND":
-            exists = conn.execute(
-                "SELECT 1 FROM orders WHERE order_id = ?",
-                (session.order_id_for(order_ref),),
-            ).fetchone()
-            if exists:
-                return {
-                    "error": "NOT_FOUND",
-                    "message": messages.ORDER_NOT_FOUND + " (it is another customer's)",
-                }
-        return answer
 
-    assert sqlite3  # the leak reads the table the real check reads
-    patch_attr(stack, orders, "get_order_status", leaking)
-    patch_attr(stack, server_module, "get_order_status", leaking)
+def anything_in_the_database(original, tree, allowed_tables, reserved_names):
+    """The validator's check with every reserved name added to the allowed tables."""
+    return original(tree, (*allowed_tables, *reserved_names), reserved_names)
 
 
 def validator_tables_off(stack: ExitStack) -> None:
     """Free SQL may read any table of the database, not only the safe views."""
     from src.knowledge import sql_validator
 
-    original = sql_validator.check_tree
-
-    def anything_in_the_database(tree, allowed_tables, reserved_names):
-        return original(tree, (*allowed_tables, *reserved_names), reserved_names)
-
-    patch_attr(stack, sql_validator, "check_tree", anything_in_the_database)
+    patched = functools.partial(anything_in_the_database, sql_validator.check_tree)
+    patch_attr(stack, sql_validator, "check_tree", patched)
 
 
 def theme_check_off(stack: ExitStack) -> None:
@@ -120,14 +127,16 @@ def outbound_off(stack: ExitStack) -> None:
     patch_attr(stack, Redactor, "redact", lambda self, text: (text, Count()))
 
 
+def open_connection(conn, inserts=(), updates=()):
+    """The connection as it is, with no allowlist put on it."""
+    return conn
+
+
 def write_allowlist_off(stack: ExitStack) -> None:
     """The database connections may write anywhere."""
     from src.guardrails import write_access
     from src.mcp_server import server as server_module
     from src.tools import review_queue
-
-    def open_connection(conn, inserts=(), updates=()):
-        return conn
 
     patch_attr(stack, write_access, "restrict_writes", open_connection)
     patch_attr(stack, server_module, "restrict_writes", open_connection)
@@ -152,6 +161,13 @@ class Fallback(dict):
         return self._default
 
 
+def init_with_fallback(self, original, *arguments, **keywords):
+    """The orchestrator's own init, then every agent it does not have is answered
+    by the one it has."""
+    original(self, *arguments, **keywords)
+    self._agents = Fallback(self._agents, self._agent)
+
+
 def router_roles_off(stack: ExitStack) -> None:
     """A session may be routed to any agent, and one it does not have is
     answered by the agent it has."""
@@ -163,12 +179,9 @@ def router_roles_off(stack: ExitStack) -> None:
     }
     patch_attr(stack, orchestrator, "ALLOWED_INTENTS", everything)
 
-    original = orchestrator.Orchestrator.__init__
-
-    def init(self, *arguments, **keywords):
-        original(self, *arguments, **keywords)
-        self._agents = Fallback(self._agents, self._agent)
-
+    init = functools.partialmethod(
+        init_with_fallback, orchestrator.Orchestrator.__init__
+    )
     patch_attr(stack, orchestrator.Orchestrator, "__init__", init)
 
 
@@ -186,17 +199,17 @@ def safe_markdown_off(stack: ExitStack) -> None:
     patch_attr(stack, view, "safe_markdown", lambda text, language=None: text)
 
 
+async def approve_any_card(self, original, card):
+    """The click carries the card that waits now, not the one it was on."""
+    return await original(self, await self.pending_approval())
+
+
 def card_binding_off(stack: ExitStack) -> None:
     """A click writes whatever request waits, not the card the person saw."""
     from src.mcp_server.client import OrdersClient
 
-    original = OrdersClient.approve_pending
-
-    async def any_card(self, card):
-        # The click carries the card that waits now, not the one it was on.
-        return await original(self, await self.pending_approval())
-
-    patch_attr(stack, OrdersClient, "approve_pending", any_card)
+    patched = functools.partialmethod(approve_any_card, OrdersClient.approve_pending)
+    patch_attr(stack, OrdersClient, "approve_pending", patched)
 
 
 def nothing(stack: ExitStack) -> None:
@@ -308,6 +321,17 @@ def apply(name: str, stack: ExitStack) -> None:
     MUTATIONS[name].patch(stack)
 
 
+def mutated_server(original, name: str, env=None) -> StdioServerParameters:
+    """The parameters that start the order server, with the mutated one in its place."""
+    parameters = original(env)
+    return StdioServerParameters(
+        command=parameters.command,
+        args=["-m", "eval.mutated_server", name],
+        cwd=parameters.cwd,
+        env=parameters.env,
+    )
+
+
 def apply_everywhere(name: str, stack: ExitStack) -> None:
     """Break the guard here and, if it lives in the order server, there too.
 
@@ -317,23 +341,11 @@ def apply_everywhere(name: str, stack: ExitStack) -> None:
     apply(name, stack)
     if not MUTATIONS[name].server_side:
         return
-    from mcp.client.stdio import StdioServerParameters
-
     from src.mcp_server import client
 
     original = client.server_parameters
-
-    def mutated_server(env=None):
-        parameters = original(env)
-        return StdioServerParameters(
-            command=parameters.command,
-            args=["-m", "eval.mutated_server", name],
-            cwd=parameters.cwd,
-            env=parameters.env,
-        )
-
     stack.callback(setattr, client, "server_parameters", original)
-    client.server_parameters = mutated_server
+    client.server_parameters = functools.partial(mutated_server, original, name)
 
 
 # --- The runner -------------------------------------------------------------------
@@ -467,6 +479,7 @@ def live_run(mutation: Mutation, paid: bool) -> dict:
 
 
 def live_text(row: dict) -> str:
+    """The result of the live run of a mutation, as text."""
     live = row.get("live")
     if live is None:
         return "not run"
@@ -479,6 +492,7 @@ def live_text(row: dict) -> str:
 
 
 def markdown(results: dict) -> str:
+    """The results as a markdown report."""
     lines = [
         "# Do the tests notice a guard that is switched off?",
         "",
@@ -488,7 +502,10 @@ def markdown(results: dict) -> str:
             "when it is broken is a hole in the tests."
         ),
         "",
-        "| Guard broken | What is switched off | Unit tests | Attack sets (dev, with the model) |",
+        (
+            "| Guard broken | What is switched off | Unit tests "
+            "| Attack sets (dev, with the model) |"
+        ),
         "|---|---|---|---|",
     ]
     for name, row in results.items():
@@ -519,6 +536,7 @@ def markdown(results: dict) -> str:
 
 
 def main() -> int:
+    """Run the command line entry point."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--only", help="the name of one guard")
     parser.add_argument("--list", action="store_true", help="list the guards")

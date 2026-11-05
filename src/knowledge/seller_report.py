@@ -27,6 +27,15 @@ SELLER = "seller_key"
 
 
 def column(result: dict, name: str) -> list:
+    """The values of one named column of a query result.
+
+    Args:
+        result (dict): A query result with columns and rows.
+        name (str): The column.
+
+    Returns:
+        Its values.
+    """
     return [row[result["columns"].index(name)] for row in result["rows"]]
 
 
@@ -43,6 +52,18 @@ def build_seller_report(
     period may hold purchase_from and purchase_to (YYYY-MM-DD). The answer
     holds the rows, the metric calls behind them ("sources") and the caveat
     of every metric used; an error answer from a metric is returned as it is.
+
+    Args:
+        conn (sqlite3.Connection): A connection to the database.
+        today (date): The simulated today.
+        min_items (int | None): The fewest items a seller needs; the configured number
+            when None.
+        rows (int | None): How many sellers to show; the configured number when None.
+        period (dict | None): purchase_from and purchase_to, or None for all time.
+        language (Language): The session's language.
+
+    Returns:
+        The report with its rows and the SQL behind them.
     """
     # Read at the call, so a setting changed for a test or a run is used.
     min_items = min_items or config.SELLER_REPORT_MIN_ITEMS

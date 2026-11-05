@@ -27,6 +27,7 @@ CLICKS = ("approve", "decline")
 
 
 def last_request_id(conn: sqlite3.Connection) -> int:
+    """The highest return request id, or 0 when there is none."""
     return conn.execute("SELECT COALESCE(MAX(id), 0) FROM return_requests").fetchone()[
         0
     ]
@@ -44,6 +45,7 @@ def written_rows(conn: sqlite3.Connection, order_id: str, after_id: int) -> list
 
 
 def written_as_expected(rows: list[tuple], expected: dict) -> bool:
+    """True when the written rows match the expected count and values."""
     if len(rows) != expected["count"]:
         return False
     return all(
@@ -234,6 +236,7 @@ def multi_turn_summary(rows: list[dict]) -> dict:
 
 
 def multi_turn_text(summary: dict) -> str:
+    """The multi-turn results as text."""
     held, tried = summary["written"]
     flows = ", ".join(
         f"{flow} {passed} of {run}"

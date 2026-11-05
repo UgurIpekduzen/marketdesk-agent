@@ -19,11 +19,13 @@ logger = logging.getLogger(__name__)
 CHECK_SECONDS = 60
 
 
-class SessionLimitReached(RuntimeError):
+class SessionLimitReachedError(RuntimeError):
     """Too many sessions are open; the visitor should try again later."""
 
 
 class SessionPool:
+    """Keeps the open sessions, closes idle ones and limits how many are open."""
+
     def __init__(
         self,
         idle_seconds: float,
@@ -38,11 +40,21 @@ class SessionPool:
         self._stopped = threading.Event()
 
     def open(self, start: Callable[[], ChatSession]) -> ChatSession:
-        """Start a session with start(), unless the pool is full."""
+        """Start a session with start(), unless the pool is full.
+
+        Args:
+            start (Callable[[], ChatSession]): Creates the session.
+
+        Returns:
+            The new session.
+
+        Raises:
+            SessionLimitReachedError: The pool is full.
+        """
         with self._lock:
             self._drop_idle()
             if len(self._sessions) >= self._max_open:
-                raise SessionLimitReached(
+                raise SessionLimitReachedError(
                     f"{len(self._sessions)} chat sessions are open already"
                 )
             # Started under the lock, so two visitors cannot both take the
@@ -73,20 +85,30 @@ class SessionPool:
 
     @property
     def open_count(self) -> int:
+        """How many sessions are open now."""
         with self._lock:
             return sum(not session.closed for session in self._sessions)
 
     def start_checking(self, every_seconds: float = CHECK_SECONDS) -> None:
-        """Look for idle sessions in the background until stop() is called."""
+        """Look for idle sessions in the background until stop() is called.
 
-        def check() -> None:
-            while not self._stopped.wait(every_seconds):
-                try:
-                    self.close_idle()
-                except Exception:
-                    logger.exception("idle session check failed")
+        Args:
+            every_seconds (float): How often to look.
+        """
+        threading.Thread(
+            target=self._check_until_stopped,
+            args=(every_seconds,),
+            name="session-pool",
+            daemon=True,
+        ).start()
 
-        threading.Thread(target=check, name="session-pool", daemon=True).start()
+    def _check_until_stopped(self, every_seconds: float) -> None:
+        while not self._stopped.wait(every_seconds):
+            try:
+                self.close_idle()
+            except Exception:
+                logger.exception("idle session check failed")
 
     def stop(self) -> None:
+        """Stop the background check for idle sessions."""
         self._stopped.set()

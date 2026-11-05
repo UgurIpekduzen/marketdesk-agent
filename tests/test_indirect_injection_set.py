@@ -25,9 +25,9 @@ from src.knowledge.policy_index import INDEX_DIR, POLICIES_DIR, read_sections
 from src.knowledge.sql_runner import run_sql
 from src.orchestrator import Intent
 from src.tools.escalation import TICKETS_TABLE
+from tests.example_ids import by_id
 
 EXAMPLES = load_golden(INDIRECT_INJECTION_SET)
-by_id = lambda example: example["id"]
 MARKUP = ("<script", "javascript:", "\\]\\(", "!\\[")
 SRC = Path(__file__).resolve().parent.parent / "src"
 

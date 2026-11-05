@@ -1,6 +1,8 @@
 """Tests for the multi-turn runner and its report, on the synthetic
 database with a stand-in model."""
 
+import functools
+
 import pytest
 
 from eval import multi_turn, report, run_eval
@@ -66,22 +68,25 @@ CARD_SCRIPT = [
 ]
 
 
+def run_examples_of_run(
+    tmp_path, synthetic_db_path, fake_policy_index, examples, script
+):
+    lines = []
+    llm = CachedLLM(inner=FakeLLM(script=list(script)), cache_dir=tmp_path / "cache")
+    rows = run_eval.run(
+        examples, synthetic_db_path, fake_policy_index, llm, report=lines.append
+    )
+    return rows, lines
+
+
 @pytest.fixture
 def run(synthetic_db_path, fake_policy_index, tmp_path):
     """Run examples with a scripted model; returns the rows and the lines
     the run printed."""
 
-    def run_examples(examples, script):
-        lines = []
-        llm = CachedLLM(
-            inner=FakeLLM(script=list(script)), cache_dir=tmp_path / "cache"
-        )
-        rows = run_eval.run(
-            examples, synthetic_db_path, fake_policy_index, llm, report=lines.append
-        )
-        return rows, lines
-
-    return run_examples
+    return functools.partial(
+        run_examples_of_run, tmp_path, synthetic_db_path, fake_policy_index
+    )
 
 
 def requests_of(path, order_id: str) -> list[tuple]:

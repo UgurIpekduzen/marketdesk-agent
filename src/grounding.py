@@ -61,6 +61,12 @@ def number_readings(token: str) -> set[tuple[float, int, float]]:
     "1.234" is 1234 in Turkish and 1.234 in English; both are kept, and an
     answer passes if either is in the tool output. A word for thousands or
     millions after the number scales it.
+
+    Args:
+        token (str): A number as written.
+
+    Returns:
+        Every (value, decimals, scale) the written number may stand for.
     """
     match = NUMBER_PATTERN.fullmatch(token.strip())
     if not match:
@@ -87,32 +93,45 @@ def number_readings(token: str) -> set[tuple[float, int, float]]:
     return readings
 
 
+def collect_numbers(value: object, found: list[float]) -> None:
+    """Add every number in the value, at any depth, to found.
+
+    Args:
+        value (object): Any value; dicts, lists and strings are searched.
+        found (list[float]): The list the numbers are added to.
+    """
+    if isinstance(value, bool):
+        return
+    if isinstance(value, int | float):
+        found.append(float(value))
+    elif isinstance(value, str):
+        found.extend(float(x) for x in re.findall(r"-?\d+(?:\.\d+)?", value))
+    elif isinstance(value, dict):
+        if isinstance(value.get("rows"), list):
+            found.append(float(len(value["rows"])))
+        for item in value.values():
+            collect_numbers(item, found)
+    elif isinstance(value, list | tuple):
+        for item in value:
+            collect_numbers(item, found)
+
+
 def tool_numbers(tool_results: list[tuple[str, object]]) -> list[float]:
     """Every number in the tool results, at any depth, also in strings.
 
     The number of rows a result holds counts too: "the top 20" of a table of
     20 rows states what the tool returned, though no field says 20.
+
+    Args:
+        tool_results (list[tuple[str, object]]): The (tool name, result) pairs of a
+            question.
+
+    Returns:
+        Every number in the results.
     """
     found: list[float] = []
-
-    def walk(value: object) -> None:
-        if isinstance(value, bool):
-            return
-        if isinstance(value, int | float):
-            found.append(float(value))
-        elif isinstance(value, str):
-            found.extend(float(x) for x in re.findall(r"-?\d+(?:\.\d+)?", value))
-        elif isinstance(value, dict):
-            if isinstance(value.get("rows"), list):
-                found.append(float(len(value["rows"])))
-            for item in value.values():
-                walk(item)
-        elif isinstance(value, list | tuple):
-            for item in value:
-                walk(item)
-
     for _, result in tool_results:
-        walk(result)
+        collect_numbers(result, found)
     return found
 
 
@@ -120,6 +139,13 @@ def matches_a_tool_number(token: str, numbers: list[float]) -> bool:
     """True when the written number is a tool number, rounded as written.
 
     A share may be written as a percentage (0.123 as 12,3).
+
+    Args:
+        token (str): A number as written.
+        numbers (list[float]): The numbers the tools returned.
+
+    Returns:
+        True when the written number matches one of them, rounded as written.
     """
     for value, places, scale in number_readings(token):
         tolerance = 0.5 * 10**-places * scale
@@ -138,6 +164,15 @@ def ungrounded_numbers(
     """Numbers in the answer that no tool returned.
 
     Left out: dates, citations, and numbers the question itself holds.
+
+    Args:
+        text (str): The answer.
+        tool_results (list[tuple[str, object]]): The (tool name, result) pairs of the
+            question.
+        question (str): The person's question; numbers typed in it are allowed.
+
+    Returns:
+        The numbers in the answer that no tool returned.
     """
     cleaned = LIST_MARKER.sub(" ", text)
     cleaned = ISO_DATE.sub(" ", cleaned)

@@ -1,6 +1,7 @@
 """Runs the Support Agent in a test: real MCP order server, stand-in model."""
 
 import asyncio
+import functools
 import json
 import sqlite3
 
@@ -9,6 +10,14 @@ from src.i18n import DEFAULT_LANGUAGE
 from src.mcp_server.client import OrdersClient
 from src.orchestrator import Orchestrator
 from tests.synthetic_data import ALICE
+
+
+async def run_of_with_agent(db_path, customer, language, policy_index, fake, scenario):
+    async with OrdersClient(db_path, customer, language) as orders:
+        agent = await SupportAgent.create(
+            orders, customer, policy_index, fake, language
+        )
+        return await scenario(agent)
 
 
 def with_agent(
@@ -20,14 +29,19 @@ def with_agent(
     one task, as the MCP connection requires.
     """
 
-    async def run():
-        async with OrdersClient(db_path, customer, language) as orders:
-            agent = await SupportAgent.create(
-                orders, customer, policy_index, fake, language
-            )
-            return await scenario(agent)
+    return asyncio.run(
+        run_of_with_agent(db_path, customer, language, policy_index, fake, scenario)
+    )
 
-    return asyncio.run(run())
+
+async def run_of_with_customer_router(
+    db_path, customer, language, policy_index, fake, scenario
+):
+    async with OrdersClient(db_path, customer, language) as orders:
+        router = await Orchestrator.for_customer(
+            orders, customer, policy_index, fake, language
+        )
+        return await scenario(router)
 
 
 def with_customer_router(
@@ -35,26 +49,24 @@ def with_customer_router(
 ):
     """Like with_agent, but the scenario gets the router of a customer session."""
 
-    async def run():
-        async with OrdersClient(db_path, customer, language) as orders:
-            router = await Orchestrator.for_customer(
-                orders, customer, policy_index, fake, language
-            )
-            return await scenario(router)
+    return asyncio.run(
+        run_of_with_customer_router(
+            db_path, customer, language, policy_index, fake, scenario
+        )
+    )
 
-    return asyncio.run(run())
+
+async def scenario_of_asking(messages_to_send, agent):
+    reply = None
+    for message in messages_to_send:
+        reply = await agent.ask(message)
+    return reply
 
 
 def asking(*messages_to_send):
     """A scenario that sends the messages in turn and returns the last reply."""
 
-    async def scenario(agent):
-        reply = None
-        for message in messages_to_send:
-            reply = await agent.ask(message)
-        return reply
-
-    return scenario
+    return functools.partial(scenario_of_asking, messages_to_send)
 
 
 def tool_results(fake):

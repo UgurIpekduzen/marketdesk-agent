@@ -13,9 +13,9 @@ from src.formatting import format_money, how_computed
 from src.i18n import DEFAULT_LANGUAGE, Language, catalog
 from src.orchestrator import Answer, Intent
 from src.tools.review_queue import RequestRow, TicketRow
-from src.ui.chat_session import ApprovalWaiting, MessageTooLong
-from src.ui.question_limit import QuestionLimitReached
-from src.ui.session_pool import SessionLimitReached
+from src.ui.chat_session import ApprovalWaitingError, MessageTooLongError
+from src.ui.question_limit import QuestionLimitReachedError
+from src.ui.session_pool import SessionLimitReachedError
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +81,12 @@ def escape_markdown(text: str) -> str:
     Escaping does not stop a written address from being made a link (the
     link is found in the text once the escapes are read), so an address is
     drawn as code instead.
+
+    Args:
+        text (str): Any text.
+
+    Returns:
+        The text drawn as written.
     """
     parts, last = [], 0
     for match in BARE_ADDRESS.finditer(text):
@@ -96,6 +102,13 @@ def without_images(text: str, language: Language = DEFAULT_LANGUAGE) -> str:
 
     The usual forms become a plain note; any other start of an image is
     escaped, so that a form the pattern misses cannot load either.
+
+    Args:
+        text (str): Any text.
+        language (Language): The session's language.
+
+    Returns:
+        The text with no markdown image left.
     """
     cleaned, replaced = IMAGE_PATTERN.subn(catalog(language).UI_IMAGE_REMOVED, text)
     escaped = cleaned.count(IMAGE_START)
@@ -110,7 +123,14 @@ def without_images(text: str, language: Language = DEFAULT_LANGUAGE) -> str:
 
 
 def without_links(text: str) -> str:
-    """The text with no markdown link left to click; the words stay."""
+    """The text with no markdown link left to click; the words stay.
+
+    Args:
+        text (str): Any text.
+
+    Returns:
+        The text with no link left to click; the words stay.
+    """
     text, inline = INLINE_LINK.subn(r"\1", text)
     text, defined = LINK_DEFINITION.subn("", text)
     text, auto = AUTOLINK.subn("\\\\<", text)
@@ -129,12 +149,22 @@ def without_links(text: str) -> str:
 
 def safe_markdown(text: str, language: Language = DEFAULT_LANGUAGE) -> str:
     """A text from the model or the visitor, as it may be drawn as markdown:
-    no image to load, no link to click."""
+    no image to load, no link to click.
+
+    Args:
+        text (str): A text from the model or the visitor.
+        language (Language): The session's language.
+
+    Returns:
+        The text as it may be drawn as markdown.
+    """
     return without_links(without_images(text, language))
 
 
 @dataclass(frozen=True)
 class AnswerView:
+    """An answer prepared for display: text, who answered and the step details."""
+
     text: str
     agent: str  # who answered, for the steps panel
     avatar: str = SUPPORT_AVATAR
@@ -155,7 +185,14 @@ class AnswerView:
 
 
 def last_table(tool_results: list) -> dict | None:
-    """The columns and rows of the last query that returned some."""
+    """The columns and rows of the last query that returned some.
+
+    Args:
+        tool_results (list): The (tool name, result) pairs of the answer.
+
+    Returns:
+        The columns and rows of the last result that has them, or None.
+    """
     for _, result in reversed(tool_results):
         if isinstance(result, dict) and "columns" in result and "rows" in result:
             return {"columns": result["columns"], "rows": result["rows"]}
@@ -163,7 +200,15 @@ def last_table(tool_results: list) -> dict | None:
 
 
 def cited_sources(text: str, tool_results: list) -> list[str]:
-    """Citations of the policy sections found that the answer names."""
+    """Citations of the policy sections found that the answer names.
+
+    Args:
+        text (str): The answer.
+        tool_results (list): The (tool name, result) pairs of the answer.
+
+    Returns:
+        The citations of the policy sections the answer names.
+    """
     cited = []
     for name, result in tool_results:
         if name != "search_policies" or not isinstance(result, dict):
@@ -183,12 +228,28 @@ def unsaid_caveats(text: str, caveats: list[str]) -> list[str]:
     caveat the model left out, cut short or reworded is still shown: the
     caveat comes from the code and must reach the reader. Spaces and line
     breaks do not count.
+
+    Args:
+        text (str): The answer.
+        caveats (list[str]): The caveats of the metrics used.
+
+    Returns:
+        The caveats the answer does not already hold in full.
     """
     said = " ".join(text.split())
     return [caveat for caveat in caveats if " ".join(caveat.split()) not in said]
 
 
 def view_of(answer: Answer, language: Language = DEFAULT_LANGUAGE) -> AnswerView:
+    """Turn an Answer into the AnswerView the page shows.
+
+    Args:
+        answer (Answer): The router's answer.
+        language (Language): The session's language.
+
+    Returns:
+        The answer prepared for display.
+    """
     texts = catalog(language)
     router = answer.router_log
     if answer.refused:
@@ -238,6 +299,13 @@ def tools_text(tools: list[str], language: Language = DEFAULT_LANGUAGE) -> str:
 
     Inline code is not read as markdown, so a tool name can never become an
     image or a link; a backtick, which would end the code, is dropped.
+
+    Args:
+        tools (list[str]): The tools the answer called.
+        language (Language): The session's language.
+
+    Returns:
+        The tool names as inline code.
     """
     if not tools:
         return catalog(language).UI_STEPS_NO_TOOLS
@@ -247,7 +315,15 @@ def tools_text(tools: list[str], language: Language = DEFAULT_LANGUAGE) -> str:
 def approval_card(
     pending: dict, language: Language = DEFAULT_LANGUAGE
 ) -> dict[str, str]:
-    """What the person is asked to approve: label -> value."""
+    """What the person is asked to approve: label -> value.
+
+    Args:
+        pending (dict): The request waiting for approval.
+        language (Language): The session's language.
+
+    Returns:
+        The label and value of each line of the card.
+    """
     texts = catalog(language)
     return {
         texts.UI_APPROVAL_ORDER: pending["order"],
@@ -260,16 +336,24 @@ def approval_card(
 def friendly_error(
     failure: BaseException, language: Language = DEFAULT_LANGUAGE
 ) -> str:
-    """The message shown for a failure. The details go to the log only."""
+    """The message shown for a failure. The details go to the log only.
+
+    Args:
+        failure (BaseException): What went wrong; logged, not shown.
+        language (Language): The session's language.
+
+    Returns:
+        The message to show.
+    """
     logger.error("request failed", exc_info=failure)
     texts = catalog(language)
-    if isinstance(failure, SessionLimitReached):
+    if isinstance(failure, SessionLimitReachedError):
         return texts.UI_ERROR_FULL
-    if isinstance(failure, MessageTooLong):
+    if isinstance(failure, MessageTooLongError):
         return texts.UI_ERROR_TOO_LONG.format(limit=config.MAX_MESSAGE_CHARS)
-    if isinstance(failure, QuestionLimitReached):
+    if isinstance(failure, QuestionLimitReachedError):
         return texts.UI_ERROR_QUESTION_LIMIT
-    if isinstance(failure, ApprovalWaiting):
+    if isinstance(failure, ApprovalWaitingError):
         return texts.UI_ERROR_APPROVAL_WAITING
     if isinstance(failure, TimeoutError):
         return texts.UI_ERROR_TIMEOUT
@@ -283,6 +367,13 @@ def request_card(
 
     Every value comes from the database and the rules, none from the model;
     ids are shown as hashes.
+
+    Args:
+        row (RequestRow): A return request.
+        language (Language): The session's language.
+
+    Returns:
+        The title line and the details.
     """
     texts = catalog(language)
     title = texts.UI_REVIEW_REQUEST_TITLE.format(
@@ -298,7 +389,15 @@ def request_card(
 
 
 def ticket_title(row: TicketRow, language: Language = DEFAULT_LANGUAGE) -> str:
-    """A ticket's title line; its summary is drawn apart, as plain text."""
+    """A ticket's title line; its summary is drawn apart, as plain text.
+
+    Args:
+        row (TicketRow): An escalation ticket.
+        language (Language): The session's language.
+
+    Returns:
+        The title line.
+    """
     texts = catalog(language)
     return texts.UI_REVIEW_TICKET_TITLE.format(
         number=row.number,

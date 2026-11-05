@@ -48,6 +48,13 @@ def cited_in(result: dict, language: Language) -> dict:
     """A search result whose document and citation are in the language.
 
     The section text stays as it is written: the documents are Turkish.
+
+    Args:
+        result (dict): A search result.
+        language (Language): The session's language.
+
+    Returns:
+        The result with its document title and citation in that language.
     """
     texts = catalog(language)
     document = texts.POLICY_DOCUMENT_TITLES[result["document"]]

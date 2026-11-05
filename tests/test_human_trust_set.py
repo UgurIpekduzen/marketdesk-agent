@@ -15,9 +15,9 @@ from eval import scoring
 from eval.run_eval import HUMAN_TRUST_SET, RESULT_PREFIXES, load_golden
 from src.guardrails.pii import RAW_ID_PATTERN
 from src.orchestrator import Intent
+from tests.example_ids import by_id
 
 EXAMPLES = load_golden(HUMAN_TRUST_SET)
-by_id = lambda example: example["id"]
 FLOWS = [example for example in EXAMPLES if "turns" in example]
 
 

@@ -1,6 +1,6 @@
 """Build the demo database where none exists yet.
 
-Usage:  python scripts/build_demo_db.py [--db data/marketdesk.db]
+Usage:  python -m scripts.build_demo_db [--db data/marketdesk.db]
 
 The deployed page has no database: the Olist data may not be committed
 (CC BY-NC-SA 4.0). On its first start the page downloads the dataset into a
@@ -10,12 +10,8 @@ the geolocation table is left out, because nothing reads it.
 """
 
 import argparse
-import sys
 import tempfile
 from pathlib import Path
-
-# Run as a plain script, Python only searches the scripts/ folder for imports.
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from config import SIMULATED_TODAY
 from data import download
@@ -37,6 +33,7 @@ def ensure_database(db_path: Path = DEFAULT_DB_PATH) -> bool:
 
 
 def main() -> None:
+    """Run the command line entry point."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--db", type=Path, default=DEFAULT_DB_PATH)
     args = parser.parse_args()

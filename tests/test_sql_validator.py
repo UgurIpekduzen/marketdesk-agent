@@ -2,7 +2,7 @@
 
 import pytest
 
-from src.knowledge.sql_validator import SqlRejected, validate
+from src.knowledge.sql_validator import SqlRejectedError, validate
 
 # What exists in the database besides the views.
 RAW_TABLES = (
@@ -24,7 +24,7 @@ def check(query, **kwargs):
 
 
 def rejection(query):
-    with pytest.raises(SqlRejected) as caught:
+    with pytest.raises(SqlRejectedError) as caught:
         check(query)
     return caught.value.code
 
@@ -42,7 +42,8 @@ def rejection(query):
             "JOIN v_order_items AS i ON i.order_key = o.order_key GROUP BY 1"
         ),
         (
-            "WITH late AS (SELECT order_key FROM v_orders WHERE order_status = 'shipped') "
+            "WITH late AS (SELECT order_key FROM v_orders "
+            "WHERE order_status = 'shipped') "
             "SELECT COUNT(*) FROM late"
         ),
         "SELECT order_key FROM v_orders UNION SELECT order_key FROM v_order_items",
@@ -282,7 +283,7 @@ def test_unlisted_function_is_refused(call):
 
 
 def test_rejection_names_what_was_wrong():
-    with pytest.raises(SqlRejected) as caught:
+    with pytest.raises(SqlRejectedError) as caught:
         check("SELECT * FROM v_orders JOIN customers ON 1 = 1")
 
     assert caught.value.code == "TABLE_NOT_ALLOWED"
@@ -324,7 +325,7 @@ def test_items_and_payments_together_refused(query):
 
 
 def test_the_refusal_names_the_two_views():
-    with pytest.raises(SqlRejected) as caught:
+    with pytest.raises(SqlRejectedError) as caught:
         check(ITEMS_WITH_PAYMENTS)
 
     assert caught.value.detail == "v_order_items and v_order_payments"

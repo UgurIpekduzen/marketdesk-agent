@@ -4,6 +4,7 @@ without a raw id. A stand-in model, no network.
 """
 
 import asyncio
+import functools
 import logging
 import sqlite3
 
@@ -45,14 +46,21 @@ def marks(exporter) -> set[str]:
     }
 
 
-def customer(db, index, script, *messages_to_send, approve=False):
-    async def scenario(router):
-        for message in messages_to_send:
-            await router.ask(message)
-        if approve:
-            await router.approve()
+async def scenario_of_customer(messages_to_send, approve, router):
+    for message in messages_to_send:
+        await router.ask(message)
+    if approve:
+        await router.approve()
 
-    with_customer_router(db, index, FakeLLM(script=script), scenario)
+
+def customer(db, index, script, *messages_to_send, approve=False):
+
+    with_customer_router(
+        db,
+        index,
+        FakeLLM(script=script),
+        functools.partial(scenario_of_customer, messages_to_send, approve),
+    )
 
 
 def operations(db, script, message):

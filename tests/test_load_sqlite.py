@@ -291,18 +291,11 @@ def test_failed_rebuild_keeps_the_old_one(raw_dir, tmp_path):
         conn.close()
 
 
-@pytest.mark.parametrize(
-    "command",
-    [
-        ["scripts/load_sqlite.py", "--help"],
-        ["-m", "scripts.load_sqlite", "--help"],
-    ],
-)
-def test_runs_as_file_and_as_module(command):
+def test_runs_as_a_module_from_the_project_root():
     project_root = Path(__file__).resolve().parent.parent
 
     result = subprocess.run(
-        [sys.executable, *command],
+        [sys.executable, "-m", "scripts.load_sqlite", "--help"],
         cwd=project_root,
         capture_output=True,
         text=True,
@@ -313,27 +306,21 @@ def test_runs_as_file_and_as_module(command):
     assert "--db" in result.stdout
 
 
-def test_runs_from_another_directory(tmp_path):
-    script = Path(__file__).resolve().parent.parent / "scripts" / "load_sqlite.py"
-
-    result = subprocess.run(
-        [sys.executable, str(script), "--help"],
-        cwd=tmp_path,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-
-    assert result.returncode == 0, result.stderr
-
-
 def test_builds_from_a_given_folder(raw_dir, tmp_path):
-    script = Path(__file__).resolve().parent.parent / "scripts" / "load_sqlite.py"
+    project_root = Path(__file__).resolve().parent.parent
     db_path = tmp_path / "out" / "orders.db"
 
     result = subprocess.run(
-        [sys.executable, str(script), "--src", str(raw_dir), "--db", str(db_path)],
-        cwd=tmp_path,
+        [
+            sys.executable,
+            "-m",
+            "scripts.load_sqlite",
+            "--src",
+            str(raw_dir),
+            "--db",
+            str(db_path),
+        ],
+        cwd=project_root,
         capture_output=True,
         text=True,
         check=False,

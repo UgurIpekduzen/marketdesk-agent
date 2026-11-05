@@ -30,7 +30,18 @@ async def run_agent(
     message: str,
     customer_unique_id: str | None = None,
 ) -> tuple[str, RunLog]:
-    """Return the agent's answer to the message and what the run cost."""
+    """Return the agent's answer to the message and what the run cost.
+
+    Args:
+        agent (FunctionAgent): The agent to run.
+        context (Context): The conversation context.
+        message (str): The person's message.
+        customer_unique_id (str | None): The customer, for the log line; None when there
+            is none.
+
+    Returns:
+        The agent's answer and the log of the run.
+    """
     log = RunLog()
     given = {tool.metadata.name for tool in agent.tools}
     try:

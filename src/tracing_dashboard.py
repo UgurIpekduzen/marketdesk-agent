@@ -33,13 +33,19 @@ class NoRedirects(urllib.request.HTTPRedirectHandler):
     """Refuse every redirect: urllib would send the keys on to the new address."""
 
     def redirect_request(self, *args, **kwargs):
-        return None
+        """Refuse to follow a redirect: no new request, so urllib raises the error.
+
+        Args:
+            *args: Ignored.
+            **kwargs: Ignored.
+        """
+        return
 
 
 OPENER = urllib.request.build_opener(NoRedirects)
 
 
-class DashboardUnavailable(RuntimeError):
+class DashboardUnavailableError(RuntimeError):
     """The page cannot show its numbers; the code says why, in no words."""
 
     def __init__(self, code: str, status: int | None = None):
@@ -62,11 +68,21 @@ class ErrorCount:
 
 
 def credentials(environment: Mapping[str, str] = os.environ) -> tuple[str, str]:
-    """The public and the secret key of the Langfuse project."""
+    """The public and the secret key of the Langfuse project.
+
+    Args:
+        environment (Mapping[str, str]): The environment variables.
+
+    Returns:
+        The public and the secret key.
+
+    Raises:
+        DashboardUnavailableError: A key is missing.
+    """
     public = environment.get("LANGFUSE_PUBLIC_KEY", "")
     secret = environment.get("LANGFUSE_SECRET_KEY", "")
     if not public or not secret:
-        raise DashboardUnavailable("KEYS_MISSING")
+        raise DashboardUnavailableError("KEYS_MISSING")
     return public, secret
 
 
@@ -75,6 +91,13 @@ def observations_url(base_url: str, cursor: str | None) -> str:
 
     No start time is given, so the machine clock is not needed: Langfuse
     answers the newest observations first, and the cursor goes on from there.
+
+    Args:
+        base_url (str): The Langfuse address.
+        cursor (str | None): Where the previous page ended, or None.
+
+    Returns:
+        The request address.
     """
     query = {"limit": PAGE_SIZE, "fields": "core,basic,metadata"}
     if cursor:
@@ -90,10 +113,24 @@ def fetch_observations(
     base_url: str = config.LANGFUSE_BASE_URL,
     opener: Callable = OPENER.open,
 ) -> list[dict]:
-    """The newest observations, page by page, at most as many as asked."""
+    """The newest observations, page by page, at most as many as asked.
+
+    Args:
+        public_key (str): The Langfuse public key.
+        secret_key (str): The Langfuse secret key.
+        newest (int): How many observations to read at most.
+        base_url (str): The Langfuse address; it must be https.
+        opener (Callable): Opens a request.
+
+    Returns:
+        The observations, newest first.
+
+    Raises:
+        DashboardUnavailableError: The address is not https or the request failed.
+    """
     if not base_url.lower().startswith("https://"):
         # The keys are sent in a header: never over a plain connection.
-        raise DashboardUnavailable("INSECURE_URL")
+        raise DashboardUnavailableError("INSECURE_URL")
     signed = base64.b64encode(f"{public_key}:{secret_key}".encode()).decode()
     headers = {"Authorization": f"Basic {signed}"}
     observations: list[dict] = []
@@ -107,9 +144,9 @@ def fetch_observations(
                 body = json.loads(response.read())
         except urllib.error.HTTPError as failure:
             # The status only: the answer may repeat what was sent.
-            raise DashboardUnavailable("REQUEST_FAILED", failure.code) from None
+            raise DashboardUnavailableError("REQUEST_FAILED", failure.code) from None
         except (urllib.error.URLError, TimeoutError, OSError):
-            raise DashboardUnavailable("UNREACHABLE") from None
+            raise DashboardUnavailableError("UNREACHABLE") from None
         page = body.get("data") or []
         observations += page
         cursor = (body.get("meta") or {}).get("cursor")
@@ -119,7 +156,14 @@ def fetch_observations(
 
 
 def count_errors(observations: list[dict]) -> list[ErrorCount]:
-    """The error kinds, most frequent first, apart for messages and tools."""
+    """The error kinds, most frequent first, apart for messages and tools.
+
+    Args:
+        observations (list[dict]): The observations.
+
+    Returns:
+        The error kinds with counts, most frequent first.
+    """
     counts: Counter = Counter()
     for observation in observations:
         metadata = observation.get("metadata") or {}
@@ -132,8 +176,16 @@ def count_errors(observations: list[dict]) -> list[ErrorCount]:
     return [ErrorCount(kind, where, count) for (kind, where), count in ranked]
 
 
-def failure_text(texts, failure: DashboardUnavailable) -> str:
-    """What the page or the command says when the numbers cannot be read."""
+def failure_text(texts, failure: DashboardUnavailableError) -> str:
+    """What the page or the command says when the numbers cannot be read.
+
+    Args:
+        texts: The strings of the session's language.
+        failure (DashboardUnavailableError): Why the numbers cannot be read.
+
+    Returns:
+        The text to show.
+    """
     if failure.code == "KEYS_MISSING":
         return texts.DASH_KEYS_MISSING
     if failure.code == "INSECURE_URL":
@@ -188,12 +240,27 @@ ROW_HEIGHT = 30
 
 
 def kind_label(texts, kind: str) -> str:
-    """An error kind said in words; a kind that has no words is shown by its code."""
+    """An error kind said in words; a kind that has no words is shown by its code.
+
+    Args:
+        texts: The strings of the session's language.
+        kind (str): An error kind.
+
+    Returns:
+        The kind in words, or its code.
+    """
     return texts.DASH_ERROR_LABELS.get(kind, kind)
 
 
 def kinds_by_total(rows: list[ErrorCount]) -> list[tuple[str, dict[str, int]]]:
-    """Each error kind with its count in messages and in tools, most frequent first."""
+    """Each error kind with its count in messages and in tools, most frequent first.
+
+    Args:
+        rows (list[ErrorCount]): The error counts.
+
+    Returns:
+        Each kind with its counts in messages and tools, most frequent first.
+    """
     by_kind: dict[str, dict[str, int]] = {}
     for row in rows:
         by_kind.setdefault(row.kind, {})[row.where] = row.count
@@ -206,6 +273,13 @@ def vega_chart(rows: list[ErrorCount], texts) -> tuple[list[dict], dict]:
     A bar for each kind, the most frequent on top, a message and a tool part in
     each in the colours of the page; the labels of the kinds are given room,
     and the counts go by whole numbers.
+
+    Args:
+        rows (list[ErrorCount]): The error counts.
+        texts: The strings of the session's language.
+
+    Returns:
+        The data and the chart spec.
     """
     ordered = kinds_by_total(rows)
     data = [
@@ -248,7 +322,15 @@ def vega_chart(rows: list[ErrorCount], texts) -> tuple[list[dict], dict]:
 
 
 def chart_svg(rows: list[ErrorCount], texts) -> str:
-    """Bars by error kind, a message and a tool part in each."""
+    """Bars by error kind, a message and a tool part in each.
+
+    Args:
+        rows (list[ErrorCount]): The error counts.
+        texts: The strings of the session's language.
+
+    Returns:
+        The chart as SVG.
+    """
     ordered = kinds_by_total(rows)
     top = max(sum(parts.values()) for _, parts in ordered)
     height = ROW_HEIGHT * len(ordered)
@@ -277,7 +359,17 @@ def chart_svg(rows: list[ErrorCount], texts) -> str:
 
 
 def render_html(rows: list[ErrorCount], observed: int, texts, language: str) -> str:
-    """The whole page as one file: no server, no script, nothing from outside."""
+    """The whole page as one file: no server, no script, nothing from outside.
+
+    Args:
+        rows (list[ErrorCount]): The error counts.
+        observed (int): How many observations were read.
+        texts: The strings of the session's language.
+        language (str): The language code of the page.
+
+    Returns:
+        The page as one HTML file.
+    """
     errors = sum(row.count for row in rows)
     kinds = len({row.kind for row in rows})
     metrics = "".join(
@@ -325,7 +417,16 @@ def render_html(rows: list[ErrorCount], observed: int, texts, language: str) -> 
 
 
 def render_table(rows: list[ErrorCount], observed: int, texts) -> str:
-    """The same numbers as plain lines for the terminal."""
+    """The same numbers as plain lines for the terminal.
+
+    Args:
+        rows (list[ErrorCount]): The error counts.
+        observed (int): How many observations were read.
+        texts: The strings of the session's language.
+
+    Returns:
+        The numbers as plain lines.
+    """
     head = (
         f"{texts.DASH_OBSERVATIONS}: {observed}   "
         f"{texts.DASH_ERRORS}: {sum(row.count for row in rows)}   "

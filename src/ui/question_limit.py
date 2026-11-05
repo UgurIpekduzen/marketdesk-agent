@@ -13,11 +13,13 @@ from collections.abc import Callable
 WINDOW_SECONDS = 3600
 
 
-class QuestionLimitReached(RuntimeError):
+class QuestionLimitReachedError(RuntimeError):
     """The questions of the last hour have used up the limit."""
 
 
 class QuestionLimit:
+    """Limits how many questions one session may ask per hour."""
+
     def __init__(
         self,
         per_hour: int,
@@ -35,7 +37,7 @@ class QuestionLimit:
             while self._asked and started - self._asked[0] >= WINDOW_SECONDS:
                 self._asked.popleft()
             if len(self._asked) >= self._per_hour:
-                raise QuestionLimitReached(
+                raise QuestionLimitReachedError(
                     f"{self._per_hour} questions in the last hour"
                 )
             self._asked.append(started)

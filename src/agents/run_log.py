@@ -20,6 +20,15 @@ USAGE_KEYS = ("usage_metadata", "usage")
 
 
 def first_number(usage: dict, keys: tuple[str, ...]) -> int:
+    """Return the first integer found under any of the keys, or 0.
+
+    Args:
+        usage (dict): A token usage dict.
+        keys (tuple[str, ...]): The names to try, in order.
+
+    Returns:
+        The first integer found, or 0.
+    """
     for key in keys:
         if isinstance(usage.get(key), int):
             return usage[key]
@@ -27,7 +36,14 @@ def first_number(usage: dict, keys: tuple[str, ...]) -> int:
 
 
 def token_usage(raw: object) -> tuple[int, int]:
-    """(input tokens, output tokens) of one raw model response, or (0, 0)."""
+    """(input tokens, output tokens) of one raw model response, or (0, 0).
+
+    Args:
+        raw (object): The provider's raw response.
+
+    Returns:
+        The input and output tokens, or (0, 0) when none are reported.
+    """
     if not isinstance(raw, dict):
         return 0, 0
     for key in USAGE_KEYS:
@@ -44,6 +60,8 @@ def token_usage(raw: object) -> tuple[int, int]:
 
 @dataclass
 class RunLog:
+    """What one run did: model calls, tool calls, tokens and the final step count."""
+
     llm_calls: int = 0
     tool_calls: list[str] = field(default_factory=list)
     # The arguments of each call, for a person inspecting a run. They are
@@ -74,17 +92,34 @@ class RunLog:
         return self.llm_calls + len(self.tool_calls)
 
     def add_llm_call(self, raw: object) -> None:
+        """Count one model call and add its token usage.
+
+        Args:
+            raw (object): The provider's raw response, read for token usage.
+        """
         self.llm_calls += 1
         input_tokens, output_tokens = token_usage(raw)
         self.input_tokens += input_tokens
         self.output_tokens += output_tokens
 
     def add_tool_call(self, tool_name: str, arguments: dict | None = None) -> None:
+        """Record one tool call with its arguments.
+
+        Args:
+            tool_name (str): The tool that was called.
+            arguments (dict | None): The arguments of the call; kept for inspection
+                only.
+        """
         self.tool_calls.append(tool_name)
         self.tool_arguments.append(arguments or {})
 
     def add_tool_result(self, tool_name: str, content: str) -> None:
-        """Keep a tool's answer: parsed when it is JSON, as text otherwise."""
+        """Keep a tool's answer: parsed when it is JSON, as text otherwise.
+
+        Args:
+            tool_name (str): The tool that answered.
+            content (str): The answer text, parsed when it is JSON.
+        """
         try:
             result: object = json.loads(content)
         except ValueError:
@@ -92,7 +127,11 @@ class RunLog:
         self.tool_results.append((tool_name, result))
 
     def absorb(self, other: "RunLog") -> None:
-        """Add the cost of a second run made for the same message."""
+        """Add the cost of a second run made for the same message.
+
+        Args:
+            other ('RunLog'): The log of the second run.
+        """
         self.llm_calls += other.llm_calls
         self.tool_calls += other.tool_calls
         self.tool_arguments += other.tool_arguments
@@ -103,7 +142,13 @@ class RunLog:
         self.unknown_tools += other.unknown_tools
 
     def write(self, agent: str, customer_unique_id: str | None) -> None:
-        """Log the run as one line."""
+        """Log the run as one line.
+
+        Args:
+            agent (str): The name of the agent.
+            customer_unique_id (str | None): The customer; written as a hash, or a dash
+                when None.
+        """
         logger.info(
             "run agent=%s customer=%s steps=%d llm_calls=%d tool_calls=%d "
             "tools=%s errors=%s input_tokens=%d output_tokens=%d step_limit=%s",

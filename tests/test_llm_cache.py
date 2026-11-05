@@ -13,9 +13,9 @@ import config
 from eval import run_eval
 from eval.llm_cache import (
     CachedLLM,
-    DailyQuotaUsedUp,
-    LiveCallLimitReached,
-    NoPaidCredit,
+    DailyQuotaUsedUpError,
+    LiveCallLimitReachedError,
+    NoPaidCreditError,
     daily_quota_message,
     is_daily_quota,
     is_out_of_credit,
@@ -118,19 +118,24 @@ def test_other_temperature_new_entry(cached, fake, monkeypatch):
     assert len(fake.requests) == 2
 
 
-def test_tokens_and_time_are_kept(fake, tmp_path):
-    class CountingFake(FakeLLM):
-        def _answer(self, messages, **kwargs):
-            response = super()._answer(messages, **kwargs)
-            response.raw = {
-                "usage_metadata": {
-                    "prompt_token_count": 120,
-                    "candidates_token_count": 7,
-                }
+class CountingFake(FakeLLM):
+    def _answer(self, messages, **kwargs):
+        response = super()._answer(messages, **kwargs)
+        response.raw = {
+            "usage_metadata": {
+                "prompt_token_count": 120,
+                "candidates_token_count": 7,
             }
-            return response
+        }
+        return response
 
-    cached = CachedLLM(inner=CountingFake(script=["bir"]), cache_dir=tmp_path)
+
+def test_tokens_and_time_are_kept(fake, tmp_path):
+
+    cached = CachedLLM(
+        inner=CountingFake(script=["bir"]),
+        cache_dir=tmp_path,
+    )
 
     live = chat(cached, "merhaba")
     seconds_after_live = cached.seconds
@@ -142,28 +147,43 @@ def test_tokens_and_time_are_kept(fake, tmp_path):
     assert cached.seconds == pytest.approx(seconds_after_live * 2)
 
 
-def test_tool_calls_come_back_from_the_cache(tmp_path):
-    async def echo(text: str) -> str:
-        """Return the text."""
-        return text
+async def echo_of_tool_calls_come_back_from_the_cache(text: str) -> str:
+    """Return the text."""
+    return text
 
-    def run(fake):
-        async def scenario():
-            agent = FunctionAgent(
-                name="trial",
-                tools=[FunctionTool.from_defaults(async_fn=echo)],
-                llm=CachedLLM(inner=fake, cache_dir=tmp_path),
-                system_prompt="system",
+
+async def scenario_of_run_of_tool_calls_come_back_from_the_cache(fake, tmp_path):
+    agent = FunctionAgent(
+        name="trial",
+        tools=[
+            FunctionTool.from_defaults(
+                async_fn=echo_of_tool_calls_come_back_from_the_cache
             )
-            return await run_agent(agent, Context(agent), "merhaba")
+        ],
+        llm=CachedLLM(inner=fake, cache_dir=tmp_path),
+        system_prompt="system",
+    )
+    return await run_agent(agent, Context(agent), "merhaba")
 
-        return asyncio.run(scenario())
+
+def run_of_tool_calls_come_back_from_the_cache(tmp_path, fake):
+
+    return asyncio.run(
+        scenario_of_run_of_tool_calls_come_back_from_the_cache(fake, tmp_path)
+    )
+
+
+def test_tool_calls_come_back_from_the_cache(tmp_path):
 
     first_model = FakeLLM(script=[[("echo", {"text": "a"})], "bitti"])
     second_model = FakeLLM(script=["cache was not used"])
 
-    live_text, live_log = run(first_model)
-    cached_text, cached_log = run(second_model)
+    live_text, live_log = run_of_tool_calls_come_back_from_the_cache(
+        tmp_path, first_model
+    )
+    cached_text, cached_log = run_of_tool_calls_come_back_from_the_cache(
+        tmp_path, second_model
+    )
 
     assert live_text == cached_text == "bitti"
     assert live_log.tool_calls == cached_log.tool_calls == ["echo"]
@@ -315,7 +335,7 @@ def test_daily_quota_stops_at_once(tmp_path):
     inner = GoogleGenAI(script=["x"], answers=0)
     llm = CachedLLM(inner=inner, cache_dir=tmp_path, retry_seconds=3600)
 
-    with pytest.raises(DailyQuotaUsedUp, match="--paid"):
+    with pytest.raises(DailyQuotaUsedUpError, match="--paid"):
         ask_once(llm)
 
     assert inner.calls == 1
@@ -325,7 +345,7 @@ def test_no_credit_stops_at_once(tmp_path):
     inner = Failing(script=["x"], answers=0, error=NO_CREDIT_ERROR)
     llm = CachedLLM(inner=inner, cache_dir=tmp_path, retry_seconds=3600)
 
-    with pytest.raises(NoPaidCredit, match="Add credit"):
+    with pytest.raises(NoPaidCreditError, match="Add credit"):
         ask_once(llm)
 
     assert inner.calls == 1
@@ -357,7 +377,7 @@ def test_other_daily_limit_says_wait(tmp_path):
     inner = Groq(script=["x"], answers=0, error=GROQ_DAY_ERROR)
     llm = CachedLLM(inner=inner, cache_dir=tmp_path, retry_seconds=3600)
 
-    with pytest.raises(DailyQuotaUsedUp, match="tomorrow") as stop:
+    with pytest.raises(DailyQuotaUsedUpError, match="tomorrow") as stop:
         ask_once(llm)
 
     assert "--paid" not in str(stop.value)
@@ -387,7 +407,7 @@ def test_paid_run_stops_at_its_limit(tmp_path):
     asyncio.run(llm.achat([ChatMessage(role="user", content="1")]))
     asyncio.run(llm.achat([ChatMessage(role="user", content="2")]))
 
-    with pytest.raises(LiveCallLimitReached):
+    with pytest.raises(LiveCallLimitReachedError):
         asyncio.run(llm.achat([ChatMessage(role="user", content="3")]))
     # A cached answer is still given: it costs nothing.
     asyncio.run(llm.achat([ChatMessage(role="user", content="1")]))
@@ -407,26 +427,45 @@ def comparable(rows):
     ]
 
 
-def test_resumed_run_gives_same_results(synthetic_db_path, fake_policy_index, tmp_path):
-    def run(inner, cache_dir):
-        llm = CachedLLM(inner=inner, cache_dir=cache_dir)
-        return run_eval.run(
-            EXAMPLES,
-            synthetic_db_path,
-            fake_policy_index,
-            llm,
-            report=lambda line: None,
-        )
+def run_of_resumed_run_gives_same_results(
+    synthetic_db_path, fake_policy_index, inner, cache_dir
+):
+    llm = CachedLLM(inner=inner, cache_dir=cache_dir)
+    return run_eval.run(
+        EXAMPLES,
+        synthetic_db_path,
+        fake_policy_index,
+        llm,
+        report=lambda line: None,
+    )
 
-    straight = run(FakeLLM(script=list(GOOD_SCRIPT)), tmp_path / "straight")
+
+def test_resumed_run_gives_same_results(synthetic_db_path, fake_policy_index, tmp_path):
+
+    straight = run_of_resumed_run_gives_same_results(
+        synthetic_db_path,
+        fake_policy_index,
+        FakeLLM(script=list(GOOD_SCRIPT)),
+        tmp_path / "straight",
+    )
 
     # The free quota runs out in the middle of the second example.
-    with pytest.raises(DailyQuotaUsedUp):
-        run(Failing(script=list(GOOD_SCRIPT), answers=5), tmp_path / "cut")
+    with pytest.raises(DailyQuotaUsedUpError):
+        run_of_resumed_run_gives_same_results(
+            synthetic_db_path,
+            fake_policy_index,
+            Failing(script=list(GOOD_SCRIPT), answers=5),
+            tmp_path / "cut",
+        )
     # The same command again, now on the paid key: the answers so far come
     # from the cache, the rest live. The fresh model starts its script where
     # the first one stopped. It is of the same class, as the free and the
     # paid key are: the provider's class is part of the cache key.
-    finished = run(Failing(script=list(GOOD_SCRIPT[5:]), answers=100), tmp_path / "cut")
+    finished = run_of_resumed_run_gives_same_results(
+        synthetic_db_path,
+        fake_policy_index,
+        Failing(script=list(GOOD_SCRIPT[5:]), answers=100),
+        tmp_path / "cut",
+    )
 
     assert comparable(finished) == comparable(straight)

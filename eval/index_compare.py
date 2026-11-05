@@ -1,6 +1,6 @@
 """Does the policy search through LlamaIndex give what direct Chroma gives?
 
-Usage:  python eval/index_compare.py [--runs N]
+Usage:  python -m eval.index_compare [--runs N]
 
 The policy search first used Chroma directly. It now goes through LlamaIndex
 (`VectorStoreIndex` over `ChromaVectorStore`, src/knowledge/policy_index.py).
@@ -28,10 +28,6 @@ from pathlib import Path
 
 import numpy as np
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
 from eval.terminal_table import terminal_tables
 from src.knowledge.embedding import Embedder, load_embedder
 from src.knowledge.policy_index import (
@@ -45,6 +41,8 @@ from src.knowledge.policy_index import (
     source_hash,
 )
 from tests.retrieval_questions import QUESTIONS
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 RESULTS_DIR = PROJECT_ROOT / "eval" / "results"
 TOP = 5
@@ -85,6 +83,7 @@ class DirectIndex:
         self._embedder = embedder
 
     def search(self, query: str, k: int) -> list[dict]:
+        """Search the Chroma collection directly and return the sections found."""
         found = self._collection.query(
             query_embeddings=self._embedder.embed_queries([query]).tolist(),
             n_results=min(k, self._collection.count()),
@@ -105,6 +104,7 @@ class DirectIndex:
 
 
 def section_ids(results: list[dict]) -> list[tuple[str, int]]:
+    """The (document, section) pairs of the results."""
     return [(result["document"], result["section"]) for result in results]
 
 
@@ -119,6 +119,7 @@ def compare_answers(direct: list[dict], llama: list[dict]) -> dict:
 
 
 def milliseconds(action, times: int = 1) -> float:
+    """Run the action the given number of times and return the milliseconds."""
     start = time.perf_counter()
     for _ in range(times):
         action()
@@ -126,22 +127,42 @@ def milliseconds(action, times: int = 1) -> float:
 
 
 def search_times(index, questions: list[str]) -> list[float]:
+    """The time of one search per question, in milliseconds."""
     return [
         milliseconds(lambda q=question: index.search(q, TOP)) for question in questions
     ]
 
 
 def percentile(values: list[float], share: float) -> float:
+    """A percentile of the values."""
     return float(np.percentile(values, share))
 
 
 def folder_size_kb(folder: Path) -> int:
+    """The size of the files under the folder, in KB."""
     return round(
         sum(path.stat().st_size for path in folder.rglob("*") if path.is_file()) / 1024
     )
 
 
+def search_summary(per_run: list[list[float]]) -> dict:
+    """The range over the runs of the median and the 95th percentile of a search."""
+    p50 = [percentile(run_times, 50) for run_times in per_run]
+    p95 = [percentile(run_times, 95) for run_times in per_run]
+    return {
+        "searches_per_run": len(per_run[0]),
+        "p50_ms": [round(min(p50), 1), round(max(p50), 1)],
+        "p95_ms": [round(min(p95), 1), round(max(p95), 1)],
+    }
+
+
+def range_of(values: list[float]) -> list[float]:
+    """The lowest and highest value, rounded."""
+    return [round(min(values), 1), round(max(values), 1)]
+
+
 def run(embedder: Embedder, runs: int) -> dict:
+    """Build both indexes and measure them on the retrieval questions."""
     sections = read_sections()
     questions = [question for _, question, _ in QUESTIONS]
     work = Path(tempfile.mkdtemp(prefix="index-compare-"))
@@ -184,19 +205,6 @@ def run(embedder: Embedder, runs: int) -> dict:
         times["direct"].append(direct_run)
         times["llama"].append(llama_run)
 
-    def search_summary(kind: str) -> dict:
-        per_run = times[kind]
-        p50 = [percentile(run_times, 50) for run_times in per_run]
-        p95 = [percentile(run_times, 95) for run_times in per_run]
-        return {
-            "searches_per_run": len(per_run[0]),
-            "p50_ms": [round(min(p50), 1), round(max(p50), 1)],
-            "p95_ms": [round(min(p95), 1), round(max(p95), 1)],
-        }
-
-    def range_of(values: list[float]) -> list[float]:
-        return [round(min(values), 1), round(max(values), 1)]
-
     result = {
         "questions": len(questions),
         "sections": len(sections),
@@ -206,13 +214,13 @@ def run(embedder: Embedder, runs: int) -> dict:
         "max_score_gap": max(answer["max_score_gap"] for answer in answers),
         "per_question": answers,
         "direct": {
-            "search": search_summary("direct"),
+            "search": search_summary(times["direct"]),
             "open_ms": range_of(open_ms["direct"]),
             "build_ms": range_of(build_ms["direct"]),
             "size_kb": folder_size_kb(direct_dir),
         },
         "llama_index": {
-            "search": search_summary("llama"),
+            "search": search_summary(times["llama"]),
             "open_ms": range_of(open_ms["llama"]),
             "build_ms": range_of(build_ms["llama"]),
             "size_kb": folder_size_kb(llama_dir),
@@ -226,15 +234,18 @@ def run(embedder: Embedder, runs: int) -> dict:
 
 
 def span(values: list[float]) -> str:
+    """A range as text; one number when both ends are equal."""
     low, high = values
     return f"{low}" if low == high else f"{low}–{high}"
 
 
 def row(label: str, direct, llama) -> str:
+    """One table row comparing the two ways."""
     return f"| {label} | {direct} | {llama} |"
 
 
 def markdown(result: dict) -> str:
+    """The results as a markdown report."""
     direct, llama = result["direct"], result["llama_index"]
     searches = direct["search"]["searches_per_run"]
     same = f"{result['same_sections']} of {result['questions']} questions"
@@ -286,6 +297,7 @@ def markdown(result: dict) -> str:
 
 
 def main() -> int:
+    """Run the command line entry point."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--runs", type=int, default=3, help="runs of the timings")
     args = parser.parse_args()

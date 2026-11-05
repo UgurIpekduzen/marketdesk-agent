@@ -12,6 +12,7 @@ that task, which closes the connection and with it the server process.
 """
 
 import asyncio
+import functools
 import logging
 import threading
 import time
@@ -42,15 +43,15 @@ CLOSE_WAIT_SECONDS = 5
 Job = Callable[[Orchestrator], Awaitable[object]]
 
 
-class SessionClosed(RuntimeError):
+class SessionClosedError(RuntimeError):
     """The session was closed and can take no more work."""
 
 
-class ApprovalWaiting(RuntimeError):
+class ApprovalWaitingError(RuntimeError):
     """A message came while a return request waits for the person's answer."""
 
 
-class MessageTooLong(ValueError):
+class MessageTooLongError(ValueError):
     """The message is longer than the limit; it never reaches the model."""
 
 
@@ -61,6 +62,9 @@ def finish_pending(loop: asyncio.AbstractEventLoop) -> None:
     is garbage collected while the loop runs schedules its own closing as a
     task; closed with the loop still pending, that task is destroyed and
     logged as an error. Tasks that do not end in time are cancelled.
+
+    Args:
+        loop (asyncio.AbstractEventLoop): The loop about to be closed.
     """
     pending = asyncio.all_tasks(loop)
     if pending:
@@ -74,12 +78,19 @@ def finish_pending(loop: asyncio.AbstractEventLoop) -> None:
 
 
 def stop(loop: asyncio.AbstractEventLoop, jobs: asyncio.Queue) -> None:
-    """Tell the session's task to finish; safe to call from any thread."""
+    """Tell the session's task to finish; safe to call from any thread.
+
+    Args:
+        loop (asyncio.AbstractEventLoop): The session's loop.
+        jobs (asyncio.Queue): The queue the session's task reads.
+    """
     if not loop.is_closed():
         loop.call_soon_threadsafe(jobs.put_nowait, None)
 
 
 class ChatSession:
+    """One person's chat: a router on its own thread, with limits and a clean close."""
+
     def __init__(
         self,
         db_path: Path | str,
@@ -183,7 +194,7 @@ class ChatSession:
     def _do(self, job: Job) -> object:
         """Run a job on the session's task and wait for what it returns."""
         if self._closed:
-            raise SessionClosed("the chat session is closed")
+            raise SessionClosedError("the chat session is closed")
         self.last_used = time.monotonic()
         done: Future = Future()
         self._loop.call_soon_threadsafe(self._jobs.put_nowait, (job, done))
@@ -193,28 +204,51 @@ class ChatSession:
 
     def ask(self, message: str) -> Answer:
         """Answer one message. The limits are checked here, on the server:
-        whatever the page shows, every message passes this way."""
+        whatever the page shows, every message passes this way.
+
+        Args:
+            message (str): The person's message.
+
+        Returns:
+            The answer.
+
+        Raises:
+            MessageTooLongError: The message is over the length limit.
+            CallBudgetReachedError: The day's model calls are used up.
+            QuestionLimitReachedError: The session asked too many questions this hour.
+            ApprovalWaitingError: A request is waiting for the person's answer.
+        """
         if len(message) > config.MAX_MESSAGE_CHARS:
-            raise MessageTooLong(f"{len(message)} characters")
+            raise MessageTooLongError(f"{len(message)} characters")
         if self._call_budget is not None and not self._closed:
             self._call_budget.check()
         if self._question_limit is not None and not self._closed:
             self._question_limit.take()
 
-        async def job(router):
-            # The page locks its input while a card waits; this is the same
-            # rule on the server, since a page can be made to send anything.
-            if await router.approval_waiting():
-                raise ApprovalWaiting("a return request waits for the person")
-            return await router.ask(message)
+        return self._do(functools.partial(self._ask_job, message))
 
-        return self._do(job)
+    @staticmethod
+    async def _ask_job(message: str, router):
+        # The page locks its input while a card waits; this is the same
+        # rule on the server, since a page can be made to send anything.
+        if await router.approval_waiting():
+            raise ApprovalWaitingError("a return request waits for the person")
+        return await router.ask(message)
 
     def approve(self, card: dict | None = None) -> str:
-        """The person pressed approve on this card: have that request written."""
+        """The person pressed approve on this card: have that request written.
+
+        Args:
+            card (dict | None): The card the person approved; the last one shown when
+                None.
+
+        Returns:
+            The text to show after the request was written.
+        """
         return self._do(lambda router: router.approve(card))
 
     def decline(self) -> str:
+        """The person pressed decline: drop the waiting request."""
         return self._do(lambda router: router.decline())
 
     def close(self) -> None:
@@ -227,4 +261,5 @@ class ChatSession:
 
     @property
     def closed(self) -> bool:
+        """True once the session has been closed."""
         return self._closed

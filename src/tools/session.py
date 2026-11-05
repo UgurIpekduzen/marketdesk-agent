@@ -30,6 +30,8 @@ ALIAS_PATTERN = re.compile(r"SIP[- ]?(\d+)", re.IGNORECASE)
 
 @dataclass
 class Session:
+    """The server-side session: the customer, the order aliases and the approvals."""
+
     customer_unique_id: str
     # Position n - 1 holds the order id behind the alias SIP-n.
     _order_ids: list[str] = field(default_factory=list, repr=False)
@@ -41,7 +43,14 @@ class Session:
     language: Language = DEFAULT_LANGUAGE
 
     def alias_for(self, order_id: str) -> str:
-        """Return the alias of an order, handing out a new one if needed."""
+        """Return the alias of an order, handing out a new one if needed.
+
+        Args:
+            order_id (str): An order id.
+
+        Returns:
+            Its alias.
+        """
         if order_id not in self._order_ids:
             self._order_ids.append(order_id)
         return f"{ALIAS_PREFIX}{self._order_ids.index(order_id) + 1}"
@@ -53,6 +62,12 @@ class Session:
         as it is, trimmed: it may be a raw order id typed by the customer.
         The result is only a candidate; whether the order belongs to this
         customer is decided by the query that uses it.
+
+        Args:
+            order_ref (str): An alias or an order number.
+
+        Returns:
+            The order id; the text itself when it is not an alias.
         """
         order_ref = order_ref.strip()
         match = ALIAS_PATTERN.fullmatch(order_ref)
@@ -76,6 +91,14 @@ def open_session(
 
     A customer can have several of each, one per order. An unknown customer
     simply has none.
+
+    Args:
+        conn (sqlite3.Connection): A connection to the database.
+        customer_unique_id (str): The customer.
+        language (Language): The session's language.
+
+    Returns:
+        The session.
     """
     personal_values = {}
     rows = conn.execute(

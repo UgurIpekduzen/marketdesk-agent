@@ -15,10 +15,12 @@ _stack = ExitStack()
 
 
 def pytest_configure(config) -> None:
+    """Apply the mutation named in the environment before the tests run."""
     name = os.environ.get(MUTATION_VARIABLE)
     if name:
         apply_everywhere(name, _stack)
 
 
 def pytest_unconfigure(config) -> None:
+    """Undo the mutation after the tests."""
     _stack.close()

@@ -16,6 +16,7 @@ The cases are a list chosen by hand and the same queries written differently
 validator refuses is fine; a query it passes and the oracle flags is a hole.
 """
 
+import functools
 import random
 import sqlite3
 import time
@@ -25,7 +26,7 @@ import pytest
 import config
 from src.knowledge.safe_views import ALLOWED_VIEWS
 from src.knowledge.sql_runner import connect_read_only, existing_names, run_sql
-from src.knowledge.sql_validator import SqlRejected, validate
+from src.knowledge.sql_validator import SqlRejectedError, validate
 
 ALLOWED_ACTIONS = {
     sqlite3.SQLITE_SELECT,
@@ -159,12 +160,14 @@ HAND_CASES = [
 ]
 
 
-def authorizer_into(seen: list):
-    def authorize(action, first, second, database, source):
-        seen.append((action, first, second, database, source))
-        return sqlite3.SQLITE_OK
+def authorize_of_authorizer_into(seen, action, first, second, database, source):
+    seen.append((action, first, second, database, source))
+    return sqlite3.SQLITE_OK
 
-    return authorize
+
+def authorizer_into(seen: list):
+
+    return functools.partial(authorize_of_authorizer_into, seen)
 
 
 def holes(conn: sqlite3.Connection, sql: str) -> list[str]:
@@ -210,7 +213,7 @@ def passed(query: str, names: tuple[str, ...]) -> str | None:
     """The SQL the validator would run, or None when it refuses the query."""
     try:
         return validate(query, names)
-    except SqlRejected:
+    except SqlRejectedError:
         return None
 
 
@@ -373,7 +376,8 @@ def test_small_values_cannot_sum_to_huge(
     # 1,000 rows of 90,000 characters: each value passes, the answer is 90 MB.
     answer = run_sql(
         synthetic_db_path,
-        "WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n + 1 FROM r WHERE n < 1000) "
+        "WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL "
+        "SELECT n + 1 FROM r WHERE n < 1000) "
         "SELECT format('%.*c', 90000, 'x') AS big FROM r",
     )
 

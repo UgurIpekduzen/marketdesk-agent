@@ -1,6 +1,6 @@
 """How much time does the agent framework itself add to a step?
 
-Usage:  python eval/framework_overhead.py [--runs N]
+Usage:  python -m eval.framework_overhead [--runs N]
 
 A task spends its time waiting for the model. What the framework (LlamaIndex's
 FunctionAgent workflow) adds around each model call is measured here with the
@@ -29,11 +29,6 @@ import time
 from pathlib import Path
 
 import numpy as np
-
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
 from llama_index.core.agent.workflow import FunctionAgent
 from llama_index.core.tools import FunctionTool
 from llama_index.core.workflow import Context
@@ -42,6 +37,8 @@ import config
 from eval.terminal_table import terminal_tables
 from src.agents.runner import run_agent
 from tests.fakes import FakeLLM
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 RESULTS_DIR = PROJECT_ROOT / "eval" / "results"
 GOLDEN_RESULTS = RESULTS_DIR / "golden_v1_gemini-3.5-flash-lite.json"
@@ -72,6 +69,7 @@ def agent_and_context(model_calls: int) -> tuple[FunctionAgent, Context]:
 
 
 def milliseconds_since(start: float) -> float:
+    """Milliseconds since the given performance counter value."""
     return (time.perf_counter() - start) * 1000
 
 
@@ -86,6 +84,7 @@ async def one_run(model_calls: int) -> tuple[float, float, int, bool]:
 
 
 async def measure(model_calls: int, runs: int) -> dict:
+    """Repeat a run after a warm-up and summarise the timings."""
     for _ in range(WARM_UP_RUNS):
         await one_run(model_calls)
     built, took, made, stopped = [], [], set(), 0
@@ -99,12 +98,14 @@ async def measure(model_calls: int, runs: int) -> dict:
 
 
 def percentile(values: list[float], share: float) -> float:
+    """A percentile of the values."""
     return float(np.percentile(values, share))
 
 
 def summarize(
     model_calls: int, built: list, took: list, made: set, stopped: int
 ) -> dict:
+    """Median and tail of the timings for one number of model calls."""
     return {
         "model_calls": model_calls,
         "runs": len(took),
@@ -145,6 +146,7 @@ def model_time_per_call(path: Path = GOLDEN_RESULTS) -> dict | None:
 
 
 def markdown(result: dict) -> str:
+    """The results as a markdown report."""
     lines = [
         "# Framework overhead: LlamaIndex FunctionAgent without the model",
         "",
@@ -193,6 +195,7 @@ def markdown(result: dict) -> str:
 
 
 def main() -> int:
+    """Run the command line entry point."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--runs", type=int, default=DEFAULT_RUNS, help="runs per row")
     args = parser.parse_args()

@@ -1,6 +1,7 @@
 """Tests for the chat command, with scripted typing and a stand-in model."""
 
 import asyncio
+import functools
 
 import pytest
 
@@ -22,30 +23,38 @@ def fake():
     return FakeLLM()
 
 
+def read_of_run_of_run_chat(prompts, lines, prompt):
+    prompts.append(prompt)
+    try:
+        return next(lines)
+    except StopIteration:
+        raise EOFError from None
+
+
+def run_of_run_chat(synthetic_db_path, fake_policy_index, fake, typed):
+    lines = iter(typed)
+    prompts, shown = [], []
+
+    with_agent(
+        synthetic_db_path,
+        fake_policy_index,
+        fake,
+        lambda agent: chat(
+            agent,
+            functools.partial(read_of_run_of_run_chat, prompts, lines),
+            shown.append,
+        ),
+    )
+    return prompts, shown
+
+
 @pytest.fixture
 def run_chat(synthetic_db_path, fake_policy_index, fake):
     """Run the chat with the given lines typed in; return prompts and output."""
 
-    def run(typed):
-        lines = iter(typed)
-        prompts, shown = [], []
-
-        def read(prompt):
-            prompts.append(prompt)
-            try:
-                return next(lines)
-            except StopIteration:
-                raise EOFError from None
-
-        with_agent(
-            synthetic_db_path,
-            fake_policy_index,
-            fake,
-            lambda agent: chat(agent, read, shown.append),
-        )
-        return prompts, shown
-
-    return run
+    return functools.partial(
+        run_of_run_chat, synthetic_db_path, fake_policy_index, fake
+    )
 
 
 def test_question_and_answer(run_chat, fake):
@@ -147,6 +156,11 @@ def test_demo_customer_has_most_orders(synthetic_db):
     assert demo_customer(synthetic_db) == ALICE
 
 
+def read_of_ops_chat_shows_sources(prompts, lines, prompt):
+    prompts.append(prompt)
+    return next(lines)
+
+
 def test_ops_chat_shows_sources(synthetic_db_path):
     fake = FakeLLM(
         script=[[("run_metric", {"metric_name": "order_count"})], "29 sipariş var."]
@@ -155,11 +169,14 @@ def test_ops_chat_shows_sources(synthetic_db_path):
     lines = iter(["Kaç sipariş var?", "çık"])
     prompts, shown = [], []
 
-    def read(prompt):
-        prompts.append(prompt)
-        return next(lines)
-
-    asyncio.run(chat(agent, read, shown.append, messages.CHAT_BANNER_OPS))
+    asyncio.run(
+        chat(
+            agent,
+            functools.partial(read_of_ops_chat_shows_sources, prompts, lines),
+            shown.append,
+            messages.CHAT_BANNER_OPS,
+        )
+    )
     agent.close()
 
     assert shown[0] == messages.CHAT_BANNER_OPS
@@ -167,6 +184,13 @@ def test_ops_chat_shows_sources(synthetic_db_path):
     assert "Kullanılan SQL:\nSELECT numerator" in shown[1]
     # An operations session never asks for an approval.
     assert messages.APPROVAL_QUESTION not in prompts
+
+
+def read_of_ops_chat_says_how_computed(lines, prompt):
+    try:
+        return next(lines)
+    except StopIteration:
+        raise EOFError from None
 
 
 def test_ops_chat_says_how_computed(synthetic_db_path):
@@ -190,14 +214,14 @@ def test_ops_chat_says_how_computed(synthetic_db_path):
     lines = iter(["En çok sipariş hangi eyaletlerde?"])
     shown = []
 
-    def read(prompt):
-        try:
-            return next(lines)
-        except StopIteration:
-            raise EOFError from None
-
     try:
-        asyncio.run(chat(agent, read, shown.append))
+        asyncio.run(
+            chat(
+                agent,
+                functools.partial(read_of_ops_chat_says_how_computed, lines),
+                shown.append,
+            )
+        )
     finally:
         agent.close()
 

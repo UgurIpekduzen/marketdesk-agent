@@ -30,6 +30,14 @@ SERVER_MODULE = "src.mcp_server.server"
 
 
 def server_parameters(env: dict[str, str] | None = None) -> StdioServerParameters:
+    """How to start the order server: the same interpreter, the server module.
+
+    Args:
+        env (dict[str, str] | None): Extra environment variables for the server process.
+
+    Returns:
+        The parameters to start the server.
+    """
     return StdioServerParameters(
         # The same interpreter as this process, so the same packages.
         command=sys.executable,
@@ -40,6 +48,18 @@ def server_parameters(env: dict[str, str] | None = None) -> StdioServerParameter
 
 
 def result_to_dict(name: str, result) -> dict:
+    """Turn a tool result into a dict; raise when the server reported an error.
+
+    Args:
+        name (str): The tool that was called.
+        result: The MCP call result.
+
+    Returns:
+        The result as a dict.
+
+    Raises:
+        RuntimeError: The server reported an error.
+    """
     if result.is_error:
         raise RuntimeError(f"tool {name!r} failed: {result.content}")
     if result.structured_content is not None:
@@ -48,6 +68,8 @@ def result_to_dict(name: str, result) -> dict:
 
 
 class OrdersClient:
+    """One customer's connection to their own order server process."""
+
     def __init__(
         self,
         db_path: Path | str,
@@ -89,7 +111,18 @@ class OrdersClient:
         self._stack = self._session = None
 
     async def call(self, name: str, arguments: dict | None = None) -> dict:
-        """Call one tool on the server and return its result."""
+        """Call one tool on the server and return its result.
+
+        Args:
+            name (str): The tool on the order server.
+            arguments (dict | None): Its arguments.
+
+        Returns:
+            The tool's result.
+
+        Raises:
+            RuntimeError: The connection to the server is not open.
+        """
         if self._session is None:
             raise RuntimeError("the connection to the order server is not open")
         result = await self._session.call_tool(name, arguments or {})
@@ -103,9 +136,18 @@ class OrdersClient:
     # --- Control calls, made by application code only ---------------------
 
     async def session_info(self) -> dict:
+        """Ask the server for the session's public information."""
         return await self.call("session_info")
 
     async def alias_order_reference(self, order_ref: str) -> str:
+        """Turn an order reference into the session's alias for it.
+
+        Args:
+            order_ref (str): An order number as the customer typed it.
+
+        Returns:
+            The session's alias for the order.
+        """
         answer = await self.call("alias_order_reference", {"order_ref": order_ref})
         return answer["alias"]
 
@@ -115,7 +157,15 @@ class OrdersClient:
         return answer if answer["pending"] else None
 
     async def approve_pending(self, card: dict | None) -> dict:
-        """Approve the card the person saw (order, reason, refund_amount)."""
+        """Approve the card the person saw (order, reason, refund_amount).
+
+        Args:
+            card (dict | None): The card the person saw: order, reason and refund
+                amount.
+
+        Returns:
+            The server's answer.
+        """
         card = card or {}
         return await self.call(
             "approve_pending",
@@ -127,6 +177,7 @@ class OrdersClient:
         )
 
     async def decline_pending(self) -> dict:
+        """Tell the server the person declined the waiting request."""
         return await self.call("decline_pending")
 
 
@@ -134,6 +185,13 @@ async def call_tool_async(name: str, arguments: dict | None = None) -> dict:
     """Start a server without a session, call one tool, stop the server.
 
     Only for tools that need no session, such as status.
+
+    Args:
+        name (str): The tool on the order server.
+        arguments (dict | None): Its arguments.
+
+    Returns:
+        The tool's result.
     """
     async with (
         stdio_client(server_parameters()) as (read_stream, write_stream),

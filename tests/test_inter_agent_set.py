@@ -16,9 +16,9 @@ from eval.run_eval import INTER_AGENT_SET, RESULT_PREFIXES, load_golden
 from src.agents.support import IMITATED_NOTE
 from src.guardrails.pii import RAW_ID_PATTERN
 from src.orchestrator import Intent
+from tests.example_ids import by_id
 
 EXAMPLES = load_golden(INTER_AGENT_SET)
-by_id = lambda example: example["id"]
 SINGLE = [example for example in EXAMPLES if "turns" not in example]
 FLOWS = [example for example in EXAMPLES if "turns" in example]
 

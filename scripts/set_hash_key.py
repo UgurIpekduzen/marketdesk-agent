@@ -1,6 +1,6 @@
 """Put a new secret key for the id hashes into .env, unless one is there.
 
-Usage:  python scripts/set_hash_key.py [--env .env]
+Usage:  python -m scripts.set_hash_key [--env .env]
 
 The key is written to the file and never printed. An existing key is left
 alone: changing it would make new hashes differ from the ones already in
@@ -11,11 +11,6 @@ import argparse
 import secrets
 import sys
 from pathlib import Path
-
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-# Run as a plain script, Python only searches the scripts/ folder for imports.
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.guardrails.pii import HASH_KEY_VARIABLE
 
@@ -41,6 +36,7 @@ def set_hash_key(env_path: Path) -> bool:
 
 
 def main() -> int:
+    """Run the command line entry point."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--env", type=Path, default=DEFAULT_ENV_PATH)
     args = parser.parse_args()

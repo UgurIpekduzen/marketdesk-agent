@@ -1,12 +1,14 @@
 """The evaluation runner with one guard broken, for eval/mutations.py only.
 
-Usage:  MARKETDESK_MUTATION_ROWS=rows.json python -m eval.mutated_eval NAME RUN_EVAL_ARGS...
+Usage:  MARKETDESK_MUTATION_ROWS=rows.json
+        python -m eval.mutated_eval NAME RUN_EVAL_ARGS...
 
 Breaks the guard, then runs eval/run_eval.py with the arguments. The rows of
 the run (id, split, success) are written to the file in the environment
 variable; no results file is written (give --only).
 """
 
+import functools
 import json
 import os
 import sys
@@ -18,29 +20,32 @@ from eval.mutations import apply_everywhere
 ROWS_VARIABLE = "MARKETDESK_MUTATION_ROWS"
 
 
+def keep_rows(rows_path: str, original, rows):
+    """Write what the run found for each example, then summarise as before."""
+    with open(rows_path, "w", encoding="utf-8") as handle:
+        json.dump(
+            [
+                {
+                    "id": row["id"],
+                    "split": row["split"],
+                    "success": row["success"],
+                    "failed": [k for k, v in row["checks"].items() if v is False],
+                }
+                for row in rows
+            ],
+            handle,
+        )
+    return original(rows)
+
+
 def main(name: str, arguments: list[str]) -> int:
+    """Run the evaluation with the named guard switched off."""
     rows_path = os.environ[ROWS_VARIABLE]
     original = run_eval.summarise_by_split
 
-    def keep_rows(rows):
-        with open(rows_path, "w", encoding="utf-8") as handle:
-            json.dump(
-                [
-                    {
-                        "id": row["id"],
-                        "split": row["split"],
-                        "success": row["success"],
-                        "failed": [k for k, v in row["checks"].items() if v is False],
-                    }
-                    for row in rows
-                ],
-                handle,
-            )
-        return original(rows)
-
     with ExitStack() as stack:
         apply_everywhere(name, stack)
-        run_eval.summarise_by_split = keep_rows
+        run_eval.summarise_by_split = functools.partial(keep_rows, rows_path, original)
         sys.argv = ["run_eval.py", *arguments]
         try:
             return run_eval.main()

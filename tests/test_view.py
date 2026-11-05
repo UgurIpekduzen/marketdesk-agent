@@ -10,9 +10,9 @@ from src.agents.support import Reply as SupportReply
 from src.formatting import format_number, readable_table
 from src.i18n import Language
 from src.orchestrator import Answer, Intent
-from src.ui.chat_session import MessageTooLong
-from src.ui.question_limit import QuestionLimitReached
-from src.ui.session_pool import SessionLimitReached
+from src.ui.chat_session import MessageTooLongError
+from src.ui.question_limit import QuestionLimitReachedError
+from src.ui.session_pool import SessionLimitReachedError
 from src.ui.view import (
     approval_card,
     escape_markdown,
@@ -190,7 +190,10 @@ def test_split_caveat_counts_as_said():
 
 def test_missing_caveat_is_still_shown():
     # As in a live answer: only the first sentence of the caveat was repeated.
-    cut_short = "2018-01: 7.269 sipariş.\n\n*Not: Her durumdaki sipariş sayılır, iptal edilenler dahil.*"
+    cut_short = (
+        "2018-01: 7.269 sipariş.\n\n"
+        "*Not: Her durumdaki sipariş sayılır, iptal edilenler dahil.*"
+    )
 
     assert unsaid_caveats("2018-01: 7.269 sipariş.", [CAVEAT]) == [CAVEAT]
     assert unsaid_caveats(cut_short, [CAVEAT]) == [CAVEAT]
@@ -268,12 +271,12 @@ def wrapped(inner: Exception) -> Exception:
         (RuntimeError("503 UNAVAILABLE: high demand"), messages.UI_ERROR_BUSY),
         (wrapped(ValueError("status 429")), messages.UI_ERROR_QUOTA),
         (TimeoutError(), messages.UI_ERROR_TIMEOUT),
-        (SessionLimitReached("20 chat sessions are open"), messages.UI_ERROR_FULL),
+        (SessionLimitReachedError("20 chat sessions are open"), messages.UI_ERROR_FULL),
         (
-            MessageTooLong("1500 characters"),
+            MessageTooLongError("1500 characters"),
             messages.UI_ERROR_TOO_LONG.format(limit=config.MAX_MESSAGE_CHARS),
         ),
-        (QuestionLimitReached("60 questions"), messages.UI_ERROR_QUESTION_LIMIT),
+        (QuestionLimitReachedError("60 questions"), messages.UI_ERROR_QUESTION_LIMIT),
         (KeyError("GEMINI_API_KEY_FREE"), messages.UI_ERROR_NOT_CONFIGURED),
         (wrapped(KeyError("GROQ_API_KEY")), messages.UI_ERROR_NOT_CONFIGURED),
         # What Gemini answers to a key it does not accept (2026-10-19).

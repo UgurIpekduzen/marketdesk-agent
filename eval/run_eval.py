@@ -1,6 +1,6 @@
 """Run the golden set through the system and print the result table.
 
-Usage:  python eval/run_eval.py [--db data/marketdesk.db] [--only S1,O2]
+Usage:  python -m eval.run_eval [--db data/marketdesk.db] [--only S1,O2]
                                 [--pause 20] [--no-cache] [--show-test]
                                 [--judge]
 
@@ -29,19 +29,15 @@ import tempfile
 import time
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-# Run as a plain script, Python only searches the eval/ folder for imports.
-sys.path.insert(0, str(PROJECT_ROOT))
-
 import config
 from eval import scoring
 from eval.live_bar import LiveBar
 from eval.llm_cache import (
     DEFAULT_CACHE_DIR,
     CachedLLM,
-    DailyQuotaUsedUp,
-    LiveCallLimitReached,
-    NoPaidCredit,
+    DailyQuotaUsedUpError,
+    LiveCallLimitReachedError,
+    NoPaidCreditError,
 )
 from eval.terminal_table import terminal_tables
 from src import messages_en
@@ -137,6 +133,7 @@ def language_of(example: dict) -> Language:
 
 
 def load_golden(path: Path = GOLDEN_SET) -> list[dict]:
+    """Read the examples of a set from its JSON lines file."""
     lines = path.read_text(encoding="utf-8").splitlines()
     return [json.loads(line) for line in lines if line.strip()]
 
@@ -155,6 +152,7 @@ def fill(value: object, placeholders: dict[str, str]) -> object:
 
 
 def request_count(conn: sqlite3.Connection) -> int:
+    """The number of stored return requests."""
     return conn.execute("SELECT COUNT(*) FROM return_requests").fetchone()[0]
 
 
@@ -461,11 +459,6 @@ def count_where(rows: list[dict], key: str, test) -> int | None:
 def summarise(rows: list[dict]) -> dict:
     """The numbers of the result table, for one group or for all."""
 
-    def check_rate(name: str) -> float | None:
-        return scoring.rate(
-            [row["checks"][name] for row in rows if name in row["checks"]]
-        )
-
     expected_calls = sum(row["tools_expected"] for row in rows)
     seconds = [row["seconds"] for row in rows]
     return {
@@ -476,10 +469,10 @@ def summarise(rows: list[dict]) -> dict:
             if expected_calls
             else None
         ),
-        "decision_accuracy": check_rate("decision"),
-        "execution_accuracy": check_rate("execution"),
-        "source_accuracy": check_rate("source"),
-        "intent_accuracy": check_rate("intent"),
+        "decision_accuracy": scoring.check_rate(rows, "decision"),
+        "execution_accuracy": scoring.check_rate(rows, "execution"),
+        "source_accuracy": scoring.check_rate(rows, "source"),
+        "intent_accuracy": scoring.check_rate(rows, "intent"),
         "faithfulness": judge_mean(rows, "faithfulness"),
         "helpfulness": judge_mean(rows, "helpfulness"),
         "no_causal_claim": judge_mean(rows, "no_causal_claim"),
@@ -565,6 +558,7 @@ def attack_rates(rows: list[dict]) -> dict:
 
 
 def attack_text(rows: list[dict]) -> str:
+    """The attack results as text."""
     rates = attack_rates(rows)
     labels = {
         "writes": "No write without approval",
@@ -671,6 +665,7 @@ def result_name(
 
 
 def show(value: float | None, percent: bool = True) -> str:
+    """A rate as a percentage, or a dash when it was not measured."""
     if value is None:
         return "—"
     return f"{value * 100:.0f}%" if percent else f"{value:.1f}"
@@ -682,6 +677,7 @@ def show_score(value: float | None) -> str:
 
 
 def markdown_table(summary: dict) -> str:
+    """The summary as a markdown table."""
     header = (
         "| Group | n | Task success | Tool-call accuracy | Decision | SQL execution "
         "| Source | Intent | Steps | Tokens | p50 s | p95 s "
@@ -884,6 +880,7 @@ def index_with_extra_policies(embedder, extra_dir: Path, folder: Path) -> Policy
 
 
 def main() -> int:
+    """Run the command line entry point."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--db", type=Path, default=DEFAULT_DB_PATH)
     parser.add_argument("--golden", type=Path, default=GOLDEN_SET)
@@ -991,7 +988,11 @@ def main() -> int:
                 bar=bar,
                 watch=watch,
             )
-        except (DailyQuotaUsedUp, LiveCallLimitReached, NoPaidCredit) as stop:
+        except (
+            DailyQuotaUsedUpError,
+            LiveCallLimitReachedError,
+            NoPaidCreditError,
+        ) as stop:
             # Nothing is written: the next run takes the answers so far from
             # the cache and goes on from there.
             print(f"\nStopped: {stop}")

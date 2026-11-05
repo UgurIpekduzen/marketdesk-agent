@@ -27,11 +27,13 @@ from src.failures import BUDGET_MARK
 WINDOW_SECONDS = 24 * 3600
 
 
-class CallBudgetReached(RuntimeError):
+class CallBudgetReachedError(RuntimeError):
     """The model calls of the last day have used up the budget."""
 
 
 class CallBudget:
+    """The model calls the page may make per day, for the whole process."""
+
     def __init__(
         self,
         per_day: int,
@@ -51,7 +53,9 @@ class CallBudget:
         with self._lock:
             self._forget_old(self._clock())
             if len(self._calls) >= self._per_day:
-                raise CallBudgetReached(f"{BUDGET_MARK} of {self._per_day} used up")
+                raise CallBudgetReachedError(
+                    f"{BUDGET_MARK} of {self._per_day} used up"
+                )
 
     def take(self) -> None:
         """Count one model call, or refuse it when the day is full."""
@@ -59,7 +63,9 @@ class CallBudget:
             now = self._clock()
             self._forget_old(now)
             if len(self._calls) >= self._per_day:
-                raise CallBudgetReached(f"{BUDGET_MARK} of {self._per_day} used up")
+                raise CallBudgetReachedError(
+                    f"{BUDGET_MARK} of {self._per_day} used up"
+                )
             self._calls.append(now)
 
 
@@ -76,55 +82,133 @@ class CountedLLM(FunctionCallingLLM):
 
     @classmethod
     def class_name(cls) -> str:
+        """Name used by LlamaIndex for this model class."""
         return "CountedLLM"
 
     @property
     def metadata(self) -> LLMMetadata:
+        """Metadata of the wrapped model."""
         return self.inner.metadata
 
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        """Take one call from the budget, then chat.
+
+        Args:
+            messages (Sequence[ChatMessage]): The messages to send.
+            **kwargs: Passed on to the wrapped model.
+
+        Returns:
+            The wrapped model's response.
+        """
         self.budget.take()
         return self.inner.chat(messages, **kwargs)
 
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
+        """Take one call from the budget, then chat (async).
+
+        Args:
+            messages (Sequence[ChatMessage]): The messages to send.
+            **kwargs: Passed on to the wrapped model.
+
+        Returns:
+            The wrapped model's response.
+        """
         self.budget.take()
         return await self.inner.achat(messages, **kwargs)
 
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> Generator[ChatResponse, None, None]:
+        """Take one call from the budget, then stream a chat reply.
+
+        Args:
+            messages (Sequence[ChatMessage]): The messages to send.
+            **kwargs: Passed on to the wrapped model.
+
+        Returns:
+            A generator of response pieces.
+        """
         self.budget.take()
         return self.inner.stream_chat(messages, **kwargs)
 
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> AsyncGenerator[ChatResponse, None]:
+        """Take one call from the budget, then stream a chat reply (async).
+
+        Args:
+            messages (Sequence[ChatMessage]): The messages to send.
+            **kwargs: Passed on to the wrapped model.
+
+        Returns:
+            An async generator of response pieces.
+        """
         self.budget.take()
         return await self.inner.astream_chat(messages, **kwargs)
 
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
+        """Take one call from the budget, then complete the prompt.
+
+        Args:
+            prompt (str): The prompt to complete.
+            formatted (bool): True when the prompt already has the model's format.
+            **kwargs: Passed on to the wrapped model.
+
+        Returns:
+            The wrapped model's response.
+        """
         self.budget.take()
         return self.inner.complete(prompt, formatted, **kwargs)
 
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
+        """Take one call from the budget, then complete the prompt (async).
+
+        Args:
+            prompt (str): The prompt to complete.
+            formatted (bool): True when the prompt already has the model's format.
+            **kwargs: Passed on to the wrapped model.
+
+        Returns:
+            The wrapped model's response.
+        """
         self.budget.take()
         return await self.inner.acomplete(prompt, formatted, **kwargs)
 
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> Generator[CompletionResponse, None, None]:
+        """Take one call from the budget, then stream the completion.
+
+        Args:
+            prompt (str): The prompt to complete.
+            formatted (bool): True when the prompt already has the model's format.
+            **kwargs: Passed on to the wrapped model.
+
+        Returns:
+            A generator of response pieces.
+        """
         self.budget.take()
         return self.inner.stream_complete(prompt, formatted, **kwargs)
 
     async def astream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> AsyncGenerator[CompletionResponse, None]:
+        """Take one call from the budget, then stream the completion (async).
+
+        Args:
+            prompt (str): The prompt to complete.
+            formatted (bool): True when the prompt already has the model's format.
+            **kwargs: Passed on to the wrapped model.
+
+        Returns:
+            An async generator of response pieces.
+        """
         self.budget.take()
         return await self.inner.astream_complete(prompt, formatted, **kwargs)
 
@@ -139,4 +223,13 @@ class CountedLLM(FunctionCallingLLM):
         return self.inner._validate_chat_with_tools_response(*args, **kwargs)
 
     def get_tool_calls_from_response(self, *args: Any, **kwargs: Any) -> list:
+        """Read the tool calls from a response, as the wrapped model does.
+
+        Args:
+            *args: Passed on to the wrapped model.
+            **kwargs: Passed on to the wrapped model.
+
+        Returns:
+            The tool calls in the response.
+        """
         return self.inner.get_tool_calls_from_response(*args, **kwargs)

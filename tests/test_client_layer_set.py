@@ -14,9 +14,9 @@ import pytest
 from eval.run_eval import CLIENT_LAYER_SET, RESULT_PREFIXES, load_golden
 from src.guardrails.pii import RAW_ID_PATTERN
 from src.orchestrator import Intent
+from tests.example_ids import by_id
 
 EXAMPLES = load_golden(CLIENT_LAYER_SET)
-by_id = lambda example: example["id"]
 
 
 def test_set_covers_both_sessions():

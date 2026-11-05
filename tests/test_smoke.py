@@ -193,12 +193,18 @@ def test_main_returns_1_when_a_check_fails(db_path, raw_dir, capsys):
     assert "Smoke test FAILED" in output
 
 
-def test_runs_as_file_from_another_directory(tmp_path):
-    script = Path(__file__).resolve().parent.parent / "scripts" / "smoke.py"
+def test_runs_as_a_module_from_the_project_root(tmp_path):
+    project_root = Path(__file__).resolve().parent.parent
 
     result = subprocess.run(
-        [sys.executable, str(script), "--db", str(tmp_path / "missing.db")],
-        cwd=tmp_path,
+        [
+            sys.executable,
+            "-m",
+            "scripts.smoke",
+            "--db",
+            str(tmp_path / "missing.db"),
+        ],
+        cwd=project_root,
         capture_output=True,
         text=True,
         check=False,

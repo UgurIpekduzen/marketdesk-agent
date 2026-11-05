@@ -59,6 +59,8 @@ SITUATIONS = {
 
 @dataclass(frozen=True)
 class DemoCustomer:
+    """A demo customer the visitor can pick, described by their situation."""
+
     situation: str
     label: str  # what the person choosing sees
     customer_unique_id: str  # never shown
@@ -67,7 +69,15 @@ class DemoCustomer:
 def demo_customers(
     conn: sqlite3.Connection, today: date = config.SIMULATED_TODAY
 ) -> list[DemoCustomer]:
-    """The customers to offer; a situation nobody is in is left out."""
+    """The customers to offer; a situation nobody is in is left out.
+
+    Args:
+        conn (sqlite3.Connection): A connection to the database.
+        today (date): The simulated today.
+
+    Returns:
+        The customers to offer, one per situation that has someone in it.
+    """
     parameters = {
         "today": today.isoformat(),
         "short_window_start": (

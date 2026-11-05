@@ -17,9 +17,9 @@ from eval.run_eval import MULTI_TURN_ATTACK_SET, RESULT_PREFIXES, load_golden
 from src.agents.support import system_prompt
 from src.guardrails.pii import RAW_ID_PATTERN
 from src.orchestrator import Intent
+from tests.example_ids import by_id
 
 EXAMPLES = load_golden(MULTI_TURN_ATTACK_SET)
-by_id = lambda example: example["id"]
 
 
 def said(example: dict) -> list[dict]:

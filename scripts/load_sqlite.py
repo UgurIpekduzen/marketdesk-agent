@@ -1,6 +1,6 @@
 """Load the Olist CSV files into a SQLite database.
 
-Usage:  python scripts/load_sqlite.py --src data/raw --db data/marketdesk.db
+Usage:  python -m scripts.load_sqlite --src data/raw --db data/marketdesk.db
 
 What it does:
 - creates one table per CSV file, with explicit column types;
@@ -18,15 +18,10 @@ The database is rebuilt from scratch on every run.
 import argparse
 import csv
 import sqlite3
-import sys
 from collections.abc import Callable, Collection, Iterator
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
-
-# Run as a plain script, Python only searches the scripts/ folder for imports.
-# Adding the project root lets config.py be found from any working directory.
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from config import SIMULATED_TODAY
 from src.knowledge.safe_views import create_view_statements
@@ -38,6 +33,8 @@ DEFAULT_DB_PATH = Path("data/marketdesk.db")
 
 @dataclass(frozen=True)
 class Table:
+    """The definition of one table: its CSV file, columns and key."""
+
     name: str
     csv_file: str
     columns: dict[str, str]  # column name -> SQLite type, in CSV order
@@ -223,6 +220,7 @@ def is_excluded_by_r0(purchase_timestamp: str | None, simulated_today: date) -> 
 
 
 def create_table(conn: sqlite3.Connection, table: Table) -> None:
+    """Create the table from its definition."""
     definitions = [f"{column} {sql_type}" for column, sql_type in table.columns.items()]
     if table.primary_key:
         definitions.append(f"PRIMARY KEY ({', '.join(table.primary_key)})")
@@ -241,6 +239,44 @@ def insert_rows(
     sql = f"INSERT INTO {table.name} ({', '.join(columns)}) VALUES ({placeholders})"
     cursor = conn.executemany(sql, (row for row in rows if keep(row)))
     return cursor.rowcount
+
+
+def keep_all(row: dict[str, str | None]) -> bool:
+    """Keep every row."""
+    return True
+
+
+@dataclass
+class Exclusions:
+    """The orders rule R0 leaves out, and with them the rows of their customers."""
+
+    simulated_today: date
+    order_ids: set[str | None] = field(default_factory=set)
+    customer_ids: set[str | None] = field(default_factory=set)
+
+    def keep_order(self, row: dict[str, str | None]) -> bool:
+        """Keep an order unless the rules exclude it, and remember the excluded ones."""
+        if is_excluded_by_r0(row["order_purchase_timestamp"], self.simulated_today):
+            self.order_ids.add(row["order_id"])
+            self.customer_ids.add(row["customer_id"])
+            return False
+        return True
+
+    def keeps_order_row(self, row: dict[str, str | None]) -> bool:
+        """Keep a row of a table keyed by order unless its order was excluded."""
+        return row["order_id"] not in self.order_ids
+
+    def keeps_customer_row(self, row: dict[str, str | None]) -> bool:
+        """Keep a row of a table keyed by customer unless its customer was excluded."""
+        return row["customer_id"] not in self.customer_ids
+
+    def keep_dependent(self, table: Table) -> Callable[[dict[str, str | None]], bool]:
+        """Rows of an excluded order, and its customer row, are dropped."""
+        if table.name in ORDER_ID_TABLES:
+            return self.keeps_order_row
+        if table.name == "customers":
+            return self.keeps_customer_row
+        return keep_all
 
 
 def build_database(
@@ -267,35 +303,22 @@ def build_database(
     try:
         with conn:
             # Orders first: R0 decides which order and customer ids are left out.
-            excluded_order_ids: set[str | None] = set()
-            excluded_customer_ids: set[str | None] = set()
-
-            def keep_order(row: dict[str, str | None]) -> bool:
-                if is_excluded_by_r0(row["order_purchase_timestamp"], simulated_today):
-                    excluded_order_ids.add(row["order_id"])
-                    excluded_customer_ids.add(row["customer_id"])
-                    return False
-                return True
+            exclusions = Exclusions(simulated_today)
 
             create_table(conn, ORDERS)
             counts[ORDERS.name] = insert_rows(
-                conn, ORDERS, read_rows(raw_dir, ORDERS), keep_order
+                conn, ORDERS, read_rows(raw_dir, ORDERS), exclusions.keep_order
             )
-
-            def keep_dependent(table: Table) -> Callable[[dict[str, str | None]], bool]:
-                """Rows of an excluded order, and its customer row, are dropped."""
-                if table.name in ORDER_ID_TABLES:
-                    return lambda row: row["order_id"] not in excluded_order_ids
-                if table.name == "customers":
-                    return lambda row: row["customer_id"] not in excluded_customer_ids
-                return lambda row: True
 
             for table in OTHER_TABLES:
                 if table.name in skip_tables:
                     continue
                 create_table(conn, table)
                 counts[table.name] = insert_rows(
-                    conn, table, read_rows(raw_dir, table), keep_dependent(table)
+                    conn,
+                    table,
+                    read_rows(raw_dir, table),
+                    exclusions.keep_dependent(table),
                 )
 
             conn.execute(RETURN_REQUESTS_SQL)
@@ -312,7 +335,7 @@ def build_database(
 
             for statement in create_view_statements():
                 conn.execute(statement)
-        counts["excluded_by_r0"] = len(excluded_order_ids)
+        counts["excluded_by_r0"] = len(exclusions.order_ids)
     except BaseException:
         conn.close()
         temp_path.unlink(missing_ok=True)
@@ -324,6 +347,7 @@ def build_database(
 
 
 def main() -> None:
+    """Run the command line entry point."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--db", type=Path, default=DEFAULT_DB_PATH)
     parser.add_argument(

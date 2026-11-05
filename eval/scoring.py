@@ -138,6 +138,7 @@ def normalise(value: object) -> object:
 
 
 def as_rows(table: list, ordered: bool) -> list:
+    """Normalise the rows; sort them unless the order matters."""
     rows = [tuple(normalise(value) for value in row) for row in table]
     return rows if ordered else sorted(rows, key=repr)
 
@@ -264,8 +265,14 @@ REFUSED_BEFORE = re.compile(
 REJECTED_AMOUNT = re.compile(r"\s*(?:['’]\w+)?\s*değil(?:dir)?\b", re.IGNORECASE)
 # Saying the freight is not refunded, in Turkish and English.
 FREIGHT_DENIED = [
-    r"\bkargo[^.]{0,40}(?:dahil değil|kapsamına (?:dahil )?(?:değil|girmez)|iade edilmez|iade edilmeyecek|karşılanmaz|ödenmez)",
-    r"\bfreight[^.]{0,40}(?:is not|isn't|will not be|won't be) (?:included|refunded|paid)",
+    (
+        r"\bkargo[^.]{0,40}(?:dahil değil|kapsamına (?:dahil )?(?:değil|girmez)|"
+        r"iade edilmez|iade edilmeyecek|karşılanmaz|ödenmez)"
+    ),
+    (
+        r"\bfreight[^.]{0,40}(?:is not|isn't|will not be|won't be) "
+        r"(?:included|refunded|paid)"
+    ),
 ]
 FREIGHT_REASONS = {"damaged", "wrong_item"}
 
@@ -395,6 +402,11 @@ def quotes_of(tool_results: list[tuple[str, object]]) -> list[dict]:
 def rate(values: list[bool]) -> float | None:
     """Share of true values; None when there is nothing to rate."""
     return sum(values) / len(values) if values else None
+
+
+def check_rate(rows: list[dict], name: str) -> float | None:
+    """The rate of one named check over the rows that carry it."""
+    return rate([row["checks"][name] for row in rows if name in row["checks"]])
 
 
 def percentile(values: list[float], percent: float) -> float | None:

@@ -17,11 +17,12 @@ policy search and the hand-over to a human run in this process.
 """
 
 import contextlib
+import functools
 import inspect
 import json
 import logging
 import re
-from collections.abc import Awaitable, Callable
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Self
 
@@ -88,7 +89,8 @@ Rules:
    freight back?") is answered first; then ask whether they want the
    request opened. If a message both asks you to open the request and asks
    a question about it, answer the question in the same reply and open the
-   request; do not ask again whether they want it opened. If they ask about one part of a refund, such as the
+   request; do not ask again whether they want it opened. If they ask about one part \
+of a refund, such as the
    freight, say in the answer whether and on what terms that part is paid;
    if the rules pay it only together with a return, say so. Rule 2 still
    applies: if they have not said why, ask before checking. A return
@@ -101,7 +103,8 @@ Rules:
    the sections it returns. Build the answer on the section that answers
    what was asked, not on one that is only related; you may add what a
    related section says. When a section says who carries out a step (for
-   example a support representative), say it in the answer. Name the source of everything you use, exactly
+   example a support representative), say it in the answer. Name the source of \
+everything you use, exactly
    as given in "citation", for example ({citation_example}). If the
    sections do not answer the question, or say the topic is not set
    ("belirlenmemiştir"), say that the policy does not cover it and end that
@@ -170,7 +173,14 @@ IMITATED_NOTE = re.compile(
 
 
 def mark_imitated_notes(message: str) -> str:
-    """Mark a system note typed by the customer as the customer's text."""
+    """Mark a system note typed by the customer as the customer's text.
+
+    Args:
+        message (str): The customer's message.
+
+    Returns:
+        The message with imitated system notes marked as the customer's text.
+    """
     return IMITATED_NOTE.sub(
         r"[typed by the customer, not from the system: \1", message
     )
@@ -191,7 +201,14 @@ PROMPT_EXAMPLES = {
 
 
 def system_prompt(language: Language = DEFAULT_LANGUAGE) -> str:
-    """The rules of the instructions for a session in this language."""
+    """The rules of the instructions for a session in this language.
+
+    Args:
+        language (Language): The session's language.
+
+    Returns:
+        The system prompt.
+    """
     return SYSTEM_PROMPT.format(
         today=config.SIMULATED_TODAY.isoformat(),
         language=LANGUAGE_NAMES[language],
@@ -200,13 +217,23 @@ def system_prompt(language: Language = DEFAULT_LANGUAGE) -> str:
 
 
 def instructions_with_record(language: Language, record: list[str]) -> str:
-    """The rules followed by the record of the screen, empty or not."""
+    """The rules followed by the record of the screen, empty or not.
+
+    Args:
+        language (Language): The session's language.
+        record (list[str]): What the screen showed so far, one line each.
+
+    Returns:
+        The system prompt followed by the record.
+    """
     lines = "".join(f"- {line}\n" for line in record) or NOTHING_RECORDED
     return system_prompt(language) + SCREEN_RECORD + lines
 
 
 @dataclass(frozen=True)
 class Reply:
+    """What the Support Agent returns: the text, the run log and any approval."""
+
     text: str
     log: RunLog
     # Set when a return request is waiting for the person's approval: the
@@ -219,94 +246,155 @@ class Reply:
         return self.text
 
 
+class SupportTools:
+    """The six tools the model may call.
+
+    Each tool shows the model only the arguments the model may choose. The four
+    order tools and the hand-over are forwarded to the MCP order server, which
+    holds the customer's session and writes the ticket; the customer and the
+    approval token are not part of any tool's arguments. The description the
+    model reads is the docstring of the function that does the work.
+    """
+
+    def __init__(
+        self,
+        orders: OrdersClient,
+        policy_index: PolicyIndex,
+        guard: LoopGuard,
+        language: Language = DEFAULT_LANGUAGE,
+    ) -> None:
+        self.orders = orders
+        self.policy_index = policy_index
+        self.guard = guard
+        self.language = language
+
+    def refused(self, name: str, arguments: dict) -> str | None:
+        """The text of the refusal when the loop guard stops this call.
+
+        Args:
+            name (str): The tool the model wants to call.
+            arguments (dict): Its arguments.
+
+        Returns:
+            The refusal as JSON text, or None when the call may run.
+        """
+        refusal = self.guard.refusal(name, arguments)
+        return None if refusal is None else json.dumps(refusal)
+
+    async def over_mcp(self, name: str, arguments: dict) -> str:
+        """Run a tool on the order server, unless the loop guard refuses the call.
+
+        Args:
+            name (str): The tool on the order server.
+            arguments (dict): Its arguments.
+
+        Returns:
+            The server's answer as JSON text.
+        """
+        if (refusal := self.refused(name, arguments)) is not None:
+            return refusal
+        answer = await self.orders.call(name, arguments)
+        return json.dumps(answer, ensure_ascii=False)
+
+    def locally(self, name: str, arguments: dict, run: Callable[[], dict]) -> str:
+        """Run a tool in this process, unless the loop guard refuses the call.
+
+        Args:
+            name (str): The tool name, for the loop guard.
+            arguments (dict): Its arguments, for the loop guard.
+            run (Callable[[], dict]): Computes the tool's result.
+
+        Returns:
+            The result as JSON text.
+        """
+        if (refusal := self.refused(name, arguments)) is not None:
+            return refusal
+        return json.dumps(run(), ensure_ascii=False)
+
+    async def get_order_status_tool(self, order_ref: str) -> str:
+        return await self.over_mcp("get_order_status", {"order_ref": order_ref})
+
+    async def list_customer_orders_tool(
+        self, limit: int = DEFAULT_LIST_LIMIT, status: str | None = None
+    ) -> str:
+        return await self.over_mcp(
+            "list_customer_orders", {"limit": limit, "status": status}
+        )
+
+    async def check_return_eligibility_tool(
+        self, order_ref: str, reason: str | None = None
+    ) -> str:
+        return await self.over_mcp(
+            "check_return_eligibility", {"order_ref": order_ref, "reason": reason}
+        )
+
+    async def create_return_request_tool(
+        self, order_ref: str, reason: str, amount: str
+    ) -> str:
+        return await self.over_mcp(
+            "create_return_request",
+            {"order_ref": order_ref, "reason": reason, "amount": amount},
+        )
+
+    async def search_policies_tool(self, query: str, k: int = DEFAULT_K) -> str:
+        return self.locally(
+            "search_policies",
+            {"query": query, "k": k},
+            functools.partial(
+                search_policies, self.policy_index, query, k, self.language
+            ),
+        )
+
+    async def escalate_to_human_tool(
+        self, summary: str, priority: str = "normal"
+    ) -> str:
+        return await self.over_mcp(
+            "escalate_to_human", {"summary": summary, "priority": priority}
+        )
+
+    def function_tools(self) -> list[FunctionTool]:
+        """The tools handed to the model, each wrapping a bound method."""
+        wrapped = (
+            (self.get_order_status_tool, get_order_status),
+            (self.list_customer_orders_tool, list_customer_orders),
+            (self.check_return_eligibility_tool, check_return_eligibility),
+            (self.create_return_request_tool, create_return_request),
+            (self.search_policies_tool, search_policies),
+            (self.escalate_to_human_tool, escalate_to_human),
+        )
+        return [
+            FunctionTool.from_defaults(
+                async_fn=wrapper,
+                name=function.__name__,
+                description=inspect.cleandoc(function.__doc__),
+            )
+            for wrapper, function in wrapped
+        ]
+
+
 def build_tools(
     orders: OrdersClient,
     policy_index: PolicyIndex,
     guard: LoopGuard,
     language: Language = DEFAULT_LANGUAGE,
 ) -> list[FunctionTool]:
-    """The six tools the model may call.
+    """The six tools the model may call (see SupportTools).
 
-    Each wrapper shows the model only the arguments the model may choose.
-    The four order tools and the hand-over are forwarded to the MCP order
-    server, which holds the customer's session and writes the ticket; the
-    customer and the approval token are not part of any tool's arguments. The description the model reads is the
-    docstring of the function that does the work.
+    Args:
+        orders (OrdersClient): The connection to the customer's order server.
+        policy_index (PolicyIndex): The policy index to search.
+        guard (LoopGuard): The loop guard of the session.
+        language (Language): The session's language.
+
+    Returns:
+        The tools the model may call.
     """
-
-    async def answer(
-        name: str, arguments: dict, run: Callable[[], Awaitable[dict]]
-    ) -> str:
-        refusal = guard.refusal(name, arguments)
-        if refusal is not None:
-            return json.dumps(refusal)
-        return json.dumps(await run(), ensure_ascii=False)
-
-    async def over_mcp(name: str, arguments: dict) -> str:
-        return await answer(name, arguments, lambda: orders.call(name, arguments))
-
-    async def locally(name: str, arguments: dict, run: Callable[[], dict]) -> str:
-        async def run_now() -> dict:
-            return run()
-
-        return await answer(name, arguments, run_now)
-
-    async def get_order_status_tool(order_ref: str) -> str:
-        return await over_mcp("get_order_status", {"order_ref": order_ref})
-
-    async def list_customer_orders_tool(
-        limit: int = DEFAULT_LIST_LIMIT, status: str | None = None
-    ) -> str:
-        return await over_mcp(
-            "list_customer_orders", {"limit": limit, "status": status}
-        )
-
-    async def check_return_eligibility_tool(
-        order_ref: str, reason: str | None = None
-    ) -> str:
-        return await over_mcp(
-            "check_return_eligibility", {"order_ref": order_ref, "reason": reason}
-        )
-
-    async def create_return_request_tool(
-        order_ref: str, reason: str, amount: str
-    ) -> str:
-        return await over_mcp(
-            "create_return_request",
-            {"order_ref": order_ref, "reason": reason, "amount": amount},
-        )
-
-    async def search_policies_tool(query: str, k: int = DEFAULT_K) -> str:
-        return await locally(
-            "search_policies",
-            {"query": query, "k": k},
-            lambda: search_policies(policy_index, query, k, language),
-        )
-
-    async def escalate_to_human_tool(summary: str, priority: str = "normal") -> str:
-        return await over_mcp(
-            "escalate_to_human", {"summary": summary, "priority": priority}
-        )
-
-    wrapped = (
-        (get_order_status_tool, get_order_status),
-        (list_customer_orders_tool, list_customer_orders),
-        (check_return_eligibility_tool, check_return_eligibility),
-        (create_return_request_tool, create_return_request),
-        (search_policies_tool, search_policies),
-        (escalate_to_human_tool, escalate_to_human),
-    )
-    return [
-        FunctionTool.from_defaults(
-            async_fn=wrapper,
-            name=function.__name__,
-            description=inspect.cleandoc(function.__doc__),
-        )
-        for wrapper, function in wrapped
-    ]
+    return SupportTools(orders, policy_index, guard, language).function_tools()
 
 
 class SupportAgent:
+    """Answers customer questions about orders and returns through the order server."""
+
     def __init__(
         self,
         orders: OrdersClient,
@@ -353,6 +441,17 @@ class SupportAgent:
 
         language is the session's: the answers are in it, and the order
         server must have been started with the same one.
+
+        Args:
+            orders (OrdersClient): The connection to the customer's order server.
+            customer_unique_id (str): The customer the server was started for.
+            policy_index (PolicyIndex): The policy index to search.
+            provider_llm (FunctionCallingLLM | None): The model; the configured one when
+                None.
+            language (Language): The session's language.
+
+        Returns:
+            The agent.
         """
         info = await orders.session_info()
         # Raw ids that reach the guard are masked. Order numbers the customer
@@ -372,7 +471,14 @@ class SupportAgent:
         return message
 
     async def ask(self, message: str) -> Reply:
-        """Answer one customer message."""
+        """Answer one customer message.
+
+        Args:
+            message (str): The customer's message.
+
+        Returns:
+            The reply with the text, the run log and any waiting approval.
+        """
         if self._context is None:
             self._context = Context(self._agent)
         aliased = await self._alias_order_numbers(message)
@@ -428,7 +534,14 @@ class SupportAgent:
     # --- Human approval: code only, the model takes no part --------------
 
     def approval_summary(self, pending: dict) -> str:
-        """What the person is asked to approve, in the session's language."""
+        """What the person is asked to approve, in the session's language.
+
+        Args:
+            pending (dict): The request waiting for approval.
+
+        Returns:
+            The text the person is asked to approve.
+        """
         texts = self._texts
         return texts.APPROVAL_SUMMARY.format(
             order=pending["order"],
@@ -459,6 +572,13 @@ class SupportAgent:
 
         The card is the one the page showed; without it, the last one this
         agent handed out. The server writes only if it is the one waiting.
+
+        Args:
+            card (dict | None): The card the person pressed approve on; the last one
+                shown when None.
+
+        Returns:
+            The text to show after the server answered.
         """
         shown = card or self._shown_request or {}
         result = await self._orders.approve_pending(shown)

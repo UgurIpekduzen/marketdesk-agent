@@ -2,6 +2,7 @@
 server process, a stand-in model, no page framework."""
 
 import asyncio
+import functools
 import gc
 import logging
 import os
@@ -13,14 +14,14 @@ import pytest
 import config
 from src import messages
 from src.orchestrator import Intent, SessionType
-from src.ui.call_budget import CallBudget, CallBudgetReached
+from src.ui.call_budget import CallBudget, CallBudgetReachedError
 from src.ui.chat_session import (
-    ApprovalWaiting,
+    ApprovalWaitingError,
     ChatSession,
-    MessageTooLong,
-    SessionClosed,
+    MessageTooLongError,
+    SessionClosedError,
 )
-from src.ui.question_limit import QuestionLimit, QuestionLimitReached
+from src.ui.question_limit import QuestionLimit, QuestionLimitReachedError
 from src.ui.view import friendly_error
 from tests.agent_harness import request_count
 from tests.fakes import FakeLLM
@@ -29,24 +30,35 @@ from tests.synthetic_data import ALICE
 RETURN = {"order_ref": "o_day14", "reason": "damaged", "amount": "115.00"}
 
 
+def start_of_open_session(
+    synthetic_db_path,
+    fake_policy_index,
+    sessions,
+    script,
+    customer=ALICE,
+    question_limit=None,
+    call_budget=None,
+):
+    session = ChatSession(
+        synthetic_db_path,
+        fake_policy_index,
+        customer,
+        FakeLLM(script=list(script)),
+        question_limit=question_limit,
+        call_budget=call_budget,
+    )
+    sessions.append(session)
+    return session
+
+
 @pytest.fixture
 def open_session(synthetic_db_path, fake_policy_index):
     """Open sessions with a scripted model; all are closed after the test."""
     sessions = []
 
-    def start(script, customer=ALICE, question_limit=None, call_budget=None):
-        session = ChatSession(
-            synthetic_db_path,
-            fake_policy_index,
-            customer,
-            FakeLLM(script=list(script)),
-            question_limit=question_limit,
-            call_budget=call_budget,
-        )
-        sessions.append(session)
-        return session
-
-    yield start
+    yield functools.partial(
+        start_of_open_session, synthetic_db_path, fake_policy_index, sessions
+    )
     for session in sessions:
         session.close()
 
@@ -109,7 +121,7 @@ def test_message_refused_while_card_waits(open_session, synthetic_db_path):
     session.ask("o_day14 hasarlı geldi, iade istiyorum")
     model_calls_before = len(session._provider_llm.requests)
 
-    with pytest.raises(ApprovalWaiting):
+    with pytest.raises(ApprovalWaitingError):
         session.ask("Bir de başka bir siparişim var, onu da iade edin.")
 
     # The model was not asked, and the card still waits for its answer.
@@ -138,9 +150,9 @@ def test_card_wait_refusal_has_own_text():
     from src.i18n import Language
 
     for language in Language:
-        text = friendly_error(ApprovalWaiting("x"), language)
+        text = friendly_error(ApprovalWaitingError("x"), language)
         assert text
-        assert text != friendly_error(MessageTooLong("x"), language)
+        assert text != friendly_error(MessageTooLongError("x"), language)
 
 
 def test_old_card_click_writes_nothing(open_session, synthetic_db_path):
@@ -242,7 +254,7 @@ def test_oversized_message_skips_the_model(open_session):
     # An empty script: a model call would fail the test.
     session = open_session([])
 
-    with pytest.raises(MessageTooLong):
+    with pytest.raises(MessageTooLongError):
         session.ask("a" * (config.MAX_MESSAGE_CHARS + 1))
 
 
@@ -264,7 +276,7 @@ def test_question_limit_ignores_approvals(
     first.ask("Merhaba")
     first.decline()
 
-    with pytest.raises(QuestionLimitReached):
+    with pytest.raises(QuestionLimitReachedError):
         second.ask("Merhaba")
 
 
@@ -283,7 +295,7 @@ def test_call_budget_counts_model_calls(open_session):
 
     session.ask("o_day14 nerede?")
 
-    with pytest.raises(CallBudgetReached):
+    with pytest.raises(CallBudgetReachedError):
         session.ask("Bir soru daha")
     assert len(model_requests(session)) == 3
 
@@ -309,7 +321,7 @@ def test_sessions_share_the_call_budget(open_session):
 
     first.ask("Bir şiir yaz")
 
-    with pytest.raises(CallBudgetReached):
+    with pytest.raises(CallBudgetReachedError):
         second.ask("Merhaba")
     assert model_requests(second) == []
 
@@ -340,7 +352,7 @@ def test_close_ends_thread_refuses_work(open_session):
 
     assert session.closed
     assert not thread.is_alive()
-    with pytest.raises(SessionClosed):
+    with pytest.raises(SessionClosedError):
         session.ask("Merhaba")
 
 
@@ -376,16 +388,18 @@ def test_sessions_do_not_share_conversation(open_session):
 CLEANED: list = []
 
 
+async def close_client_of_achat():
+    await asyncio.sleep(0.5)
+    CLEANED.append(True)
+
+
 class CleansUpLater(FakeLLM):
     """A model whose client leaves its own closing behind as a task, as the
     Gemini client does when it is garbage collected while a loop runs."""
 
     async def achat(self, messages, **kwargs):
-        async def close_client():
-            await asyncio.sleep(0.5)
-            CLEANED.append(True)
 
-        asyncio.get_running_loop().create_task(close_client())
+        asyncio.get_running_loop().create_task(close_client_of_achat())
         return await super().achat(messages, **kwargs)
 
 

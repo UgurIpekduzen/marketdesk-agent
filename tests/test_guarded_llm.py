@@ -2,6 +2,7 @@
 
 import ast
 import asyncio
+import functools
 import importlib
 from pathlib import Path
 
@@ -71,25 +72,29 @@ def test_streaming_chat_is_cleaned(guarded, fake):
     assert texts_sent(fake) == ["[id] nerede?"]
 
 
-def test_async_streaming_chat_is_cleaned(guarded, fake):
-    async def run():
-        stream = await guarded.astream_chat([user(f"{RAW_ID} nerede?")])
-        return [chunk async for chunk in stream]
+async def run_of_async_streaming_chat_is_cleaned(guarded):
+    stream = await guarded.astream_chat([user(f"{RAW_ID} nerede?")])
+    return [chunk async for chunk in stream]
 
-    asyncio.run(run())
+
+def test_async_streaming_chat_is_cleaned(guarded, fake):
+
+    asyncio.run(run_of_async_streaming_chat_is_cleaned(guarded))
 
     assert texts_sent(fake) == ["[id] nerede?"]
 
 
+async def run_async_of_completion_calls_are_cleaned(guarded):
+    await guarded.acomplete(f"c {RAW_ID}")
+    stream = await guarded.astream_complete(f"d {RAW_ID}")
+    return [chunk async for chunk in stream]
+
+
 def test_completion_calls_are_cleaned(guarded, fake):
-    async def run_async():
-        await guarded.acomplete(f"c {RAW_ID}")
-        stream = await guarded.astream_complete(f"d {RAW_ID}")
-        return [chunk async for chunk in stream]
 
     guarded.complete(f"a {RAW_ID}")
     list(guarded.stream_complete(f"b {RAW_ID}"))
-    asyncio.run(run_async())
+    asyncio.run(run_async_of_completion_calls_are_cleaned(guarded))
 
     assert [request["prompt"] for request in fake.requests] == [
         "a [id]",
@@ -241,13 +246,14 @@ def test_main_model_unless_fallback_is_on(monkeypatch):
     )
 
 
+def create_of_recording_provider(created, **kwargs):
+    created.append(kwargs)
+
+
 def recording_provider(created):
     """A stand-in for a provider's model class that records how it is created."""
 
-    def create(**kwargs):
-        created.append(kwargs)
-
-    return create
+    return functools.partial(create_of_recording_provider, created)
 
 
 @pytest.mark.parametrize(

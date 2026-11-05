@@ -46,19 +46,20 @@ DAILY_QUOTA_MARKS = ("perday", "per_day", "per day")
 NO_CREDIT_MARKS = ("prepayment credits", "402 resource_exhausted")
 
 
-class DailyQuotaUsedUp(RuntimeError):
+class DailyQuotaUsedUpError(RuntimeError):
     """The free daily quota is gone: the run stops, to go on with --paid."""
 
 
-class NoPaidCredit(RuntimeError):
+class NoPaidCreditError(RuntimeError):
     """The paid key has no prepaid credit left: the run stops until some is added."""
 
 
-class LiveCallLimitReached(RuntimeError):
+class LiveCallLimitReachedError(RuntimeError):
     """A run made as many live calls as it may (config.PAID_RUN_MAX_LIVE_CALLS)."""
 
 
 def error_text(failure: BaseException) -> str:
+    """The error's type and message, lower case, for matching."""
     return f"{type(failure).__name__} {failure}".lower()
 
 
@@ -99,7 +100,14 @@ def daily_quota_message(provider_class: str) -> str:
     )
 
 
+async def one_piece(response):
+    """A stream that holds one whole response."""
+    yield response
+
+
 class CachedLLM(FunctionCallingLLM):
+    """A model that answers from the cache and calls the wrapped model on a miss."""
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     inner: FunctionCallingLLM = Field(exclude=True)
@@ -121,10 +129,12 @@ class CachedLLM(FunctionCallingLLM):
 
     @classmethod
     def class_name(cls) -> str:
+        """Name used by LlamaIndex for this model class."""
         return "CachedLLM"
 
     @property
     def metadata(self) -> LLMMetadata:
+        """Metadata of the wrapped model."""
         return self.inner.metadata
 
     def _key(self, messages: Sequence[ChatMessage], kwargs: dict) -> str:
@@ -170,6 +180,7 @@ class CachedLLM(FunctionCallingLLM):
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
+        """Answer from the cache, or call the wrapped model and store the answer."""
         key = self._key(messages, kwargs)
         entry = self._load(key)
         if entry is None:
@@ -197,7 +208,7 @@ class CachedLLM(FunctionCallingLLM):
         the waiting is not counted as the model's time.
         """
         if self.max_live_calls is not None and self.live_calls >= self.max_live_calls:
-            raise LiveCallLimitReached(
+            raise LiveCallLimitReachedError(
                 f"{self.live_calls} live calls made, the limit of this run"
             )
         for attempt in range(self.retries + 1):
@@ -206,11 +217,11 @@ class CachedLLM(FunctionCallingLLM):
                 return await self.inner.achat(messages, **kwargs), started
             except Exception as failure:
                 if is_daily_quota(failure):
-                    raise DailyQuotaUsedUp(
+                    raise DailyQuotaUsedUpError(
                         daily_quota_message(type(self.inner).__name__)
                     ) from failure
                 if is_out_of_credit(failure):
-                    raise NoPaidCredit(
+                    raise NoPaidCreditError(
                         "The paid key has no prepaid credit left. Add credit in "
                         "AI Studio (the project's Billing page) and run the same "
                         "command again; the answers so far are in the cache."
@@ -227,13 +238,10 @@ class CachedLLM(FunctionCallingLLM):
         raise AssertionError("unreachable")
 
     async def astream_chat(self, messages: Sequence[ChatMessage], **kwargs: Any):
+        """Stream the cached or fresh answer as one piece."""
         # One whole response instead of pieces: a cached answer has no pieces.
         response = await self.achat(messages, **kwargs)
-
-        async def stream():
-            yield response
-
-        return stream()
+        return one_piece(response)
 
     # --- Not used by the agents; refused so nothing goes round the cache ---
 
@@ -254,4 +262,5 @@ class CachedLLM(FunctionCallingLLM):
         return self.inner._validate_chat_with_tools_response(*args, **kwargs)
 
     def get_tool_calls_from_response(self, *args: Any, **kwargs: Any) -> list:
+        """Read the tool calls from a response, as the wrapped model does."""
         return self.inner.get_tool_calls_from_response(*args, **kwargs)

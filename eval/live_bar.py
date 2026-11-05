@@ -13,6 +13,7 @@ Held-out examples move the bar but are not counted as passed or failed,
 so the counts never tell how one of them went.
 """
 
+import functools
 import logging
 import os
 import sys
@@ -26,6 +27,8 @@ GREEN, RED, CYAN, DIM, RESET = "\x1b[32m", "\x1b[31m", "\x1b[36m", "\x1b[90m", "
 
 
 class LiveBar:
+    """A progress line that updates in place on a terminal."""
+
     def __init__(self, total: int, stream=None) -> None:
         self.stream = stream or sys.stdout
         self.active = self.stream.isatty()
@@ -46,14 +49,13 @@ class LiveBar:
         """Clear the bar before a log line and draw it again after."""
         for handler in logging.getLogger().handlers:
             original = handler.emit
-
-            def emit(record, original=original):
-                self._write(REWRITE)
-                original(record)
-                self._draw()
-
-            handler.emit = emit
+            handler.emit = functools.partial(self._emit_above_bar, original)
             self._handlers.append((handler, original))
+
+    def _emit_above_bar(self, original, record) -> None:
+        self._write(REWRITE)
+        original(record)
+        self._draw()
 
     def _write(self, text: str) -> None:
         self.stream.write(text)
@@ -65,20 +67,20 @@ class LiveBar:
         filled = round(share * BAR_WIDTH)
         minutes, seconds = divmod(int(time.monotonic() - self.started), 60)
 
-        def paint(text: str, code: str) -> str:
-            return f"{code}{text}{RESET}" if self.colour and code and text else text
-
         return (
             f"[{self.done:>{len(str(self.total))}}/{self.total}] "
-            + paint("█" * filled, RED if self.failed else GREEN)
-            + paint("░" * (BAR_WIDTH - filled), DIM)
+            + self._paint("█" * filled, RED if self.failed else GREEN)
+            + self._paint("░" * (BAR_WIDTH - filled), DIM)
             + f" {share:>4.0%}  "
-            + paint(f"✓ {self.passed}", GREEN)
+            + self._paint(f"✓ {self.passed}", GREEN)
             + "  "
-            + paint(f"✗ {self.failed}", RED if self.failed else DIM)
-            + paint(f"   live {self.live}   {minutes}:{seconds:02d}   ", DIM)
-            + paint(self.current, CYAN)
+            + self._paint(f"✗ {self.failed}", RED if self.failed else DIM)
+            + self._paint(f"   live {self.live}   {minutes}:{seconds:02d}   ", DIM)
+            + self._paint(self.current, CYAN)
         )
+
+    def _paint(self, text: str, code: str) -> str:
+        return f"{code}{text}{RESET}" if self.colour and code and text else text
 
     def _draw(self) -> None:
         if self.active:

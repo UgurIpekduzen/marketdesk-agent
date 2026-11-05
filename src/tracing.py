@@ -92,11 +92,16 @@ _provider: TracerProvider | None = None
 
 
 def register_personal_values(values: Mapping[str, str]) -> None:
-    """Have the values of a session masked in every span from now on."""
+    """Have the values of a session masked in every span from now on.
+
+    Args:
+        values (Mapping[str, str]): The values to mask, by kind.
+    """
     _personal_values.update(values)
 
 
 def secret_values() -> list[str]:
+    """The secret values that must never leave the process in a trace."""
     values = [os.environ.get(name, "") for name in SECRET_VARIABLES]
     # The key in use, also when it was made for this process.
     values.append(hash_key())
@@ -104,7 +109,14 @@ def secret_values() -> list[str]:
 
 
 def scrub(text: str) -> str:
-    """A text as it may leave the process."""
+    """A text as it may leave the process.
+
+    Args:
+        text (str): Any text.
+
+    Returns:
+        The text with secrets, raw ids and personal values masked.
+    """
     for secret in secret_values():
         text = text.replace(secret, SECRET_MASK)
     text = RAW_ID_PATTERN.sub(lambda match: hash_id(match.group().lower()), text)
@@ -113,7 +125,14 @@ def scrub(text: str) -> str:
 
 
 def scrub_value(value: object) -> object:
-    """Clean a span attribute value: a text or a sequence of values."""
+    """Clean a span attribute value: a text or a sequence of values.
+
+    Args:
+        value (object): A text, bytes, or a sequence of values.
+
+    Returns:
+        The value, cleaned.
+    """
     if isinstance(value, str):
         return scrub(value)
     if isinstance(value, bytes):
@@ -124,7 +143,14 @@ def scrub_value(value: object) -> object:
 
 
 def estimated_cost(attributes: Mapping) -> float | None:
-    """What a model call would cost at the list price, in USD."""
+    """What a model call would cost at the list price, in USD.
+
+    Args:
+        attributes (Mapping): A span's attributes.
+
+    Returns:
+        The cost in USD, or None without token counts or a list price.
+    """
     prices = (config.LLM_PRICE_INPUT_PER_MTOK, config.LLM_PRICE_OUTPUT_PER_MTOK)
     if INPUT_TOKENS not in attributes or None in prices:
         return None
@@ -133,13 +159,28 @@ def estimated_cost(attributes: Mapping) -> float | None:
 
 
 def scrub_attributes(attributes: Mapping | None) -> dict:
+    """Mask secrets in the keys and values of span attributes.
+
+    Args:
+        attributes (Mapping | None): A span's attributes, or None.
+
+    Returns:
+        The attributes with keys and values cleaned.
+    """
     return {
         scrub(str(key)): scrub_value(value) for key, value in (attributes or {}).items()
     }
 
 
 def tool_result(attributes: Mapping) -> dict | None:
-    """The dict a tool answered with, read from the attributes of its span."""
+    """The dict a tool answered with, read from the attributes of its span.
+
+    Args:
+        attributes (Mapping): A tool span's attributes.
+
+    Returns:
+        The dict the tool answered with, or None.
+    """
     try:
         output = json.loads(attributes.get("output.value", ""))
         result = json.loads(output["blocks"][0]["text"])
@@ -154,6 +195,12 @@ def own_attributes(attributes: Mapping) -> dict:
     The rule engine's decision and rule, the status a return request would
     get, an error code with its reason, and for free SQL whether the query
     passed the check.
+
+    Args:
+        attributes (Mapping): A span's attributes.
+
+    Returns:
+        The project's attributes for a tool span, empty for other spans.
     """
     if attributes.get(SPAN_KIND) != "TOOL":
         return {}
@@ -177,7 +224,14 @@ def own_attributes(attributes: Mapping) -> dict:
 
 
 def allowed_for_hosted(attributes: Mapping) -> dict:
-    """The attributes a hosted target may receive."""
+    """The attributes a hosted target may receive.
+
+    Args:
+        attributes (Mapping): A span's attributes.
+
+    Returns:
+        Only the attributes a hosted target may receive.
+    """
     return {
         key: value
         for key, value in attributes.items()
@@ -192,6 +246,13 @@ def masked(span: ReadableSpan, hosted: bool = False) -> ReadableSpan:
     their details and the status its description. The project's own
     attributes are read from the full span first, so the decision of a
     tool still arrives when its answer does not.
+
+    Args:
+        span (ReadableSpan): A finished span.
+        hosted (bool): True when the target runs outside this machine.
+
+    Returns:
+        A copy with every text cleaned.
     """
     attributes = scrub_attributes(
         {**span.attributes, **own_attributes(span.attributes)}
@@ -237,17 +298,41 @@ class MaskingExporter(SpanExporter):
         self._hosted = hosted
 
     def export(self, spans: Sequence[ReadableSpan]) -> SpanExportResult:
+        """Mask the spans, then pass them to the wrapped exporter.
+
+        Args:
+            spans (Sequence[ReadableSpan]): The finished spans.
+
+        Returns:
+            The result of the wrapped exporter.
+        """
         return self._inner.export([masked(span, self._hosted) for span in spans])
 
     def shutdown(self) -> None:
+        """Shut down the wrapped exporter."""
         self._inner.shutdown()
 
     def force_flush(self, timeout_millis: int = 30000) -> bool:
+        """Flush the wrapped exporter.
+
+        Args:
+            timeout_millis (int): How long to wait.
+
+        Returns:
+            True when the wrapped exporter flushed.
+        """
         return self._inner.force_flush(timeout_millis)
 
 
 def target_settings(target: str) -> tuple[str, dict[str, str]]:
-    """Where a target receives spans, and the headers it asks for."""
+    """Where a target receives spans, and the headers it asks for.
+
+    Args:
+        target (str): phoenix or langfuse.
+
+    Returns:
+        The endpoint and the headers.
+    """
     if target == "phoenix":
         return config.TRACING_PHOENIX_ENDPOINT, {}
     if target == "langfuse":
@@ -262,7 +347,14 @@ def target_settings(target: str) -> tuple[str, dict[str, str]]:
 
 
 def target_exporter(target: str) -> SpanExporter:
-    """The exporter that sends spans to a target."""
+    """The exporter that sends spans to a target.
+
+    Args:
+        target (str): phoenix or langfuse.
+
+    Returns:
+        The exporter.
+    """
     # Imported here: only a run that sends spans needs the HTTP exporter.
     from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
         OTLPSpanExporter,
@@ -273,7 +365,14 @@ def target_exporter(target: str) -> SpanExporter:
 
 
 def is_hosted(target: str) -> bool:
-    """Whether a target runs outside this machine."""
+    """Whether a target runs outside this machine.
+
+    Args:
+        target (str): The tracing target.
+
+    Returns:
+        True when it is not the local one.
+    """
     return target != "phoenix"
 
 
@@ -286,6 +385,14 @@ def setup_tracing(
 
     A test passes its own exporter and batch=False, to read the spans as
     soon as they end. The masking exporter is always in front.
+
+    Args:
+        target (str | None): The target; the configured one when None.
+        exporter (SpanExporter | None): An exporter to use instead of the target's.
+        batch (bool): True to send spans in batches.
+
+    Returns:
+        The tracer provider, or None when tracing is off.
     """
     target = config.TRACING_TARGET if target is None else target
     if target == "off":
@@ -325,6 +432,13 @@ def span(name: str, **attributes: object):
 
     Does nothing when tracing is off. Attribute names get the project's
     prefix; None values are left out.
+
+    Args:
+        name (str): The span's name.
+        **attributes: The project's attributes to put on it.
+
+    Returns:
+        The open span, or None when tracing is off.
     """
     if _provider is None:
         yield None
@@ -336,7 +450,12 @@ def span(name: str, **attributes: object):
 
 
 def annotate(current: trace.Span | None, **attributes: object) -> None:
-    """Put the project's attributes on a span."""
+    """Put the project's attributes on a span.
+
+    Args:
+        current (trace.Span | None): A span, or None.
+        **attributes: The attributes to put on it; None values are left out.
+    """
     if current is None:
         return
     for key, value in attributes.items():
@@ -345,7 +464,11 @@ def annotate(current: trace.Span | None, **attributes: object) -> None:
 
 
 def mark(**attributes: object) -> None:
-    """Put the project's attributes on the span that is open now, if any."""
+    """Put the project's attributes on the span that is open now, if any.
+
+    Args:
+        **attributes: The attributes to put on the open span.
+    """
     if _provider is None:
         return
     current = trace.get_current_span()

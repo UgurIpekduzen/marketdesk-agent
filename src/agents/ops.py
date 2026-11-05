@@ -14,6 +14,7 @@ is decided in code:
 - the model is reached only through the outbound guard.
 """
 
+import functools
 import inspect
 import json
 import logging
@@ -141,7 +142,15 @@ NUMBER_RULES = {
 
 
 def system_prompt(db_path: Path | str, language: Language = DEFAULT_LANGUAGE) -> str:
-    """The instructions for a session in this language."""
+    """The instructions for a session in this language.
+
+    Args:
+        db_path (Path | str): The database whose safe views are listed in the prompt.
+        language (Language): The session's language.
+
+    Returns:
+        The system prompt.
+    """
     return SYSTEM_PROMPT.format(
         today=config.SIMULATED_TODAY.isoformat(),
         corrections=config.SQL_MAX_CORRECTIONS,
@@ -172,6 +181,8 @@ never present the result as a cause of anything.
 
 @dataclass(frozen=True)
 class Reply:
+    """What the Ops Data Agent returns: the text, the run log and the SQL behind it."""
+
     text: str
     log: RunLog
     # The SQL behind the numbers: what ran, or what was tried when gave_up.
@@ -216,7 +227,14 @@ class Reply:
 
 
 def view_schema(db_path: Path | str) -> str:
-    """The safe views and their columns, read from the database itself."""
+    """The safe views and their columns, read from the database itself.
+
+    Args:
+        db_path (Path | str): The database to read the views from.
+
+    Returns:
+        One line per allowed view with its columns.
+    """
     conn = connect_read_only(db_path)
     try:
         lines = []
@@ -241,7 +259,14 @@ caveats when reporting, and never present a figure as the cause of another.
 
 
 def cut_rows(result: dict) -> dict:
-    """Shorten a long result table for the model and say how much was left out."""
+    """Shorten a long result table for the model and say how much was left out.
+
+    Args:
+        result (dict): A query result with columns and rows.
+
+    Returns:
+        The result, shortened when it has more rows than the model should see.
+    """
     rows = result.get("rows")
     if rows is None or len(rows) <= MAX_ROWS_FOR_MODEL:
         return result
@@ -253,6 +278,8 @@ def cut_rows(result: dict) -> dict:
 
 
 class OpsAgent:
+    """Answers operations questions from metrics and checked read-only SQL."""
+
     def __init__(
         self,
         db_path: Path | str,
@@ -286,6 +313,7 @@ class OpsAgent:
         self._context: Context | None = None
 
     def close(self) -> None:
+        """Close the read-only database connection."""
         self._conn.close()
 
     # --- Tools ------------------------------------------------------------
@@ -370,73 +398,78 @@ class OpsAgent:
             metric["caveat"] = defined.caveat_in(self._language)
         return listed
 
+    # --- The tools the model may call ---------------------------------------
+
+    async def list_metrics_tool(self) -> str:
+        return self._answer("list_metrics", {}, self._list_metrics)
+
+    async def run_metric_tool(
+        self,
+        metric_name: str,
+        group_by: list[str] | None = None,
+        customer_state: list[str] | None = None,
+        product_category_en: list[str] | None = None,
+        purchase_month: list[str] | None = None,
+        seller_state: list[str] | None = None,
+        seller_key: list[str] | None = None,
+        purchase_from: str | None = None,
+        purchase_to: str | None = None,
+        min_count: int | None = None,
+        order: str | None = None,
+        top: int | None = None,
+    ) -> str:
+        # One typed argument per filter: providers refuse a free-form
+        # object as a tool argument. Only the filters given are passed on.
+        given = {
+            "customer_state": customer_state,
+            "product_category_en": product_category_en,
+            "purchase_month": purchase_month,
+            "seller_state": seller_state,
+            "seller_key": seller_key,
+            "purchase_from": purchase_from,
+            "purchase_to": purchase_to,
+        }
+        filters = {name: value for name, value in given.items() if value}
+        ranking = {"min_count": min_count, "order": order, "top": top}
+        return self._answer(
+            "run_metric",
+            {
+                "metric_name": metric_name,
+                "filters": filters,
+                "group_by": group_by,
+                **ranking,
+            },
+            functools.partial(
+                self._run_metric, metric_name, filters, group_by or [], ranking
+            ),
+        )
+
+    async def seller_report_tool(
+        self, purchase_from: str | None = None, purchase_to: str | None = None
+    ) -> str:
+        period = {
+            name: value
+            for name, value in (
+                ("purchase_from", purchase_from),
+                ("purchase_to", purchase_to),
+            )
+            if value
+        }
+        return self._answer(
+            "seller_report", period, functools.partial(self._seller_report, period)
+        )
+
+    async def run_sql_tool(self, query: str) -> str:
+        return self._answer(
+            "run_sql", {"query": query}, functools.partial(self._run_sql, query)
+        )
+
     def _build_tools(self) -> list[FunctionTool]:
-        async def list_metrics_tool() -> str:
-            return self._answer("list_metrics", {}, self._list_metrics)
-
-        async def run_metric_tool(
-            metric_name: str,
-            group_by: list[str] | None = None,
-            customer_state: list[str] | None = None,
-            product_category_en: list[str] | None = None,
-            purchase_month: list[str] | None = None,
-            seller_state: list[str] | None = None,
-            seller_key: list[str] | None = None,
-            purchase_from: str | None = None,
-            purchase_to: str | None = None,
-            min_count: int | None = None,
-            order: str | None = None,
-            top: int | None = None,
-        ) -> str:
-            # One typed argument per filter: providers refuse a free-form
-            # object as a tool argument. Only the filters given are passed on.
-            given = {
-                "customer_state": customer_state,
-                "product_category_en": product_category_en,
-                "purchase_month": purchase_month,
-                "seller_state": seller_state,
-                "seller_key": seller_key,
-                "purchase_from": purchase_from,
-                "purchase_to": purchase_to,
-            }
-            filters = {name: value for name, value in given.items() if value}
-            ranking = {"min_count": min_count, "order": order, "top": top}
-            return self._answer(
-                "run_metric",
-                {
-                    "metric_name": metric_name,
-                    "filters": filters,
-                    "group_by": group_by,
-                    **ranking,
-                },
-                lambda: self._run_metric(metric_name, filters, group_by or [], ranking),
-            )
-
-        async def seller_report_tool(
-            purchase_from: str | None = None, purchase_to: str | None = None
-        ) -> str:
-            period = {
-                name: value
-                for name, value in (
-                    ("purchase_from", purchase_from),
-                    ("purchase_to", purchase_to),
-                )
-                if value
-            }
-            return self._answer(
-                "seller_report", period, lambda: self._seller_report(period)
-            )
-
-        async def run_sql_tool(query: str) -> str:
-            return self._answer(
-                "run_sql", {"query": query}, lambda: self._run_sql(query)
-            )
-
         wrapped = (
-            (list_metrics_tool, list_metrics),
-            (run_metric_tool, run_metric),
-            (seller_report_tool, build_seller_report),
-            (run_sql_tool, run_sql),
+            (self.list_metrics_tool, list_metrics),
+            (self.run_metric_tool, run_metric),
+            (self.seller_report_tool, build_seller_report),
+            (self.run_sql_tool, run_sql),
         )
         # run_metric's own docstring describes a filters dict; the model
         # gets one argument per filter instead, so it gets its own text. So
@@ -460,7 +493,14 @@ class OpsAgent:
     # --- One question -------------------------------------------------------
 
     async def ask(self, message: str) -> Reply:
-        """Answer one question."""
+        """Answer one question.
+
+        Args:
+            message (str): The operations question.
+
+        Returns:
+            The reply with the text, the run log and the SQL behind it.
+        """
         if self._context is None:
             self._context = Context(self._agent)
         self._guard.reset()

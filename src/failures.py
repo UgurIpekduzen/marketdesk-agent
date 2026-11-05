@@ -47,7 +47,14 @@ FAILURE_MARKS = (
 
 
 def failure_code(failure: BaseException) -> str:
-    """The code of a failure, read from the whole chain of exceptions."""
+    """The code of a failure, read from the whole chain of exceptions.
+
+    Args:
+        failure (BaseException): The exception; its causes are read too.
+
+    Returns:
+        A fixed code for the kind of failure.
+    """
     # The provider's error is often wrapped by the framework.
     chain = []
     current: BaseException | None = failure

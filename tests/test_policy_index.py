@@ -129,19 +129,36 @@ def test_node_embeds_the_section_text():
         assert node.get_content() == section.text
 
 
+class QueryPassageRecorder:
+    def embed_queries(self, texts):
+        return np.array([[1.0, 0.0] for _ in texts])
+
+    def embed_passages(self, texts):
+        return np.array([[0.0, 1.0] for _ in texts])
+
+
 def test_wrapper_separates_queries_passages():
-    class Recorder:
-        def embed_queries(self, texts):
-            return np.array([[1.0, 0.0] for _ in texts])
 
-        def embed_passages(self, texts):
-            return np.array([[0.0, 1.0] for _ in texts])
-
-    model = E5Embedding(Recorder())
+    model = E5Embedding(QueryPassageRecorder())
 
     assert model.get_query_embedding("soru") == [1.0, 0.0]
     assert model.get_text_embedding("metin") == [0.0, 1.0]
     assert model.get_text_embedding_batch(["a", "b"]) == [[0.0, 1.0], [0.0, 1.0]]
+
+
+class BatchRecorder:
+    """An embedder that notes the size of every batch of passages it is given."""
+
+    def __init__(self, embedder, batches):
+        self.embedder = embedder
+        self.batches = batches
+
+    def embed_queries(self, texts):
+        return self.embedder.embed_queries(texts)
+
+    def embed_passages(self, texts):
+        self.batches.append(len(texts))
+        return self.embedder.embed_passages(texts)
 
 
 def test_sections_embed_in_one_batch(fake_embedder, tmp_path):
@@ -149,15 +166,7 @@ def test_sections_embed_in_one_batch(fake_embedder, tmp_path):
     # different batch; the stored vectors are the ones of a single batch.
     batches = []
 
-    class Recorder:
-        def embed_queries(self, texts):
-            return fake_embedder.embed_queries(texts)
-
-        def embed_passages(self, texts):
-            batches.append(len(texts))
-            return fake_embedder.embed_passages(texts)
-
-    build_index(Recorder(), tmp_path / "index")
+    build_index(BatchRecorder(fake_embedder, batches), tmp_path / "index")
 
     assert batches == [28]
 

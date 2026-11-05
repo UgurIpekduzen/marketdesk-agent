@@ -58,7 +58,8 @@ def test_order_bought_today_is_not_loaded(synthetic_db):
     assert (
         value(
             synthetic_db,
-            "SELECT COUNT(*) FROM orders WHERE DATE(order_purchase_timestamp) >= DATE(?)",
+            "SELECT COUNT(*) FROM orders "
+            "WHERE DATE(order_purchase_timestamp) >= DATE(?)",
             TODAY,
         )
         == 0
@@ -99,7 +100,8 @@ def test_one_order_is_a_foreign_order(synthetic_db):
 )
 def test_each_open_status_has_an_order(synthetic_db, order_id, status):
     row = synthetic_db.execute(
-        "SELECT order_status, order_delivered_customer_date FROM orders WHERE order_id = ?",
+        "SELECT order_status, order_delivered_customer_date "
+        "FROM orders WHERE order_id = ?",
         (order_id,),
     ).fetchone()
 

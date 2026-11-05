@@ -8,7 +8,9 @@ from pathlib import Path
 
 from eval import mutations
 from eval.mutations import CONTROL, MUTATIONS, apply, apply_everywhere
+from src.knowledge.sql_validator import SqlRejectedError, validate
 from tests.synthetic_data import ALICE
+from tests.test_mcp_server import RETURN, request_count, with_server
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -52,22 +54,14 @@ def test_patch_changes_then_restores():
     from src.guardrails.approval import Approvals, ReturnAction
     from src.guardrails.outbound import Redactor
     from src.knowledge import review_themes, sql_validator
-    from src.knowledge.sql_validator import SqlRejected, validate
     from src.orchestrator import Intent, SessionType
 
     action = ReturnAction("o1", "damaged", __import__("decimal").Decimal("1.00"))
     raw_tables = ("customers", "orders")
 
-    def refuses_raw_table() -> bool:
-        try:
-            validate("SELECT * FROM customers", raw_tables)
-        except SqlRejected:
-            return True
-        return False
-
     assert Approvals().consume(None, action) is False
     assert Redactor().redact("a@b.com")[1] == Counter({"email": 1})
-    assert refuses_raw_table()
+    assert refuses_raw_table(raw_tables)
     assert not review_themes.whole_sentences("Não recebi.", "recebi")
     assert Intent.OPS_METRIC not in orchestrator.ALLOWED_INTENTS[SessionType.CUSTOMER]
 
@@ -83,34 +77,41 @@ def test_patch_changes_then_restores():
 
         assert Approvals().consume(None, action) is True
         assert Redactor().redact("a@b.com")[1] == Counter()
-        assert not refuses_raw_table()
+        assert not refuses_raw_table(raw_tables)
         assert review_themes.whole_sentences("Não recebi.", "recebi")
         assert Intent.OPS_METRIC in orchestrator.ALLOWED_INTENTS[SessionType.CUSTOMER]
 
     assert Approvals().consume(None, action) is False
     assert Redactor().redact("a@b.com")[1] == Counter({"email": 1})
-    assert refuses_raw_table()
+    assert refuses_raw_table(raw_tables)
     assert not review_themes.whole_sentences("Não recebi.", "recebi")
     assert Intent.OPS_METRIC not in orchestrator.ALLOWED_INTENTS[SessionType.CUSTOMER]
     assert sql_validator.check_tree  # the original function is back
 
 
+def refuses_raw_table(raw_tables) -> bool:
+    try:
+        validate("SELECT * FROM customers", raw_tables)
+    except SqlRejectedError:
+        return True
+    return False
+
+
+async def create_return_without_a_click(orders):
+    # No click: the real server answers APPROVAL_REQUIRED and writes nothing.
+    return await orders.call("create_return_request", RETURN)
+
+
 def test_server_guard_breaks_in_the_server(
     synthetic_db_path,
 ):
-    from tests.test_mcp_server import RETURN, request_count, with_server
-
-    async def scenario(orders):
-        # No click: the real server answers APPROVAL_REQUIRED and writes nothing.
-        return await orders.call("create_return_request", RETURN)
-
-    normal = with_server(synthetic_db_path, scenario)
+    normal = with_server(synthetic_db_path, create_return_without_a_click)
     assert normal["error"] == "APPROVAL_REQUIRED"
     before = request_count(synthetic_db_path)
 
     with ExitStack() as stack:
         apply_everywhere("approval_off", stack)
-        broken = with_server(synthetic_db_path, scenario)
+        broken = with_server(synthetic_db_path, create_return_without_a_click)
 
     # The mutated server wrote the request with no approval at all.
     assert "error" not in broken

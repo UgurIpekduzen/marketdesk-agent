@@ -6,6 +6,7 @@ an answer that still holds one is shown with a note.
 """
 
 import asyncio
+import functools
 
 import pytest
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
@@ -27,28 +28,31 @@ def fake():
     return FakeLLM()
 
 
+def make_of_make_agent(synthetic_db_path, fake, agents, **options):
+    agent = OpsAgent(synthetic_db_path, fake, **options)
+    agents.append(agent)
+    return agent
+
+
 @pytest.fixture
 def make_agent(synthetic_db_path, fake):
     agents = []
 
-    def make(**options):
-        agent = OpsAgent(synthetic_db_path, fake, **options)
-        agents.append(agent)
-        return agent
-
-    yield make
+    yield functools.partial(make_of_make_agent, synthetic_db_path, fake, agents)
     for agent in agents:
         agent.close()
 
 
-def ask(agent, *questions):
-    async def run():
-        reply = None
-        for question in questions:
-            reply = await agent.ask(question)
-        return reply
+async def run_of_ask(questions, agent):
+    reply = None
+    for question in questions:
+        reply = await agent.ask(question)
+    return reply
 
-    return asyncio.run(run())
+
+def ask(agent, *questions):
+
+    return asyncio.run(run_of_ask(questions, agent))
 
 
 def asked_for_correction(fake) -> bool:

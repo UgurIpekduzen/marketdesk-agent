@@ -1,6 +1,6 @@
 """Check that the downloaded data and the loaded database look right.
 
-Usage:  python scripts/smoke.py --db data/marketdesk.db
+Usage:  python -m scripts.smoke --db data/marketdesk.db
 
 Two groups of checks:
 - the raw CSV files have the row counts, order status distribution and
@@ -22,10 +22,6 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
-
-# Run as a plain script, Python only searches the scripts/ folder for imports.
-# Adding the project root lets config.py be found from any working directory.
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from config import SIMULATED_TODAY
 from src.knowledge.safe_views import ALLOWED_VIEWS
@@ -109,12 +105,15 @@ ORDER_ID_TABLES = ("order_items", "order_payments", "order_reviews")
 
 @dataclass(frozen=True)
 class Check:
+    """One expected figure and the figure found."""
+
     name: str
     expected: int
     found: int
 
     @property
     def ok(self) -> bool:
+        """True when the figure found is the expected one."""
         return self.expected == self.found
 
     def __str__(self) -> str:
@@ -132,12 +131,14 @@ def count_csv_rows(path: Path) -> int:
 
 
 def read_csv_column(path: Path, column: str) -> Iterator[str]:
+    """The values of one column of a CSV file."""
     with path.open(newline="", encoding="utf-8-sig") as handle:
         for row in csv.DictReader(handle):
             yield row[column]
 
 
 def raw_checks(raw_dir: Path, expected: Expected) -> list[Check]:
+    """Compare the raw files' row counts with the expected ones."""
     checks = [
         Check(f"raw {name} rows", rows, count_csv_rows(raw_dir / name))
         for name, rows in expected.raw_rows.items()
@@ -166,12 +167,14 @@ def raw_checks(raw_dir: Path, expected: Expected) -> list[Check]:
 
 
 def scalar(conn: sqlite3.Connection, sql: str, params: tuple = ()) -> int:
+    """The first value of a query that returns one."""
     return conn.execute(sql, params).fetchone()[0]
 
 
 def database_checks(
     conn: sqlite3.Connection, expected: Expected, simulated_today: date
 ) -> list[Check]:
+    """Compare the loaded database with the expected figures."""
     checks = [
         Check(f"{table} rows", rows, scalar(conn, f"SELECT COUNT(*) FROM {table}"))
         for table, rows in expected.db_rows.items()
@@ -280,6 +283,7 @@ def run_checks(
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run the command line entry point."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--db", type=Path, default=DEFAULT_DB_PATH)
     parser.add_argument(

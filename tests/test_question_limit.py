@@ -1,10 +1,15 @@
 """Tests for the hourly question limit shared by all visitors."""
 
+import functools
 import threading
 
 import pytest
 
-from src.ui.question_limit import WINDOW_SECONDS, QuestionLimit, QuestionLimitReached
+from src.ui.question_limit import (
+    WINDOW_SECONDS,
+    QuestionLimit,
+    QuestionLimitReachedError,
+)
 
 
 class Clock:
@@ -21,7 +26,7 @@ def test_limit_passes_then_refuses():
     for _ in range(3):
         limit.take()
 
-    with pytest.raises(QuestionLimitReached):
+    with pytest.raises(QuestionLimitReachedError):
         limit.take()
 
 
@@ -33,7 +38,7 @@ def test_old_questions_stop_counting():
     limit.take()
 
     clock.seconds += WINDOW_SECONDS - 1800 - 1
-    with pytest.raises(QuestionLimitReached):
+    with pytest.raises(QuestionLimitReachedError):
         limit.take()
 
     clock.seconds += 1
@@ -45,26 +50,34 @@ def test_a_refused_question_takes_no_place():
     limit = QuestionLimit(per_hour=1, clock=clock)
     limit.take()
     for _ in range(5):
-        with pytest.raises(QuestionLimitReached):
+        with pytest.raises(QuestionLimitReachedError):
             limit.take()
 
     clock.seconds += WINDOW_SECONDS
     limit.take()
 
 
+def ask_of_parallel_visitors_respect_the_limit(limit, passed) -> None:
+    for _ in range(20):
+        try:
+            limit.take()
+        except QuestionLimitReachedError:
+            continue
+        passed.append(1)
+
+
 def test_parallel_visitors_respect_the_limit():
     limit = QuestionLimit(per_hour=50)
     passed = []
 
-    def ask() -> None:
-        for _ in range(20):
-            try:
-                limit.take()
-            except QuestionLimitReached:
-                continue
-            passed.append(1)
-
-    threads = [threading.Thread(target=ask) for _ in range(8)]
+    threads = [
+        threading.Thread(
+            target=functools.partial(
+                ask_of_parallel_visitors_respect_the_limit, limit, passed
+            )
+        )
+        for _ in range(8)
+    ]
     for thread in threads:
         thread.start()
     for thread in threads:

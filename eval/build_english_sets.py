@@ -1,6 +1,6 @@
 """Build the English golden and attack sets from the Turkish ones.
 
-Usage:  python eval/build_english_sets.py
+Usage:  python -m eval.build_english_sets
 
 Each English example is its Turkish example with the language-bound fields
 replaced from translations_en.json: the question, the texts the answer must
@@ -14,13 +14,7 @@ writes.
 
 import json
 import re
-import sys
 from pathlib import Path
-
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-# Run as a plain script, Python only searches the eval/ folder for imports.
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
 
 from src import messages, messages_en
 from src.i18n import Language
@@ -44,6 +38,7 @@ CITATION_SEPARATOR = messages.POLICY_CITATION.split("{document}")[1].split("{num
 
 
 def language_free(value) -> bool:
+    """True when the value holds no text of a language, so it needs no translation."""
     items = value if isinstance(value, list) else [value]
     return all(
         language_free(item) if isinstance(item, list) else LANGUAGE_FREE.fullmatch(item)
@@ -114,6 +109,7 @@ def build(turkish_sets: dict[Path, str], translations: dict) -> dict[Path, str]:
 
 
 def main() -> None:
+    """Run the command line entry point."""
     turkish = {path: path.read_text(encoding="utf-8") for path in SETS}
     translations = json.loads(TRANSLATIONS.read_text(encoding="utf-8"))
     for path, text in build(turkish, translations).items():

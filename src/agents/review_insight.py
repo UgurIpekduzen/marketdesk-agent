@@ -1,4 +1,4 @@
-"""The Review Insight Agent: themes and quotes from the reviews, in the session's language.
+"""The Review Insight Agent: review themes and quotes, in the session's language.
 
 A third specialist of the operations session. It answers questions such as
 "what do customers complain about most in furniture?" from a sample of
@@ -18,6 +18,7 @@ fixed message, not what the model wrote. The agent has no write tool, and
 it is reached only by an operations session, through the router.
 """
 
+import functools
 import inspect
 import json
 import logging
@@ -115,6 +116,14 @@ review. The result gives how many reviews of the sample hold each theme's words.
 
 
 def system_prompt(language: Language = DEFAULT_LANGUAGE) -> str:
+    """Fill the system prompt with the language, today's date and the limits.
+
+    Args:
+        language (Language): The session's language.
+
+    Returns:
+        The system prompt.
+    """
     return SYSTEM_PROMPT.format(
         language=LANGUAGE_NAMES[language],
         today=config.SIMULATED_TODAY.isoformat(),
@@ -126,6 +135,8 @@ def system_prompt(language: Language = DEFAULT_LANGUAGE) -> str:
 
 
 class ReviewInsightAgent:
+    """Summarises review themes from a bounded sample of reviews."""
+
     def __init__(
         self,
         db_path: Path | str,
@@ -157,6 +168,7 @@ class ReviewInsightAgent:
         self._context: Context | None = None
 
     def close(self) -> None:
+        """Close the read-only database connection."""
         self._conn.close()
 
     # --- Tools ------------------------------------------------------------
@@ -196,39 +208,46 @@ class ReviewInsightAgent:
         if not self._sample:
             return {
                 "error": "NO_SAMPLE",
-                "message": "Call summarize_reviews first and draw the themes from its sample.",
+                "message": (
+                    "Call summarize_reviews first and draw the themes from its sample."
+                ),
             }
         result = verify_themes(self._sample, themes_json)
         if "error" not in result:
             self._verified = result
         return result
 
+    # --- The tools the model may call ---------------------------------------
+
+    async def summarize_reviews(
+        self,
+        category: str | None = None,
+        min_score: int | None = None,
+        max_score: int | None = None,
+        purchase_from: str | None = None,
+        purchase_to: str | None = None,
+        max_reviews: int | None = None,
+    ) -> str:
+        """Tool: sample the matching reviews and return them for theme extraction."""
+        filters = ReviewFilters(
+            category, min_score, max_score, purchase_from, purchase_to
+        )
+        arguments = {**vars(filters), "max_reviews": max_reviews}
+        return self._answer(
+            "summarize_reviews",
+            arguments,
+            functools.partial(self._summarize_reviews, filters, max_reviews),
+        )
+
+    async def report_themes(self, themes_json: str) -> str:
+        """Tool: check the themes the model found against the sampled reviews."""
+        return self._answer(
+            "report_themes",
+            {"themes_json": themes_json},
+            functools.partial(self._report_themes, themes_json),
+        )
+
     def _build_tools(self) -> list[FunctionTool]:
-        async def summarize_reviews(
-            category: str | None = None,
-            min_score: int | None = None,
-            max_score: int | None = None,
-            purchase_from: str | None = None,
-            purchase_to: str | None = None,
-            max_reviews: int | None = None,
-        ) -> str:
-            filters = ReviewFilters(
-                category, min_score, max_score, purchase_from, purchase_to
-            )
-            arguments = {**vars(filters), "max_reviews": max_reviews}
-            return self._answer(
-                "summarize_reviews",
-                arguments,
-                lambda: self._summarize_reviews(filters, max_reviews),
-            )
-
-        async def report_themes(themes_json: str) -> str:
-            return self._answer(
-                "report_themes",
-                {"themes_json": themes_json},
-                lambda: self._report_themes(themes_json),
-            )
-
         descriptions = {
             "summarize_reviews": SUMMARIZE_REVIEWS_DESCRIPTION,
             "report_themes": REPORT_THEMES_DESCRIPTION,
@@ -239,13 +258,20 @@ class ReviewInsightAgent:
                 name=function.__name__,
                 description=inspect.cleandoc(descriptions[function.__name__]),
             )
-            for function in (summarize_reviews, report_themes)
+            for function in (self.summarize_reviews, self.report_themes)
         ]
 
     # --- One question -------------------------------------------------------
 
     async def ask(self, message: str) -> Reply:
-        """Answer one question about the reviews."""
+        """Answer one question about the reviews.
+
+        Args:
+            message (str): The question about the reviews.
+
+        Returns:
+            The reply with the text, the run log and the checked themes.
+        """
         if self._context is None:
             self._context = Context(self._agent)
         self._guard.reset()
@@ -290,7 +316,15 @@ class ReviewInsightAgent:
 
 
 def theme_table(verified: dict, language: Language) -> dict:
-    """The checked themes as a table: name, reviews, share, an example quote."""
+    """The checked themes as a table: name, reviews, share, an example quote.
+
+    Args:
+        verified (dict): The themes that passed the check.
+        language (Language): The session's language.
+
+    Returns:
+        A table with name, review count, share and an example quote.
+    """
     columns = catalog(language).REVIEW_TABLE_COLUMNS
     rows = []
     for theme in verified["themes"]:
