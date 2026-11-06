@@ -300,7 +300,7 @@ What to know before using the live demo.
 - Streamlit Community Cloud puts the app to sleep after 12 hours without visitors. Anyone who opens the link wakes it up, which took about 50 seconds on 5 November 2026.
 - There is no sign-in. The five demo customers and their data are shared between visitors, and each order can be returned once.
 - A message may have up to 1,000 characters, and all visitors together may ask 60 questions an hour.
-- Two Langfuse alerts watch the model's p95 latency and its calls per day (warning above 319, alert above 399, against the page's limit of 400). They start a GitHub Actions run and go to a temporary webhook backup (valid until about 10 November). No person is woken up. The `MARKETDESK_PAUSED` secret stops the page.
+- Two Langfuse alerts watch the model's p95 latency and its calls per day (warning above 319, alert above 399, against the page's limit of 400). They start a GitHub Actions run. No person is woken up. The `MARKETDESK_PAUSED` secret stops the page.
 
 ## Known limitations and roadmap
 
