@@ -1,10 +1,11 @@
 # A Langfuse alert changed its severity: one run, on the Actions tab, for each
 # change. Langfuse sends a repository_dispatch event with the alert in
-# client_payload.
+# client_payload.payload.
 #
-# This first version writes the whole payload to the run summary, to see its
-# shape. Run summaries of a public repository are public: replace it with the
-# alert's name, severity and value before the repository is opened.
+# The run summary holds the alert's name, severity, value, thresholds, window
+# and time, and nothing else. The project id, the monitor id and the link in
+# the payload stay out of it, because the run summaries of a public repository
+# are public.
 
 name: langfuse-alert
 
@@ -19,15 +20,25 @@ jobs:
   record:
     runs-on: ubuntu-24.04
     steps:
-      # The payload goes through an environment variable, never straight into
-      # the script: its text is data, not code.
-      - name: Write the payload to the run summary
+      # The fields go through environment variables, never straight into the
+      # script: their text is data, not code.
+      - name: Write the alert to the run summary
         env:
-          PAYLOAD: ${{ toJSON(github.event.client_payload) }}
+          NAME: ${{ github.event.client_payload.payload.monitorName }}
+          SEVERITY: ${{ github.event.client_payload.payload.severity }}
+          VALUE: ${{ github.event.client_payload.payload.metricValue }}
+          WARNING: ${{ github.event.client_payload.payload.warningThreshold }}
+          ALERT: ${{ github.event.client_payload.payload.alertThreshold }}
+          WINDOW: ${{ github.event.client_payload.payload.window }}
+          TIME: ${{ github.event.client_payload.payload.timestamp }}
         run: |
+          # A pipe in the name would break the table.
+          NAME="${NAME//|/\\|}"
           {
             echo '### Langfuse alert'
-            echo '```json'
-            printf '%s\n' "$PAYLOAD"
-            echo '```'
+            echo
+            echo '| Alert | Severity | Value | Warning above | Alert above | Window | Time (UTC) |'
+            echo '|---|---|---|---|---|---|---|'
+            printf '| %s | %s | %s | %s | %s | %s | %s |\n' \
+              "$NAME" "$SEVERITY" "$VALUE" "$WARNING" "$ALERT" "$WINDOW" "$TIME"
           } >> "$GITHUB_STEP_SUMMARY"
