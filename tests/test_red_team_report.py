@@ -125,5 +125,14 @@ def test_the_report_holds_no_ticket_key():
     assert not re.search(r"MKDSK-\d+", REPORT)
 
 
-def test_author_sections_stay_unwritten():
-    assert "*To be written by the author.*" in section("9. Reading of the results")
+def test_the_reading_of_the_results_is_written_in_three_parts():
+    reading = section("9. Reading of the results")
+
+    assert "To be written" not in reading
+    for part in (
+        "### What the results show",
+        "### What was learned about the method",
+        "### What would be done next",
+    ):
+        assert part in reading
+        assert len(reading.split(part)[1].split("###")[0].split()) > 20
