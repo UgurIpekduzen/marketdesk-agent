@@ -1,0 +1,97 @@
+{
+ "runs": 3,
+ "scale": {
+  "300": {
+   "size_mb": {
+    "median": 3.11,
+    "min": 3.11,
+    "max": 3.12
+   },
+   "build_s": {
+    "median": 0.13,
+    "min": 0.12,
+    "max": 0.14
+   },
+   "load_s": {
+    "median": 0.04,
+    "min": 0.03,
+    "max": 0.04
+   },
+   "search_ms_p50": {
+    "median": 1.12,
+    "min": 1.06,
+    "max": 1.13
+   },
+   "peak_memory_mb": {
+    "median": 210.45,
+    "min": 206.15,
+    "max": 210.68
+   },
+   "failed_runs": 0
+  },
+  "3000": {
+   "size_mb": {
+    "median": 32.82,
+    "min": 32.8,
+    "max": 32.83
+   },
+   "build_s": {
+    "median": 1.17,
+    "min": 1.13,
+    "max": 1.23
+   },
+   "load_s": {
+    "median": 0.02,
+    "min": 0.02,
+    "max": 0.03
+   },
+   "search_ms_p50": {
+    "median": 1.23,
+    "min": 1.19,
+    "max": 1.26
+   },
+   "peak_memory_mb": {
+    "median": 304.51,
+    "min": 304.1,
+    "max": 311.38
+   },
+   "failed_runs": 0
+  },
+  "30000": {
+   "size_mb": {
+    "median": 214.77,
+    "min": 214.71,
+    "max": 214.83
+   },
+   "build_s": {
+    "median": 14.36,
+    "min": 14.13,
+    "max": 14.88
+   },
+   "load_s": {
+    "median": 0.07,
+    "min": 0.07,
+    "max": 0.08
+   },
+   "search_ms_p50": {
+    "median": 1.75,
+    "min": 1.65,
+    "max": 1.96
+   },
+   "peak_memory_mb": {
+    "median": 984.0,
+    "min": 980.59,
+    "max": 993.31
+   },
+   "failed_runs": 0
+  }
+ },
+ "versions": [
+  "llama-index-core==0.14.25",
+  "llama-index-vector-stores-chroma==0.6.0",
+  "chromadb==1.5.9",
+  "llama-index-vector-stores-faiss==0.7.0",
+  "faiss-cpu==1.15.1",
+  "sqlite-vec==0.1.9"
+ ]
+}

@@ -520,10 +520,73 @@ def scale_worker(chunks: int) -> dict:
         }
 
 
+def chroma_scale_worker(chunks: int) -> dict:
+    """Chroma with real-sized chunks: built, kept to disk, opened again."""
+    import tempfile
+
+    import chromadb
+    import numpy
+    from llama_index.core.schema import TextNode
+    from llama_index.vector_stores.chroma import ChromaVectorStore
+
+    generator = numpy.random.default_rng(0)
+    matrix = generator.standard_normal((chunks, DIMENSIONS)).astype("float32")
+    matrix /= numpy.linalg.norm(matrix, axis=1, keepdims=True)
+    queries = synthetic_vectors(QUERIES, DIMENSIONS, seed=1)
+    text = "x" * SCALE_TEXT_CHARACTERS
+    nodes = [
+        TextNode(
+            id_=f"n{index}",
+            text=text,
+            embedding=row.tolist(),
+            metadata={"category": category_of(index)},
+        )
+        for index, row in enumerate(matrix)
+    ]
+    with tempfile.TemporaryDirectory() as folder:
+        client = chromadb.PersistentClient(path=folder)
+        collection = client.create_collection(
+            "compare", metadata={"hnsw:space": "cosine"}
+        )
+        started = time.perf_counter()
+        store = ChromaVectorStore(chroma_collection=collection)
+        # One call takes at most this many records; the connector does not split.
+        batch = client.get_max_batch_size()
+        for start in range(0, len(nodes), batch):
+            store.add(nodes[start : start + batch])
+        build_s = time.perf_counter() - started
+        size = sum(
+            path.stat().st_size for path in Path(folder).rglob("*") if path.is_file()
+        )
+
+        # Chroma remembers the folders it has opened in this process: forget
+        # them, so that the next client reads the files again.
+        del collection
+        client.clear_system_cache()
+        started = time.perf_counter()
+        reopened = chromadb.PersistentClient(path=folder).get_collection("compare")
+        store = ChromaVectorStore(chroma_collection=reopened)
+        llama_search(store, queries[0])
+        load_s = time.perf_counter() - started
+
+        return {
+            "size_mb": size / 1_000_000,
+            "build_s": build_s,
+            "load_s": load_s,
+            "search_ms_p50": timed_searches(
+                functools.partial(llama_search, store), queries
+            ),
+            "peak_memory_mb": peak_memory_mb(),
+        }
+
+
+SCALE_WORKERS = {"simple": scale_worker, "chroma": chroma_scale_worker}
+
+
 def worker_main(key: str, scale: int | None) -> int:
     """Run one measurement inside a worker process and print the result."""
     if scale is not None:
-        result = scale_worker(scale)
+        result = SCALE_WORKERS[key](scale)
     else:
         result = WORKERS[key]()
         packages, disk_mb = installed_packages()
@@ -577,6 +640,67 @@ def measure_scale(runs: int) -> dict:
     return rows
 
 
+CHROMA_SCALE_FIELDS = [
+    "size_mb",
+    "build_s",
+    "load_s",
+    "search_ms_p50",
+    "peak_memory_mb",
+]
+
+
+def measure_chroma_scale(runs: int) -> dict:
+    """Measure Chroma at growing numbers of chunks."""
+    chroma = next(item for item in CANDIDATES if item.name.startswith("Chroma"))
+    rows = {}
+    for chunks in SCALE_CHUNKS:
+        print(f"measuring Chroma at {chunks:,} chunks ...", flush=True)
+        results = [run_worker(chroma, ["--scale", str(chunks)]) for _ in range(runs)]
+        rows[str(chunks)] = aggregate(results, CHROMA_SCALE_FIELDS)
+    return rows
+
+
+def chroma_scale_markdown(result: dict) -> str:
+    """The Chroma scale results as a markdown report."""
+    lines = [
+        "# Chroma as the chunks grow",
+        "",
+        (
+            f"Chunks of {SCALE_TEXT_CHARACTERS} characters with random "
+            f"{DIMENSIONS}-dimensional vectors, kept in Chroma's own folder through "
+            f"the LlamaIndex connector. {result['runs']} runs per row, the median and "
+            "the range. Load is opening the folder again and the first search."
+        ),
+        "",
+        (
+            "| Chunks | Size on disk (MB) | Build (s) | Load (s) | Search p50 (ms) "
+            "| Peak memory (MB) |"
+        ),
+        "|---|---|---|---|---|---|",
+    ]
+    for chunks, row in result["scale"].items():
+        label = f"{int(chunks):,}"
+        if "error" in row:
+            lines.append(f"| {label} | failed: {row['error']} | | | | |")
+            continue
+        lines.append(
+            f"| {label} | {cell(row['size_mb'])} | {cell(row['build_s'], 2)} "
+            f"| {cell(row['load_s'], 2)} | {cell(row['search_ms_p50'], 1)} "
+            f"| {cell(row['peak_memory_mb'], 0)} |"
+        )
+    lines += ["", "Versions: " + ", ".join(result["versions"]) + ".", ""]
+    return "\n".join(lines) + "\n"
+
+
+def run_chroma_scale(runs: int) -> dict:
+    """The Chroma scale test with the versions it ran on."""
+    return {
+        "runs": runs,
+        "scale": measure_chroma_scale(runs),
+        "versions": versions_line(),
+    }
+
+
 def versions_line() -> list[str]:
     """The pinned package versions as text lines."""
     seen = dict.fromkeys(
@@ -613,10 +737,31 @@ def main() -> int:
     )
     parser.add_argument("--worker", choices=sorted(WORKERS), help=argparse.SUPPRESS)
     parser.add_argument("--scale", type=int, help=argparse.SUPPRESS)
+    parser.add_argument(
+        "--chroma-scale",
+        action="store_true",
+        help="measure only Chroma at 300, 3,000 and 30,000 chunks",
+    )
     args = parser.parse_args()
 
     if args.worker:
         return worker_main(args.worker, args.scale)
+
+    if args.chroma_scale:
+        from eval.terminal_table import terminal_tables
+
+        result = run_chroma_scale(args.runs)
+        print(f"\n{terminal_tables(chroma_scale_markdown(result))}")
+        RESULTS_DIR.mkdir(exist_ok=True)
+        stem = RESULTS_DIR / "vector_store_compare_chroma_scale_v1"
+        stem.with_suffix(".json").write_text(
+            json.dumps(result, ensure_ascii=False, indent=1), encoding="utf-8"
+        )
+        stem.with_suffix(".md").write_text(
+            chroma_scale_markdown(result), encoding="utf-8"
+        )
+        print(f"Results written to {stem.relative_to(PROJECT_ROOT)}.json and .md")
+        return 0
 
     from eval.terminal_table import terminal_tables
 

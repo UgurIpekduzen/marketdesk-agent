@@ -264,3 +264,61 @@ def test_report_leaves_out_the_scale_table_when_it_was_not_measured():
     result["scale"] = {}
 
     assert "as the chunks grow" not in compare.markdown(result)
+
+
+def chroma_scale_result() -> dict:
+    row = {
+        "size_mb": {"median": 40.0, "min": 39.0, "max": 41.0},
+        "build_s": {"median": 12.0, "min": 12.0, "max": 12.0},
+        "load_s": {"median": 0.8, "min": 0.7, "max": 0.9},
+        "search_ms_p50": {"median": 3.2, "min": 3.1, "max": 3.3},
+        "peak_memory_mb": {"median": 700.0, "min": 690.0, "max": 710.0},
+    }
+    return {
+        "runs": 3,
+        "scale": {"3000": row, "30000": {"error": "out of memory"}},
+        "versions": ["chromadb==1.5.9"],
+    }
+
+
+def test_chroma_scale_report_has_a_row_for_every_size():
+    text = compare.chroma_scale_markdown(chroma_scale_result())
+
+    assert (
+        "| 3,000 | 40.0 (39.0–41.0) | 12.00 | 0.80 (0.70–0.90) | 3.2 (3.1–3.3) |"
+        in text
+    )
+    assert "| 30,000 | failed: out of memory |" in text
+    assert "Versions: chromadb==1.5.9." in text
+
+
+def test_a_scale_worker_exists_for_the_stores_that_are_measured_as_they_grow():
+    assert set(compare.SCALE_WORKERS) == {"simple", "chroma"}
+
+
+class RecordingWorker:
+    """Stands in for run_worker: notes which candidate was started and how."""
+
+    def __init__(self):
+        self.started = []
+
+    def __call__(self, candidate, arguments):
+        self.started.append((candidate.name, arguments))
+        return {
+            "size_mb": 1.0,
+            "build_s": 1.0,
+            "load_s": 1.0,
+            "search_ms_p50": 1.0,
+            "peak_memory_mb": 1.0,
+        }
+
+
+def test_the_chroma_scale_is_measured_in_the_chroma_environment(monkeypatch):
+    worker = RecordingWorker()
+    monkeypatch.setattr(compare, "run_worker", worker)
+
+    rows = compare.measure_chroma_scale(runs=2)
+
+    assert list(rows) == ["300", "3000", "30000"]
+    assert {name for name, _ in worker.started} == {"Chroma (LlamaIndex connector)"}
+    assert len(worker.started) == 6
