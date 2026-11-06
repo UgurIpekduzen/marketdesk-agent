@@ -6,7 +6,7 @@ MarketDesk answers an online marketplace's "where is my order / can I return it"
 
 ![A recording of the live demo, one session of each role: a customer asks for the orders and opens a return request, which waits for the customer's approval, a support representative decides the request, operations asks a metric question and sees its SQL, then a question about review themes](docs/screenshots/demo_live.gif)
 
-<!-- TODO: link to the technical article once it is published. -->
+**Technical article:** [MarketDesk: where the model is free, and where code locks it down](https://medium.com/@u.ipkdzn/marketdesk-where-the-model-is-free-and-where-code-locks-it-down-f6a2ec57d1b3) (Medium, in English).
 
 > **Status:** the system, its evaluation, the deployed demo and the documentation are finished. See [Project status](#project-status).
 
@@ -150,6 +150,8 @@ marketdesk-agent/
 | UI and deploy | Streamlit on Streamlit Community Cloud |
 | Local environment | Docker Compose, Task |
 | CI | GitHub Actions (lint and unit tests on every push) |
+| Project tracking | Jira |
+| Development | Claude Code, with every plan and commit approved by the author |
 
 Every choice has a record with its reasons, alternatives, costs and what would change it: [`docs/decisions.md`](docs/decisions.md). The vector store was also measured against three other stores: [`docs/vector_store_comparison.md`](docs/vector_store_comparison.md). Shorter answers are in [`docs/questions.md`](docs/questions.md).
 
@@ -300,7 +302,11 @@ What to know before using the live demo.
 - Streamlit Community Cloud puts the app to sleep after 12 hours without visitors. Anyone who opens the link wakes it up, which took about 50 seconds on 5 November 2026.
 - There is no sign-in. The five demo customers and their data are shared between visitors, and each order can be returned once.
 - A message may have up to 1,000 characters, and all visitors together may ask 60 questions an hour.
-- Two Langfuse alerts watch the model's p95 latency and its calls per day (warning above 319, alert above 399, against the page's limit of 400). They start a GitHub Actions run and go to a temporary webhook backup (valid until about 10 November). No person is woken up. The `MARKETDESK_PAUSED` secret stops the page.
+- Two Langfuse alerts watch the model's p95 latency and its calls per day (warning above 319, alert above 399, against the page's limit of 400). They start a GitHub Actions run. No person is woken up. The `MARKETDESK_PAUSED` secret stops the page.
+
+**Error tracing.** Every routed message and every tool call that fails is marked in the Langfuse traces with an error kind (for example a step limit, a refused SQL query, an exhausted model quota or an order that was not found), and the support representative console counts them in the "Error tracing" tab. The traces hold no message text and no id. The counts below were read from the live demo: 25 marked observations out of 1,000, in 12 error kinds.
+
+![The error tracing tab of the support representative console: observations read, observations with an error, error kinds and a bar chart by error kind](docs/screenshots/error_tracing.png)
 
 ## Known limitations and roadmap
 
@@ -336,7 +342,7 @@ Answers to the ten questions of the project guide and the six project-specific q
 | M0 Setup | Project skeleton, data download and load, smoke test | Done |
 | M1 Deterministic core | Return rule engine, order tools, approval flow, policies, metrics, SQL validator | Done |
 | M2 Agent layer | Policy search, Support Agent, MCP server, Ops Data Agent, router, evaluation, tracing | Done |
-| M3 Demo and delivery | Chat page, final evaluation, deploy, security review, README, article | `█████████░` 88% (23 of 26) |
+| M3 Demo and delivery | Chat page, final evaluation, deploy, security review, README, article | Done |
 | M4 AI red teaming | Threat model, automated and hand-written attacks, findings and fixes | Done |
 
 Progress is the share of finished tracker tasks of each milestone on 6 November 2026. A task counts as finished when its acceptance criteria are met.
