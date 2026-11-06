@@ -1,0 +1,6404 @@
+{
+ "e5-small": {
+  "repo": "Xenova/multilingual-e5-small",
+  "revision": "761b726dd34fb83930e26aab4e9ac3899aa1fa78",
+  "file": "onnx/model_quantized.onnx",
+  "sections": 28,
+  "questions": 20,
+  "peak_memory_mb": 676,
+  "by_batch_size": {
+   "all": {
+    "dimensions": 384,
+    "first": 14,
+    "top3": 18,
+    "top5": 18,
+    "mrr": 0.806,
+    "worst": 8,
+    "query_ms_p50": 2.3,
+    "query_ms_max": 3.7,
+    "per_question": [
+     {
+      "rule": "R0",
+      "question": "2018 Eylül'den sonra verdiğim sipariş neden görünmüyor?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#1",
+        "score": 0.8606
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.8469
+       },
+       {
+        "section": "returns#4",
+        "score": 0.8421
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8418
+       },
+       {
+        "section": "returns#5",
+        "score": 0.8322
+       }
+      ]
+     },
+     {
+      "rule": "R1",
+      "question": "Arkadaşımın siparişinin durumunu öğrenebilir miyim?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "returns#4",
+        "score": 0.8452
+       },
+       {
+        "section": "returns#1",
+        "score": 0.8432
+       },
+       {
+        "section": "returns#5",
+        "score": 0.8414
+       },
+       {
+        "section": "cancellation#5",
+        "score": 0.8308
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.83
+       }
+      ]
+     },
+     {
+      "rule": "R2",
+      "question": "Siparişim henüz hazırlanıyor, iptal edebilir miyim?",
+      "expected": [
+       [
+        "cancellation",
+        1
+       ],
+       [
+        "cancellation",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "cancellation#1",
+        "score": 0.8629
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.8598
+       },
+       {
+        "section": "cancellation#2",
+        "score": 0.8503
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.8477
+       },
+       {
+        "section": "cancellation#5",
+        "score": 0.8433
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "Siparişim kargoya verildi, iptal edebilir miyim?",
+      "expected": [
+       [
+        "cancellation",
+        3
+       ],
+       [
+        "shipping_and_delays",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "cancellation#3",
+        "score": 0.8948
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.8837
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8739
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.8599
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.858
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "Ürün hâlâ yolda, şimdiden iade talebi açabilir miyim?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        1
+       ],
+       [
+        "cancellation",
+        3
+       ]
+      ],
+      "rank": 8,
+      "top": [
+       {
+        "section": "returns#6",
+        "score": 0.8907
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8897
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8879
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8875
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.8864
+       }
+      ]
+     },
+     {
+      "rule": "R4",
+      "question": "İptal edilen siparişimin parası ne olacak?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        4
+       ],
+       [
+        "cancellation",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "cancellation#4",
+        "score": 0.8801
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.8764
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.8757
+       },
+       {
+        "section": "cancellation#5",
+        "score": 0.8697
+       },
+       {
+        "section": "cancellation#2",
+        "score": 0.8689
+       }
+      ]
+     },
+     {
+      "rule": "R5",
+      "question": "Sipariş teslim edildi görünüyor ama teslim tarihi yok, iade edebilir miyim?",
+      "expected": [
+       [
+        "returns",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#4",
+        "score": 0.9307
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8986
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8957
+       },
+       {
+        "section": "returns#1",
+        "score": 0.89
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8895
+       }
+      ]
+     },
+     {
+      "rule": "R6",
+      "question": "Ürünü beğenmedim, kaç gün içinde iade edebilirim?",
+      "expected": [
+       [
+        "returns",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#2",
+        "score": 0.9015
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.899
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8916
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8872
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8835
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "Ürün kırık geldi, kaç gün içinde iade edebilirim?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        2
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "returns#2",
+        "score": 0.8913
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8913
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.881
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8786
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8771
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "Sipariş ettiğimden farklı bir ürün gönderilmiş",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        1
+       ],
+       [
+        "damaged_or_wrong_item",
+        2
+       ],
+       [
+        "damaged_or_wrong_item",
+        3
+       ]
+      ],
+      "rank": 6,
+      "top": [
+       {
+        "section": "cancellation#4",
+        "score": 0.8462
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.838
+       },
+       {
+        "section": "returns#4",
+        "score": 0.8358
+       },
+       {
+        "section": "returns#1",
+        "score": 0.8324
+       },
+       {
+        "section": "returns#5",
+        "score": 0.831
+       }
+      ]
+     },
+     {
+      "rule": "R8",
+      "question": "İade edersem kargo ücretini de geri alır mıyım?",
+      "expected": [
+       [
+        "returns",
+        3
+       ],
+       [
+        "payments_and_refunds",
+        1
+       ],
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8801
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8745
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.8731
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8726
+       },
+       {
+        "section": "returns#7",
+        "score": 0.8585
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "Kargo 12 gün geç geldi, kargo ücretimi geri alabilir miyim?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8721
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8652
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8469
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.8395
+       },
+       {
+        "section": "payments_and_refunds#5",
+        "score": 0.838
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "İade sürem geçti ama teslimat çok gecikmişti, bir hakkım var mı?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8994
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8921
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8885
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8804
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8761
+       }
+      ]
+     },
+     {
+      "rule": "R10",
+      "question": "600 BRL'lik iade talebim neden kıdemli onay bekliyor?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        2
+       ],
+       [
+        "returns",
+        6
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.8826
+       },
+       {
+        "section": "returns#6",
+        "score": 0.8686
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.8658
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.8257
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8238
+       }
+      ]
+     },
+     {
+      "rule": "R11",
+      "question": "Aynı sipariş için ikinci kez iade talebi açabilir miyim?",
+      "expected": [
+       [
+        "returns",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#5",
+        "score": 0.9299
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.8901
+       },
+       {
+        "section": "returns#1",
+        "score": 0.8822
+       },
+       {
+        "section": "returns#6",
+        "score": 0.8821
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8784
+       }
+      ]
+     },
+     {
+      "rule": "R12",
+      "question": "Hediye çekiyle ödedim, iadem nasıl yapılır?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.8821
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.8642
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8446
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8444
+       },
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.8435
+       }
+      ]
+     },
+     {
+      "rule": "R13",
+      "question": "Satıcı ürünü kargoya geç vermiş, bu durumda ne olur?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#5",
+        "score": 0.8799
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8704
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8655
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8638
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.859
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Param hesabıma kaç günde geçer?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        5
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8407
+       },
+       {
+        "section": "payments_and_refunds#5",
+        "score": 0.8364
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.8345
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8341
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.8234
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "İade kargosunun ücretini kim öder?",
+      "expected": [
+       [
+        "returns",
+        7
+       ]
+      ],
+      "rank": 3,
+      "top": [
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.8613
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8542
+       },
+       {
+        "section": "returns#7",
+        "score": 0.8523
+       },
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.8515
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8513
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Ürünü yenisiyle değiştirebilir miyim?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.8641
+       },
+       {
+        "section": "shipping_and_delays#6",
+        "score": 0.8455
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8414
+       },
+       {
+        "section": "returns#2",
+        "score": 0.837
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.8335
+       }
+      ]
+     }
+    ]
+   },
+   "10": {
+    "dimensions": 384,
+    "first": 14,
+    "top3": 17,
+    "top5": 18,
+    "mrr": 0.793,
+    "worst": 8,
+    "query_ms_p50": 3.0,
+    "query_ms_max": 4.3,
+    "per_question": [
+     {
+      "rule": "R0",
+      "question": "2018 Eylül'den sonra verdiğim sipariş neden görünmüyor?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#1",
+        "score": 0.8631
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8447
+       },
+       {
+        "section": "returns#4",
+        "score": 0.8431
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.8409
+       },
+       {
+        "section": "returns#5",
+        "score": 0.8326
+       }
+      ]
+     },
+     {
+      "rule": "R1",
+      "question": "Arkadaşımın siparişinin durumunu öğrenebilir miyim?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#1",
+        "score": 0.8453
+       },
+       {
+        "section": "returns#4",
+        "score": 0.8432
+       },
+       {
+        "section": "returns#5",
+        "score": 0.8412
+       },
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.8317
+       },
+       {
+        "section": "cancellation#5",
+        "score": 0.8312
+       }
+      ]
+     },
+     {
+      "rule": "R2",
+      "question": "Siparişim henüz hazırlanıyor, iptal edebilir miyim?",
+      "expected": [
+       [
+        "cancellation",
+        1
+       ],
+       [
+        "cancellation",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "cancellation#1",
+        "score": 0.8685
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.8567
+       },
+       {
+        "section": "cancellation#2",
+        "score": 0.8492
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.8483
+       },
+       {
+        "section": "cancellation#5",
+        "score": 0.8423
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "Siparişim kargoya verildi, iptal edebilir miyim?",
+      "expected": [
+       [
+        "cancellation",
+        3
+       ],
+       [
+        "shipping_and_delays",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "cancellation#3",
+        "score": 0.8941
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.8839
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8715
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8582
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.8562
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "Ürün hâlâ yolda, şimdiden iade talebi açabilir miyim?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        1
+       ],
+       [
+        "cancellation",
+        3
+       ]
+      ],
+      "rank": 8,
+      "top": [
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8917
+       },
+       {
+        "section": "returns#6",
+        "score": 0.8913
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8904
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.8889
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8889
+       }
+      ]
+     },
+     {
+      "rule": "R4",
+      "question": "İptal edilen siparişimin parası ne olacak?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        4
+       ],
+       [
+        "cancellation",
+        4
+       ]
+      ],
+      "rank": 3,
+      "top": [
+       {
+        "section": "cancellation#1",
+        "score": 0.8789
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.8779
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.8759
+       },
+       {
+        "section": "cancellation#5",
+        "score": 0.8732
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.8681
+       }
+      ]
+     },
+     {
+      "rule": "R5",
+      "question": "Sipariş teslim edildi görünüyor ama teslim tarihi yok, iade edebilir miyim?",
+      "expected": [
+       [
+        "returns",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#4",
+        "score": 0.931
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8961
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8915
+       },
+       {
+        "section": "returns#1",
+        "score": 0.8904
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.89
+       }
+      ]
+     },
+     {
+      "rule": "R6",
+      "question": "Ürünü beğenmedim, kaç gün içinde iade edebilirim?",
+      "expected": [
+       [
+        "returns",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#2",
+        "score": 0.9039
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8951
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8925
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8867
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8854
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "Ürün kırık geldi, kaç gün içinde iade edebilirim?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        2
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "returns#2",
+        "score": 0.8944
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8892
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8822
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8789
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8783
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "Sipariş ettiğimden farklı bir ürün gönderilmiş",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        1
+       ],
+       [
+        "damaged_or_wrong_item",
+        2
+       ],
+       [
+        "damaged_or_wrong_item",
+        3
+       ]
+      ],
+      "rank": 7,
+      "top": [
+       {
+        "section": "cancellation#4",
+        "score": 0.8422
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8411
+       },
+       {
+        "section": "returns#1",
+        "score": 0.8342
+       },
+       {
+        "section": "returns#4",
+        "score": 0.8341
+       },
+       {
+        "section": "returns#5",
+        "score": 0.8332
+       }
+      ]
+     },
+     {
+      "rule": "R8",
+      "question": "İade edersem kargo ücretini de geri alır mıyım?",
+      "expected": [
+       [
+        "returns",
+        3
+       ],
+       [
+        "payments_and_refunds",
+        1
+       ],
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8824
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8761
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.876
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8753
+       },
+       {
+        "section": "returns#7",
+        "score": 0.8581
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "Kargo 12 gün geç geldi, kargo ücretimi geri alabilir miyim?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8751
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8651
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8495
+       },
+       {
+        "section": "payments_and_refunds#5",
+        "score": 0.8411
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.838
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "İade sürem geçti ama teslimat çok gecikmişti, bir hakkım var mı?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.9009
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8922
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8871
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8794
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.874
+       }
+      ]
+     },
+     {
+      "rule": "R10",
+      "question": "600 BRL'lik iade talebim neden kıdemli onay bekliyor?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        2
+       ],
+       [
+        "returns",
+        6
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.8803
+       },
+       {
+        "section": "returns#6",
+        "score": 0.8643
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.8641
+       },
+       {
+        "section": "returns#5",
+        "score": 0.8268
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.8245
+       }
+      ]
+     },
+     {
+      "rule": "R11",
+      "question": "Aynı sipariş için ikinci kez iade talebi açabilir miyim?",
+      "expected": [
+       [
+        "returns",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#5",
+        "score": 0.9317
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.8908
+       },
+       {
+        "section": "returns#1",
+        "score": 0.8861
+       },
+       {
+        "section": "returns#6",
+        "score": 0.8812
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8795
+       }
+      ]
+     },
+     {
+      "rule": "R12",
+      "question": "Hediye çekiyle ödedim, iadem nasıl yapılır?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.8817
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.8646
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8443
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8439
+       },
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.8432
+       }
+      ]
+     },
+     {
+      "rule": "R13",
+      "question": "Satıcı ürünü kargoya geç vermiş, bu durumda ne olur?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#5",
+        "score": 0.8818
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.87
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8674
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.865
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.8603
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Param hesabıma kaç günde geçer?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        5
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8416
+       },
+       {
+        "section": "payments_and_refunds#5",
+        "score": 0.8374
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.8352
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8343
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.8251
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "İade kargosunun ücretini kim öder?",
+      "expected": [
+       [
+        "returns",
+        7
+       ]
+      ],
+      "rank": 4,
+      "top": [
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.8643
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8566
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8553
+       },
+       {
+        "section": "returns#7",
+        "score": 0.8533
+       },
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.8511
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Ürünü yenisiyle değiştirebilir miyim?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.8645
+       },
+       {
+        "section": "shipping_and_delays#6",
+        "score": 0.845
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8403
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8379
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.8368
+       }
+      ]
+     }
+    ]
+   },
+   "1": {
+    "dimensions": 384,
+    "first": 15,
+    "top3": 17,
+    "top5": 18,
+    "mrr": 0.822,
+    "worst": 9,
+    "query_ms_p50": 2.1,
+    "query_ms_max": 2.7,
+    "per_question": [
+     {
+      "rule": "R0",
+      "question": "2018 Eylül'den sonra verdiğim sipariş neden görünmüyor?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#1",
+        "score": 0.8658
+       },
+       {
+        "section": "returns#4",
+        "score": 0.8452
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.844
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.841
+       },
+       {
+        "section": "returns#5",
+        "score": 0.829
+       }
+      ]
+     },
+     {
+      "rule": "R1",
+      "question": "Arkadaşımın siparişinin durumunu öğrenebilir miyim?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#1",
+        "score": 0.8486
+       },
+       {
+        "section": "returns#4",
+        "score": 0.8447
+       },
+       {
+        "section": "returns#5",
+        "score": 0.8359
+       },
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.8334
+       },
+       {
+        "section": "cancellation#5",
+        "score": 0.8284
+       }
+      ]
+     },
+     {
+      "rule": "R2",
+      "question": "Siparişim henüz hazırlanıyor, iptal edebilir miyim?",
+      "expected": [
+       [
+        "cancellation",
+        1
+       ],
+       [
+        "cancellation",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "cancellation#1",
+        "score": 0.8667
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.8574
+       },
+       {
+        "section": "cancellation#2",
+        "score": 0.8469
+       },
+       {
+        "section": "cancellation#5",
+        "score": 0.8438
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.8425
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "Siparişim kargoya verildi, iptal edebilir miyim?",
+      "expected": [
+       [
+        "cancellation",
+        3
+       ],
+       [
+        "shipping_and_delays",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "cancellation#3",
+        "score": 0.8891
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.8827
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8741
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.8574
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.857
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "Ürün hâlâ yolda, şimdiden iade talebi açabilir miyim?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        1
+       ],
+       [
+        "cancellation",
+        3
+       ]
+      ],
+      "rank": 8,
+      "top": [
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8915
+       },
+       {
+        "section": "returns#6",
+        "score": 0.8915
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.888
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8861
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8846
+       }
+      ]
+     },
+     {
+      "rule": "R4",
+      "question": "İptal edilen siparişimin parası ne olacak?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        4
+       ],
+       [
+        "cancellation",
+        4
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "cancellation#1",
+        "score": 0.8789
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.8751
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.8745
+       },
+       {
+        "section": "cancellation#5",
+        "score": 0.8735
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.8682
+       }
+      ]
+     },
+     {
+      "rule": "R5",
+      "question": "Sipariş teslim edildi görünüyor ama teslim tarihi yok, iade edebilir miyim?",
+      "expected": [
+       [
+        "returns",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#4",
+        "score": 0.9283
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8986
+       },
+       {
+        "section": "returns#1",
+        "score": 0.8911
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8909
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8909
+       }
+      ]
+     },
+     {
+      "rule": "R6",
+      "question": "Ürünü beğenmedim, kaç gün içinde iade edebilirim?",
+      "expected": [
+       [
+        "returns",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#2",
+        "score": 0.9027
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8988
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8926
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8849
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8823
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "Ürün kırık geldi, kaç gün içinde iade edebilirim?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8917
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8902
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8824
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8764
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8759
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "Sipariş ettiğimden farklı bir ürün gönderilmiş",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        1
+       ],
+       [
+        "damaged_or_wrong_item",
+        2
+       ],
+       [
+        "damaged_or_wrong_item",
+        3
+       ]
+      ],
+      "rank": 9,
+      "top": [
+       {
+        "section": "cancellation#4",
+        "score": 0.8421
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8398
+       },
+       {
+        "section": "returns#4",
+        "score": 0.8383
+       },
+       {
+        "section": "returns#1",
+        "score": 0.8338
+       },
+       {
+        "section": "returns#5",
+        "score": 0.8283
+       }
+      ]
+     },
+     {
+      "rule": "R8",
+      "question": "İade edersem kargo ücretini de geri alır mıyım?",
+      "expected": [
+       [
+        "returns",
+        3
+       ],
+       [
+        "payments_and_refunds",
+        1
+       ],
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8796
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8736
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.8732
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8722
+       },
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.8594
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "Kargo 12 gün geç geldi, kargo ücretimi geri alabilir miyim?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8731
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8649
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8514
+       },
+       {
+        "section": "payments_and_refunds#5",
+        "score": 0.8411
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.8408
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "İade sürem geçti ama teslimat çok gecikmişti, bir hakkım var mı?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8994
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8908
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8849
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8769
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8741
+       }
+      ]
+     },
+     {
+      "rule": "R10",
+      "question": "600 BRL'lik iade talebim neden kıdemli onay bekliyor?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        2
+       ],
+       [
+        "returns",
+        6
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.882
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.8664
+       },
+       {
+        "section": "returns#6",
+        "score": 0.8652
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.8263
+       },
+       {
+        "section": "returns#5",
+        "score": 0.8261
+       }
+      ]
+     },
+     {
+      "rule": "R11",
+      "question": "Aynı sipariş için ikinci kez iade talebi açabilir miyim?",
+      "expected": [
+       [
+        "returns",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#5",
+        "score": 0.9347
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.8934
+       },
+       {
+        "section": "returns#1",
+        "score": 0.8872
+       },
+       {
+        "section": "returns#6",
+        "score": 0.8798
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8756
+       }
+      ]
+     },
+     {
+      "rule": "R12",
+      "question": "Hediye çekiyle ödedim, iadem nasıl yapılır?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.8854
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.8657
+       },
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.8455
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.8423
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8423
+       }
+      ]
+     },
+     {
+      "rule": "R13",
+      "question": "Satıcı ürünü kargoya geç vermiş, bu durumda ne olur?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#5",
+        "score": 0.8815
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8708
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8667
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8638
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.8579
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Param hesabıma kaç günde geçer?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        5
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8398
+       },
+       {
+        "section": "payments_and_refunds#5",
+        "score": 0.8391
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.8375
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8343
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8271
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "İade kargosunun ücretini kim öder?",
+      "expected": [
+       [
+        "returns",
+        7
+       ]
+      ],
+      "rank": 5,
+      "top": [
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.8592
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8551
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8518
+       },
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.8516
+       },
+       {
+        "section": "returns#7",
+        "score": 0.8516
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Ürünü yenisiyle değiştirebilir miyim?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.8644
+       },
+       {
+        "section": "shipping_and_delays#6",
+        "score": 0.8462
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8389
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.8355
+       },
+       {
+        "section": "returns#2",
+        "score": 0.835
+       }
+      ]
+     }
+    ]
+   }
+  }
+ },
+ "e5-base": {
+  "repo": "Xenova/multilingual-e5-base",
+  "revision": "1ec9243030a27d1a115d5c340572074c125b58b2",
+  "file": "onnx/model_quantized.onnx",
+  "sections": 28,
+  "questions": 20,
+  "peak_memory_mb": 928,
+  "by_batch_size": {
+   "all": {
+    "dimensions": 768,
+    "first": 13,
+    "top3": 16,
+    "top5": 17,
+    "mrr": 0.746,
+    "worst": 8,
+    "query_ms_p50": 6.8,
+    "query_ms_max": 8.0,
+    "per_question": [
+     {
+      "rule": "R0",
+      "question": "2018 Eylül'den sonra verdiğim sipariş neden görünmüyor?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#1",
+        "score": 0.8399
+       },
+       {
+        "section": "returns#4",
+        "score": 0.8277
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8198
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.8162
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.8157
+       }
+      ]
+     },
+     {
+      "rule": "R1",
+      "question": "Arkadaşımın siparişinin durumunu öğrenebilir miyim?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 7,
+      "top": [
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8167
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.816
+       },
+       {
+        "section": "returns#7",
+        "score": 0.8126
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.8093
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.8088
+       }
+      ]
+     },
+     {
+      "rule": "R2",
+      "question": "Siparişim henüz hazırlanıyor, iptal edebilir miyim?",
+      "expected": [
+       [
+        "cancellation",
+        1
+       ],
+       [
+        "cancellation",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "cancellation#2",
+        "score": 0.8167
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.8167
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.8073
+       },
+       {
+        "section": "cancellation#5",
+        "score": 0.806
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.8012
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "Siparişim kargoya verildi, iptal edebilir miyim?",
+      "expected": [
+       [
+        "cancellation",
+        3
+       ],
+       [
+        "shipping_and_delays",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "cancellation#3",
+        "score": 0.8462
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.8446
+       },
+       {
+        "section": "shipping_and_delays#5",
+        "score": 0.8306
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8271
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8246
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "Ürün hâlâ yolda, şimdiden iade talebi açabilir miyim?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        1
+       ],
+       [
+        "cancellation",
+        3
+       ]
+      ],
+      "rank": 8,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.8665
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8577
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8571
+       },
+       {
+        "section": "returns#6",
+        "score": 0.8546
+       },
+       {
+        "section": "returns#5",
+        "score": 0.8546
+       }
+      ]
+     },
+     {
+      "rule": "R4",
+      "question": "İptal edilen siparişimin parası ne olacak?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        4
+       ],
+       [
+        "cancellation",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "cancellation#4",
+        "score": 0.8604
+       },
+       {
+        "section": "cancellation#2",
+        "score": 0.8562
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.8487
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.8443
+       },
+       {
+        "section": "cancellation#5",
+        "score": 0.8377
+       }
+      ]
+     },
+     {
+      "rule": "R5",
+      "question": "Sipariş teslim edildi görünüyor ama teslim tarihi yok, iade edebilir miyim?",
+      "expected": [
+       [
+        "returns",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#4",
+        "score": 0.8675
+       },
+       {
+        "section": "returns#2",
+        "score": 0.865
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8561
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8558
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8521
+       }
+      ]
+     },
+     {
+      "rule": "R6",
+      "question": "Ürünü beğenmedim, kaç gün içinde iade edebilirim?",
+      "expected": [
+       [
+        "returns",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#2",
+        "score": 0.8823
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8763
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8526
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.852
+       },
+       {
+        "section": "returns#3",
+        "score": 0.848
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "Ürün kırık geldi, kaç gün içinde iade edebilirim?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        2
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "returns#2",
+        "score": 0.8732
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8728
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.8592
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8545
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.848
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "Sipariş ettiğimden farklı bir ürün gönderilmiş",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        1
+       ],
+       [
+        "damaged_or_wrong_item",
+        2
+       ],
+       [
+        "damaged_or_wrong_item",
+        3
+       ]
+      ],
+      "rank": 8,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.8083
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.8069
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.8067
+       },
+       {
+        "section": "returns#7",
+        "score": 0.8045
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.8039
+       }
+      ]
+     },
+     {
+      "rule": "R8",
+      "question": "İade edersem kargo ücretini de geri alır mıyım?",
+      "expected": [
+       [
+        "returns",
+        3
+       ],
+       [
+        "payments_and_refunds",
+        1
+       ],
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8776
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.8743
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8662
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.8635
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8632
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "Kargo 12 gün geç geldi, kargo ücretimi geri alabilir miyim?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.86
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8583
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8422
+       },
+       {
+        "section": "shipping_and_delays#5",
+        "score": 0.8414
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.8361
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "İade sürem geçti ama teslimat çok gecikmişti, bir hakkım var mı?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        4
+       ]
+      ],
+      "rank": 3,
+      "top": [
+       {
+        "section": "returns#2",
+        "score": 0.853
+       },
+       {
+        "section": "returns#3",
+        "score": 0.852
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8503
+       },
+       {
+        "section": "returns#4",
+        "score": 0.8445
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.8417
+       }
+      ]
+     },
+     {
+      "rule": "R10",
+      "question": "600 BRL'lik iade talebim neden kıdemli onay bekliyor?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        2
+       ],
+       [
+        "returns",
+        6
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.8785
+       },
+       {
+        "section": "returns#6",
+        "score": 0.8534
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.8498
+       },
+       {
+        "section": "returns#5",
+        "score": 0.8211
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8196
+       }
+      ]
+     },
+     {
+      "rule": "R11",
+      "question": "Aynı sipariş için ikinci kez iade talebi açabilir miyim?",
+      "expected": [
+       [
+        "returns",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#5",
+        "score": 0.8859
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.8555
+       },
+       {
+        "section": "returns#1",
+        "score": 0.8478
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.8471
+       },
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.8429
+       }
+      ]
+     },
+     {
+      "rule": "R12",
+      "question": "Hediye çekiyle ödedim, iadem nasıl yapılır?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.868
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.8426
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.8343
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.8202
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.82
+       }
+      ]
+     },
+     {
+      "rule": "R13",
+      "question": "Satıcı ürünü kargoya geç vermiş, bu durumda ne olur?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#5",
+        "score": 0.8696
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8426
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.833
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8303
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.8302
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Param hesabıma kaç günde geçer?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#5",
+        "score": 0.8232
+       },
+       {
+        "section": "returns#1",
+        "score": 0.8054
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.7996
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.7993
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.7984
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "İade kargosunun ücretini kim öder?",
+      "expected": [
+       [
+        "returns",
+        7
+       ]
+      ],
+      "rank": 5,
+      "top": [
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.8656
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8471
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.8449
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8425
+       },
+       {
+        "section": "returns#7",
+        "score": 0.8381
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Ürünü yenisiyle değiştirebilir miyim?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.8197
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.812
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8035
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.7938
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7922
+       }
+      ]
+     }
+    ]
+   },
+   "10": {
+    "dimensions": 768,
+    "first": 13,
+    "top3": 17,
+    "top5": 19,
+    "mrr": 0.781,
+    "worst": 6,
+    "query_ms_p50": 7.0,
+    "query_ms_max": 11.0,
+    "per_question": [
+     {
+      "rule": "R0",
+      "question": "2018 Eylül'den sonra verdiğim sipariş neden görünmüyor?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#1",
+        "score": 0.8518
+       },
+       {
+        "section": "returns#4",
+        "score": 0.8344
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.8248
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.8182
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8178
+       }
+      ]
+     },
+     {
+      "rule": "R1",
+      "question": "Arkadaşımın siparişinin durumunu öğrenebilir miyim?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#1",
+        "score": 0.8176
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.817
+       },
+       {
+        "section": "returns#7",
+        "score": 0.8147
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.8132
+       },
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.8088
+       }
+      ]
+     },
+     {
+      "rule": "R2",
+      "question": "Siparişim henüz hazırlanıyor, iptal edebilir miyim?",
+      "expected": [
+       [
+        "cancellation",
+        1
+       ],
+       [
+        "cancellation",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "cancellation#1",
+        "score": 0.8243
+       },
+       {
+        "section": "cancellation#2",
+        "score": 0.8081
+       },
+       {
+        "section": "returns#1",
+        "score": 0.804
+       },
+       {
+        "section": "cancellation#5",
+        "score": 0.8038
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.8029
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "Siparişim kargoya verildi, iptal edebilir miyim?",
+      "expected": [
+       [
+        "cancellation",
+        3
+       ],
+       [
+        "shipping_and_delays",
+        1
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "cancellation#1",
+        "score": 0.8529
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.8395
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8391
+       },
+       {
+        "section": "shipping_and_delays#5",
+        "score": 0.8314
+       },
+       {
+        "section": "cancellation#2",
+        "score": 0.8155
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "Ürün hâlâ yolda, şimdiden iade talebi açabilir miyim?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        1
+       ],
+       [
+        "cancellation",
+        3
+       ]
+      ],
+      "rank": 5,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.8605
+       },
+       {
+        "section": "returns#5",
+        "score": 0.854
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8528
+       },
+       {
+        "section": "returns#7",
+        "score": 0.8517
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.851
+       }
+      ]
+     },
+     {
+      "rule": "R4",
+      "question": "İptal edilen siparişimin parası ne olacak?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        4
+       ],
+       [
+        "cancellation",
+        4
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "cancellation#1",
+        "score": 0.8566
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.8512
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.8462
+       },
+       {
+        "section": "cancellation#2",
+        "score": 0.8461
+       },
+       {
+        "section": "cancellation#5",
+        "score": 0.84
+       }
+      ]
+     },
+     {
+      "rule": "R5",
+      "question": "Sipariş teslim edildi görünüyor ama teslim tarihi yok, iade edebilir miyim?",
+      "expected": [
+       [
+        "returns",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#4",
+        "score": 0.8721
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8606
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8535
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8515
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8486
+       }
+      ]
+     },
+     {
+      "rule": "R6",
+      "question": "Ürünü beğenmedim, kaç gün içinde iade edebilirim?",
+      "expected": [
+       [
+        "returns",
+        2
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8781
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8704
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8558
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.847
+       },
+       {
+        "section": "returns#7",
+        "score": 0.847
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "Ürün kırık geldi, kaç gün içinde iade edebilirim?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8792
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8609
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.8563
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.846
+       },
+       {
+        "section": "returns#7",
+        "score": 0.8436
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "Sipariş ettiğimden farklı bir ürün gönderilmiş",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        1
+       ],
+       [
+        "damaged_or_wrong_item",
+        2
+       ],
+       [
+        "damaged_or_wrong_item",
+        3
+       ]
+      ],
+      "rank": 6,
+      "top": [
+       {
+        "section": "cancellation#4",
+        "score": 0.813
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.8095
+       },
+       {
+        "section": "returns#7",
+        "score": 0.8077
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.8036
+       },
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.8028
+       }
+      ]
+     },
+     {
+      "rule": "R8",
+      "question": "İade edersem kargo ücretini de geri alır mıyım?",
+      "expected": [
+       [
+        "returns",
+        3
+       ],
+       [
+        "payments_and_refunds",
+        1
+       ],
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.8735
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8709
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.8642
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8633
+       },
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.858
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "Kargo 12 gün geç geldi, kargo ücretimi geri alabilir miyim?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8624
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8582
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8514
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8458
+       },
+       {
+        "section": "shipping_and_delays#5",
+        "score": 0.8416
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "İade sürem geçti ama teslimat çok gecikmişti, bir hakkım var mı?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8513
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8455
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8437
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8426
+       },
+       {
+        "section": "returns#4",
+        "score": 0.8378
+       }
+      ]
+     },
+     {
+      "rule": "R10",
+      "question": "600 BRL'lik iade talebim neden kıdemli onay bekliyor?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        2
+       ],
+       [
+        "returns",
+        6
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.8759
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.857
+       },
+       {
+        "section": "returns#6",
+        "score": 0.8549
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.8274
+       },
+       {
+        "section": "returns#5",
+        "score": 0.8256
+       }
+      ]
+     },
+     {
+      "rule": "R11",
+      "question": "Aynı sipariş için ikinci kez iade talebi açabilir miyim?",
+      "expected": [
+       [
+        "returns",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#5",
+        "score": 0.8856
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.8779
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.853
+       },
+       {
+        "section": "returns#1",
+        "score": 0.8453
+       },
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.8423
+       }
+      ]
+     },
+     {
+      "rule": "R12",
+      "question": "Hediye çekiyle ödedim, iadem nasıl yapılır?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.8607
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.8479
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.827
+       },
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.8228
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.8193
+       }
+      ]
+     },
+     {
+      "rule": "R13",
+      "question": "Satıcı ürünü kargoya geç vermiş, bu durumda ne olur?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#5",
+        "score": 0.883
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8476
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8314
+       },
+       {
+        "section": "returns#3",
+        "score": 0.83
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8283
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Param hesabıma kaç günde geçer?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#5",
+        "score": 0.8349
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8021
+       },
+       {
+        "section": "returns#1",
+        "score": 0.8
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.7997
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.7959
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "İade kargosunun ücretini kim öder?",
+      "expected": [
+       [
+        "returns",
+        7
+       ]
+      ],
+      "rank": 4,
+      "top": [
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.8621
+       },
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.8518
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8516
+       },
+       {
+        "section": "returns#7",
+        "score": 0.8473
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8413
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Ürünü yenisiyle değiştirebilir miyim?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.8181
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8114
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7937
+       },
+       {
+        "section": "returns#7",
+        "score": 0.7931
+       },
+       {
+        "section": "returns#2",
+        "score": 0.7919
+       }
+      ]
+     }
+    ]
+   },
+   "1": {
+    "dimensions": 768,
+    "first": 16,
+    "top3": 17,
+    "top5": 19,
+    "mrr": 0.852,
+    "worst": 11,
+    "query_ms_p50": 7.0,
+    "query_ms_max": 8.7,
+    "per_question": [
+     {
+      "rule": "R0",
+      "question": "2018 Eylül'den sonra verdiğim sipariş neden görünmüyor?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#1",
+        "score": 0.8512
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.8258
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8247
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.823
+       },
+       {
+        "section": "returns#4",
+        "score": 0.8226
+       }
+      ]
+     },
+     {
+      "rule": "R1",
+      "question": "Arkadaşımın siparişinin durumunu öğrenebilir miyim?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#1",
+        "score": 0.8177
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.817
+       },
+       {
+        "section": "returns#5",
+        "score": 0.8163
+       },
+       {
+        "section": "returns#7",
+        "score": 0.8145
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.8139
+       }
+      ]
+     },
+     {
+      "rule": "R2",
+      "question": "Siparişim henüz hazırlanıyor, iptal edebilir miyim?",
+      "expected": [
+       [
+        "cancellation",
+        1
+       ],
+       [
+        "cancellation",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "cancellation#2",
+        "score": 0.8139
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.8139
+       },
+       {
+        "section": "returns#1",
+        "score": 0.8095
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.8067
+       },
+       {
+        "section": "cancellation#5",
+        "score": 0.8058
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "Siparişim kargoya verildi, iptal edebilir miyim?",
+      "expected": [
+       [
+        "cancellation",
+        3
+       ],
+       [
+        "shipping_and_delays",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "cancellation#3",
+        "score": 0.8423
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.8414
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8337
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8212
+       },
+       {
+        "section": "shipping_and_delays#6",
+        "score": 0.8203
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "Ürün hâlâ yolda, şimdiden iade talebi açabilir miyim?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        1
+       ],
+       [
+        "cancellation",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "cancellation#3",
+        "score": 0.8578
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8569
+       },
+       {
+        "section": "returns#5",
+        "score": 0.8565
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.8564
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8562
+       }
+      ]
+     },
+     {
+      "rule": "R4",
+      "question": "İptal edilen siparişimin parası ne olacak?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        4
+       ],
+       [
+        "cancellation",
+        4
+       ]
+      ],
+      "rank": 4,
+      "top": [
+       {
+        "section": "cancellation#1",
+        "score": 0.8561
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.8556
+       },
+       {
+        "section": "cancellation#2",
+        "score": 0.8512
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.8501
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.8482
+       }
+      ]
+     },
+     {
+      "rule": "R5",
+      "question": "Sipariş teslim edildi görünüyor ama teslim tarihi yok, iade edebilir miyim?",
+      "expected": [
+       [
+        "returns",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#4",
+        "score": 0.872
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8606
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8565
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8562
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8545
+       }
+      ]
+     },
+     {
+      "rule": "R6",
+      "question": "Ürünü beğenmedim, kaç gün içinde iade edebilirim?",
+      "expected": [
+       [
+        "returns",
+        2
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8747
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8709
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8603
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.8437
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8426
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "Ürün kırık geldi, kaç gün içinde iade edebilirim?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8751
+       },
+       {
+        "section": "returns#2",
+        "score": 0.868
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8543
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.8436
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8405
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "Sipariş ettiğimden farklı bir ürün gönderilmiş",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        1
+       ],
+       [
+        "damaged_or_wrong_item",
+        2
+       ],
+       [
+        "damaged_or_wrong_item",
+        3
+       ]
+      ],
+      "rank": 11,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.8131
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.8101
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.806
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.8041
+       },
+       {
+        "section": "returns#7",
+        "score": 0.8038
+       }
+      ]
+     },
+     {
+      "rule": "R8",
+      "question": "İade edersem kargo ücretini de geri alır mıyım?",
+      "expected": [
+       [
+        "returns",
+        3
+       ],
+       [
+        "payments_and_refunds",
+        1
+       ],
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8704
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.8655
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8645
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.8636
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.8566
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "Kargo 12 gün geç geldi, kargo ücretimi geri alabilir miyim?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8665
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8601
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8465
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.844
+       },
+       {
+        "section": "shipping_and_delays#6",
+        "score": 0.8277
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "İade sürem geçti ama teslimat çok gecikmişti, bir hakkım var mı?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8561
+       },
+       {
+        "section": "returns#2",
+        "score": 0.8479
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8453
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.8443
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8417
+       }
+      ]
+     },
+     {
+      "rule": "R10",
+      "question": "600 BRL'lik iade talebim neden kıdemli onay bekliyor?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        2
+       ],
+       [
+        "returns",
+        6
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.8732
+       },
+       {
+        "section": "returns#6",
+        "score": 0.8527
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.8451
+       },
+       {
+        "section": "returns#5",
+        "score": 0.8241
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.8237
+       }
+      ]
+     },
+     {
+      "rule": "R11",
+      "question": "Aynı sipariş için ikinci kez iade talebi açabilir miyim?",
+      "expected": [
+       [
+        "returns",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#5",
+        "score": 0.8892
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.866
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.8554
+       },
+       {
+        "section": "returns#6",
+        "score": 0.8483
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.8473
+       }
+      ]
+     },
+     {
+      "rule": "R12",
+      "question": "Hediye çekiyle ödedim, iadem nasıl yapılır?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.8647
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.8503
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.823
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8157
+       },
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.814
+       }
+      ]
+     },
+     {
+      "rule": "R13",
+      "question": "Satıcı ürünü kargoya geç vermiş, bu durumda ne olur?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#5",
+        "score": 0.8757
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.8456
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.8411
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8311
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.8291
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Param hesabıma kaç günde geçer?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#5",
+        "score": 0.8189
+       },
+       {
+        "section": "returns#1",
+        "score": 0.8157
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.8044
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.7973
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.7964
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "İade kargosunun ücretini kim öder?",
+      "expected": [
+       [
+        "returns",
+        7
+       ]
+      ],
+      "rank": 5,
+      "top": [
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.8606
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.8565
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.8437
+       },
+       {
+        "section": "returns#3",
+        "score": 0.8368
+       },
+       {
+        "section": "returns#7",
+        "score": 0.8364
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Ürünü yenisiyle değiştirebilir miyim?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.8354
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.808
+       },
+       {
+        "section": "returns#2",
+        "score": 0.7932
+       },
+       {
+        "section": "returns#5",
+        "score": 0.7932
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.7912
+       }
+      ]
+     }
+    ]
+   }
+  }
+ },
+ "bge-m3": {
+  "repo": "Xenova/bge-m3",
+  "revision": "4de13258303883538bd53b696b452bf8099f0858",
+  "file": "onnx/model_quantized.onnx",
+  "sections": 28,
+  "questions": 20,
+  "peak_memory_mb": 1344,
+  "by_batch_size": {
+   "all": {
+    "dimensions": 1024,
+    "first": 16,
+    "top3": 19,
+    "top5": 19,
+    "mrr": 0.872,
+    "worst": 9,
+    "query_ms_p50": 22.3,
+    "query_ms_max": 24.7,
+    "per_question": [
+     {
+      "rule": "R0",
+      "question": "2018 Eylül'den sonra verdiğim sipariş neden görünmüyor?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#1",
+        "score": 0.6187
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.5565
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.5477
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.526
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.5219
+       }
+      ]
+     },
+     {
+      "rule": "R1",
+      "question": "Arkadaşımın siparişinin durumunu öğrenebilir miyim?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#1",
+        "score": 0.624
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.5782
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.5651
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.5642
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.5617
+       }
+      ]
+     },
+     {
+      "rule": "R2",
+      "question": "Siparişim henüz hazırlanıyor, iptal edebilir miyim?",
+      "expected": [
+       [
+        "cancellation",
+        1
+       ],
+       [
+        "cancellation",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "cancellation#1",
+        "score": 0.7406
+       },
+       {
+        "section": "cancellation#2",
+        "score": 0.6701
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.6582
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.6508
+       },
+       {
+        "section": "cancellation#5",
+        "score": 0.6171
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "Siparişim kargoya verildi, iptal edebilir miyim?",
+      "expected": [
+       [
+        "cancellation",
+        3
+       ],
+       [
+        "shipping_and_delays",
+        1
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "cancellation#1",
+        "score": 0.7525
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.7452
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.6722
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.6687
+       },
+       {
+        "section": "cancellation#2",
+        "score": 0.6644
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "Ürün hâlâ yolda, şimdiden iade talebi açabilir miyim?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        1
+       ],
+       [
+        "cancellation",
+        3
+       ]
+      ],
+      "rank": 9,
+      "top": [
+       {
+        "section": "returns#5",
+        "score": 0.6625
+       },
+       {
+        "section": "returns#6",
+        "score": 0.6603
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.6518
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.6398
+       },
+       {
+        "section": "returns#2",
+        "score": 0.6393
+       }
+      ]
+     },
+     {
+      "rule": "R4",
+      "question": "İptal edilen siparişimin parası ne olacak?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        4
+       ],
+       [
+        "cancellation",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.7044
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.6787
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.6619
+       },
+       {
+        "section": "cancellation#2",
+        "score": 0.6458
+       },
+       {
+        "section": "cancellation#5",
+        "score": 0.6345
+       }
+      ]
+     },
+     {
+      "rule": "R5",
+      "question": "Sipariş teslim edildi görünüyor ama teslim tarihi yok, iade edebilir miyim?",
+      "expected": [
+       [
+        "returns",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#4",
+        "score": 0.7316
+       },
+       {
+        "section": "returns#2",
+        "score": 0.7145
+       },
+       {
+        "section": "returns#1",
+        "score": 0.7074
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.68
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.6779
+       }
+      ]
+     },
+     {
+      "rule": "R6",
+      "question": "Ürünü beğenmedim, kaç gün içinde iade edebilirim?",
+      "expected": [
+       [
+        "returns",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#2",
+        "score": 0.7112
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.7017
+       },
+       {
+        "section": "returns#7",
+        "score": 0.619
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.615
+       },
+       {
+        "section": "returns#3",
+        "score": 0.6014
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "Ürün kırık geldi, kaç gün içinde iade edebilirim?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        2
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "returns#2",
+        "score": 0.6811
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.6781
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.5845
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.584
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.5834
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "Sipariş ettiğimden farklı bir ürün gönderilmiş",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        1
+       ],
+       [
+        "damaged_or_wrong_item",
+        2
+       ],
+       [
+        "damaged_or_wrong_item",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.5833
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.5697
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.5664
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.5635
+       },
+       {
+        "section": "returns#2",
+        "score": 0.5597
+       }
+      ]
+     },
+     {
+      "rule": "R8",
+      "question": "İade edersem kargo ücretini de geri alır mıyım?",
+      "expected": [
+       [
+        "returns",
+        3
+       ],
+       [
+        "payments_and_refunds",
+        1
+       ],
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.7016
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.6809
+       },
+       {
+        "section": "returns#3",
+        "score": 0.6755
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.6718
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.6684
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "Kargo 12 gün geç geldi, kargo ücretimi geri alabilir miyim?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.7457
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.711
+       },
+       {
+        "section": "returns#2",
+        "score": 0.6531
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.6499
+       },
+       {
+        "section": "shipping_and_delays#5",
+        "score": 0.6475
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "İade sürem geçti ama teslimat çok gecikmişti, bir hakkım var mı?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        4
+       ]
+      ],
+      "rank": 3,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.6979
+       },
+       {
+        "section": "returns#2",
+        "score": 0.6974
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.6875
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.6623
+       },
+       {
+        "section": "shipping_and_delays#5",
+        "score": 0.6443
+       }
+      ]
+     },
+     {
+      "rule": "R10",
+      "question": "600 BRL'lik iade talebim neden kıdemli onay bekliyor?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        2
+       ],
+       [
+        "returns",
+        6
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.7055
+       },
+       {
+        "section": "returns#6",
+        "score": 0.6637
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.6009
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.574
+       },
+       {
+        "section": "returns#5",
+        "score": 0.5427
+       }
+      ]
+     },
+     {
+      "rule": "R11",
+      "question": "Aynı sipariş için ikinci kez iade talebi açabilir miyim?",
+      "expected": [
+       [
+        "returns",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#5",
+        "score": 0.7619
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.6837
+       },
+       {
+        "section": "returns#1",
+        "score": 0.6561
+       },
+       {
+        "section": "returns#6",
+        "score": 0.6264
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.6194
+       }
+      ]
+     },
+     {
+      "rule": "R12",
+      "question": "Hediye çekiyle ödedim, iadem nasıl yapılır?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.7398
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.7002
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.579
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.5752
+       },
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.5712
+       }
+      ]
+     },
+     {
+      "rule": "R13",
+      "question": "Satıcı ürünü kargoya geç vermiş, bu durumda ne olur?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#5",
+        "score": 0.7039
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.6747
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.6687
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.6327
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.6304
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Param hesabıma kaç günde geçer?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#5",
+        "score": 0.5808
+       },
+       {
+        "section": "returns#2",
+        "score": 0.5475
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.5348
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.534
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.5281
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "İade kargosunun ücretini kim öder?",
+      "expected": [
+       [
+        "returns",
+        7
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#7",
+        "score": 0.6498
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.6382
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.6321
+       },
+       {
+        "section": "returns#3",
+        "score": 0.6034
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.5998
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Ürünü yenisiyle değiştirebilir miyim?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.6003
+       },
+       {
+        "section": "returns#2",
+        "score": 0.5557
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.5552
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.5541
+       },
+       {
+        "section": "returns#5",
+        "score": 0.5425
+       }
+      ]
+     }
+    ]
+   },
+   "10": {
+    "dimensions": 1024,
+    "first": 17,
+    "top3": 19,
+    "top5": 20,
+    "mrr": 0.893,
+    "worst": 5,
+    "query_ms_p50": 22.2,
+    "query_ms_max": 27.0,
+    "per_question": [
+     {
+      "rule": "R0",
+      "question": "2018 Eylül'den sonra verdiğim sipariş neden görünmüyor?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#1",
+        "score": 0.611
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.5619
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.539
+       },
+       {
+        "section": "returns#4",
+        "score": 0.5315
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.5236
+       }
+      ]
+     },
+     {
+      "rule": "R1",
+      "question": "Arkadaşımın siparişinin durumunu öğrenebilir miyim?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#1",
+        "score": 0.6132
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.5681
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.5663
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.5647
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.5595
+       }
+      ]
+     },
+     {
+      "rule": "R2",
+      "question": "Siparişim henüz hazırlanıyor, iptal edebilir miyim?",
+      "expected": [
+       [
+        "cancellation",
+        1
+       ],
+       [
+        "cancellation",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "cancellation#1",
+        "score": 0.7333
+       },
+       {
+        "section": "cancellation#2",
+        "score": 0.6742
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.6518
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.6494
+       },
+       {
+        "section": "cancellation#5",
+        "score": 0.6265
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "Siparişim kargoya verildi, iptal edebilir miyim?",
+      "expected": [
+       [
+        "cancellation",
+        3
+       ],
+       [
+        "shipping_and_delays",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "cancellation#3",
+        "score": 0.7432
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.7376
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.6759
+       },
+       {
+        "section": "cancellation#2",
+        "score": 0.6667
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.6626
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "Ürün hâlâ yolda, şimdiden iade talebi açabilir miyim?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        1
+       ],
+       [
+        "cancellation",
+        3
+       ]
+      ],
+      "rank": 5,
+      "top": [
+       {
+        "section": "returns#5",
+        "score": 0.668
+       },
+       {
+        "section": "returns#6",
+        "score": 0.6513
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.6445
+       },
+       {
+        "section": "returns#1",
+        "score": 0.639
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.632
+       }
+      ]
+     },
+     {
+      "rule": "R4",
+      "question": "İptal edilen siparişimin parası ne olacak?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        4
+       ],
+       [
+        "cancellation",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.6936
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.6843
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.6466
+       },
+       {
+        "section": "cancellation#2",
+        "score": 0.6423
+       },
+       {
+        "section": "cancellation#5",
+        "score": 0.6376
+       }
+      ]
+     },
+     {
+      "rule": "R5",
+      "question": "Sipariş teslim edildi görünüyor ama teslim tarihi yok, iade edebilir miyim?",
+      "expected": [
+       [
+        "returns",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#4",
+        "score": 0.7413
+       },
+       {
+        "section": "returns#2",
+        "score": 0.7075
+       },
+       {
+        "section": "returns#1",
+        "score": 0.7047
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.6746
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.6736
+       }
+      ]
+     },
+     {
+      "rule": "R6",
+      "question": "Ürünü beğenmedim, kaç gün içinde iade edebilirim?",
+      "expected": [
+       [
+        "returns",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#2",
+        "score": 0.6976
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.6976
+       },
+       {
+        "section": "returns#7",
+        "score": 0.6149
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.608
+       },
+       {
+        "section": "cancellation#5",
+        "score": 0.6009
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "Ürün kırık geldi, kaç gün içinde iade edebilirim?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.6718
+       },
+       {
+        "section": "returns#2",
+        "score": 0.6675
+       },
+       {
+        "section": "returns#3",
+        "score": 0.5822
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.5808
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.5804
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "Sipariş ettiğimden farklı bir ürün gönderilmiş",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        1
+       ],
+       [
+        "damaged_or_wrong_item",
+        2
+       ],
+       [
+        "damaged_or_wrong_item",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.572
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.5683
+       },
+       {
+        "section": "returns#5",
+        "score": 0.5651
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.5647
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.5528
+       }
+      ]
+     },
+     {
+      "rule": "R8",
+      "question": "İade edersem kargo ücretini de geri alır mıyım?",
+      "expected": [
+       [
+        "returns",
+        3
+       ],
+       [
+        "payments_and_refunds",
+        1
+       ],
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.7067
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.682
+       },
+       {
+        "section": "returns#3",
+        "score": 0.6748
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.6572
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.6494
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "Kargo 12 gün geç geldi, kargo ücretimi geri alabilir miyim?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.7458
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.7075
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.6505
+       },
+       {
+        "section": "returns#2",
+        "score": 0.6478
+       },
+       {
+        "section": "shipping_and_delays#5",
+        "score": 0.6399
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "İade sürem geçti ama teslimat çok gecikmişti, bir hakkım var mı?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        4
+       ]
+      ],
+      "rank": 3,
+      "top": [
+       {
+        "section": "returns#2",
+        "score": 0.6933
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.6891
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.6881
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.6613
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.6341
+       }
+      ]
+     },
+     {
+      "rule": "R10",
+      "question": "600 BRL'lik iade talebim neden kıdemli onay bekliyor?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        2
+       ],
+       [
+        "returns",
+        6
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.6973
+       },
+       {
+        "section": "returns#6",
+        "score": 0.66
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.5983
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.5806
+       },
+       {
+        "section": "returns#5",
+        "score": 0.5446
+       }
+      ]
+     },
+     {
+      "rule": "R11",
+      "question": "Aynı sipariş için ikinci kez iade talebi açabilir miyim?",
+      "expected": [
+       [
+        "returns",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#5",
+        "score": 0.7653
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.6742
+       },
+       {
+        "section": "returns#1",
+        "score": 0.6513
+       },
+       {
+        "section": "returns#6",
+        "score": 0.6188
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.6119
+       }
+      ]
+     },
+     {
+      "rule": "R12",
+      "question": "Hediye çekiyle ödedim, iadem nasıl yapılır?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.7389
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.702
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.5727
+       },
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.5701
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.5688
+       }
+      ]
+     },
+     {
+      "rule": "R13",
+      "question": "Satıcı ürünü kargoya geç vermiş, bu durumda ne olur?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#5",
+        "score": 0.6978
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.6795
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.6586
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.6312
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.6268
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Param hesabıma kaç günde geçer?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#5",
+        "score": 0.5894
+       },
+       {
+        "section": "returns#2",
+        "score": 0.5515
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.5418
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.5328
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.5229
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "İade kargosunun ücretini kim öder?",
+      "expected": [
+       [
+        "returns",
+        7
+       ]
+      ],
+      "rank": 3,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.645
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.6372
+       },
+       {
+        "section": "returns#7",
+        "score": 0.6326
+       },
+       {
+        "section": "returns#3",
+        "score": 0.6009
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.5985
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Ürünü yenisiyle değiştirebilir miyim?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.604
+       },
+       {
+        "section": "returns#5",
+        "score": 0.5498
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.5458
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.5447
+       },
+       {
+        "section": "returns#2",
+        "score": 0.5435
+       }
+      ]
+     }
+    ]
+   },
+   "1": {
+    "dimensions": 1024,
+    "first": 16,
+    "top3": 19,
+    "top5": 19,
+    "mrr": 0.883,
+    "worst": 6,
+    "query_ms_p50": 22.4,
+    "query_ms_max": 25.0,
+    "per_question": [
+     {
+      "rule": "R0",
+      "question": "2018 Eylül'den sonra verdiğim sipariş neden görünmüyor?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#1",
+        "score": 0.6039
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.5629
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.5407
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.5326
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.5314
+       }
+      ]
+     },
+     {
+      "rule": "R1",
+      "question": "Arkadaşımın siparişinin durumunu öğrenebilir miyim?",
+      "expected": [
+       [
+        "returns",
+        1
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#1",
+        "score": 0.6098
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.5829
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.5712
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.57
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.5692
+       }
+      ]
+     },
+     {
+      "rule": "R2",
+      "question": "Siparişim henüz hazırlanıyor, iptal edebilir miyim?",
+      "expected": [
+       [
+        "cancellation",
+        1
+       ],
+       [
+        "cancellation",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "cancellation#1",
+        "score": 0.7451
+       },
+       {
+        "section": "cancellation#2",
+        "score": 0.667
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.662
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.6542
+       },
+       {
+        "section": "cancellation#5",
+        "score": 0.6212
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "Siparişim kargoya verildi, iptal edebilir miyim?",
+      "expected": [
+       [
+        "cancellation",
+        3
+       ],
+       [
+        "shipping_and_delays",
+        1
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "cancellation#1",
+        "score": 0.7593
+       },
+       {
+        "section": "cancellation#3",
+        "score": 0.7481
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.6817
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.6704
+       },
+       {
+        "section": "cancellation#2",
+        "score": 0.6594
+       }
+      ]
+     },
+     {
+      "rule": "R3",
+      "question": "Ürün hâlâ yolda, şimdiden iade talebi açabilir miyim?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        1
+       ],
+       [
+        "cancellation",
+        3
+       ]
+      ],
+      "rank": 6,
+      "top": [
+       {
+        "section": "returns#5",
+        "score": 0.6645
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.66
+       },
+       {
+        "section": "returns#6",
+        "score": 0.6558
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.6471
+       },
+       {
+        "section": "returns#1",
+        "score": 0.6385
+       }
+      ]
+     },
+     {
+      "rule": "R4",
+      "question": "İptal edilen siparişimin parası ne olacak?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        4
+       ],
+       [
+        "cancellation",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.7055
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.6936
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.6602
+       },
+       {
+        "section": "cancellation#5",
+        "score": 0.6428
+       },
+       {
+        "section": "cancellation#2",
+        "score": 0.6367
+       }
+      ]
+     },
+     {
+      "rule": "R5",
+      "question": "Sipariş teslim edildi görünüyor ama teslim tarihi yok, iade edebilir miyim?",
+      "expected": [
+       [
+        "returns",
+        4
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#4",
+        "score": 0.7443
+       },
+       {
+        "section": "returns#2",
+        "score": 0.7125
+       },
+       {
+        "section": "returns#1",
+        "score": 0.6972
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.6827
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.6778
+       }
+      ]
+     },
+     {
+      "rule": "R6",
+      "question": "Ürünü beğenmedim, kaç gün içinde iade edebilirim?",
+      "expected": [
+       [
+        "returns",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#2",
+        "score": 0.7005
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.7001
+       },
+       {
+        "section": "returns#7",
+        "score": 0.6227
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.6073
+       },
+       {
+        "section": "cancellation#5",
+        "score": 0.6017
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "Ürün kırık geldi, kaç gün içinde iade edebilirim?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        2
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.6772
+       },
+       {
+        "section": "returns#2",
+        "score": 0.6683
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.5904
+       },
+       {
+        "section": "returns#3",
+        "score": 0.5812
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.5789
+       }
+      ]
+     },
+     {
+      "rule": "R7",
+      "question": "Sipariş ettiğimden farklı bir ürün gönderilmiş",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        1
+       ],
+       [
+        "damaged_or_wrong_item",
+        2
+       ],
+       [
+        "damaged_or_wrong_item",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.5918
+       },
+       {
+        "section": "cancellation#1",
+        "score": 0.5758
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.5739
+       },
+       {
+        "section": "cancellation#4",
+        "score": 0.5666
+       },
+       {
+        "section": "returns#5",
+        "score": 0.5613
+       }
+      ]
+     },
+     {
+      "rule": "R8",
+      "question": "İade edersem kargo ücretini de geri alır mıyım?",
+      "expected": [
+       [
+        "returns",
+        3
+       ],
+       [
+        "payments_and_refunds",
+        1
+       ],
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.7103
+       },
+       {
+        "section": "returns#3",
+        "score": 0.6785
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.6725
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.6691
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.6615
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "Kargo 12 gün geç geldi, kargo ücretimi geri alabilir miyim?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.751
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.7089
+       },
+       {
+        "section": "shipping_and_delays#5",
+        "score": 0.6549
+       },
+       {
+        "section": "returns#3",
+        "score": 0.644
+       },
+       {
+        "section": "returns#2",
+        "score": 0.6432
+       }
+      ]
+     },
+     {
+      "rule": "R9",
+      "question": "İade sürem geçti ama teslimat çok gecikmişti, bir hakkım var mı?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        4
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.6952
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.689
+       },
+       {
+        "section": "returns#2",
+        "score": 0.6889
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.668
+       },
+       {
+        "section": "damaged_or_wrong_item#2",
+        "score": 0.6396
+       }
+      ]
+     },
+     {
+      "rule": "R10",
+      "question": "600 BRL'lik iade talebim neden kıdemli onay bekliyor?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        2
+       ],
+       [
+        "returns",
+        6
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#2",
+        "score": 0.6976
+       },
+       {
+        "section": "returns#6",
+        "score": 0.6712
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.613
+       },
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.5745
+       },
+       {
+        "section": "returns#5",
+        "score": 0.5382
+       }
+      ]
+     },
+     {
+      "rule": "R11",
+      "question": "Aynı sipariş için ikinci kez iade talebi açabilir miyim?",
+      "expected": [
+       [
+        "returns",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "returns#5",
+        "score": 0.7666
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.6837
+       },
+       {
+        "section": "returns#1",
+        "score": 0.6608
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.6288
+       },
+       {
+        "section": "returns#6",
+        "score": 0.6236
+       }
+      ]
+     },
+     {
+      "rule": "R12",
+      "question": "Hediye çekiyle ödedim, iadem nasıl yapılır?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        3
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#3",
+        "score": 0.7311
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.6993
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.5752
+       },
+       {
+        "section": "damaged_or_wrong_item#4",
+        "score": 0.5729
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.5717
+       }
+      ]
+     },
+     {
+      "rule": "R13",
+      "question": "Satıcı ürünü kargoya geç vermiş, bu durumda ne olur?",
+      "expected": [
+       [
+        "shipping_and_delays",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "shipping_and_delays#5",
+        "score": 0.7013
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.6776
+       },
+       {
+        "section": "shipping_and_delays#1",
+        "score": 0.6634
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.6369
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.6325
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Param hesabıma kaç günde geçer?",
+      "expected": [
+       [
+        "payments_and_refunds",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "payments_and_refunds#5",
+        "score": 0.5793
+       },
+       {
+        "section": "returns#2",
+        "score": 0.5484
+       },
+       {
+        "section": "shipping_and_delays#4",
+        "score": 0.5421
+       },
+       {
+        "section": "shipping_and_delays#2",
+        "score": 0.5385
+       },
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.5243
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "İade kargosunun ücretini kim öder?",
+      "expected": [
+       [
+        "returns",
+        7
+       ]
+      ],
+      "rank": 2,
+      "top": [
+       {
+        "section": "shipping_and_delays#3",
+        "score": 0.6488
+       },
+       {
+        "section": "returns#7",
+        "score": 0.6417
+       },
+       {
+        "section": "payments_and_refunds#1",
+        "score": 0.6249
+       },
+       {
+        "section": "returns#3",
+        "score": 0.604
+       },
+       {
+        "section": "damaged_or_wrong_item#3",
+        "score": 0.6016
+       }
+      ]
+     },
+     {
+      "rule": null,
+      "question": "Ürünü yenisiyle değiştirebilir miyim?",
+      "expected": [
+       [
+        "damaged_or_wrong_item",
+        5
+       ]
+      ],
+      "rank": 1,
+      "top": [
+       {
+        "section": "damaged_or_wrong_item#5",
+        "score": 0.6146
+       },
+       {
+        "section": "damaged_or_wrong_item#1",
+        "score": 0.5551
+       },
+       {
+        "section": "returns#2",
+        "score": 0.5525
+       },
+       {
+        "section": "returns#5",
+        "score": 0.5511
+       },
+       {
+        "section": "payments_and_refunds#4",
+        "score": 0.5452
+       }
+      ]
+     }
+    ]
+   }
+  }
+ }
+}

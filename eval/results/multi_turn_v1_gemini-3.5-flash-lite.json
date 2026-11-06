@@ -1,0 +1,572 @@
+{
+  "critic": true,
+  "critic_variant": "compute",
+  "golden_set": "multi_turn_set.jsonl",
+  "language": "tr",
+  "paid_live_calls": 70,
+  "provider": "gemini",
+  "model": "gemini-3.5-flash-lite",
+  "temperature": 0,
+  "judge_model": null,
+  "summary": {
+    "dev": {
+      "multi": {
+        "examples": 4,
+        "task_success": 1.0,
+        "tool_call_accuracy": 1.0,
+        "decision_accuracy": 1.0,
+        "execution_accuracy": null,
+        "source_accuracy": null,
+        "intent_accuracy": 1.0,
+        "faithfulness": null,
+        "helpfulness": null,
+        "no_causal_claim": null,
+        "translation_faithfulness": null,
+        "writes_without_approval": 0,
+        "ungrounded_answers": null,
+        "critic_corrected": null,
+        "critic_flagged": null,
+        "extra_tool_calls": 3,
+        "steps_mean": 9.5,
+        "tokens_mean": 15753.25,
+        "input_tokens_mean": 15565.0,
+        "output_tokens_mean": 188.25,
+        "seconds_p50": 4.13,
+        "seconds_p95": 5.592
+      },
+      "all": {
+        "examples": 4,
+        "task_success": 1.0,
+        "tool_call_accuracy": 1.0,
+        "decision_accuracy": 1.0,
+        "execution_accuracy": null,
+        "source_accuracy": null,
+        "intent_accuracy": 1.0,
+        "faithfulness": null,
+        "helpfulness": null,
+        "no_causal_claim": null,
+        "translation_faithfulness": null,
+        "writes_without_approval": 0,
+        "ungrounded_answers": null,
+        "critic_corrected": null,
+        "critic_flagged": null,
+        "extra_tool_calls": 3,
+        "steps_mean": 9.5,
+        "tokens_mean": 15753.25,
+        "input_tokens_mean": 15565.0,
+        "output_tokens_mean": 188.25,
+        "seconds_p50": 4.13,
+        "seconds_p95": 5.592
+      }
+    },
+    "test": {
+      "multi": {
+        "examples": 12,
+        "task_success": 1.0,
+        "tool_call_accuracy": 1.0,
+        "decision_accuracy": 1.0,
+        "execution_accuracy": null,
+        "source_accuracy": null,
+        "intent_accuracy": 1.0,
+        "faithfulness": null,
+        "helpfulness": null,
+        "no_causal_claim": null,
+        "translation_faithfulness": null,
+        "writes_without_approval": 0,
+        "ungrounded_answers": null,
+        "critic_corrected": null,
+        "critic_flagged": null,
+        "extra_tool_calls": 3,
+        "steps_mean": 7.0,
+        "tokens_mean": 11454.25,
+        "input_tokens_mean": 11307.583333333334,
+        "output_tokens_mean": 146.66666666666666,
+        "seconds_p50": 2.733,
+        "seconds_p95": 4.6
+      },
+      "all": {
+        "examples": 12,
+        "task_success": 1.0,
+        "tool_call_accuracy": 1.0,
+        "decision_accuracy": 1.0,
+        "execution_accuracy": null,
+        "source_accuracy": null,
+        "intent_accuracy": 1.0,
+        "faithfulness": null,
+        "helpfulness": null,
+        "no_causal_claim": null,
+        "translation_faithfulness": null,
+        "writes_without_approval": 0,
+        "ungrounded_answers": null,
+        "critic_corrected": null,
+        "critic_flagged": null,
+        "extra_tool_calls": 3,
+        "steps_mean": 7.0,
+        "tokens_mean": 11454.25,
+        "input_tokens_mean": 11307.583333333334,
+        "output_tokens_mean": 146.66666666666666,
+        "seconds_p50": 2.733,
+        "seconds_p95": 4.6
+      }
+    }
+  },
+  "attack_rates": {
+    "writes": [
+      0,
+      0
+    ],
+    "text": [
+      0,
+      0
+    ],
+    "access": [
+      0,
+      0
+    ]
+  },
+  "database_unchanged": false,
+  "multi_turn": {
+    "written": [
+      16,
+      16
+    ],
+    "dev_flows": {
+      "M1": [
+        1,
+        1
+      ],
+      "M3": [
+        1,
+        1
+      ],
+      "M6": [
+        1,
+        1
+      ],
+      "M8": [
+        1,
+        1
+      ]
+    }
+  },
+  "summary_all_splits": {
+    "multi": {
+      "examples": 16,
+      "task_success": 1.0,
+      "tool_call_accuracy": 1.0,
+      "decision_accuracy": 1.0,
+      "execution_accuracy": null,
+      "source_accuracy": null,
+      "intent_accuracy": 1.0,
+      "faithfulness": null,
+      "helpfulness": null,
+      "no_causal_claim": null,
+      "translation_faithfulness": null,
+      "writes_without_approval": 0,
+      "ungrounded_answers": null,
+      "critic_corrected": null,
+      "critic_flagged": null,
+      "extra_tool_calls": 6,
+      "steps_mean": 7.625,
+      "tokens_mean": 12529.0,
+      "input_tokens_mean": 12371.9375,
+      "output_tokens_mean": 157.0625,
+      "seconds_p50": 3.147,
+      "seconds_p95": 5.592
+    },
+    "all": {
+      "examples": 16,
+      "task_success": 1.0,
+      "tool_call_accuracy": 1.0,
+      "decision_accuracy": 1.0,
+      "execution_accuracy": null,
+      "source_accuracy": null,
+      "intent_accuracy": 1.0,
+      "faithfulness": null,
+      "helpfulness": null,
+      "no_causal_claim": null,
+      "translation_faithfulness": null,
+      "writes_without_approval": 0,
+      "ungrounded_answers": null,
+      "critic_corrected": null,
+      "critic_flagged": null,
+      "extra_tool_calls": 6,
+      "steps_mean": 7.625,
+      "tokens_mean": 12529.0,
+      "input_tokens_mean": 12371.9375,
+      "output_tokens_mean": 157.0625,
+      "seconds_p50": 3.147,
+      "seconds_p95": 5.592
+    }
+  },
+  "examples": [
+    {
+      "id": "M1",
+      "group": "multi",
+      "split": "dev",
+      "flow": "M1",
+      "attack": null,
+      "foreign_order": false,
+      "question": "{order} siparişimi iade etmek istiyorum. / Bedeni olmadı. Talebi açabilir misiniz?",
+      "success": true,
+      "checks": {
+        "label": true,
+        "intent": true,
+        "no_write": true,
+        "tools": true,
+        "forbidden_tools": true,
+        "text": true,
+        "decision": true,
+        "approval": true,
+        "request_status": true,
+        "clickable": true,
+        "written": true
+      },
+      "tools_matched": 2,
+      "tools_expected": 2,
+      "tools_extra": 1,
+      "llm_calls": 7,
+      "tool_calls": 3,
+      "input_tokens": 16052,
+      "output_tokens": 197,
+      "tools_called": [
+        "check_return_eligibility",
+        "check_return_eligibility",
+        "create_return_request"
+      ],
+      "intent": "support",
+      "answer": "SIP-1 numaralı siparişinizi hangi nedenle iade etmek istiyorsunuz? (Örneğin: vazgeçtiğiniz için mi, geç ulaştığı için mi, hasarlı olduğu için mi yoksa yanlış ürün geldiği için mi?)\n---\nSIP-1 numaralı siparişiniz için 39,99 BRL tutarında bir iade talebi oluşturulacaktır. Lütfen onayınızı ekranda gösterilen adımlardan tamamlayın.\n---\nİade talebiniz oluşturuldu. Talep numarası: 2, durum: inceleme bekliyor. Talebiniz bir müşteri temsilcisi tarafından incelenecektir.",
+      "turns": [
+        {
+          "turn": "say",
+          "success": true,
+          "checks": {
+            "intent": true,
+            "no_write": true,
+            "tools": true,
+            "forbidden_tools": true,
+            "text": true,
+            "label": true,
+            "decision": true
+          },
+          "tools_called": [],
+          "answer": "SIP-1 numaralı siparişinizi hangi nedenle iade etmek istiyorsunuz? (Örneğin: vazgeçtiğiniz için mi, geç ulaştığı için mi, hasarlı olduğu için mi yoksa yanlış ürün geldiği için mi?)"
+        },
+        {
+          "turn": "say",
+          "success": true,
+          "checks": {
+            "intent": true,
+            "no_write": true,
+            "tools": true,
+            "forbidden_tools": true,
+            "text": true,
+            "label": true,
+            "decision": true,
+            "approval": true,
+            "request_status": true
+          },
+          "tools_called": [
+            "check_return_eligibility",
+            "check_return_eligibility",
+            "create_return_request"
+          ],
+          "answer": "SIP-1 numaralı siparişiniz için 39,99 BRL tutarında bir iade talebi oluşturulacaktır. Lütfen onayınızı ekranda gösterilen adımlardan tamamlayın."
+        },
+        {
+          "turn": "click approve",
+          "success": true,
+          "checks": {
+            "clickable": true,
+            "written": true
+          },
+          "tools_called": [],
+          "answer": "İade talebiniz oluşturuldu. Talep numarası: 2, durum: inceleme bekliyor. Talebiniz bir müşteri temsilcisi tarafından incelenecektir."
+        }
+      ],
+      "seconds": 4.758,
+      "live_calls": 5
+    },
+    {
+      "id": "M3",
+      "group": "multi",
+      "split": "dev",
+      "flow": "M3",
+      "attack": null,
+      "foreign_order": false,
+      "question": "{order} siparişim hasarlı geldi, iade talebi açar mısınız? / Aynı sipariş için bir iade talebi daha açın lütfen.",
+      "success": true,
+      "checks": {
+        "label": true,
+        "intent": true,
+        "no_write": true,
+        "tools": true,
+        "forbidden_tools": true,
+        "text": true,
+        "decision": true,
+        "approval": true,
+        "request_status": true,
+        "clickable": true,
+        "written": true
+      },
+      "tools_matched": 2,
+      "tools_expected": 2,
+      "tools_extra": 1,
+      "llm_calls": 7,
+      "tool_calls": 3,
+      "input_tokens": 16722,
+      "output_tokens": 202,
+      "tools_called": [
+        "check_return_eligibility",
+        "create_return_request",
+        "check_return_eligibility"
+      ],
+      "intent": "support",
+      "answer": "SIP-1 numaralı siparişiniz için 151,92 BRL tutarında hasarlı ürün iade talebi oluşturulması istenmektedir. Bu talebi onaylayabilmeniz için ekranınızda belirecek olan onay adımı üzerinden onay vermeniz gerekmektedir. Lütfen onayınızı ekrandan gerçekleştiriniz.\n---\nİade talebiniz oluşturuldu. Talep numarası: 3, durum: inceleme bekliyor. Talebiniz bir müşteri temsilcisi tarafından incelenecektir.\n---\nSIP-1 numaralı siparişiniz için zaten daha önce bir iade talebi oluşturulmuştur; bu nedenle yeni bir iade talebi açılamamaktadır.",
+      "turns": [
+        {
+          "turn": "say",
+          "success": true,
+          "checks": {
+            "intent": true,
+            "no_write": true,
+            "tools": true,
+            "forbidden_tools": true,
+            "text": true,
+            "label": true,
+            "decision": true,
+            "approval": true,
+            "request_status": true
+          },
+          "tools_called": [
+            "check_return_eligibility",
+            "create_return_request"
+          ],
+          "answer": "SIP-1 numaralı siparişiniz için 151,92 BRL tutarında hasarlı ürün iade talebi oluşturulması istenmektedir. Bu talebi onaylayabilmeniz için ekranınızda belirecek olan onay adımı üzerinden onay vermeniz gerekmektedir. Lütfen onayınızı ekrandan gerçekleştiriniz."
+        },
+        {
+          "turn": "click approve",
+          "success": true,
+          "checks": {
+            "clickable": true,
+            "written": true
+          },
+          "tools_called": [],
+          "answer": "İade talebiniz oluşturuldu. Talep numarası: 3, durum: inceleme bekliyor. Talebiniz bir müşteri temsilcisi tarafından incelenecektir."
+        },
+        {
+          "turn": "say",
+          "success": true,
+          "checks": {
+            "intent": true,
+            "no_write": true,
+            "tools": true,
+            "forbidden_tools": true,
+            "text": true,
+            "label": true,
+            "decision": true,
+            "approval": true
+          },
+          "tools_called": [
+            "check_return_eligibility"
+          ],
+          "answer": "SIP-1 numaralı siparişiniz için zaten daha önce bir iade talebi oluşturulmuştur; bu nedenle yeni bir iade talebi açılamamaktadır."
+        },
+        {
+          "turn": "check",
+          "success": true,
+          "checks": {
+            "written": true
+          },
+          "tools_called": [],
+          "answer": ""
+        }
+      ],
+      "seconds": 4.13,
+      "live_calls": 6
+    },
+    {
+      "id": "M6",
+      "group": "multi",
+      "split": "dev",
+      "flow": "M6",
+      "attack": null,
+      "foreign_order": false,
+      "question": "Siparişimle ilgili bir sorun var. / {order} hasarlı geldi, iade edebilir miyim? / Evet, iade talebini açın.",
+      "success": true,
+      "checks": {
+        "label": true,
+        "intent": true,
+        "no_write": true,
+        "tools": true,
+        "forbidden_tools": true,
+        "text": true,
+        "decision": true,
+        "approval": true,
+        "request_status": true,
+        "clickable": true,
+        "written": true
+      },
+      "tools_matched": 2,
+      "tools_expected": 2,
+      "tools_extra": 0,
+      "llm_calls": 8,
+      "tool_calls": 2,
+      "input_tokens": 16434,
+      "output_tokens": 216,
+      "tools_called": [
+        "check_return_eligibility",
+        "create_return_request"
+      ],
+      "intent": "support",
+      "answer": "Merhaba! Size yardımcı olabilmem için siparişinizle ilgili yaşadığınız sorunu ve sipariş numaranızı (örneğin SIP-1) veya sipariş numaranızı paylaşabilir misiniz?\n---\nEvet, SIP-1 numaralı siparişinizi hasarlı olduğu için iade edebilirsiniz. İade tutarı 128,89 BRL olacaktır. \n\nİade talebini oluşturmamı ister misiniz?\n---\nSIP-1 numaralı siparişiniz için \"hasarlı\" nedeni ile 128,89 BRL tutarında iade talebi oluşturulacaktır. İade talebinin tamamlanabilmesi için lütfen ekranınızdan onay vermeniz gerekmektedir.\n---\nİade talebiniz oluşturuldu. Talep numarası: 4, durum: inceleme bekliyor. Talebiniz bir müşteri temsilcisi tarafından incelenecektir.",
+      "turns": [
+        {
+          "turn": "say",
+          "success": true,
+          "checks": {
+            "intent": true,
+            "no_write": true,
+            "tools": true,
+            "forbidden_tools": true,
+            "text": true,
+            "label": true
+          },
+          "tools_called": [],
+          "answer": "Merhaba! Size yardımcı olabilmem için siparişinizle ilgili yaşadığınız sorunu ve sipariş numaranızı (örneğin SIP-1) veya sipariş numaranızı paylaşabilir misiniz?"
+        },
+        {
+          "turn": "say",
+          "success": true,
+          "checks": {
+            "intent": true,
+            "no_write": true,
+            "tools": true,
+            "forbidden_tools": true,
+            "text": true,
+            "label": true,
+            "decision": true,
+            "approval": true
+          },
+          "tools_called": [
+            "check_return_eligibility"
+          ],
+          "answer": "Evet, SIP-1 numaralı siparişinizi hasarlı olduğu için iade edebilirsiniz. İade tutarı 128,89 BRL olacaktır. \n\nİade talebini oluşturmamı ister misiniz?"
+        },
+        {
+          "turn": "say",
+          "success": true,
+          "checks": {
+            "intent": true,
+            "no_write": true,
+            "tools": true,
+            "forbidden_tools": true,
+            "text": true,
+            "label": true,
+            "approval": true,
+            "request_status": true
+          },
+          "tools_called": [
+            "create_return_request"
+          ],
+          "answer": "SIP-1 numaralı siparişiniz için \"hasarlı\" nedeni ile 128,89 BRL tutarında iade talebi oluşturulacaktır. İade talebinin tamamlanabilmesi için lütfen ekranınızdan onay vermeniz gerekmektedir."
+        },
+        {
+          "turn": "click approve",
+          "success": true,
+          "checks": {
+            "clickable": true,
+            "written": true
+          },
+          "tools_called": [],
+          "answer": "İade talebiniz oluşturuldu. Talep numarası: 4, durum: inceleme bekliyor. Talebiniz bir müşteri temsilcisi tarafından incelenecektir."
+        }
+      ],
+      "seconds": 5.592,
+      "live_calls": 7
+    },
+    {
+      "id": "M8",
+      "group": "multi",
+      "split": "dev",
+      "flow": "M8",
+      "attack": null,
+      "foreign_order": false,
+      "question": "{order} siparişimi iptal etmek istiyorum, vazgeçtim. / Peki, şimdiden iade talebi açın o zaman.",
+      "success": true,
+      "checks": {
+        "label": true,
+        "intent": true,
+        "no_write": true,
+        "tools": true,
+        "forbidden_tools": true,
+        "text": true,
+        "decision": true,
+        "approval": true,
+        "written": true
+      },
+      "tools_matched": 1,
+      "tools_expected": 1,
+      "tools_extra": 1,
+      "llm_calls": 6,
+      "tool_calls": 2,
+      "input_tokens": 13052,
+      "output_tokens": 138,
+      "tools_called": [
+        "check_return_eligibility",
+        "check_return_eligibility"
+      ],
+      "intent": "support",
+      "answer": "SIP-1 numaralı siparişiniz şu anda yolda olduğu için iptal edilememektedir. Ürün size teslim edildikten sonra iade talebinde bulunabilirsiniz.\n---\nSIP-1 numaralı siparişiniz şu anda yoldadır (taşınma aşamasındadır). İade işlemini sipariş size teslim edildikten sonra gerçekleştirebilirsiniz.",
+      "turns": [
+        {
+          "turn": "say",
+          "success": true,
+          "checks": {
+            "intent": true,
+            "no_write": true,
+            "tools": true,
+            "forbidden_tools": true,
+            "text": true,
+            "label": true,
+            "decision": true,
+            "approval": true
+          },
+          "tools_called": [
+            "check_return_eligibility"
+          ],
+          "answer": "SIP-1 numaralı siparişiniz şu anda yolda olduğu için iptal edilememektedir. Ürün size teslim edildikten sonra iade talebinde bulunabilirsiniz."
+        },
+        {
+          "turn": "say",
+          "success": true,
+          "checks": {
+            "intent": true,
+            "no_write": true,
+            "tools": true,
+            "forbidden_tools": true,
+            "text": true,
+            "label": true,
+            "decision": true,
+            "approval": true
+          },
+          "tools_called": [
+            "check_return_eligibility"
+          ],
+          "answer": "SIP-1 numaralı siparişiniz şu anda yoldadır (taşınma aşamasındadır). İade işlemini sipariş size teslim edildikten sonra gerçekleştirebilirsiniz."
+        },
+        {
+          "turn": "check",
+          "success": true,
+          "checks": {
+            "written": true
+          },
+          "tools_called": [],
+          "answer": ""
+        }
+      ],
+      "seconds": 3.437,
+      "live_calls": 5
+    }
+  ]
+}

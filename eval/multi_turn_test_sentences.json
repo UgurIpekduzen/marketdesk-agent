@@ -1,0 +1,23 @@
+{
+"S1": [
+{"m1": "{order} numaralı siparişimdeki ürün hasarlı geldi, hemen iade talebi oluşturur musunuz lütfen?"},
+{"m1": "selam {order} nolu siparişim kırık geldi iade açmak istiyorum"},
+{"m1": "{order} numaralı siparişim hasarlı teslim edildi, iade süreci başlatılmasını rica ediyorum."}
+],
+"S2": [
+{"m1": "O kadar para verip aldığım {order} numaralı sipariş arızalı çıktı, derhal iade talebini açar mısınız?"},
+{"m1": "{order} nolu siparişimdeki pahalı cihaz maalesef kırık çıktı iade kaydı oluşturulsun lütfen"},
+{"m1": "{order} numarasıyla gelen değerli ürün bozuk çıktı, iade talebimin açılmasını istiyorum."}
+],
+"S3": [
+{"m1": "{order} numaralı siparişimi iade etmek istiyorum.", "m2": "Aslında bir kusuru yok, sadece artık istemiyorum o yüzden vazgeçtim."},
+{"m1": "merhaba {order} nolu siparişi iade edecektim", "m2": "üründe sıkıntı yok bayağıdır bende ama fikrimi değiştirdim hepsi bu"},
+{"m1": "{order} siparişimi iade etmek niyetindeyim.", "m2": "Geçen gün elime geçmişti ama sonradan kullanmak istemediğimi fark ettim."}
+],
+"S4": [
+{"m1": "{order} numaralı siparişimde yanlış ürün geldi, iade talebi açar mısınız?", "m2": "Evet onaylıyorum, hemen iade edilsin lütfen."},
+{"m1": "selam {order} nolu siparişim yanlış gönderilmiş acil iade açalım", "m2": "tamamdır gösterdiğiniz özeti onaylıyorum."},
+{"m1": "{order} numarasıyla sipariş ettiğim ürün yanlış geldi, iade talebi oluşturur musunuz?", "m2": "Yazılanları kabul ediyorum, onay veriyorum."}
+],
+"_chosen_by_user_2026-10-20": {"S1": 3, "S2": 1, "S3": 3, "S4": 1}
+}

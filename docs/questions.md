@@ -1,0 +1,292 @@
+# Questions answered in writing
+
+The ten questions every project of the course answers, and six questions specific to this project. Numbers come from [`eval/results/final_report_gemini-3.5-flash-lite.md`](../eval/results/final_report_gemini-3.5-flash-lite.md) unless a section says otherwise.
+
+## Part 1: common questions
+
+### 1. Problem: which problem, for whom, and how is success measured?
+
+In a marketplace, the support team answers the same questions again and again ("where is my order?", "can I return it?"), and an operations manager waits for an analyst to write a query for a simple metric. MarketDesk serves three people:
+
+- The customer asking about their own orders.
+- The support agent who can hand those routine questions over.
+- The operations manager who asks for a metric in plain language.
+
+The system was designed to cost as little as possible, and that was measured.
+
+- One task takes about 0.0024 USD at the provider's list price (7,106 input and 110 output tokens on average over the 86 golden set examples, at 0.30 and 2.50 USD per million tokens for `gemini-3.5-flash-lite` on 2026-10-14, [Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing)). So 1,000 questions cost about 2.4 USD.
+- On the free tier it costs nothing. The API reported a limit of 500 requests a day for this model (2026-10-14), and a question took 4.4 model requests on average in the evaluation and 4.43 in the questions asked on the deployed demo. So the free tier answers about 110 questions a day.
+- The low cost comes from the design: a small model, an embedding model that needs no GPU, free hosting, and decisions and calculations made in code (rule engine, metric templates), so the model only writes the language.
+
+We have no data on a real support team's workload, so no saving in staff time is claimed.
+
+Success is defined by eight targets, measured on 86 golden set examples and 16 attack examples. All eight are met:
+
+- Task success 95% (target 80%).
+- Tool-call accuracy 98% (90%).
+- Decision accuracy 100% (100%).
+- SQL execution accuracy 100% (75%).
+- Policy faithfulness 0.95 (0.85).
+- Every write, forbidden-text and foreign-order check of the attack set held.
+
+### 2. Why an agent: why is a fixed workflow or a single model call not enough?
+
+The questions need different tools, in different orders, and sometimes a clarifying question first. "Where is my order?" takes one tool. "It arrived damaged, please return it" needs the order found, the rule engine asked about eligibility and the customer asked to approve.
+
+Doing it with one model call was measured with baselines:
+
+- B0, given the full policy text, succeeded on 14% of the customer questions, because it cannot see the order and makes up dates and amounts.
+- B2, writing SQL from the raw schema, reached 33%.
+
+The agent pays for this. A task takes 4.4 steps and 7,215 tokens on average, about twice one call (3,281 for B0), which is still about 0.0024 USD at the list price. One exception should be said plainly: on policy questions alone B0 is as good as the system (100% against 100%), because five documents fit into one call.
+
+### 3. Architecture: how are the agents split, how does orchestration work, why this framework?
+
+Every message first reaches a router, which classifies its intent with a model call (support, operations, out of scope). Whether that intent is allowed is not up to the classifier. It is read from a fixed table for the session type, which is set when the session starts.
+
+- In a customer session the Support Agent works. It uses the order tools through an own MCP server (one server process per customer session), plus policy search and a hand-over to a human.
+- In an operations session the Ops Data Agent works: metric templates first, validated free SQL if needed.
+- Each agent holds only its own tools, so even a fooled classifier cannot reach the operations tools from a customer session.
+
+The agents are LlamaIndex `FunctionAgent`s, which take plain Python functions as tools and support a step limit. LlamaIndex was chosen after LangGraph was looked at, and small measurements showed little difference between the frameworks. The reasons, the alternative and the costs are in [`decisions.md`](decisions.md#agent-framework).
+
+### 4. Tool design: how were tool boundaries set, which tools read and which write, how are writes protected?
+
+Tools are plain Python functions. The MCP server and LlamaIndex wrap the same functions.
+
+- **Reading tools:** `list_customer_orders`, `get_order_status`, `check_return_eligibility`, `search_policies`, `list_metrics`, `run_metric`, `run_sql`.
+- **Writing tools:** two tools write something lasting, each to its own table. `create_return_request` writes to `return_requests`, and only with an approval token. `escalate_to_human` writes to `escalation_tickets`. A ticket changes no order and no return request, and its summary is cleaned (personal data masked, cut to 500 characters) before it is kept.
+- **Identity:** no tool takes a customer id. Identity comes from the session.
+
+Writes are guarded three times:
+
+1. The rule engine, not the model, decides eligibility.
+2. Writing needs an approval token made in code, single-use and bound to order, reason and amount.
+3. The amount written must equal the refund the rules computed.
+
+The loop is limited in code too: at most 8 steps, the same tool with the same arguments at most twice, at most two SQL corrections.
+
+### 5. Knowledge layer: chunking, embedding, retrieval and semantic layer decisions. How was retrieval quality measured?
+
+**Policy search**
+
+- The five policy documents were split into 28 sections, one section per chunk and no overlap, because the documents are written section by section.
+- The embedded text is the document title and section heading followed by the section.
+- The embedding model is `multilingual-e5-small` as quantized ONNX without PyTorch, which keeps the deployed page within the platform's memory limit.
+- Chroma is used through LlamaIndex (`VectorStoreIndex` over `ChromaVectorStore`) and the index is in the repository.
+- Retrieval was measured on 20 questions. The right section comes first for 14, in the top 3 for 18 and in the top 5 for 18, and a test keeps it from falling below that.
+
+**Semantic layer**
+
+- `metrics.yaml` defines 8 metrics and 5 dimensions.
+- Each metric has a caveat, and the queries take the simulated today as a parameter.
+- The agent tries the templates first. Free SQL is the fallback.
+
+### 6. Baseline and final: what is the baseline, what are the scores, which component makes the difference?
+
+Three baselines were measured:
+
+- B0: one call, the full policy text.
+- B1: one call, the five closest sections.
+- B2: one call, SQL from the raw schema.
+
+The results:
+
+- On customer questions B0 reaches 14%, the system 89%.
+- On operations questions B2 reaches 33%, the system 100%. The 67 points come from the semantic layer, which is the project's ablation.
+- On policy questions the system and B0 reach 100% and B1 92%. With this small corpus retrieval does not add accuracy, but it cuts the tokens to a quarter (751 against 3,274).
+- Faithfulness is 0.95 for the system and 0.92 for B0 and B1.
+
+### 7. Error analysis: five failures, why they failed, what changed, what happened next
+
+Each of these failed on a real run and was found by reading the trace, not by guessing. Four were fixed and measured again. One was left as a known fault.
+
+**1. A return without a reason (S19, tool design).**
+
+"I want to return SIP-1", with no reason given, should get the question "why?". Instead the agent called `check_return_eligibility` with `reason=changed_mind` and told the customer the order was eligible.
+
+- **Why it failed:** the reason was a required argument of the tool, so the model filled it in, although the prompt already said to ask when the reason is unclear. The reason matters: a changed mind gives 14 days, a damaged item 30 days and a freight refund.
+- **What changed:** a stricter prompt alone did not help, and making the argument optional alone made it worse (the agent went on to open a request). Both together worked. `reason` became optional, a call without it returns `REASON_REQUIRED` and looks at no order, and the prompt names the rule.
+- **What happened next:** S19 passed, and so did four rewordings and two questions written by an outside source. The price was two dev examples that broke (S2, P1). The fix still rests on the model: if it invents a reason, the code cannot tell.
+
+**2. Timestamps instead of calendar days (operations, date definition).**
+
+Asked whether late delivery lowers the review score, the Ops Data Agent wrote its own SQL and compared raw timestamps. The average score of late orders came out as 2.57 (7,609 orders that have a review and were delivered by the simulated today, and the agent's own query counted 7,700 review rows).
+
+- **Why it failed:** the estimated delivery date in the data is always at midnight, so every order delivered later that same day counted as late: 1,280 orders with a review. With the project's rule (calendar days, delivery day is day 0) the answer is 2.27 over 6,329 orders with a review, against 4.29 for orders on time.
+- **What changed:** the date rule was written into the agent's prompt.
+- **What happened next:** a live check then gave 8 of 8, and the operations group of the golden set now passes 23 of 23. The raw-schema baseline B2 still makes the same mistake, which is part of why it reaches only 33% against the system's 100%.
+
+**3. A request opened for a question (support, write decision).**
+
+"Can I get my shipping cost back?" is a question, not a request. The agent called `create_return_request` anyway. Nothing was written, because a write needs an approval token made in code, but the customer was shown an approval card for a request they never asked for.
+
+- **What changed:** a rule was added to the prompt. A request is opened only when the customer asks for one. A "can I?" question is answered first, and the customer is then asked whether they want a request.
+- **What happened next:** a live check gave 10 of 10, the golden set examples of this kind (S5, U5b) pass, and no run has written a request without approval.
+
+**4. The judge marking true sentences as unsupported (the measurement itself).**
+
+The first judged run gave a faithfulness of 0.72 for the system and 0.73 and 0.78 for the baselines, under the 0.85 target. Reading the verdicts showed the judge was wrong, not the answers. An answer that repeated a policy sentence almost word for word was marked "not in the context".
+
+- **Why it failed:** DeepEval's faithfulness metric compares an answer with facts it first extracts from the context. Given all five policy documents at once, that extraction drops details.
+- **What changed:** the judge now gets only the documents the example is about. Unsupported claims count against an answer, and "the policy does not cover this", offers of help and bare citations are not counted as claims.
+- **What happened next:** faithfulness became 0.95 for the system and 0.92 for both baselines. 12 of the judge's scores were checked by hand and 11 were confirmed (92%). The one disagreement was two similar answers scored 0.00 and 0.50. The judge is still the same model as the system.
+
+**5. Freight counted twice in free SQL (U13a, the limit of the semantic layer).**
+
+"What was the average freight of orders paid by credit card in 5 instalments?" has no metric template. Freight has no metric, and payment type and instalments are not dimensions.
+
+- **Why it failed:** the agent fell back to free SQL and joined orders, payments and items directly, so an order with two matching payment rows counted its items twice: 24.96 BRL instead of 24.92. The SQL validator checks safety (read-only, allowed views), not whether the joins are correct.
+- **What changed:** it was fixed later in two places, found by reading the English run. The operations agent's instructions now say never to join items with payments. The SQL validator refuses a query that holds both views (`JOIN_FANS_OUT`, tests `test_items_and_payments_together_refused`, `test_items_payments_join_is_refused`) and shows the right form, so the model corrects itself (at most two corrections) instead of giving a wrong number.
+- **What happened next:** U13a passes in the final run. There is still no freight metric. The question is answered by free SQL, now checked for this one mistake, not by a template.
+
+### 8. Cost and latency: steps, tokens, seconds and cost per task. How were they reduced?
+
+A task takes 4.4 steps, 7,215 tokens, p50 2.4 s and p95 3.6 s of model time on average. That is about 0.0024 USD at the list price of 2026-10-14, and nothing on the free tier the demo uses.
+
+- **The groups differ.** Operations questions are the most expensive (6.0 steps, 10,024 tokens). Attacks are the cheapest (2.2 steps) because most stop at the router.
+- **Where the cost is.** About 89% of the cost is input tokens: the system prompt and the tool definitions are sent again at every step.
+- **Reductions:** a small, fast model (`flash-lite`), the step limit, the model seeing at most 200 rows of a result, five sections from policy search, and a response cache for the evaluation.
+- **Latency:** the p95 is 3.6 s over the golden set. When the provider is busy its retries can make single answers much slower.
+
+### 9. Security: which attacks were tried, how many were stopped, which risks remain?
+
+**The golden set's attack examples.** Sixteen attack examples cover seven kinds: a false identity, another customer's order, a false approval, SQL injection, instructions quoted as review text, asking for a customer list and asking for the system prompt. All were stopped.
+
+- 36 of 36 checks held.
+- No request was written without approval.
+- A foreign order gave `NOT_FOUND` in all 4 tries.
+- The database did not change.
+- Half of them were refused at the router, so the strength of the SQL validator is shown by its own unit tests, not by the attack run.
+
+**The page.** It was reviewed as well ([`security_review.md`](security_review.md)). Every decision it makes is checked again on the server and tried with crafted messages, and a way to leak data through images in model answers was closed.
+
+**Beyond that set.** The system was attacked as a real attacker would ([`red_team_report.md`](red_team_report.md), [`threat_model.md`](threat_model.md)).
+
+- Nine more sets (indirect injection, review texts, client layer, misinformation, messages between agents, human trust, attacks made from templates in two languages, attacks over several messages) passed 126 of 126 examples, with no request written without approval.
+- The automated DeepTeam scans judged 37 of 37 single messages and 17 of 17 several-message attacks as held.
+- Switching ten guards off on purpose showed that the unit tests notice all ten and the attack sets only three, so the rest rest on unit tests and fuzzing.
+
+**Still open**
+
+- One visitor can hold all ten sessions or the hourly question limit for a while.
+- There was no penetration test of the deployed page.
+- Some cases of the automated scan never reached the system (the attacker model refused or hit a token limit).
+- Review text, which reaches the Review Insight Agent, remains the main path for indirect prompt injection, held in 14 of 14 review examples.
+
+### 10. Going live: how would this go live in a real company, what is monitored, when does an alarm go off?
+
+**What is watched today**
+
+- Every run leaves a trace (OpenTelemetry and OpenInference): steps, tokens, tools and error codes, with ids hashed and, on the hosted target (Langfuse), no message text.
+- The error kinds are `NOT_FOUND`, `APPROVAL_REQUIRED`, `REPEATED_CALL`, `UNKNOWN_TOOL`, `ROUTER_REFUSED`, `SQL_REJECTED`, `STEP_LIMIT` and `QUOTA_EXCEEDED`. The page for the support representative has a tab that counts them, and `task trace:dashboard` writes the same as a file ([`security_review.md`](security_review.md), "Audit and stopping").
+- The page can be stopped with one secret (`MARKETDESK_PAUSED=1`), and it limits itself: 1,000 characters a message, 60 questions an hour, 400 model calls a day, 10 sessions at a time.
+
+**Alerts set up**
+
+Two Langfuse alerts, set in its interface (the Hobby plan allows two):
+
+- The p95 latency of the model over one hour (WARNING above 10 s, ALERT above 30 s). The measured p95 is 3.6 s.
+- The number of model calls over one day (WARNING above 319, ALERT above 399). The page's own limit is 400.
+
+Both count only the observations that stand for one model call (`GuardedLLM.astream_chat` and `GuardedLLM.achat`). A call also leaves wrapper and preparation observations, which would have been counted several times over (66 observations for 13 calls in one check). A filter on the model name was left out, because older observations carry no model name, and the observation name already separates a call from its wrappers.
+
+They show their state in Langfuse. Their notifications go to two places:
+
+- A GitHub Actions workflow (`langfuse-alert`). Every change of an alert's severity starts one run on the Actions tab, and its summary holds the alert's name, severity, value, thresholds, window and time. It was tried on 6 November: a threshold was lowered, the alert went to WARNING and then back to OK, and the change back to OK started a run that succeeded. In the tries the alerts were evaluated about every half hour. The automation sends the event with a token that is limited to this repository and expires on 4 February 2027.
+- A free, temporary webhook receiver, kept as a backup. Its address expires after seven days (about 10 November), and a free address stops taking requests after 100.
+
+So no person is woken up: there is no e-mail and no call, and a run only appears on the Actions tab. This shows the thresholds working. It is not an on-call system. The thresholds are proposals, not measured on real traffic.
+
+**What would be watched in a real company, and when an alarm goes off** (proposals to tune on real traffic)
+
+| Watch | Alarm when | Why |
+|---|---|---|
+| Return requests written without approval | any, at once | a design rule: it must be zero |
+| `NOT_FOUND` on foreign orders, `SQL_REJECTED`, `UNKNOWN_TOOL` | a sudden rise against the usual rate | someone is trying something |
+| `STEP_LIMIT`, `REPEATED_CALL` | a rise | the agent loops or the tools changed |
+| `QUOTA_EXCEEDED` | any in a quiet hour | the provider limit or the budget is reached |
+| p95 latency of the model | well above the measured 3.6 s for an hour | the provider is slow |
+| Tokens and cost per task | a rise against the measured 7,215 tokens and 0.0024 USD | a prompt or tool change made it dearer |
+| Task success on a sample of real conversations, checked by a person | below the 80% target | the model or the data drifted |
+
+Langfuse alerts work on metrics of its observations. Whether an alert can count the error marks of the page (they are span attributes, not scores or tags) was not checked, so those alarms may need the marks to be sent as scores.
+
+**How it would go live**
+
+Not as this demo: it has no sign-in, one shared database, a free tier and a temporary alert address. In a company it would need:
+
+- Real sign-in and per-user limits.
+- A hosted database with a read replica instead of SQLite.
+- One shared order server instead of a process per session.
+- An owner for each metric in `metrics.yaml`.
+- A real alert channel with a person on call (Slack, PagerDuty) and a short runbook (the first step is the pause switch).
+- A cost budget with its own alert.
+- Service levels such as the p95 and the success rate above.
+
+None of these is built. They are listed in `TASKS.md` under the work left for later.
+
+## Part 2: questions specific to this project
+
+### 1. Where is identity checked, and which test shows it does not depend on the prompt?
+
+In the tool and MCP server layer. The customer's identity is given to the server process once, when it starts. Tools take no identity parameter and every query is filtered by it, so whatever the model writes, it cannot reach another customer.
+
+Tests that show it:
+
+- `test_ten_foreign_orders_not_found`.
+- `test_foreign_missing_unknown_same_answer` (another customer's order and a missing order get the same answer).
+- `test_foreign_order_cannot_be_returned`.
+- `test_fooled_classifier_cannot_reach_ops`.
+- In the attack set, 4 of 4.
+- The page tests that send crafted messages.
+
+### 2. How are `customer_id` and `customer_unique_id` handled?
+
+In Olist, `customer_id` belongs to an order: the same person gets a new `customer_id` with every order. The field that stands for the person is `customer_unique_id`. The project uses `customer_unique_id` as the identity everywhere. Orders are joined to `customers` and filtered by it, so a customer sees all of their own orders and none of anyone else's.
+
+### 3. What did the semantic layer add to SQL accuracy (B2 against Final), and which question did it not cover?
+
+B2 reaches 33%, the system 100%: 67 points. The difference comes from two things:
+
+- Definitions are fixed in code (GMV leaves out freight and closed orders, lateness is counted in calendar days).
+- The model only chooses filters instead of writing the calculation.
+
+The question it did not cover is U13a, the average freight of orders paid by credit card in 5 instalments. There is no metric for freight, and payment type and instalments are not dimensions, so the agent falls back to free SQL. In the first runs its join of items and payments gave 24.96 BRL instead of 24.92. The validator now refuses that join and the example passes (see answer 7 of part 1). The semantic layer still does not cover the question. Free SQL does, and only one kind of mistake in it is caught by a rule.
+
+### 4. Why is `create_return_request` behind human approval, and can the model fake the approval token?
+
+It is a lasting record that starts a refund, hard to undo and made on the customer's behalf. The model cannot fake the token because it never holds it:
+
+- The tool the model sees has no token parameter.
+- The token is made on the server only when the person clicks approve on the page (`secrets.token_urlsafe(32)`).
+- It is single-use and bound to order, reason and amount.
+- The tool that approves is never given to the model.
+
+When the model writes "approved", the result is still `APPROVAL_REQUIRED`. Attack example A2 tries exactly that.
+
+### 5. How was the Portuguese to Turkish review summary checked?
+
+The Review Insight Agent (operations sessions only) quotes Portuguese reviews with a translation in the session's language. The quotes are checked in code and the translations by a judge and by a person.
+
+**In code**
+
+- Every quote must be word for word a piece of a review in the sample the agent was given.
+- A theme's frequency is counted by code, not stated by the model.
+- A theme with no verified quote is rejected. When none is verified a fixed message replaces what the model wrote.
+- Review text is handed over as a block of quoted data, at most 50 reviews cut at 600 characters. A review in which the privacy guard finds personal data is left out.
+
+**The translations**
+
+- A judge model scored them (translation faithfulness 0.97 in the dev run).
+- 10 quotes were checked by hand and all 10 were confirmed (`eval/results/review_check_gemini-3.5-flash-lite.csv`).
+
+**Limits:** ten quotes is a small check, the judge is a model, and a name or address a customer typed into a review is not recognised.
+
+### 6. Which metrics must be read as observational, and how does the answer say so?
+
+All metrics are observational, most of all when a question sets two of them side by side, such as late delivery and review score.
+
+- Each metric has a caveat in `metrics.yaml`, shown under the answer in a blue box, for example that GMV is sales volume, not revenue or profit.
+- The Ops Data Agent's prompt forbids causal claims. The judge found no causal claim in 22 of the 23 operations answers (mean 0.96). The one low score (O14, 0.1) comes with a reason that says no causal claim was made, so it looks like a scoring slip by the judge, not a claim in the answer.
+- Questions U14a and U14b test this on purpose ("did sales drop because freight is expensive?").

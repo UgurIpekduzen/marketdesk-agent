@@ -1,0 +1,134 @@
+{
+ "questions": 20,
+ "sections": 28,
+ "runs": 3,
+ "top": 5,
+ "same_sections": 20,
+ "max_score_gap": 0.0,
+ "per_question": [
+  {
+   "same_sections": true,
+   "max_score_gap": 0.0
+  },
+  {
+   "same_sections": true,
+   "max_score_gap": 0.0
+  },
+  {
+   "same_sections": true,
+   "max_score_gap": 0.0
+  },
+  {
+   "same_sections": true,
+   "max_score_gap": 0.0
+  },
+  {
+   "same_sections": true,
+   "max_score_gap": 0.0
+  },
+  {
+   "same_sections": true,
+   "max_score_gap": 0.0
+  },
+  {
+   "same_sections": true,
+   "max_score_gap": 0.0
+  },
+  {
+   "same_sections": true,
+   "max_score_gap": 0.0
+  },
+  {
+   "same_sections": true,
+   "max_score_gap": 0.0
+  },
+  {
+   "same_sections": true,
+   "max_score_gap": 0.0
+  },
+  {
+   "same_sections": true,
+   "max_score_gap": 0.0
+  },
+  {
+   "same_sections": true,
+   "max_score_gap": 0.0
+  },
+  {
+   "same_sections": true,
+   "max_score_gap": 0.0
+  },
+  {
+   "same_sections": true,
+   "max_score_gap": 0.0
+  },
+  {
+   "same_sections": true,
+   "max_score_gap": 0.0
+  },
+  {
+   "same_sections": true,
+   "max_score_gap": 0.0
+  },
+  {
+   "same_sections": true,
+   "max_score_gap": 0.0
+  },
+  {
+   "same_sections": true,
+   "max_score_gap": 0.0
+  },
+  {
+   "same_sections": true,
+   "max_score_gap": 0.0
+  },
+  {
+   "same_sections": true,
+   "max_score_gap": 0.0
+  }
+ ],
+ "direct": {
+  "search": {
+   "searches_per_run": 100,
+   "p50_ms": [
+    5.2,
+    6.3
+   ],
+   "p95_ms": [
+    7.7,
+    8.3
+   ]
+  },
+  "open_ms": [
+   15.7,
+   17.9
+  ],
+  "build_ms": [
+   670.3,
+   931.9
+  ],
+  "size_kb": 540
+ },
+ "llama_index": {
+  "search": {
+   "searches_per_run": 100,
+   "p50_ms": [
+    5.9,
+    7.2
+   ],
+   "p95_ms": [
+    8.3,
+    11.3
+   ]
+  },
+  "open_ms": [
+   17.9,
+   20.8
+  ],
+  "build_ms": [
+   713.4,
+   825.7
+  ],
+  "size_kb": 600
+ }
+}

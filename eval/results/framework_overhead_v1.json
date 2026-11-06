@@ -1,0 +1,66 @@
+{
+ "runs": 200,
+ "scenarios": [
+  {
+   "model_calls": 1,
+   "runs": 200,
+   "model_calls_made": [
+    1
+   ],
+   "stopped_at_step_limit": 0,
+   "build_ms_p50": 0.64,
+   "run_ms_p50": 4.59,
+   "run_ms_p95": 5.96,
+   "run_ms_max": 42.0,
+   "step_ms_p50": 4.59,
+   "step_ms_p95": 5.96
+  },
+  {
+   "model_calls": 2,
+   "runs": 200,
+   "model_calls_made": [
+    2
+   ],
+   "stopped_at_step_limit": 0,
+   "build_ms_p50": 0.66,
+   "run_ms_p50": 8.64,
+   "run_ms_p95": 10.39,
+   "run_ms_max": 13.23,
+   "step_ms_p50": 4.32,
+   "step_ms_p95": 5.2
+  },
+  {
+   "model_calls": 4,
+   "runs": 200,
+   "model_calls_made": [
+    4
+   ],
+   "stopped_at_step_limit": 0,
+   "build_ms_p50": 0.66,
+   "run_ms_p50": 16.22,
+   "run_ms_p95": 18.82,
+   "run_ms_max": 57.52,
+   "step_ms_p50": 4.06,
+   "step_ms_p95": 4.7
+  },
+  {
+   "model_calls": 7,
+   "runs": 200,
+   "model_calls_made": [
+    7
+   ],
+   "stopped_at_step_limit": 0,
+   "build_ms_p50": 0.68,
+   "run_ms_p50": 27.78,
+   "run_ms_p95": 32.37,
+   "run_ms_max": 66.96,
+   "step_ms_p50": 3.97,
+   "step_ms_p95": 4.62
+  }
+ ],
+ "model": {
+  "examples": 25,
+  "model_calls": 83,
+  "ms_per_call": 751.4
+ }
+}

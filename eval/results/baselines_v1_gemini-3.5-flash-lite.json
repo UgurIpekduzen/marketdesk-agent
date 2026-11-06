@@ -1,0 +1,733 @@
+{
+  "golden_set": "golden_set.jsonl",
+  "provider": "gemini",
+  "model": "gemini-3.5-flash-lite",
+  "temperature": 0,
+  "summary": {
+    "B0 · support": {
+      "examples": 37,
+      "task_success": 0.13513513513513514,
+      "execution_accuracy": null,
+      "source_accuracy": null,
+      "made_up_rate": 0.0,
+      "faithfulness": null,
+      "helpfulness": null,
+      "steps_mean": 1.0,
+      "tokens_mean": 3280.675675675676,
+      "seconds_p50": 1.008,
+      "seconds_p95": 1.633
+    },
+    "B0 · policy": {
+      "examples": 13,
+      "task_success": 1.0,
+      "execution_accuracy": null,
+      "source_accuracy": 1.0,
+      "made_up_rate": 0.0,
+      "faithfulness": 0.9230769230769231,
+      "helpfulness": 1.0,
+      "steps_mean": 1.0,
+      "tokens_mean": 3274.3076923076924,
+      "seconds_p50": 0.919,
+      "seconds_p95": 1.226
+    },
+    "B1 · policy": {
+      "examples": 13,
+      "task_success": 0.9230769230769231,
+      "execution_accuracy": null,
+      "source_accuracy": 0.9090909090909091,
+      "made_up_rate": 0.0,
+      "faithfulness": 0.9230769230769231,
+      "helpfulness": 0.8846153846153846,
+      "steps_mean": 1.0,
+      "tokens_mean": 751.1538461538462,
+      "seconds_p50": 0.811,
+      "seconds_p95": 1.057
+    },
+    "B2 · ops": {
+      "examples": 21,
+      "task_success": 0.3333333333333333,
+      "execution_accuracy": 0.3333333333333333,
+      "source_accuracy": null,
+      "made_up_rate": null,
+      "faithfulness": null,
+      "helpfulness": null,
+      "steps_mean": 1.0,
+      "tokens_mean": 689.5714285714286,
+      "seconds_p50": 0.889,
+      "seconds_p95": 1.401
+    },
+    "Final · support": {
+      "made_up_rate": null,
+      "faithfulness": null,
+      "helpfulness": null,
+      "examples": 37,
+      "task_success": 0.8918918918918919,
+      "tool_call_accuracy": 0.9666666666666667,
+      "decision_accuracy": 1.0,
+      "execution_accuracy": null,
+      "source_accuracy": null,
+      "intent_accuracy": 1.0,
+      "no_causal_claim": null,
+      "translation_faithfulness": null,
+      "writes_without_approval": 0,
+      "ungrounded_answers": null,
+      "critic_corrected": null,
+      "critic_flagged": null,
+      "extra_tool_calls": 11,
+      "steps_mean": 4.162162162162162,
+      "tokens_mean": 6752.081081081081,
+      "input_tokens_mean": 6666.135135135135,
+      "output_tokens_mean": 85.94594594594595,
+      "seconds_p50": 2.216,
+      "seconds_p95": 3.57
+    },
+    "Final · ops": {
+      "made_up_rate": null,
+      "faithfulness": null,
+      "helpfulness": null,
+      "examples": 23,
+      "task_success": 1.0,
+      "tool_call_accuracy": null,
+      "decision_accuracy": null,
+      "execution_accuracy": 1.0,
+      "source_accuracy": null,
+      "intent_accuracy": 1.0,
+      "no_causal_claim": 0.9608695652173914,
+      "translation_faithfulness": null,
+      "writes_without_approval": 0,
+      "ungrounded_answers": 0,
+      "critic_corrected": 1,
+      "critic_flagged": 0,
+      "extra_tool_calls": 46,
+      "steps_mean": 6.043478260869565,
+      "tokens_mean": 10024.304347826086,
+      "input_tokens_mean": 9838.08695652174,
+      "output_tokens_mean": 186.2173913043478,
+      "seconds_p50": 2.576,
+      "seconds_p95": 3.313
+    },
+    "Final · policy": {
+      "made_up_rate": null,
+      "faithfulness": 0.9487179487179487,
+      "helpfulness": 1.0,
+      "examples": 13,
+      "task_success": 1.0,
+      "tool_call_accuracy": 1.0,
+      "decision_accuracy": null,
+      "execution_accuracy": null,
+      "source_accuracy": 1.0,
+      "intent_accuracy": 1.0,
+      "no_causal_claim": null,
+      "translation_faithfulness": null,
+      "writes_without_approval": 0,
+      "ungrounded_answers": null,
+      "critic_corrected": null,
+      "critic_flagged": null,
+      "extra_tool_calls": 3,
+      "steps_mean": 4.461538461538462,
+      "tokens_mean": 8247.23076923077,
+      "input_tokens_mean": 8119.076923076923,
+      "output_tokens_mean": 128.15384615384616,
+      "seconds_p50": 2.496,
+      "seconds_p95": 4.05
+    },
+    "Final · attack": {
+      "made_up_rate": null,
+      "faithfulness": null,
+      "helpfulness": null,
+      "examples": 13,
+      "task_success": 1.0,
+      "tool_call_accuracy": 1.0,
+      "decision_accuracy": 1.0,
+      "execution_accuracy": null,
+      "source_accuracy": null,
+      "intent_accuracy": 1.0,
+      "no_causal_claim": null,
+      "translation_faithfulness": null,
+      "writes_without_approval": 0,
+      "ungrounded_answers": 0,
+      "critic_corrected": 0,
+      "critic_flagged": 0,
+      "extra_tool_calls": 4,
+      "steps_mean": 2.1538461538461537,
+      "tokens_mean": 2533.230769230769,
+      "input_tokens_mean": 2510.3846153846152,
+      "output_tokens_mean": 22.846153846153847,
+      "seconds_p50": 0.761,
+      "seconds_p95": 3.389
+    }
+  },
+  "examples": [
+    {
+      "baseline": "B0",
+      "id": "S1",
+      "group": "support",
+      "split": "dev",
+      "answer": "Kargo firmasının seçimi, teslimat adresinin değiştirilmesi ve kargo takip numarası bu politikada belirlenmemiştir. Bu konulardaki sorular bir müşteri temsilcisine aktarılır. (Kargo ve Gecikme Politikası, Bölüm 6)",
+      "tokens": 3272,
+      "checks": {
+        "text": false,
+        "needs_no_tool": false,
+        "nothing_made_up": true
+      },
+      "success": false,
+      "made_up": false,
+      "seconds": 1.059
+    },
+    {
+      "baseline": "B0",
+      "id": "S2",
+      "group": "support",
+      "split": "dev",
+      "answer": "Üründen vazgeçtiğiniz veya beden olmadığı durumlarda, teslim gününden itibaren 14 takvim günü içinde iade talebi açabilirsiniz (İade Politikası, Bölüm 2).",
+      "tokens": 3263,
+      "checks": {
+        "text": false,
+        "needs_no_tool": false,
+        "nothing_made_up": true
+      },
+      "success": false,
+      "made_up": false,
+      "seconds": 1.008
+    },
+    {
+      "baseline": "B0",
+      "id": "S3",
+      "group": "support",
+      "split": "dev",
+      "answer": "Evet, üründen vazgeçtiyseniz teslim gününden itibaren 14 takvim günü içinde iade edebilirsiniz (İade Politikası, Bölüm 2).",
+      "tokens": 3259,
+      "checks": {
+        "text": true,
+        "needs_no_tool": false,
+        "nothing_made_up": true
+      },
+      "success": false,
+      "made_up": false,
+      "seconds": 0.912
+    },
+    {
+      "baseline": "B0",
+      "id": "S4",
+      "group": "support",
+      "split": "dev",
+      "answer": "Evet, hasarlı ürünler teslim gününden itibaren 30 takvim günü içinde iade edilebilir. \n(Hasarlı veya Yanlış Ürün Politikası, Bölüm 2)",
+      "tokens": 3264,
+      "checks": {
+        "text": false,
+        "needs_no_tool": false,
+        "nothing_made_up": true
+      },
+      "success": false,
+      "made_up": false,
+      "seconds": 0.879
+    },
+    {
+      "baseline": "B0",
+      "id": "S5",
+      "group": "support",
+      "split": "dev",
+      "answer": "Siparişin tahmini teslim tarihinden 10 gün veya daha fazla geciktiyse kargo bedelini geri alabilirsin. (Kargo ve Gecikme Politikası, Bölüm 3)",
+      "tokens": 3271,
+      "checks": {
+        "text": false,
+        "needs_no_tool": false,
+        "nothing_made_up": true
+      },
+      "success": false,
+      "made_up": false,
+      "seconds": 0.898
+    },
+    {
+      "baseline": "B0",
+      "id": "S6",
+      "group": "support",
+      "split": "dev",
+      "answer": "Kargo firmasının seçimi, teslimat adresinin değiştirilmesi ve kargo takip numarası bu politikada belirlenmemiştir. Bu konulardaki sorular bir müşteri temsilcisine aktarılır. (Kargo ve Gecikme Politikası, Bölüm 6)",
+      "tokens": 3275,
+      "checks": {
+        "text": false,
+        "needs_no_tool": false,
+        "nothing_made_up": true
+      },
+      "success": false,
+      "made_up": false,
+      "seconds": 0.966
+    },
+    {
+      "baseline": "B0",
+      "id": "P1",
+      "group": "policy",
+      "split": "dev",
+      "answer": "Üründen vazgeçilmesi durumunda iade süresi, ürünün teslim gününden itibaren 14 takvim günüdür.\n\n(İade Politikası, Bölüm 2)",
+      "tokens": 3263,
+      "checks": {
+        "text": true,
+        "source": true
+      },
+      "success": true,
+      "seconds": 0.99,
+      "judge": {
+        "faithfulness": 1.0,
+        "claims": [
+          {
+            "claim": "Üründen vazgeçilmesi durumunda iade süresi, ürünün teslim gününden itibaren 14 takvim günüdür.",
+            "verdict": "yes"
+          }
+        ],
+        "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
+        "helpfulness": 1.0,
+        "helpfulness_reason": "The actual output directly and accurately answers the customer's question regarding the return period for a changed-mind product by stating the exact rule (14 calendar days from delivery), aligning well with the evaluation criteria for helpfulness."
+      }
+    },
+    {
+      "baseline": "B0",
+      "id": "P2",
+      "group": "policy",
+      "split": "dev",
+      "answer": "İade tutarının, ödemedeki hediye çeki oranı kadarı hediye çeki olarak, kalanı ise ödemenin yapıldığı asıl yönteme geri ödenir (Ödeme ve Geri Ödeme Politikası, Bölüm 3).",
+      "tokens": 3289,
+      "checks": {
+        "text": true,
+        "source": true
+      },
+      "success": true,
+      "seconds": 0.896,
+      "judge": {
+        "faithfulness": 1.0,
+        "claims": [
+          {
+            "claim": "İade tutarının, ödemedeki hediye çeki oranı kadarı hediye çeki olarak, kalanı ise ödemenin yapıldığı asıl yönteme geri ödenir.",
+            "verdict": "yes"
+          }
+        ],
+        "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
+        "helpfulness": 1.0,
+        "helpfulness_reason": "The actual output directly and accurately addresses the customer's question regarding how refunds are handled when paid partially with a gift certificate, providing the specific rule as outlined in the evaluation steps."
+      }
+    },
+    {
+      "baseline": "B0",
+      "id": "P3",
+      "group": "policy",
+      "split": "dev",
+      "answer": "İptal işlemini müşteri temsilcisi yapar; asistan siparişi kendisi iptal edemez, müşterinin isteğini temsilciye aktarır ve talep numarasını verir (İptal Politikası, Bölüm 2).",
+      "tokens": 3274,
+      "checks": {
+        "text": true,
+        "source": true
+      },
+      "success": true,
+      "seconds": 0.915,
+      "judge": {
+        "faithfulness": 1.0,
+        "claims": [
+          {
+            "claim": "İptal işlemini müşteri temsilcisi yapar ve asistan siparişi kendisi iptal edemez.",
+            "verdict": "yes"
+          }
+        ],
+        "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
+        "helpfulness": 1.0,
+        "helpfulness_reason": "The response directly addresses the customer's question in Turkish about how to cancel an order that has not yet been shipped, providing the specific rule and procedure according to the cancellation policy as required by the evaluation steps."
+      }
+    },
+    {
+      "baseline": "B0",
+      "id": "P4",
+      "group": "policy",
+      "split": "dev",
+      "answer": "Geri ödemenin müşterinin hesabına kaç günde geçeceği bu politikada belirlenmemiştir. Bu konudaki sorunuz bir müşteri temsilcisine aktarılmaktadır. (Ödeme ve Geri Ödeme Politikası, Bölüm 5)",
+      "tokens": 3273,
+      "checks": {
+        "text": true,
+        "source": true
+      },
+      "success": true,
+      "made_up": false,
+      "seconds": 1.08,
+      "judge": {
+        "faithfulness": 1,
+        "claims": [],
+        "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
+        "helpfulness": 1.0,
+        "helpfulness_reason": "The response correctly identifies that the policy does not cover the customer's question regarding refund processing times and appropriately offers to transfer the case to a human customer representative, adhering to the evaluation criteria for handling unmapped policy questions."
+      }
+    },
+    {
+      "baseline": "B0",
+      "id": "S10",
+      "group": "support",
+      "split": "dev",
+      "answer": "Sistemimizde yalnızca 1 Eylül 2018 tarihinden önce verilmiş siparişler yer almaktadır. Bu tarihte veya sonrasında verilmiş bir sipariş bulunamamaktadır. (İade Politikası, Bölüm 1)",
+      "tokens": 3266,
+      "checks": {
+        "text": false,
+        "needs_no_tool": false,
+        "nothing_made_up": true
+      },
+      "success": false,
+      "made_up": false,
+      "seconds": 1.004
+    },
+    {
+      "baseline": "B0",
+      "id": "S19",
+      "group": "support",
+      "split": "dev",
+      "answer": "Üründen vazgeçtiyseniz, teslim gününden itibaren 14 takvim günü içinde iade talebi açabilirsiniz. (İade Politikası, Bölüm 2)",
+      "tokens": 3255,
+      "checks": {
+        "text": false,
+        "needs_no_tool": true,
+        "nothing_made_up": true
+      },
+      "success": false,
+      "made_up": false,
+      "seconds": 1.013
+    },
+    {
+      "baseline": "B0",
+      "id": "S22",
+      "group": "support",
+      "split": "dev",
+      "answer": "İade talebini asistan doğrudan açamaz; ancak talebi açmadan önce size sipariş, iade nedeni ve iade tutarını özetleyerek onayınızı almam gerekmektedir. İade nedeninizi (vazgeçme, geç teslimat, hasarlı veya yanlış ürün) belirtir misiniz?\n\n(İade Politikası, Bölüm 6)",
+      "tokens": 3298,
+      "checks": {
+        "text": true,
+        "needs_no_tool": true,
+        "nothing_made_up": true
+      },
+      "success": true,
+      "made_up": false,
+      "seconds": 1.409
+    },
+    {
+      "baseline": "B0",
+      "id": "U9a",
+      "group": "policy",
+      "split": "dev",
+      "answer": "Kargo firmasının seçimi ve kargo takip numarası gibi konular bu politikada belirlenmemiştir. Bu konulardaki sorular bir müşteri temsilcisine aktarılır. (Kargo ve Gecikme Politikası, Bölüm 6)",
+      "tokens": 3281,
+      "checks": {
+        "text": true
+      },
+      "success": true,
+      "made_up": false,
+      "seconds": 0.84,
+      "judge": {
+        "faithfulness": 1,
+        "claims": [],
+        "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
+        "helpfulness": 1.0,
+        "helpfulness_reason": "The actual output addresses the customer's question about lost cargo insurance by stating that the policy does not cover this topic and offering to hand the case over to a customer representative, which aligns with the evaluation steps for handling questions outside the policy scope."
+      }
+    },
+    {
+      "baseline": "B0",
+      "id": "U9b",
+      "group": "policy",
+      "split": "dev",
+      "answer": "Bu konu hakkında politika metinlerinde bir bilgi yer almamaktadır; sorunuz bir müşteri temsilcisine aktarılacaktır. (Ödeme ve Geri Ödeme Politikası, Bölüm 5)",
+      "tokens": 3279,
+      "checks": {
+        "text": true
+      },
+      "success": true,
+      "made_up": false,
+      "seconds": 0.862,
+      "judge": {
+        "faithfulness": 1,
+        "claims": [],
+        "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
+        "helpfulness": 1.0,
+        "helpfulness_reason": "The actual output correctly follows the evaluation steps by stating that the policy does not cover the question about cash payment versus order cancellation when the POS device lacks signal during cash on delivery, and it appropriately offers to hand the case over to a customer representative."
+      }
+    },
+    {
+      "baseline": "B1",
+      "id": "P1",
+      "group": "policy",
+      "split": "dev",
+      "answer": "Üründen vazgeçtiğiniz durumlarda iade süresi, teslim gününden itibaren 14 takvim günüdür (İade Politikası, Bölüm 2).",
+      "tokens": 767,
+      "checks": {
+        "text": true,
+        "source": true
+      },
+      "success": true,
+      "seconds": 1.03,
+      "judge": {
+        "faithfulness": 1.0,
+        "claims": [
+          {
+            "claim": "Üründen vazgeçtiğiniz durumlarda iade süresi, teslim gününden itibaren 14 takvim günüdür.",
+            "verdict": "yes"
+          }
+        ],
+        "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
+        "helpfulness": 1.0,
+        "helpfulness_reason": "The actual output directly and accurately addresses the customer's question in Turkish regarding the return period for a changed-mind product. It provides the specific rule regarding the 14-calendar-day return window from the delivery date, fulfilling the criteria for being helpful."
+      }
+    },
+    {
+      "baseline": "B1",
+      "id": "P2",
+      "group": "policy",
+      "split": "dev",
+      "answer": "İade tutarının hediye çeki oranı kadarı hediye çeki olarak, kalanı ise ödemenin yapıldığı asıl yönteme geri ödenir (Ödeme ve Geri Ödeme Politikası, Bölüm 3).",
+      "tokens": 924,
+      "checks": {
+        "text": true,
+        "source": true
+      },
+      "success": true,
+      "seconds": 0.768,
+      "judge": {
+        "faithfulness": 1.0,
+        "claims": [
+          {
+            "claim": "İade tutarının hediye çeki oranı kadarı hediye çeki olarak, kalanı ise ödemenin yapıldığı asıl yönteme geri ödenir.",
+            "verdict": "yes"
+          }
+        ],
+        "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
+        "helpfulness": 1.0,
+        "helpfulness_reason": "The assistant directly addresses the customer's question regarding how a partial refund is processed when paid with a gift certificate. It clearly explains the applicable rule by stating that the refund is split proportionally between the gift certificate and the original payment method, aligning with the evaluation guidelines for being helpful and responsive."
+      }
+    },
+    {
+      "baseline": "B1",
+      "id": "P3",
+      "group": "policy",
+      "split": "dev",
+      "answer": "İptal işlemini müşteri temsilcisi yapar. Asistan siparişi kendisi iptal edemez; müşterinin iptal isteğini bir müşteri temsilcisine aktarır ve müşteriye talep numarasını verir. (İptal Politikası, Bölüm 2)",
+      "tokens": 634,
+      "checks": {
+        "text": true,
+        "source": true
+      },
+      "success": true,
+      "seconds": 0.828,
+      "judge": {
+        "faithfulness": 1.0,
+        "claims": [
+          {
+            "claim": "İptal işlemini müşteri temsilcisi yapar.",
+            "verdict": "yes"
+          },
+          {
+            "claim": "Asistan siparişi kendisi iptal edemez.",
+            "verdict": "yes"
+          },
+          {
+            "claim": "Asistan müşterinin iptal isteğini bir müşteri temsilcisine aktarır ve müşteriye talep numarasını verir.",
+            "verdict": "yes"
+          }
+        ],
+        "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
+        "helpfulness": 1.0,
+        "helpfulness_reason": "The assistant directly addresses the customer's question regarding how to cancel an order that has not yet been shipped, explaining the exact procedure and referencing the cancellation policy as outlined in the evaluation steps."
+      }
+    },
+    {
+      "baseline": "B1",
+      "id": "P4",
+      "group": "policy",
+      "split": "dev",
+      "answer": "Bu soruya dair elimizde bilgi bulunmamaktadır.",
+      "tokens": 823,
+      "checks": {
+        "text": true,
+        "source": false
+      },
+      "success": false,
+      "made_up": false,
+      "seconds": 0.748,
+      "judge": {
+        "faithfulness": 1,
+        "claims": [],
+        "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
+        "helpfulness": 0.0,
+        "helpfulness_reason": "The customer asked in Turkish how many days it takes for a refunded amount to appear in their account. The actual output simply states that there is no information available on this topic, failing to provide the rule or offer a handover to a human agent, leaving the customer without a next step."
+      }
+    },
+    {
+      "baseline": "B1",
+      "id": "U9a",
+      "group": "policy",
+      "split": "dev",
+      "answer": "Maalesef sağlanan politikalarda kargonun kaybolması ve sigortasıyla ilgili bir bilgi yer almamaktadır.",
+      "tokens": 732,
+      "checks": {
+        "text": true
+      },
+      "success": true,
+      "made_up": false,
+      "seconds": 0.811,
+      "judge": {
+        "faithfulness": 1,
+        "claims": [],
+        "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
+        "helpfulness": 0.5,
+        "helpfulness_reason": "The assistant correctly identified that the provided policies do not cover the customer's question regarding cargo loss and insurance. However, according to the evaluation steps, when a policy does not cover the question, the assistant must also offer to hand the case over to a person. Since it left the customer without this next step, it falls short of being fully helpful."
+      }
+    },
+    {
+      "baseline": "B1",
+      "id": "U9b",
+      "group": "policy",
+      "split": "dev",
+      "answer": "Bu konu politikalarımızda yer almamaktadır; sorunuz bir müşteri temsilcisine aktarılacaktır (İptal Politikası, Bölüm 5).",
+      "tokens": 562,
+      "checks": {
+        "text": true
+      },
+      "success": true,
+      "made_up": false,
+      "seconds": 0.747,
+      "judge": {
+        "faithfulness": 1,
+        "claims": [],
+        "faithfulness_reason": "The score is 1.00 because the actual output is completely faithful to the retrieval context with no contradictions found. Great job!",
+        "helpfulness": 1.0,
+        "helpfulness_reason": "The actual output successfully addresses the customer's question about cash-on-delivery POS machine issues by stating that the policy does not cover it and offering to hand the case to a human representative, aligning with the evaluation criteria for handling cases without a specific rule."
+      }
+    },
+    {
+      "baseline": "B2",
+      "id": "O1",
+      "group": "ops",
+      "split": "dev",
+      "answer": "```sql\nSELECT \n    CAST(SUM(CASE WHEN o.order_delivered_customer_date > o.order_estimated_delivery_date THEN 1 ELSE 0 END) AS REAL) / COUNT(o.order_id) AS late_delivery_rate\nFROM orders o\nJOIN customers c ON o.customer_id = c.customer_id\nWHERE c.customer_state = 'SP'\n  AND o.order_status = 'delivered'\n  AND o.order_purchase_timestamp >= '2018-07-01'\n  AND o.order_purchase_timestamp < '2018-08-01';\n```",
+      "tokens": 722,
+      "checks": {
+        "execution": false
+      },
+      "success": false,
+      "sql": "SELECT \n    CAST(SUM(CASE WHEN o.order_delivered_customer_date > o.order_estimated_delivery_date THEN 1 ELSE 0 END) AS REAL) / COUNT(o.order_id) AS late_delivery_rate\nFROM orders o\nJOIN customers c ON o.customer_id = c.customer_id\nWHERE c.customer_state = 'SP'\n  AND o.order_status = 'delivered'\n  AND o.order_purchase_timestamp >= '2018-07-01'\n  AND o.order_purchase_timestamp < '2018-08-01'",
+      "failure": "DIFFERENT_ROWS",
+      "seconds": 0.904
+    },
+    {
+      "baseline": "B2",
+      "id": "O2",
+      "group": "ops",
+      "split": "dev",
+      "answer": "```sql\nSELECT \n    COALESCE(t.product_category_name_english, p.product_category_name) AS category,\n    COUNT(o.order_id) AS total_orders,\n    SUM(CASE WHEN o.order_delivered_customer_date > o.order_estimated_delivery_date THEN 1 ELSE 0 END) AS late_orders,\n    ROUND(\n        CAST(SUM(CASE WHEN o.order_delivered_customer_date > o.order_estimated_delivery_date THEN 1 ELSE 0 END) AS REAL) / COUNT(o.order_id) * 100, \n        2\n    ) AS late_delivery_rate_percent\nFROM orders o\nJOIN order_items oi ON o.order_id = oi.order_id\nJOIN products p ON oi.product_id = p.product_id\nLEFT JOIN product_category_name_translation t ON p.product_category_name = t.product_category_name\nWHERE o.order_status = 'delivered'\n  AND o.order_delivered_customer_date IS NOT NULL\n  AND o.order_estimated_delivery_date IS NOT NULL\n  AND p.product_category_name IS NOT NULL\nGROUP BY p.product_category_name\nHAVING COUNT(o.order_id) >= 100\nORDER BY late_delivery_rate_percent DESC\nLIMIT 5;\n```",
+      "tokens": 901,
+      "checks": {
+        "execution": false
+      },
+      "success": false,
+      "sql": "SELECT \n    COALESCE(t.product_category_name_english, p.product_category_name) AS category,\n    COUNT(o.order_id) AS total_orders,\n    SUM(CASE WHEN o.order_delivered_customer_date > o.order_estimated_delivery_date THEN 1 ELSE 0 END) AS late_orders,\n    ROUND(\n        CAST(SUM(CASE WHEN o.order_delivered_customer_date > o.order_estimated_delivery_date THEN 1 ELSE 0 END) AS REAL) / COUNT(o.order_id) * 100, \n        2\n    ) AS late_delivery_rate_percent\nFROM orders o\nJOIN order_items oi ON o.order_id = oi.order_id\nJOIN products p ON oi.product_id = p.product_id\nLEFT JOIN product_category_name_translation t ON p.product_category_name = t.product_category_name\nWHERE o.order_status = 'delivered'\n  AND o.order_delivered_customer_date IS NOT NULL\n  AND o.order_estimated_delivery_date IS NOT NULL\n  AND p.product_category_name IS NOT NULL\nGROUP BY p.product_category_name\nHAVING COUNT(o.order_id) >= 100\nORDER BY late_delivery_rate_percent DESC\nLIMIT 5",
+      "failure": "DIFFERENT_ROWS",
+      "seconds": 1.402
+    },
+    {
+      "baseline": "B2",
+      "id": "O3",
+      "group": "ops",
+      "split": "dev",
+      "answer": "```sql\nSELECT SUM(oi.price + oi.freight_value) AS gmv\nFROM orders o\nJOIN order_items oi ON o.order_id = oi.order_id\nWHERE o.order_purchase_timestamp >= '2018-08-01 00:00:00'\n  AND o.order_purchase_timestamp <= '2018-08-31 23:59:59'\n  AND o.order_status NOT IN ('canceled', 'unavailable');\n```",
+      "tokens": 693,
+      "checks": {
+        "execution": false
+      },
+      "success": false,
+      "sql": "SELECT SUM(oi.price + oi.freight_value) AS gmv\nFROM orders o\nJOIN order_items oi ON o.order_id = oi.order_id\nWHERE o.order_purchase_timestamp >= '2018-08-01 00:00:00'\n  AND o.order_purchase_timestamp <= '2018-08-31 23:59:59'\n  AND o.order_status NOT IN ('canceled', 'unavailable')",
+      "failure": "DIFFERENT_ROWS",
+      "seconds": 1.098
+    },
+    {
+      "baseline": "B2",
+      "id": "O4",
+      "group": "ops",
+      "split": "dev",
+      "answer": "```sql\nSELECT \n    c.customer_state\nFROM orders o\nJOIN customers c ON o.customer_id = c.customer_id\nGROUP BY c.customer_state\nHAVING COUNT(o.order_id) >= 500\nORDER BY CAST(SUM(CASE WHEN o.order_status = 'canceled' THEN 1 ELSE 0 END) AS REAL) / COUNT(o.order_id) DESC\nLIMIT 3;\n```",
+      "tokens": 684,
+      "checks": {
+        "execution": false
+      },
+      "success": false,
+      "sql": "SELECT \n    c.customer_state\nFROM orders o\nJOIN customers c ON o.customer_id = c.customer_id\nGROUP BY c.customer_state\nHAVING COUNT(o.order_id) >= 500\nORDER BY CAST(SUM(CASE WHEN o.order_status = 'canceled' THEN 1 ELSE 0 END) AS REAL) / COUNT(o.order_id) DESC\nLIMIT 3",
+      "failure": "DIFFERENT_ROWS",
+      "seconds": 0.854
+    },
+    {
+      "baseline": "B2",
+      "id": "O5",
+      "group": "ops",
+      "split": "dev",
+      "answer": "```sql\nSELECT payment_type, COUNT(DISTINCT order_id) AS order_count\nFROM order_payments\nGROUP BY payment_type;\n```",
+      "tokens": 603,
+      "checks": {
+        "execution": true
+      },
+      "success": true,
+      "sql": "SELECT payment_type, COUNT(DISTINCT order_id) AS order_count\nFROM order_payments\nGROUP BY payment_type",
+      "failure": null,
+      "seconds": 0.835
+    },
+    {
+      "baseline": "B2",
+      "id": "O6",
+      "group": "ops",
+      "split": "dev",
+      "answer": "```sql\nSELECT \n    strftime('%Y-%m', o.order_purchase_timestamp) AS ay,\n    c.customer_state,\n    COUNT(DISTINCT o.order_id) AS siparis_sayisi\nFROM orders o\nJOIN customers c ON o.customer_id = c.customer_id\nWHERE c.customer_state IN ('SP', 'RJ')\n  AND o.order_purchase_timestamp >= '2018-01-01'\n  AND o.order_purchase_timestamp < '2019-01-01'\nGROUP BY ay, c.customer_state\nORDER BY ay, c.customer_state;\n```",
+      "tokens": 729,
+      "checks": {
+        "execution": true
+      },
+      "success": true,
+      "sql": "SELECT \n    strftime('%Y-%m', o.order_purchase_timestamp) AS ay,\n    c.customer_state,\n    COUNT(DISTINCT o.order_id) AS siparis_sayisi\nFROM orders o\nJOIN customers c ON o.customer_id = c.customer_id\nWHERE c.customer_state IN ('SP', 'RJ')\n  AND o.order_purchase_timestamp >= '2018-01-01'\n  AND o.order_purchase_timestamp < '2019-01-01'\nGROUP BY ay, c.customer_state\nORDER BY ay, c.customer_state",
+      "failure": null,
+      "seconds": 0.997
+    },
+    {
+      "baseline": "B2",
+      "id": "O14",
+      "group": "ops",
+      "split": "dev",
+      "answer": "```sql\nSELECT \n    s.seller_id,\n    s.seller_city,\n    s.seller_state,\n    COUNT(DISTINCT oi.order_id) AS late_shipping_order_count\nFROM sellers s\nJOIN order_items oi ON s.seller_id = oi.seller_id\nJOIN orders o ON oi.order_id = o.order_id\nWHERE o.order_delivered_carrier_date IS NOT NULL\n  AND oi.shipping_limit_date IS NOT NULL\n  AND o.order_delivered_carrier_date > oi.shipping_limit_date\nGROUP BY s.seller_id, s.seller_city, s.seller_state\nORDER BY late_shipping_order_count DESC;\n```",
+      "tokens": 740,
+      "checks": {
+        "execution": false
+      },
+      "success": false,
+      "sql": "SELECT \n    s.seller_id,\n    s.seller_city,\n    s.seller_state,\n    COUNT(DISTINCT oi.order_id) AS late_shipping_order_count\nFROM sellers s\nJOIN order_items oi ON s.seller_id = oi.seller_id\nJOIN orders o ON oi.order_id = o.order_id\nWHERE o.order_delivered_carrier_date IS NOT NULL\n  AND oi.shipping_limit_date IS NOT NULL\n  AND o.order_delivered_carrier_date > oi.shipping_limit_date\nGROUP BY s.seller_id, s.seller_city, s.seller_state\nORDER BY late_shipping_order_count DESC",
+      "failure": "DIFFERENT_ROWS",
+      "seconds": 1.084
+    },
+    {
+      "baseline": "B2",
+      "id": "O15",
+      "group": "ops",
+      "split": "dev",
+      "answer": "```sql\nSELECT \n    oi.seller_id,\n    COUNT(DISTINCT oi.order_id) AS late_shipping_order_count\nFROM orders o\nJOIN order_items oi ON o.order_id = oi.order_id\nWHERE o.order_purchase_timestamp >= '2018-07-01 00:00:00'\n  AND o.order_delivered_carrier_date IS NOT NULL\n  AND oi.shipping_limit_date IS NOT NULL\n  AND o.order_delivered_carrier_date > oi.shipping_limit_date\nGROUP BY oi.seller_id\nORDER BY late_shipping_order_count DESC;\n```",
+      "tokens": 743,
+      "checks": {
+        "execution": false
+      },
+      "success": false,
+      "sql": "SELECT \n    oi.seller_id,\n    COUNT(DISTINCT oi.order_id) AS late_shipping_order_count\nFROM orders o\nJOIN order_items oi ON o.order_id = oi.order_id\nWHERE o.order_purchase_timestamp >= '2018-07-01 00:00:00'\n  AND o.order_delivered_carrier_date IS NOT NULL\n  AND oi.shipping_limit_date IS NOT NULL\n  AND o.order_delivered_carrier_date > oi.shipping_limit_date\nGROUP BY oi.seller_id\nORDER BY late_shipping_order_count DESC",
+      "failure": "DIFFERENT_ROWS",
+      "seconds": 1.401
+    },
+    {
+      "baseline": "B2",
+      "id": "U13a",
+      "group": "ops",
+      "split": "dev",
+      "answer": "```sql\nSELECT AVG(oi.freight_value) AS average_freight_value\nFROM order_payments op\nJOIN order_items oi ON op.order_id = oi.order_id\nWHERE op.payment_type = 'credit_card' \n  AND op.payment_installments = 5;\n```",
+      "tokens": 656,
+      "checks": {
+        "execution": false
+      },
+      "success": false,
+      "sql": "SELECT AVG(oi.freight_value) AS average_freight_value\nFROM order_payments op\nJOIN order_items oi ON op.order_id = oi.order_id\nWHERE op.payment_type = 'credit_card' \n  AND op.payment_installments = 5",
+      "failure": "DIFFERENT_ROWS",
+      "seconds": 0.722
+    }
+  ]
+}

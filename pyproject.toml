@@ -1,0 +1,70 @@
+[project]
+name = "marketdesk-agent"
+version = "0.1.0"
+description = "Marketplace customer-support and operations agent system"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "chromadb==1.5.9",
+    "huggingface-hub==1.33.0",
+    "llama-index-core==0.14.25",
+    "llama-index-llms-google-genai==0.11.2",
+    "llama-index-llms-groq==0.6.1",
+    "llama-index-vector-stores-chroma==0.6.0",
+    "mcp==2.3.0",
+    "numpy==2.5.3",
+    "onnxruntime==1.30.0",
+    "openinference-instrumentation-llama-index==4.6.0",
+    "opentelemetry-exporter-otlp-proto-http==1.45.1",
+    "opentelemetry-sdk==1.45.1",
+    "pandas==3.0.6",
+    "pyyaml==6.0.3",
+    "sqlglot==30.21.0",
+    "streamlit==1.66.1",
+    "tokenizers==0.23.2",
+]
+
+[dependency-groups]
+dev = [
+    "deepeval==4.2.8",
+    "deepteam==1.0.9",
+    "kagglehub==1.0.2",
+    "pytest==9.1.1",
+    "pytest-xdist==3.8.0",
+    "ruff==0.16.10",
+]
+
+[tool.uv]
+# deepeval caps click below 8.4, huggingface-hub needs 8.4.2 or later. click
+# is only used by deepeval's command line, which this project does not run.
+override-dependencies = ["click>=8.4.2"]
+# An application, not a library: nothing to build or install as a package.
+package = false
+
+[tool.ruff.lint]
+# PEP 8: the style rules of pycodestyle (E, W) and the naming rules (N), on top
+# of ruff's defaults.
+extend-select = ["E", "W", "N"]
+
+[tool.pytest.ini_options]
+# Lets tests import top-level modules and folders (config, data, scripts, src).
+pythonpath = ["."]
+testpaths = ["tests"]
+# Tests marked "model" load the real embedding model, which needs the
+# network once. They are left out by default; run them with `task test:model`.
+markers = ["model: needs the real embedding model"]
+# deepeval registers a pytest plugin that would load the library, and with
+# it .env, into every test run. The tests do not use it. -n 4 runs the tests
+# on four workers (pytest-xdist): each test that starts an order server or the
+# page takes a second or two, and they add up. The number is fixed, not one
+# for each CPU: after a restart the machine showed twenty CPUs, twenty workers
+# are twenty processes with their order servers, and the memory of a laptop
+# is not for that. Give -n 0 on the command line to run in one process.
+addopts = "-m 'not model' -p no:deepeval -n 4"
+# The agent framework inspects model objects in a way pydantic has
+# deprecated; an agent run raises hundreds of these, none from this project.
+filterwarnings = [
+    "ignore::pydantic.warnings.PydanticDeprecatedSince20",
+    "ignore::pydantic.warnings.PydanticDeprecatedSince211",
+]

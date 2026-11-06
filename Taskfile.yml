@@ -1,0 +1,350 @@
+# Taskfile for MarketDesk (https://taskfile.dev)
+# Run `task` to list the available commands.
+#
+# Locally every command runs inside the `app` container defined in
+# docker-compose.yaml. In CI (CI=true) the same command runs directly
+# with `uv`, so there is one definition per command and two runners.
+# Scripts are added milestone by milestone; a task whose script does not
+# exist yet will fail until then.
+
+version: "3"
+
+env:
+  HOST_UID:
+    sh: id -u
+  HOST_GID:
+    sh: id -g
+
+vars:
+  # Prefix for commands that need the Python environment.
+  RUN: '{{if eq .CI "true"}}{{else}}docker compose run --rm app{{end}}'
+  # Compose with every profile enabled, for commands that must see all services.
+  COMPOSE_ALL: docker compose --profile "*"
+
+tasks:
+  default:
+    desc: List available tasks
+    silent: true
+    cmds:
+      - task --list
+
+  # --- Full setup --------------------------------------------------------
+
+  install:
+    desc: Full local setup (pull the app image, install deps, load data, start the page)
+    preconditions:
+      - sh: test -f .env
+        msg: ".env not found. Run `cp .env.example .env` and fill in your API keys first."
+    cmds:
+      # The app image only: Phoenix (about 1 GB) is for local tracing and is
+      # pulled when it is first started with `task up -- phoenix`.
+      - docker compose pull app
+      - task: sync
+      - task: data
+      - task: up
+
+  reset:
+    desc: Remove everything and run the full setup again
+    cmds:
+      - task: clean
+      - task: install
+
+  # --- Containers (all services, or one: `task up -- phoenix`) -----------
+
+  pull:
+    desc: Pull the container images
+    cmds:
+      - "{{.COMPOSE_ALL}} pull {{.CLI_ARGS}}"
+
+  up:
+    desc: Start services in the background and wait until they are healthy (default is app only)
+    cmds:
+      - docker compose up -d --wait {{.CLI_ARGS}}
+
+  down:
+    desc: Stop and remove all containers
+    cmds:
+      - "{{.COMPOSE_ALL}} down"
+
+  restart:
+    desc: Restart running services
+    cmds:
+      - "{{.COMPOSE_ALL}} restart {{.CLI_ARGS}}"
+
+  logs:
+    desc: Follow service logs
+    cmds:
+      - "{{.COMPOSE_ALL}} logs -f {{.CLI_ARGS}}"
+
+  ps:
+    desc: Show container status
+    cmds:
+      - "{{.COMPOSE_ALL}} ps -a"
+
+  rm:
+    desc: Stop and delete one service's container (`task rm -- phoenix`)
+    preconditions:
+      - sh: test -n "{{.CLI_ARGS}}"
+        msg: "Name a service: task rm -- <service>"
+    cmds:
+      - "{{.COMPOSE_ALL}} rm -sf {{.CLI_ARGS}}"
+
+  size:
+    desc: Show disk use of the project folders, images and volumes
+    cmds:
+      - du -sh .
+      - du -sh data policies/index eval/cache 2>/dev/null || true
+      - "{{.COMPOSE_ALL}} config --images | sed 's/@.*//' | xargs -r -n1 docker image ls --format '{{`{{.Repository}}:{{.Tag}}\t{{.Size}}`}}'"
+      - docker system df -v | grep '^marketdesk_' || true
+
+  clean:
+    desc: Delete containers and volumes (installed dependencies, Phoenix traces)
+    prompt: This deletes all containers, the dependency volume and the Phoenix trace volume. Continue?
+    cmds:
+      - "{{.COMPOSE_ALL}} down -v"
+
+  # --- Environment -------------------------------------------------------
+
+  sync:
+    desc: Install dependencies from uv.lock
+    cmds:
+      - "{{.RUN}} uv sync --frozen"
+
+  # --- Quality -----------------------------------------------------------
+
+  lint:
+    desc: Run ruff lint checks and check the formatting (`task format` fixes it)
+    cmds:
+      - "{{.RUN}} uv run ruff check ."
+      - "{{.RUN}} uv run ruff format --check ."
+
+  format:
+    desc: Format code with ruff
+    cmds:
+      - "{{.RUN}} uv run ruff format ."
+
+  test:
+    desc: Run unit tests (no API key or network needed)
+    cmds:
+      - "{{.RUN}} uv run pytest {{.CLI_ARGS}}"
+
+  test:model:
+    desc: Run the tests that need the real embedding model (needs the network once)
+    cmds:
+      - "{{.RUN}} uv run pytest -m model {{.CLI_ARGS}}"
+
+  check:
+    desc: Lint and test, the same checks CI runs; ends with the total time
+    vars:
+      STARTED:
+        sh: date +%s
+    cmds:
+      # Runs last, also when lint or a test fails; the task still fails then.
+      - defer: >-
+          elapsed=$(( $(date +%s) - {{.STARTED}} ));
+          printf 'Total time: %d h %d min %d s (lint and tests)\n'
+          $((elapsed / 3600)) $((elapsed % 3600 / 60)) $((elapsed % 60))
+      - task: lint
+      - task: test
+
+  audit:
+    desc: Check the locked dependencies for known vulnerabilities (pip-audit through uvx; nothing is added to the project)
+    cmds:
+      # Advisories that cannot be reached in this project are ignored by id;
+      # the reason for each one is a finding in docs/security_review.md. Any
+      # other advisory fails the task.
+      - >-
+        {{.RUN}} sh -c 'uv export --frozen --no-hashes --all-groups --no-emit-project
+        > /tmp/audit-requirements.txt
+        && uvx pip-audit==2.9.0 -r /tmp/audit-requirements.txt --no-deps --disable-pip
+        --progress-spinner off
+        --ignore-vuln PYSEC-2026-311 --ignore-vuln PYSEC-2026-3813
+        --ignore-vuln PYSEC-2026-3814 --ignore-vuln PYSEC-2026-3815
+        --ignore-vuln GHSA-8mgp-746c-j5xp'
+
+  # --- Data --------------------------------------------------------------
+
+  data:download:
+    desc: Download the Olist dataset
+    cmds:
+      - "{{.RUN}} uv run python -m data.download"
+
+  data:load:
+    desc: Load the CSV files into SQLite (data/marketdesk.db)
+    cmds:
+      - "{{.RUN}} uv run python -m scripts.load_sqlite --db data/marketdesk.db"
+
+  data:demo:
+    desc: Build the demo database the deployed page builds on its first start (all orders, no geolocation), unless one exists
+    cmds:
+      - "{{.RUN}} uv run python -m scripts.build_demo_db --db {{.CLI_ARGS | default \"data/marketdesk.db\"}}"
+
+  data:smoke:
+    desc: Verify the downloaded data and the database against the expected numbers
+    cmds:
+      - "{{.RUN}} uv run python -m scripts.smoke --db data/marketdesk.db"
+
+  data:
+    desc: Download, load and verify the dataset
+    cmds:
+      - task: data:download
+      - task: data:load
+      - task: data:smoke
+
+  # --- Knowledge layer ---------------------------------------------------
+
+  index:build:
+    desc: Build the policy index in policies/index (run after changing a policy or the embedding model)
+    cmds:
+      - "{{.RUN}} uv run python -m scripts.build_policy_index"
+
+  embed:check:
+    desc: Load the real embedding model and search the policy sections (needs the network once)
+    cmds:
+      - "{{.RUN}} uv run python -m scripts.check_embedding"
+
+  embed:compare:
+    desc: Compare embedding models (e5-small, e5-base, bge-m3) on the policy questions, each in its own process; downloads about 970 MB once, runs on the CPU, needs no API key; `-- --only NAME` for one model, `-- --list` names them
+    cmds:
+      - "{{.RUN}} uv run python -m eval.embedding_compare {{.CLI_ARGS}}"
+
+  index:compare:
+    desc: Compare the policy search through LlamaIndex with direct Chroma on the retrieval questions (same vectors; needs the embedding model, no API key); `-- --runs N` for more timing runs
+    cmds:
+      - "{{.RUN}} uv run python -m eval.index_compare {{.CLI_ARGS}}"
+
+  trace:examples:
+    desc: Send example traces of every error kind to the tracing target, with the stand-in model (no model calls); `-- --target phoenix` for Phoenix
+    cmds:
+      - "{{.RUN}} uv run python -m scripts.trace_examples {{.CLI_ARGS}}"
+
+  trace:dashboard:
+    desc: Count the error kinds of the Langfuse traces, print them and write data/error_tracing.html (no server; keys from .env); `-- --lang en --newest 5000`
+    cmds:
+      - "{{.RUN}} uv run python -m scripts.trace_dashboard {{.CLI_ARGS}}"
+
+  # --- Agents ------------------------------------------------------------
+
+  agent:check:
+    desc: Run the example questions through the Support Agent with the real model (uses LLM quota)
+    cmds:
+      - "{{.RUN}} uv run python -m scripts.try_support_agent {{.CLI_ARGS}}"
+
+  agent:check:ops:
+    desc: Run example operations questions through the Ops Data Agent with the real model (uses LLM quota)
+    cmds:
+      - "{{.RUN}} uv run python -m scripts.try_ops_agent {{.CLI_ARGS}}"
+
+  agent:check:router:
+    desc: Run example messages through the router with the real model (uses LLM quota)
+    cmds:
+      - "{{.RUN}} uv run python -m scripts.try_router {{.CLI_ARGS}}"
+
+  chat:
+    desc: Chat with an agent (uses LLM quota); pass --demo, --customer <id> or --ops after --
+    cmds:
+      - "{{.RUN}} uv run python -m src.cli {{.CLI_ARGS}}"
+
+  # --- Evaluation --------------------------------------------------------
+
+  env:hash-key:
+    desc: Write a secret key for the id hashes into .env, unless it has one (the key is not printed)
+    cmds:
+      - "{{.RUN}} uv run python -m scripts.set_hash_key {{.CLI_ARGS}}"
+
+  eval:
+    desc: Run the full evaluation (uses LLM free-tier quota)
+    cmds:
+      - "{{.RUN}} uv run python -m eval.run_eval {{.CLI_ARGS}}"
+
+  eval:redteam:
+    desc: Run the automated red team scan with DeepTeam; attacker and judge on Groq (uses Groq and LLM quota); `-- --pilot` for one vulnerability, `-- --multi-turn` for attacks over several messages (with a shorter crescendo prompt), `-- --ops-only` for the operations session alone, `-- --seed N` to repeat the random choice of attacks, `-- --paid` for the paid Gemini key
+    cmds:
+      - "{{.RUN}} uv run python -m eval.red_team {{.CLI_ARGS}}"
+
+  eval:report:
+    desc: Write the final report from the results files (no model calls)
+    cmds:
+      - "{{.RUN}} uv run python -m eval.report"
+
+  eval:all:
+    desc: Run the golden set, the baselines, the attack set, the same two in English, the multi-turn set, the attack sets of the red teaming and the number traps with and without the critic (indirect injection, client layer, misinformation, inter-agent, human trust, several messages), then write the final report (uses LLM free-tier quota); `-- --paid` finishes every run on the paid key
+    cmds:
+      - "{{.RUN}} uv run python -m eval.run_eval --judge {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.baselines --judge {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/injection_tests.jsonl {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/golden_set_en.jsonl --judge {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/injection_tests_en.jsonl {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/multi_turn_set.jsonl {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/indirect_injection_tests.jsonl --extra-policies eval/poisoned_policies {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/client_layer_tests.jsonl {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/misinformation_tests.jsonl --judge --independent-judge {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/inter_agent_tests.jsonl {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/human_trust_tests.jsonl {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/multi_turn_attacks.jsonl {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/template_attacks.jsonl {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/template_attacks_en.jsonl {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/review_insight_tests.jsonl --judge --independent-judge {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/number_traps.jsonl {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/number_traps.jsonl --no-critic {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --judge --no-critic {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/misinformation_tests.jsonl --judge --independent-judge --no-critic {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/number_traps.jsonl --critic-variant plain {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --judge --critic-variant plain {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/misinformation_tests.jsonl --judge --independent-judge --critic-variant plain {{.CLI_ARGS}}"
+      - "{{.RUN}} uv run python -m eval.report"
+
+  eval:multi:
+    desc: Run the multi-turn conversations, with approve and decline clicks made in code (uses LLM free-tier quota)
+    cmds:
+      - "{{.RUN}} uv run python -m eval.run_eval --golden eval/multi_turn_set.jsonl {{.CLI_ARGS}}"
+
+  eval:build-multi:
+    desc: Write eval/multi_turn_set.jsonl from its flows and the test sentences (no model calls)
+    cmds:
+      - "{{.RUN}} uv run python -m eval.build_multi_turn"
+
+  eval:build-en:
+    desc: Write the English golden and attack sets from the Turkish ones and eval/translations_en.json (no model calls)
+    cmds:
+      - "{{.RUN}} uv run python -m eval.build_english_sets"
+
+  eval:overhead:
+    desc: Measure what the agent framework adds to a step, with a stand-in model that answers at once (no model calls, no API key); `-- --runs N` for more runs per row
+    cmds:
+      - "{{.RUN}} uv run python -m eval.framework_overhead {{.CLI_ARGS}}"
+
+  eval:overhead:compare:
+    desc: Measure what LlamaIndex, Pydantic AI and LangChain (on LangGraph) each add to a step, with a scripted model that answers at once (no model calls, no API key); the last two are added for this run only and are not dependencies of the project; `-- --runs N` for more runs per row
+    cmds:
+      - "{{.RUN}} uv run --with pydantic-ai-slim==2.63.0 --with langchain==1.4.7 python -m eval.framework_compare {{.CLI_ARGS}}"
+
+  vector:compare:
+    desc: Compare vector stores (SimpleVectorStore, Chroma, FAISS, sqlite-vec) on install size and time, memory, search time and metadata filter, each in its own clean environment; needs the network, no API key, takes about 15 minutes; `-- --runs N` for more runs per figure
+    cmds:
+      - "{{.RUN}} uv run python -m eval.vector_store_compare {{.CLI_ARGS}}"
+
+  eval:mutations:
+    desc: Break each guard on purpose and check that the tests notice (no model calls); `-- --live` also runs the attack sets with the model on each broken guard (uses LLM quota, `-- --live --paid` to finish on the paid key); `-- --list` names the guards
+    cmds:
+      - "{{.RUN}} uv run python -m eval.mutations {{.CLI_ARGS}}"
+
+  eval:build-templates:
+    desc: Write eval/template_attacks.jsonl and eval/template_attacks_en.jsonl, attacks made from templates (a payload, a framing, an encoding and a language crossed with a fixed seed; no model calls)
+    cmds:
+      - "{{.RUN}} uv run python -m eval.build_template_attacks"
+
+  eval:judge-check:
+    desc: Write the sheet for checking the judge's scores by hand; `-- --agreement` counts the filled-in sheet
+    cmds:
+      - "{{.RUN}} uv run python -m eval.judge_check {{.CLI_ARGS}}"
+
+  eval:review-check:
+    desc: Write the sheet for checking the translations of review quotes by hand; `-- --agreement` counts the filled-in sheet
+    cmds:
+      - "{{.RUN}} uv run python -m eval.review_check {{.CLI_ARGS}}"
+
+  eval:baselines:
+    desc: Run the baselines B0, B1 and B2 on the golden set (uses LLM free-tier quota)
+    cmds:
+      - "{{.RUN}} uv run python -m eval.baselines {{.CLI_ARGS}}"

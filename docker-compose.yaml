@@ -1,0 +1,80 @@
+# Local development environment for MarketDesk.
+# Use the `task` commands (Taskfile.yml) instead of calling compose directly.
+#
+# There is no Dockerfile: `app` runs the official uv image with the project
+# folder mounted, and installs dependencies from uv.lock at run time into
+# a named volume.
+# SQLite, Chroma (file mode) and the MCP server (stdio subprocess) all live
+# inside `app`, the same way they will on Streamlit Community Cloud.
+
+name: marketdesk
+
+# Container logs rotate: at most 3 files of 10 MB each per service, so a long
+# run cannot fill the disk.
+x-logging: &default-logging
+  driver: local
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  app:
+    logging: *default-logging
+    # Pinned by digest, so a moved tag cannot change what runs; the tag is
+    # kept for reading.
+    image: ghcr.io/astral-sh/uv:0.11.13-python3.12-trixie-slim@sha256:83c6e4fe758c0cf41eba9bec0bfb5aad37722d0ea8ac266b99496e13365507db
+    working_dir: /app
+    # Run as the host user so files written to the mounted folder
+    # (data/, caches) are not owned by root. The Taskfile sets these.
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    volumes:
+      - .:/app
+      # Holds the virtual environment and the uv cache, outside the project
+      # folder. /tmp is writable by any user, and the volume inherits that.
+      - app-tmp:/tmp
+    environment:
+      HOME: /tmp
+      # Not /app/.venv: a host-side .venv points at a different interpreter.
+      UV_PROJECT_ENVIRONMENT: /tmp/venv
+      UV_CACHE_DIR: /tmp/uv-cache
+      # Install exactly what uv.lock says; never rewrite the lock in here.
+      UV_FROZEN: "1"
+      # Print each line at once, also into a pipe (`task eval | tee log`),
+      # so a long run can be followed.
+      PYTHONUNBUFFERED: "1"
+    env_file:
+      - path: .env
+        required: false
+    ports:
+      # Bound to this machine only: the page spends the key in .env.
+      - "127.0.0.1:8501:8501"
+    command: uv run streamlit run app.py --server.address 0.0.0.0 --server.headless true
+    # Healthy once Streamlit answers. `task up` waits for this, so a service
+    # that exits or never comes up is reported instead of passing silently.
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8501/_stcore/health', timeout=3)"
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  phoenix:
+    image: arizephoenix/phoenix:version-20.19.0@sha256:d240d8d4e364ee3483ed2de41ec12b760cc90bb0d4c6e2f190388772aba6fe1f
+    profiles: ["tracing"]
+    logging: *default-logging
+    environment:
+      PHOENIX_WORKING_DIR: /mnt/data
+    volumes:
+      - phoenix-data:/mnt/data
+    ports:
+      # Bound to this machine only: traces are not for the network.
+      - "127.0.0.1:6006:6006" # UI and OTLP over HTTP
+      - "127.0.0.1:4317:4317" # OTLP over gRPC
+
+volumes:
+  app-tmp:
+  phoenix-data:

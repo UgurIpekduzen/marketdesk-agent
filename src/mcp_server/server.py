@@ -1,0 +1,288 @@
+"""The project's own MCP server for the order tools, run over stdio.
+
+Start it with:  python -m src.mcp_server.server
+
+One server process serves one signed-in customer. The application starts
+it with the customer, the database and the page's language in environment
+variables, and the process keeps the session for as long as it lives: who
+the customer is, the order aliases, and the approval of a return request.
+None of that is ever an argument of a tool, so the model cannot supply or
+change it.
+
+Two groups of tools:
+
+- the five tools the model may call: four order tools and the hand-over to
+  a person, which writes a ticket for the support rep's queue. They are the
+  same functions the rest of the project uses; this file only wraps them;
+- control tools for the application's own code: turning an order number the
+  customer typed into an alias, and showing, approving or declining a
+  pending return request. They are never handed to the model. The approval
+  token is made and checked here and does not leave this process.
+"""
+
+import inspect
+import os
+import sqlite3
+from dataclasses import dataclass
+from datetime import date
+
+from mcp.server.mcpserver import MCPServer
+
+import config
+from src import messages
+from src.guardrails.pii import hash_id
+from src.guardrails.write_access import restrict_writes
+from src.i18n import DEFAULT_LANGUAGE, Language
+from src.tools.eligibility import check_return_eligibility
+from src.tools.escalation import (
+    TICKETS_TABLE,
+    ensure_tickets_table,
+    escalate_to_human,
+)
+from src.tools.orders import DEFAULT_LIST_LIMIT, get_order_status, list_customer_orders
+from src.tools.return_requests import create_return_request
+from src.tools.session import Session, open_session
+
+SERVER_NAME = "marketdesk-orders"
+CUSTOMER_VARIABLE = "MARKETDESK_CUSTOMER"
+DB_VARIABLE = "MARKETDESK_DB"
+# The page's language: how amounts are written for the customer. A caller
+# that does not set it gets Turkish.
+LANGUAGE_VARIABLE = "MARKETDESK_LANGUAGE"
+
+# The tools the model may be given. Everything else is for application code.
+MODEL_TOOLS = (
+    "get_order_status",
+    "list_customer_orders",
+    "check_return_eligibility",
+    "create_return_request",
+    "escalate_to_human",
+)
+
+# The only tables this process may write to, and only new rows.
+WRITABLE_TABLES = ("return_requests", TICKETS_TABLE)
+
+server = MCPServer(SERVER_NAME)
+
+
+@dataclass
+class State:
+    """What the server holds for its one session."""
+
+    session: Session
+    conn: sqlite3.Connection
+    simulated_today: date
+
+
+_state: State | None = None
+
+
+def state() -> State:
+    """The session of this process, opened on first use."""
+    global _state
+    if _state is None:
+        conn = connect_for_order_server(os.environ[DB_VARIABLE])
+        _state = State(
+            session=open_session(
+                conn,
+                os.environ[CUSTOMER_VARIABLE],
+                Language(os.environ.get(LANGUAGE_VARIABLE, DEFAULT_LANGUAGE)),
+            ),
+            conn=conn,
+            simulated_today=config.SIMULATED_TODAY,
+        )
+    return _state
+
+
+def connect_for_order_server(db_path: str) -> sqlite3.Connection:
+    """The server's connection: it reads anything and writes only new return
+    requests and tickets, so a fault in a tool cannot touch other data.
+
+    Args:
+        db_path (str): The database file.
+
+    Returns:
+        A connection that may insert only into the writable tables.
+    """
+    conn = sqlite3.connect(db_path)
+    ensure_tickets_table(conn)
+    return restrict_writes(conn, inserts=WRITABLE_TABLES)
+
+
+def describe(function) -> str:
+    """The description the model reads: the wrapped function's docstring.
+
+    Args:
+        function: A tool function with a docstring.
+
+    Returns:
+        The docstring, dedented, as the tool's description.
+    """
+    return inspect.cleandoc(function.__doc__)
+
+
+def memory_mb() -> int:
+    """Memory this process holds right now, in MB (Linux only; else 0)."""
+    try:
+        with open("/proc/self/status", encoding="ascii") as status_file:
+            for line in status_file:
+                if line.startswith("VmRSS:"):
+                    return int(line.split()[1]) // 1024
+    except OSError:
+        pass
+    return 0
+
+
+# --- Order tools: what the model may call ---------------------------------
+
+
+@server.tool(name="get_order_status", description=describe(get_order_status))
+async def get_order_status_tool(order_ref: str) -> dict:
+    current = state()
+    return get_order_status(
+        current.session, current.conn, order_ref, current.simulated_today
+    )
+
+
+@server.tool(name="list_customer_orders", description=describe(list_customer_orders))
+async def list_customer_orders_tool(
+    limit: int = DEFAULT_LIST_LIMIT, status: str | None = None
+) -> dict:
+    current = state()
+    return list_customer_orders(
+        current.session, current.conn, limit, status, current.simulated_today
+    )
+
+
+@server.tool(
+    name="check_return_eligibility", description=describe(check_return_eligibility)
+)
+async def check_return_eligibility_tool(
+    order_ref: str, reason: str | None = None
+) -> dict:
+    current = state()
+    return check_return_eligibility(
+        current.session, current.conn, order_ref, reason, current.simulated_today
+    )
+
+
+@server.tool(name="create_return_request", description=describe(create_return_request))
+async def create_return_request_tool(order_ref: str, reason: str, amount: str) -> dict:
+    # No approval token among the arguments: a caller cannot pass one.
+    current = state()
+    return create_return_request(
+        current.session,
+        current.conn,
+        order_ref,
+        reason,
+        amount,
+        today=current.simulated_today,
+    )
+
+
+@server.tool(name="escalate_to_human", description=describe(escalate_to_human))
+async def escalate_to_human_tool(summary: str, priority: str = "normal") -> dict:
+    current = state()
+    return escalate_to_human(
+        current.session, current.conn, summary, priority, current.simulated_today
+    )
+
+
+# --- Control tools: for the application's code, never for the model -------
+
+
+@server.tool()
+async def status() -> dict:
+    """Report that the server is running, with the memory it uses in MB."""
+    return {"server": SERVER_NAME, "status": "ok", "memory_mb": memory_mb()}
+
+
+@server.tool()
+async def session_info() -> dict:
+    """Say whose session this is (as a hash) and which values are personal."""
+    session = state().session
+    return {
+        "customer_hash": hash_id(session.customer_unique_id),
+        "personal_values": session.personal_values,
+    }
+
+
+@server.tool()
+async def alias_order_reference(order_ref: str) -> dict:
+    """Return the session alias for an order number the customer typed.
+
+    Any number gets an alias; whether the order is the customer's own is
+    decided later, by the order tool that looks it up.
+    """
+    return {"alias": state().session.alias_for(order_ref.strip().lower())}
+
+
+@server.tool()
+async def pending_approval() -> dict:
+    """Describe the return request that is waiting for the person's answer."""
+    current = state()
+    action = current.session.approvals.awaiting
+    if action is None:
+        return {"pending": False}
+    decision = check_return_eligibility(
+        current.session,
+        current.conn,
+        action.order_id,
+        action.reason,
+        current.simulated_today,
+    )
+    return {
+        "pending": True,
+        "order": current.session.alias_for(action.order_id),
+        "reason": action.reason,
+        "refund_amount": str(action.amount),
+        "request_status": decision["request_status"],
+    }
+
+
+@server.tool()
+async def approve_pending(
+    order: str = "", reason: str = "", refund_amount: str = ""
+) -> dict:
+    """The person said yes to the card they saw: write the pending request.
+
+    The card is the order alias, reason and amount the person was shown. The
+    request is written only if it is the one waiting now; if another one
+    waits, the click was on a card that is no longer the current one, so the
+    waiting request is dropped and nothing is written.
+    """
+    current = state()
+    action = current.session.approvals.awaiting
+    if action is None:
+        return {"error": "NOTHING_PENDING", "message": messages.NOTHING_PENDING}
+    shown = (order, reason, refund_amount)
+    waiting = (
+        current.session.alias_for(action.order_id),
+        action.reason,
+        str(action.amount),
+    )
+    if shown != waiting:
+        current.session.approvals.reject()
+        return {"error": "STALE_CARD", "message": messages.STALE_CARD}
+    # The token is created, used and gone within this function.
+    token = current.session.approvals.approve()
+    return create_return_request(
+        current.session,
+        current.conn,
+        action.order_id,
+        action.reason,
+        str(action.amount),
+        token,
+        current.simulated_today,
+    )
+
+
+@server.tool()
+async def decline_pending() -> dict:
+    """The person said no: drop the pending return request."""
+    state().session.approvals.reject()
+    return {"declined": True}
+
+
+if __name__ == "__main__":
+    server.run(transport="stdio")

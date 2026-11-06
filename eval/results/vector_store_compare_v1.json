@@ -1,0 +1,254 @@
+{
+ "runs": 3,
+ "chunks": 300,
+ "base": {
+  "packages": 62,
+  "disk_mb": 176.2
+ },
+ "stores": {
+  "SimpleVectorStore (LlamaIndex)": {
+   "search_ms_p50": {
+    "median": 2.3,
+    "min": 2.3,
+    "max": 2.34
+   },
+   "peak_memory_mb": {
+    "median": 164.2,
+    "min": 154.53,
+    "max": 166.23
+   },
+   "build_ms": {
+    "median": 4.9,
+    "min": 4.86,
+    "max": 5.86
+   },
+   "packages": {
+    "median": 62,
+    "min": 62,
+    "max": 62
+   },
+   "disk_mb": {
+    "median": 176.18,
+    "min": 176.18,
+    "max": 176.18
+   },
+   "failed_runs": 0,
+   "filter": "works",
+   "extra_packages": 0,
+   "extra_disk_mb": {
+    "median": 0.0,
+    "min": 0.0,
+    "max": 0.0
+   },
+   "install_cold_s": {
+    "median": 62.32,
+    "min": 62.04,
+    "max": 63.12
+   },
+   "install_cached_s": {
+    "median": 0.07,
+    "min": 0.07,
+    "max": 0.08
+   }
+  },
+  "Chroma (LlamaIndex connector)": {
+   "search_ms_p50": {
+    "median": 1.05,
+    "min": 1.03,
+    "max": 1.07
+   },
+   "peak_memory_mb": {
+    "median": 205.99,
+    "min": 195.9,
+    "max": 206.17
+   },
+   "build_ms": {
+    "median": 103.93,
+    "min": 98.64,
+    "max": 106.56
+   },
+   "packages": {
+    "median": 118,
+    "min": 118,
+    "max": 118
+   },
+   "disk_mb": {
+    "median": 461.65,
+    "min": 461.65,
+    "max": 461.65
+   },
+   "failed_runs": 0,
+   "filter": "works",
+   "extra_packages": 56,
+   "extra_disk_mb": {
+    "median": 285.47,
+    "min": 285.47,
+    "max": 285.47
+   },
+   "install_cold_s": {
+    "median": 130.83,
+    "min": 126.12,
+    "max": 159.01
+   },
+   "install_cached_s": {
+    "median": 0.09,
+    "min": 0.09,
+    "max": 0.09
+   }
+  },
+  "FAISS (LlamaIndex connector)": {
+   "search_ms_p50": {
+    "median": 0.02,
+    "min": 0.02,
+    "max": 0.02
+   },
+   "peak_memory_mb": {
+    "median": 161.4,
+    "min": 157.04,
+    "max": 165.57
+   },
+   "build_ms": {
+    "median": 3.21,
+    "min": 3.2,
+    "max": 4.24
+   },
+   "packages": {
+    "median": 64,
+    "min": 64,
+    "max": 64
+   },
+   "disk_mb": {
+    "median": 242.38,
+    "min": 242.38,
+    "max": 242.38
+   },
+   "failed_runs": 0,
+   "filter": "not supported (Metadata filters not implemented for Faiss yet.)",
+   "extra_packages": 2,
+   "extra_disk_mb": {
+    "median": 66.2,
+    "min": 66.2,
+    "max": 66.2
+   },
+   "install_cold_s": {
+    "median": 76.51,
+    "min": 74.45,
+    "max": 86.93
+   },
+   "install_cached_s": {
+    "median": 0.07,
+    "min": 0.07,
+    "max": 0.08
+   }
+  },
+  "sqlite-vec (raw)": {
+   "search_ms_p50": {
+    "median": 0.11,
+    "min": 0.11,
+    "max": 0.11
+   },
+   "peak_memory_mb": {
+    "median": 38.55,
+    "min": 38.55,
+    "max": 38.55
+   },
+   "build_ms": {
+    "median": 2.47,
+    "min": 2.38,
+    "max": 2.74
+   },
+   "packages": {
+    "median": 1,
+    "min": 1,
+    "max": 1
+   },
+   "disk_mb": {
+    "median": 0.16,
+    "min": 0.16,
+    "max": 0.16
+   },
+   "failed_runs": 0,
+   "filter": "not tried",
+   "extra_packages": 1,
+   "extra_disk_mb": {
+    "median": 0.16,
+    "min": 0.16,
+    "max": 0.16
+   },
+   "install_cold_s": {
+    "median": 1.92,
+    "min": 1.85,
+    "max": 2.5
+   },
+   "install_cached_s": {
+    "median": 0.04,
+    "min": 0.04,
+    "max": 0.04
+   }
+  }
+ },
+ "scale": {
+  "300": {
+   "size_mb": {
+    "median": 2.97,
+    "min": 2.97,
+    "max": 2.97
+   },
+   "load_s": {
+    "median": 0.4,
+    "min": 0.39,
+    "max": 0.4
+   },
+   "search_ms_p50": {
+    "median": 2.52,
+    "min": 2.49,
+    "max": 2.54
+   },
+   "failed_runs": 0
+  },
+  "3000": {
+   "size_mb": {
+    "median": 29.71,
+    "min": 29.71,
+    "max": 29.71
+   },
+   "load_s": {
+    "median": 4.05,
+    "min": 4.05,
+    "max": 4.31
+   },
+   "search_ms_p50": {
+    "median": 24.72,
+    "min": 24.09,
+    "max": 24.93
+   },
+   "failed_runs": 0
+  },
+  "30000": {
+   "size_mb": {
+    "median": 297.31,
+    "min": 297.31,
+    "max": 297.31
+   },
+   "load_s": {
+    "median": 43.11,
+    "min": 41.74,
+    "max": 43.88
+   },
+   "search_ms_p50": {
+    "median": 257.47,
+    "min": 256.95,
+    "max": 257.73
+   },
+   "failed_runs": 0
+  }
+ },
+ "versions": [
+  "llama-index-core==0.14.25",
+  "llama-index-vector-stores-chroma==0.6.0",
+  "chromadb==1.5.9",
+  "llama-index-vector-stores-faiss==0.7.0",
+  "faiss-cpu==1.15.1",
+  "sqlite-vec==0.1.9"
+ ]
+}

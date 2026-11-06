@@ -1,0 +1,65 @@
+# A few golden set examples with the real model, started by hand.
+# It uses the free-tier quota (about 30 model calls), so it never runs on a
+# push. Needs the repository secret GEMINI_API_KEY_FREE.
+
+name: eval
+
+on:
+  workflow_dispatch:
+    inputs:
+      examples:
+        description: Comma-separated example ids from the dev split
+        default: "S1,S4,P3,O1,O3,A2"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  eval:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      # Actions are pinned to a commit so a moved tag cannot change what runs.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: "0.11.13"
+          enable-cache: true
+
+      - uses: go-task/setup-task@a00fbb05ce67b35648be3c78cbc9fd85354c757e # v2.2.0
+        with:
+          version: "3.51.1"
+
+      # GitHub sets CI=true, so the tasks call uv directly, without Docker.
+      - name: Install dependencies
+        run: task sync
+
+      # The same database the deployed page builds on its first start.
+      - name: Build the demo database
+        run: task data:demo
+
+      - name: Run the examples
+        env:
+          GEMINI_API_KEY_FREE: ${{ secrets.GEMINI_API_KEY_FREE }}
+          # Passed through the environment, never pasted into the script.
+          EXAMPLES: ${{ inputs.examples }}
+        run: task eval -- --only "$EXAMPLES" --pause 5 --strict | tee eval-output.txt
+
+      - name: Write the summary
+        if: always()
+        run: |
+          {
+            echo "### Evaluation of $EXAMPLES"
+            grep -E '^(\||dev$|test$|Failed|Model calls|Database copy)' eval-output.txt || true
+          } >> "$GITHUB_STEP_SUMMARY"
+        env:
+          EXAMPLES: ${{ inputs.examples }}
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: eval-output
+          path: eval-output.txt
+          retention-days: 14
